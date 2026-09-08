@@ -54,6 +54,9 @@ body {
   inset: 0;
   z-index: 1;
   pointer-events: none;
+  overflow: hidden;
+  container-type: size;
+  container-name: stage;
 }
 
 .phone-stage {
@@ -117,7 +120,7 @@ body {
 .overlay {
   position: absolute;
   inset: 0;
-  z-index: 3;
+  z-index: 6;
   pointer-events: none;
 }
 
@@ -147,15 +150,53 @@ body {
 }
 
 .scroll-hint {
-  bottom: 7vh;
+  bottom: max(7cqh, calc(18px + env(safe-area-inset-bottom)));
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 10px;
   letter-spacing: 0.42em;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 13px;
+  font-size: clamp(12px, 3.8cqw, 14px);
   color: rgba(230, 225, 214, 0.62);
+}
+
+.caption {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  top: 46%;
+  transform: translateY(-50%);
+  text-align: center;
+  opacity: 0;
+  padding: 1.15em 0.35em;
+  background: linear-gradient(
+    to bottom,
+    rgba(5, 5, 5, 0) 0%,
+    rgba(5, 5, 5, 0.62) 22%,
+    rgba(5, 5, 5, 0.78) 50%,
+    rgba(5, 5, 5, 0.62) 78%,
+    rgba(5, 5, 5, 0) 100%
+  );
+}
+
+.caption p {
+  margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(42px, 16cqw, 78px);
+  line-height: 0.88;
+  letter-spacing: 0.04em;
+  font-weight: 400;
+  color: #f6f1e6;
+  text-wrap: balance;
+  overflow-wrap: anywhere;
+  text-shadow:
+    0 1px 0 #050505,
+    0 10px 28px rgba(0, 0, 0, 0.92);
+}
+
+.caption-accent p {
+  color: #d9c27a;
 }
 
 .scroll-hint i {
@@ -165,23 +206,49 @@ body {
 }
 
 .leipzig-copy {
-  bottom: 11vh;
-  width: min(88vw, 560px);
+  bottom: max(8cqh, calc(16px + env(safe-area-inset-bottom)));
+  width: min(88%, 560px);
+}
+
+.leipzig-copy .caption-title {
+  margin: 0 0 10px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(52px, 20cqw, 96px);
+  line-height: 0.84;
+  letter-spacing: 0.08em;
+  color: #f6f1e6;
+  text-shadow: 0 8px 24px rgba(0, 0, 0, 0.88);
 }
 
 .leipzig-copy .line {
   margin: 0;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(20px, 3.4vw, 34px);
-  letter-spacing: 0.16em;
+  font-size: clamp(18px, 6.2cqw, 34px);
+  letter-spacing: 0.1em;
+  line-height: 1.05;
+  text-wrap: balance;
 }
 
 .leipzig-copy .sub,
 .finale-copy .sub {
   margin: 12px 0 0;
-  font-size: 15px;
-  letter-spacing: 0.08em;
+  font-size: clamp(13px, 3.8cqw, 15px);
+  letter-spacing: 0.06em;
   color: var(--muted);
+}
+
+.overlay.is-compact .leipzig-copy {
+  left: 0;
+  right: 0;
+  width: 100%;
+  transform: none;
+  padding: 16cqh 7% 8cqh;
+  background: linear-gradient(
+    to top,
+    rgba(5, 5, 5, 0.9) 0%,
+    rgba(5, 5, 5, 0.62) 48%,
+    rgba(5, 5, 5, 0) 100%
+  );
 }
 
 .finale-copy {
@@ -190,7 +257,7 @@ body {
   bottom: 0;
   width: 100%;
   transform: none;
-  padding: 18vh 6vw 7vh;
+  padding: 18cqh 6% max(7cqh, calc(18px + env(safe-area-inset-bottom)));
   background: linear-gradient(
     to top,
     rgba(5, 5, 5, 0.94) 0%,
@@ -201,34 +268,35 @@ body {
 }
 
 .finale-card {
-  width: min(90vw, 640px);
+  width: min(92%, 640px);
   margin: 0 auto;
 }
 
 .finale-copy h2 {
   margin: 0;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(42px, 8vw, 84px);
+  font-size: clamp(40px, 15cqw, 84px);
   line-height: 0.9;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   font-weight: 400;
   color: #f3efe6;
+  text-wrap: balance;
   text-shadow: 0 8px 28px rgba(0, 0, 0, 0.85);
 }
 
 .finale-copy .meta {
   margin: 22px 0 0;
   font-family: 'Bebas Neue', sans-serif;
-  letter-spacing: 0.18em;
-  font-size: 16px;
+  letter-spacing: 0.16em;
+  font-size: clamp(14px, 4.4cqw, 16px);
   color: #e6e1d6;
 }
 
 .finale-copy .open {
   margin: 18px 0 0;
   font-family: 'Bebas Neue', sans-serif;
-  letter-spacing: 0.28em;
-  font-size: 14px;
+  letter-spacing: 0.22em;
+  font-size: clamp(13px, 3.8cqw, 14px);
   color: #c43a3a;
 }
 
@@ -279,7 +347,7 @@ body {
 
 .loader-logo,
 .story-logo {
-  width: min(46vw, 240px);
+  width: min(62cqw, 240px);
   height: auto;
   display: block;
 }
@@ -289,7 +357,7 @@ body {
 }
 
 .story-fighter {
-  width: min(52vw, 280px);
+  width: min(58cqw, 280px);
   height: auto;
   display: block;
   margin: 36px 0 0;
@@ -305,8 +373,8 @@ body {
 
 .story {
   position: relative;
-  z-index: 3;
-  padding: 18vh 8vw 16vh;
+  z-index: 6;
+  padding: 16cqh 8% 16cqh;
   max-width: 720px;
 }
 
@@ -319,7 +387,7 @@ body {
   font-family: 'Bebas Neue', sans-serif;
   font-weight: 400;
   letter-spacing: 0.06em;
-  font-size: clamp(40px, 9vw, 88px);
+  font-size: clamp(40px, 14cqw, 88px);
   line-height: 0.92;
   margin: 0 0 16px;
 }
@@ -373,13 +441,25 @@ body {
     height: 720vh;
   }
 
+  .caption p {
+    font-size: clamp(40px, 17cqw, 68px);
+  }
+
+  .leipzig-copy .line {
+    letter-spacing: 0.07em;
+  }
+
   .finale-copy {
-    padding: 16vh 6vw 8vh;
+    padding: 20cqh 7% max(8cqh, calc(20px + env(safe-area-inset-bottom)));
   }
 
   .finale-copy h2 {
-    font-size: clamp(36px, 11vw, 64px);
+    font-size: clamp(38px, 16cqw, 64px);
   }
+}
+
+.app.is-compact .caption p {
+  font-size: clamp(40px, 17cqw, 68px);
 }
 
 @media (prefers-reduced-motion: reduce) {

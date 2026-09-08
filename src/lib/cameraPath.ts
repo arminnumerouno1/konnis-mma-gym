@@ -44,6 +44,27 @@ export const CAMERA_KEYS: CamKey[] = [
   { t: 1.0, position: [0.0, 1.26, -106.85], target: [0, 0.74, -114.15], fov: 33 },
 ]
 
+/** Portrait / phone: stay on axis so titles are not cropped. */
+export const CAMERA_KEYS_COMPACT: CamKey[] = [
+  { t: 0.0, position: [0, 1.08, 8.6], target: [0, 1.06, 0], fov: 38 },
+  { t: 0.055, position: [0, 1.08, 5.2], target: [0, 1.05, 0], fov: 36 },
+  { t: 0.11, position: [0, 1.06, 3.2], target: [0, 1.04, 0], fov: 34 },
+  { t: 0.16, position: [0.28, 1.04, 0.9], target: [0, 1.04, -4], fov: 38 },
+  { t: 0.22, position: [0, 1.4, -7.2], target: [0, 1.4, -16], fov: 42 },
+  { t: 0.3, position: [0, 1.5, -16.2], target: [0, 1.5, -24], fov: 40 },
+  { t: 0.37, position: [0, 1.72, -28.2], target: [0, 0.35, -33.2], fov: 42 },
+  { t: 0.4, position: [0.12, 1.46, -33.8], target: [0.55, 1.12, -39.2], fov: 38 },
+  { t: 0.48, position: [0, 1.5, -38.2], target: [0, 1.52, -46], fov: 36 },
+  { t: 0.56, position: [0, 1.42, -49.2], target: [0, 1.4, -57], fov: 38 },
+  { t: 0.64, position: [0, 1.5, -60.2], target: [0.2, 1.45, -67], fov: 38 },
+  { t: 0.72, position: [0, 2.35, -73], target: [0, 2.05, -86], fov: 44 },
+  { t: 0.78, position: [0, 3.05, -81], target: [0, 2.5, -93], fov: 42 },
+  { t: 0.84, position: [0.2, 4.1, -90], target: [0, 2.2, -100], fov: 42 },
+  { t: 0.9, position: [0, 1.42, -104.2], target: [0, 1.0, -114.15], fov: 38 },
+  { t: 0.96, position: [0, 1.32, -106.3], target: [0, 0.68, -114.15], fov: 38 },
+  { t: 1.0, position: [0, 1.3, -106.1], target: [0, 0.66, -114.15], fov: 38 },
+]
+
 export const LIGHT_KEYS: LightKey[] = [
   { t: 0.0, intro: 0.82, gym: 0, side: 0, city: 0, finale: 0, fog: 0.034, exposure: 0.92 },
   { t: 0.05, intro: 1, gym: 0, side: 0, city: 0, finale: 0, fog: 0.03, exposure: 1.02 },
@@ -71,8 +92,13 @@ function findSegment<T extends { t: number }>(keys: T[], t: number): { a: T; b: 
   return { a, b, u: clamp(inverseLerp(a.t, b.t, p), 0, 1) }
 }
 
-export function sampleCameraInto(t: number, position: THREE.Vector3, target: THREE.Vector3): number {
-  const { a, b, u } = findSegment(CAMERA_KEYS, t)
+export function sampleCameraInto(
+  t: number,
+  position: THREE.Vector3,
+  target: THREE.Vector3,
+  compact = false,
+): number {
+  const { a, b, u } = findSegment(compact ? CAMERA_KEYS_COMPACT : CAMERA_KEYS, t)
   position.set(
     lerp(a.position[0], b.position[0], u),
     lerp(a.position[1], b.position[1], u),

@@ -1,5 +1,6 @@
 import { Text } from '@react-three/drei'
 import type { QualityLevel } from '../lib/quality'
+import { useExperience } from '../store'
 
 const FONT = '/fonts/BebasNeue-Regular.ttf'
 
@@ -24,7 +25,9 @@ export function TypeInSpace({
   quality,
   maxWidth,
 }: TypeInSpaceProps) {
+  const compact = useExperience((s) => s.compact)
   const layers = quality === 'low' ? 1 : quality === 'medium' ? 2 : 4
+  if (compact) return null
   const step = 0.032
 
   return (

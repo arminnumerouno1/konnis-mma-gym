@@ -2,16 +2,17 @@ import { useLayoutEffect, useMemo } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { sampleCameraInto } from '../lib/cameraPath'
-import { scrollProgress } from '../store'
+import { scrollProgress, useExperience } from '../store'
 
 export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
+  const compact = useExperience((s) => s.compact)
   const { camera } = useThree()
   const pos = useMemo(() => new THREE.Vector3(), [])
   const target = useMemo(() => new THREE.Vector3(), [])
   const look = useMemo(() => new THREE.Vector3(), [])
 
   useLayoutEffect(() => {
-    const fov = sampleCameraInto(reducedMotion ? 0.1 : 0, pos, target)
+    const fov = sampleCameraInto(reducedMotion ? 0.1 : 0, pos, target, compact)
     camera.position.copy(pos)
     look.copy(target)
     camera.lookAt(look)
@@ -19,11 +20,11 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
       camera.fov = fov
       camera.updateProjectionMatrix()
     }
-  }, [camera, look, pos, reducedMotion, target])
+  }, [camera, compact, look, pos, reducedMotion, target])
 
   useFrame((_, dt) => {
     if (reducedMotion) return
-    const fov = sampleCameraInto(scrollProgress.current, pos, target)
+    const fov = sampleCameraInto(scrollProgress.current, pos, target, compact)
     const lambda = 8.5
     camera.position.x = THREE.MathUtils.damp(camera.position.x, pos.x, lambda, dt)
     camera.position.y = THREE.MathUtils.damp(camera.position.y, pos.y, lambda, dt)

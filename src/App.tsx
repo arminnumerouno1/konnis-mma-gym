@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import { Experience } from './experience/Experience'
 import { detectQuality, prefersReducedMotion, type QualityLevel } from './lib/quality'
 import { Overlay } from './overlay/Overlay'
@@ -7,12 +7,25 @@ import { ViewToggle } from './overlay/ViewToggle'
 import { useScrollExperience } from './scroll/useScrollExperience'
 import { useExperience } from './store'
 
+function isNarrowScreen() {
+  return window.innerWidth < 780
+}
+
 export default function App() {
   const ready = useExperience((s) => s.ready)
+  const compact = useExperience((s) => s.compact)
+  const setCompact = useExperience((s) => s.setCompact)
   const [boot, setBoot] = useState(false)
   const [quality, setQuality] = useState<QualityLevel>('medium')
   const [reduced, setReduced] = useState(false)
   const [phone, setPhone] = useState(false)
+
+  useLayoutEffect(() => {
+    const apply = () => setCompact(phone || isNarrowScreen())
+    apply()
+    window.addEventListener('resize', apply)
+    return () => window.removeEventListener('resize', apply)
+  }, [phone, setCompact])
 
   useEffect(() => {
     setQuality(detectQuality())
@@ -48,19 +61,22 @@ export default function App() {
     setPhone((current) => {
       const next = !current
       setQuality(next ? 'low' : detectQuality())
+      setCompact(next || isNarrowScreen())
       return next
     })
   }
 
+  const shell = ['app', phone ? 'is-phone' : '', compact ? 'is-compact' : ''].filter(Boolean).join(' ')
+
   return (
-    <div className={phone ? 'app is-phone' : 'app'}>
+    <div className={shell}>
       <div className={phone ? 'phone-stage' : undefined}>
         <div className={phone ? 'phone-bezel' : undefined}>
           <div className="viewport">
             {boot && (
               <Experience key={phone ? 'phone' : 'desktop'} quality={quality} reducedMotion={reduced} />
             )}
-            <Overlay reducedMotion={reduced} />
+            <Overlay reducedMotion={reduced} compact={compact} />
             <div className="film-grain" />
             <div className="film-vignette" />
             <Loader visible={!ready} />
