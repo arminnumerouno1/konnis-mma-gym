@@ -84,7 +84,7 @@ export default function App() {
         </div>
       </div>
       {!reduced && <div id="scroll-track" className="scroll-track" />}
-      <ViewToggle phone={phone} onToggle={togglePhone} />
+      {(phone || !compact) && <ViewToggle phone={phone} onToggle={togglePhone} />}
     </div>
   )
 }

@@ -189,7 +189,7 @@ body {
   font-weight: 400;
   color: #f6f1e6;
   text-wrap: balance;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
   text-shadow:
     0 1px 0 #050505,
     0 10px 28px rgba(0, 0, 0, 0.92);
@@ -460,6 +460,26 @@ body {
 
 .app.is-compact .caption p {
   font-size: clamp(40px, 17cqw, 68px);
+}
+
+.app.is-compact .leipzig-copy .line {
+  font-size: clamp(20px, 7.2cqw, 32px);
+  letter-spacing: 0.06em;
+}
+
+.app.is-compact .leipzig-copy .sub,
+.app.is-compact .finale-copy .sub {
+  font-size: clamp(15px, 4.8cqw, 18px);
+  letter-spacing: 0.04em;
+}
+
+.app.is-compact .finale-copy .meta {
+  font-size: clamp(16px, 5.4cqw, 20px);
+}
+
+.app.is-compact .finale-copy .open {
+  font-size: clamp(15px, 4.8cqw, 18px);
+  letter-spacing: 0.16em;
 }
 
 @media (prefers-reduced-motion: reduce) {
