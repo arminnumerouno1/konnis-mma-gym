@@ -7,10 +7,10 @@ import { windowOpacity } from '../lib/math'
 import { scrollProgress, useExperience } from '../store'
 import { sharedParticle } from './textures'
 
-const DESKTOP_POS: [number, number, number] = [1.18, 0, -39.35]
-const COMPACT_POS: [number, number, number] = [0.16, 0, -38.4]
-const HEIGHT = 1.94
-const WIDTH = HEIGHT * (400 / 600)
+const DESKTOP_POS: [number, number, number] = [1.14, 0, -39.35]
+const COMPACT_POS: [number, number, number] = [0.12, 0, -38.4]
+const HEIGHT = 2.04
+const WIDTH = HEIGHT * (644 / 1360)
 
 const FOG_COLOR = new THREE.Color('#070706')
 
@@ -38,18 +38,18 @@ const fragmentShader = /* glsl */ `
 
   void main() {
     vec4 tex = texture2D(uMap, vUv);
-    float alpha = smoothstep(0.02, 0.55, tex.a);
-    float body = 1.0 - distance(vUv, vec2(0.5, 0.46));
+    float alpha = smoothstep(0.02, 0.42, tex.a);
+    float body = 1.0 - distance(vUv, vec2(0.48, 0.42));
     alpha *= smoothstep(0.0, 0.28, uReveal);
     alpha *= smoothstep(0.12, 0.9, uReveal + body * 0.2);
-    alpha *= smoothstep(0.06, 0.4, vUv.y);
-    alpha *= smoothstep(0.0, 0.06, vUv.x) * smoothstep(1.0, 0.94, vUv.x);
+    alpha *= smoothstep(0.02, 0.2, vUv.y);
+    alpha *= smoothstep(0.0, 0.03, vUv.x) * smoothstep(1.0, 0.97, vUv.x);
 
     vec3 col = tex.rgb;
-    col = pow(max(col, vec3(0.0)), vec3(1.06));
-    col *= vec3(1.05, 0.97, 0.88);
-    col *= 0.22 + 0.78 * uReveal;
-    col *= smoothstep(0.08, 0.5, vUv.y);
+    col = pow(max(col, vec3(0.0)), vec3(1.04));
+    col *= vec3(1.04, 0.97, 0.9);
+    col *= 0.2 + 0.8 * uReveal;
+    col *= smoothstep(0.03, 0.28, vUv.y);
 
     float lift = mix(-0.05, 1.12, uReveal);
     col *= 0.42 + 0.58 * smoothstep(lift - 0.4, lift + 0.08, vUv.y);
@@ -149,7 +149,7 @@ export function Konrad({ position = DESKTOP_POS }: KonradProps) {
   const bounce = useRef<THREE.PointLight>(null)
   const revealRef = useRef(0)
   const origin = compact ? COMPACT_POS : position
-  const scale = compact ? 1.1 : 1
+  const scale = compact ? 1.16 : 1.04
 
   const material = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -212,7 +212,7 @@ export function Konrad({ position = DESKTOP_POS }: KonradProps) {
     g.visible = reveal > 0.015 || light > 0.04
     g.scale.setScalar(scale * (0.96 + 0.04 * reveal))
     g.position.y = origin[1] + (1 - reveal) * (compact ? -0.1 : -0.05)
-    g.rotation.y = compact ? 0.06 : -0.08
+    g.rotation.y = compact ? 0.02 : -0.035
   })
 
   return (

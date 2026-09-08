@@ -393,7 +393,7 @@ body {
 }
 
 .story-fighter {
-  width: min(58cqw, 280px);
+  width: min(52cqw, 260px);
   height: auto;
   display: block;
   margin: 36px 0 0;
