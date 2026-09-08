@@ -1,6 +1,6 @@
 # KONNI'S MMA GYM — Leipzig
 
-Immersive 3D scroll experience for KONNI'S MMA GYM. The page is a single camera move through an underground fight space: blackout intro, gym, disciplines, Leipzig skyline, trailer end card.
+Immersive 3D scroll experience for KONNI'S MMA GYM. The page is a single camera move through an underground fight space: blackout intro, gym, disciplines, the Völkerschlachtdenkmal in Leipzig, trailer end card.
 
 Built with React, Three.js, React Three Fiber, Drei, GSAP ScrollTrigger, and Lenis.
 
@@ -24,4 +24,4 @@ Scroll drives camera position, look-target, FOV, lights, and fog. There is no au
 
 ## Brand
 
-The original KONNI'S MMA GYM emblem (bear, crossed swords, octagon, Leipzig skyline) is staged as a thick metal plate. The artwork is not redrawn. The 3D city is a monochrome silhouette in the same family as the skyline in that logo.
+The original KONNI'S MMA GYM emblem (bear, crossed swords, octagon, Leipzig skyline) is staged as a thick metal plate. The artwork is not redrawn. The Leipzig beat is a 3D Völkerschlachtdenkmal — mound, staircase, granite hall, bell dome, and the twelve guardians — not a generic skyline.

@@ -146,17 +146,29 @@ export function Lights({ quality }: { quality: QualityLevel }) {
         distance={18}
       />
 
-      <directionalLight ref={cityDir} position={[-6, 10, -108]} color="#d8d4cc" />
+      <directionalLight ref={cityDir} position={[-6, 14, -112]} color="#e2d8c8" />
       <AimedSpot
         channel="city"
-        scale={52}
-        lookAt={[0, 3.2, -90]}
-        position={[0, 7.2, -78]}
-        angle={0.62}
-        penumbra={0.78}
-        color="#e8e2d4"
-        distance={40}
+        scale={74}
+        lookAt={[0, 5.6, -92]}
+        position={[2.6, 13.8, -76]}
+        angle={0.48}
+        penumbra={0.7}
+        color="#efe6d4"
+        distance={48}
       />
+      {quality !== 'low' && (
+        <AimedSpot
+          channel="city"
+          scale={26}
+          lookAt={[0, 6.4, -94]}
+          position={[-8.4, 9.2, -82]}
+          angle={0.55}
+          penumbra={0.82}
+          color="#c8c0b0"
+          distance={36}
+        />
+      )}
 
       <AimedSpot
         channel="finale"
