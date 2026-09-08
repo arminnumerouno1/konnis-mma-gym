@@ -27,10 +27,6 @@ const vertexShader = /* glsl */ `
 `
 
 const fragmentShader = /* glsl */ `
-  #include <common>
-  #include <tonemapping_pars_fragment>
-  #include <colorspace_pars_fragment>
-
   uniform sampler2D uMap;
   uniform float uReveal;
   uniform float uTime;
@@ -42,18 +38,25 @@ const fragmentShader = /* glsl */ `
 
   void main() {
     vec4 tex = texture2D(uMap, vUv);
-    float alpha = smoothstep(0.03, 0.4, tex.a);
-    float body = 1.0 - distance(vUv, vec2(0.5, 0.44));
-    alpha *= smoothstep(0.12, 0.92, uReveal + body * 0.38);
-    alpha *= smoothstep(0.0, 0.18, vUv.y);
-    alpha *= smoothstep(0.0, 0.05, vUv.x) * smoothstep(1.0, 0.95, vUv.x);
+    float alpha = smoothstep(0.02, 0.55, tex.a);
+    float body = 1.0 - distance(vUv, vec2(0.5, 0.46));
+    alpha *= smoothstep(0.0, 0.28, uReveal);
+    alpha *= smoothstep(0.12, 0.9, uReveal + body * 0.2);
+    alpha *= smoothstep(0.06, 0.4, vUv.y);
+    alpha *= smoothstep(0.0, 0.06, vUv.x) * smoothstep(1.0, 0.94, vUv.x);
 
     vec3 col = tex.rgb;
-    col = pow(max(col, vec3(0.0)), vec3(1.1));
-    col *= vec3(1.04, 0.96, 0.86);
-    col *= 0.32 + 0.68 * uReveal;
+    col = pow(max(col, vec3(0.0)), vec3(1.06));
+    col *= vec3(1.05, 0.97, 0.88);
+    col *= 0.22 + 0.78 * uReveal;
+    col *= smoothstep(0.08, 0.5, vUv.y);
 
-    float haze = 0.78 + 0.22 * sin(uTime * 0.45 + vUv.y * 4.0);
+    float lift = mix(-0.05, 1.12, uReveal);
+    col *= 0.42 + 0.58 * smoothstep(lift - 0.4, lift + 0.08, vUv.y);
+    float band = 1.0 - smoothstep(0.0, 0.22, abs(vUv.y - mix(0.12, 0.7, uReveal)));
+    col += vec3(1.06, 0.94, 0.72) * band * 0.16 * uReveal;
+
+    float haze = 0.84 + 0.16 * sin(uTime * 0.4 + vUv.y * 3.4);
     col *= haze;
 
     float fogFactor = 1.0 - exp(-uFogDensity * uFogDensity * vDist * vDist);
@@ -140,12 +143,13 @@ export function Konrad({ position = DESKTOP_POS }: KonradProps) {
   const wash = useRef<THREE.MeshBasicMaterial>(null)
   const pool = useRef<THREE.MeshBasicMaterial>(null)
   const cone = useRef<THREE.MeshBasicMaterial>(null)
+  const ray = useRef<THREE.MeshBasicMaterial>(null)
   const key = useRef<THREE.SpotLight>(null)
   const rim = useRef<THREE.SpotLight>(null)
   const bounce = useRef<THREE.PointLight>(null)
   const revealRef = useRef(0)
   const origin = compact ? COMPACT_POS : position
-  const scale = compact ? 1.22 : 1
+  const scale = compact ? 1.1 : 1
 
   const material = useMemo(() => {
     return new THREE.ShaderMaterial({
@@ -180,37 +184,35 @@ export function Konrad({ position = DESKTOP_POS }: KonradProps) {
     return () => material.dispose()
   }, [material])
 
-  useFrame((state, dt) => {
+  useFrame((state) => {
     const p = scrollProgress.current
     const reveal = compact
-      ? windowOpacity(p, 0.378, 0.412, 0.458, 0.502)
+      ? windowOpacity(p, 0.4, 0.432, 0.452, 0.478)
       : windowOpacity(p, 0.328, 0.368, 0.442, 0.508)
-    revealRef.current = reveal
+    const light = compact
+      ? windowOpacity(p, 0.382, 0.414, 0.456, 0.484)
+      : reveal
+    revealRef.current = Math.max(reveal, light * 0.35)
 
     material.uniforms.uReveal.value = reveal
     material.uniforms.uTime.value = state.clock.elapsedTime
     material.uniforms.uFogDensity.value = sampleLights(p).fog
 
-    if (glow.current) glow.current.opacity = reveal * (compact ? 0.28 : 0.12)
-    if (wash.current) wash.current.opacity = reveal * (compact ? 0.16 : 0.06)
-    if (pool.current) pool.current.opacity = reveal * (compact ? 0.26 : 0.12)
-    if (cone.current) cone.current.opacity = reveal * (compact ? 0.07 : 0.03)
-    if (key.current) key.current.intensity = reveal * (compact ? 22 : 14)
-    if (rim.current) rim.current.intensity = reveal * (compact ? 11 : 6)
-    if (bounce.current) bounce.current.intensity = reveal * (compact ? 3.4 : 1.6)
+    if (glow.current) glow.current.opacity = light * (compact ? 0.38 : 0.12)
+    if (wash.current) wash.current.opacity = light * (compact ? 0.22 : 0.06)
+    if (pool.current) pool.current.opacity = light * (compact ? 0.32 : 0.12)
+    if (cone.current) cone.current.opacity = light * (compact ? 0.2 : 0.08)
+    if (ray.current) ray.current.opacity = light * (compact ? 0.14 : 0.05)
+    if (key.current) key.current.intensity = light * (compact ? 28 : 14)
+    if (rim.current) rim.current.intensity = light * (compact ? 14 : 6)
+    if (bounce.current) bounce.current.intensity = light * (compact ? 4.2 : 1.6)
 
     const g = group.current
     if (!g) return
-    g.visible = reveal > 0.015
-    g.position.y = origin[1] + (1 - reveal) * (compact ? -0.14 : -0.05)
-    if (compact) {
-      const dx = state.camera.position.x - g.position.x
-      const dz = state.camera.position.z - g.position.z
-      const yaw = THREE.MathUtils.clamp(Math.atan2(dx, dz), -0.2, 0.2)
-      g.rotation.y = THREE.MathUtils.damp(g.rotation.y, yaw, 3.6, dt)
-    } else {
-      g.rotation.y = THREE.MathUtils.damp(g.rotation.y, -0.08, 4, dt)
-    }
+    g.visible = reveal > 0.015 || light > 0.04
+    g.scale.setScalar(scale * (0.96 + 0.04 * reveal))
+    g.position.y = origin[1] + (1 - reveal) * (compact ? -0.1 : -0.05)
+    g.rotation.y = compact ? 0.06 : -0.08
   })
 
   return (
@@ -269,16 +271,29 @@ export function Konrad({ position = DESKTOP_POS }: KonradProps) {
         />
       </mesh>
 
-      <mesh position={[0.08, 3.05, 0.12]} rotation={[Math.PI, 0.1, 0]} scale={[0.52, 0.82, 0.52]} renderOrder={0}>
-        <coneGeometry args={[1.15, 3.6, 18, 1, true]} />
+      <mesh position={[0.05, 2.55, -0.1]} scale={[0.72, 4.2, 1]} renderOrder={0}>
+        <planeGeometry args={[1, 1]} />
         <meshBasicMaterial
           ref={cone}
-          color="#efe6d4"
+          map={particle}
+          color="#f0e4c4"
           transparent
           opacity={0}
           depthWrite={false}
           blending={THREE.AdditiveBlending}
-          side={THREE.DoubleSide}
+          toneMapped={false}
+        />
+      </mesh>
+      <mesh position={[0.05, 2.55, -0.1]} rotation={[0, Math.PI / 2, 0]} scale={[0.55, 4.2, 1]} renderOrder={0}>
+        <planeGeometry args={[1, 1]} />
+        <meshBasicMaterial
+          ref={ray}
+          map={particle}
+          color="#e8d7a4"
+          transparent
+          opacity={0}
+          depthWrite={false}
+          blending={THREE.AdditiveBlending}
           toneMapped={false}
         />
       </mesh>
