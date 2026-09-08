@@ -86,7 +86,7 @@ body {
 .view-toggle {
   position: fixed;
   right: 18px;
-  bottom: 18px;
+  bottom: max(18px, env(safe-area-inset-bottom));
   z-index: 30;
   pointer-events: auto;
   appearance: none;
@@ -98,6 +98,42 @@ body {
   font-size: 14px;
   padding: 10px 16px;
   cursor: pointer;
+}
+
+.legal-nav {
+  position: fixed;
+  left: max(16px, env(safe-area-inset-left));
+  bottom: max(16px, env(safe-area-inset-bottom));
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  font-family: 'Barlow Condensed', 'Helvetica Neue', sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.legal-nav a {
+  color: var(--muted);
+  text-decoration: none;
+  border-bottom: 1px solid rgba(154, 149, 138, 0.4);
+}
+
+.legal-nav a:hover,
+.legal-nav a:focus-visible {
+  color: var(--ink);
+  border-bottom-color: #c1121f;
+}
+
+.legal-noscript {
+  position: relative;
+  z-index: 40;
+  margin: 0;
+  padding: 16px;
+  font-size: 15px;
 }
 
 .viewport canvas {

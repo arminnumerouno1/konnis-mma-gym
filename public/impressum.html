@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#050505" />
+    <title>Impressum — KONNI'S MMA GYM Leipzig</title>
+    <meta
+      name="description"
+      content="Impressum und Datenschutzerklärung von KONNI'S MMA GYM, Diensteanbieter Konrad Dyrschka, Leipzig."
+    />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <style>
+      @font-face {
+        font-family: 'Bebas Neue';
+        src: url('/fonts/BebasNeue-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Barlow Condensed';
+        src: url('/fonts/BarlowCondensed-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Barlow Condensed';
+        src: url('/fonts/BarlowCondensed-Medium.ttf') format('truetype');
+        font-weight: 500;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      :root {
+        color-scheme: dark;
+        --bg: #050505;
+        --ink: #e6e1d6;
+        --muted: #9a958a;
+        --line: rgba(230, 225, 214, 0.14);
+        --red: #c1121f;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--ink);
+      }
+
+      body {
+        font-family: 'Barlow Condensed', 'Helvetica Neue', sans-serif;
+        font-size: 17px;
+        line-height: 1.55;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      a {
+        color: var(--ink);
+        text-decoration: none;
+        border-bottom: 1px solid rgba(193, 18, 31, 0.65);
+      }
+
+      a:hover {
+        border-bottom-color: #e8202e;
+      }
+
+      .wrap {
+        width: min(760px, calc(100% - 40px));
+        margin: 0 auto;
+        padding: 28px 0 max(64px, calc(28px + env(safe-area-inset-bottom)));
+      }
+
+      .top {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 16px;
+        margin-bottom: 36px;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .brand {
+        font-family: 'Bebas Neue', sans-serif;
+        letter-spacing: 0.08em;
+        font-size: 18px;
+      }
+
+      .back {
+        font-size: 14px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border-bottom-color: rgba(154, 149, 138, 0.4);
+      }
+
+      .eyebrow {
+        margin: 0 0 8px;
+        font-size: 12px;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      h1,
+      h2 {
+        font-family: 'Bebas Neue', sans-serif;
+        font-weight: 400;
+        letter-spacing: 0.04em;
+        line-height: 0.92;
+        margin: 0 0 22px;
+      }
+
+      h1 {
+        font-size: clamp(42px, 9vw, 72px);
+      }
+
+      h2 {
+        font-size: clamp(28px, 6vw, 40px);
+        margin-top: 8px;
+      }
+
+      .rule {
+        height: 3px;
+        width: 88px;
+        margin: 0 0 28px;
+        background: linear-gradient(90deg, var(--red), transparent);
+      }
+
+      dl {
+        margin: 0;
+        display: grid;
+        gap: 18px;
+      }
+
+      .row {
+        display: grid;
+        grid-template-columns: minmax(140px, 180px) 1fr;
+        gap: 12px 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      dt {
+        margin: 0;
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--muted);
+        font-weight: 500;
+        padding-top: 4px;
+      }
+
+      dd {
+        margin: 0;
+      }
+
+      .note,
+      .legal p {
+        color: var(--muted);
+        font-size: 15px;
+        line-height: 1.6;
+      }
+
+      .note {
+        margin: 26px 0 0;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+      }
+
+      .note strong,
+      .legal strong {
+        color: #cfc8bc;
+        font-weight: 500;
+      }
+
+      .jump {
+        display: flex;
+        gap: 14px;
+        margin: 8px 0 40px;
+        font-size: 14px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .jump a {
+        color: var(--muted);
+        border-bottom-color: rgba(154, 149, 138, 0.4);
+      }
+
+      section {
+        scroll-margin-top: 24px;
+      }
+
+      .privacy {
+        margin-top: 56px;
+        padding-top: 36px;
+        border-top: 1px solid var(--line);
+      }
+
+      .legal h3 {
+        margin: 28px 0 8px;
+        font-size: 16px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 500;
+      }
+
+      address {
+        font-style: normal;
+      }
+
+      @media (max-width: 560px) {
+        .row {
+          grid-template-columns: 1fr;
+          gap: 4px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <div class="top">
+        <div class="brand">KONNI'S MMA GYM — LEIPZIG</div>
+        <a class="back" href="/">Zur Startseite</a>
+      </div>
+
+      <nav class="jump" aria-label="Auf dieser Seite">
+        <a href="#impressum">Impressum</a>
+        <a href="#datenschutz">Datenschutz</a>
+      </nav>
+
+      <section id="impressum">
+        <p class="eyebrow">Angaben gemäß § 5 DDG</p>
+        <h1>Impressum</h1>
+        <div class="rule"></div>
+
+        <dl>
+          <div class="row">
+            <dt>Diensteanbieter</dt>
+            <dd><strong>Konrad Dyrschka</strong></dd>
+          </div>
+          <div class="row">
+            <dt>Anschrift</dt>
+            <dd>
+              <address>
+                c/o nextGYM GmbH<br />
+                Schönbachstr. 66<br />
+                04299 Leipzig
+              </address>
+            </dd>
+          </div>
+          <div class="row">
+            <dt>E-Mail</dt>
+            <dd><a href="mailto:k.dyrschka@web.de">k.dyrschka@web.de</a></dd>
+          </div>
+          <div class="row">
+            <dt>Inhaltlich verantw.</dt>
+            <dd>Konrad Dyrschka (Anschrift wie oben)</dd>
+          </div>
+        </dl>
+
+        <p class="note">
+          Die <strong>nextGYM GmbH</strong> ist ausschließlich als Zustellungsbevollmächtigte
+          benannt und übernimmt keine inhaltliche Verantwortung für diese Website.
+        </p>
+        <p class="note" style="border: 0; margin-top: 12px; padding-top: 0">
+          Dieses Impressum gilt für die Website <strong>KONNI'S MMA GYM</strong> (Leipzig).
+        </p>
+        <p class="note" style="border: 0; margin-top: 12px; padding-top: 0">
+          Wir sind nicht bereit und nicht verpflichtet, an Streitbeilegungsverfahren vor einer
+          Verbraucherschlichtungsstelle teilzunehmen.
+        </p>
+      </section>
+
+      <section id="datenschutz" class="privacy legal">
+        <p class="eyebrow">Informationen nach Art. 13 DSGVO</p>
+        <h2>Datenschutz</h2>
+        <div class="rule"></div>
+
+        <h3>1. Verantwortlicher</h3>
+        <p>
+          Verantwortlich für die Datenverarbeitung auf dieser Website ist<br />
+          <strong>Konrad Dyrschka</strong>, c/o nextGYM GmbH, Schönbachstr. 66, 04299 Leipzig,
+          E-Mail:
+          <a href="mailto:k.dyrschka@web.de">k.dyrschka@web.de</a>.
+        </p>
+
+        <h3>2. Aufruf der Website</h3>
+        <p>
+          Beim Aufruf dieser Seiten verarbeitet der Hosting-Dienstleister technisch notwendige
+          Server-Logfiles (insbesondere IP-Adresse, Datum und Uhrzeit, aufgerufene Ressource,
+          übertragene Datenmenge, Browser und Betriebssystem, ggf. Referrer). Die Verarbeitung
+          erfolgt, um die Website auszuliefern, Angriffe abzuwehren und den Betrieb zu sichern
+          (Art. 6 Abs. 1 lit. f DSGVO). Die Speicherdauer richtet sich nach den technischen
+          Erfordernissen des Hosters.
+        </p>
+
+        <h3>3. Cookies und Tracking</h3>
+        <p>
+          Diese Website setzt keine Analyse- oder Marketing-Cookies ein und keine Dienste, die
+          Ihr Nutzungsverhalten zu Werbezwecken auswerten. Schriftarten werden lokal ausgeliefert.
+          Technisch notwendige Vorgänge im Browser (z.&nbsp;B. Scrollposition während des Besuchs)
+          bleiben auf Ihrem Gerät und werden nicht an uns übermittelt.
+        </p>
+
+        <h3>4. Kontakt per E-Mail</h3>
+        <p>
+          Wenn Sie uns schreiben, verarbeiten wir die von Ihnen übermittelten Angaben zur
+          Bearbeitung der Anfrage (Art. 6 Abs. 1 lit. b DSGVO, soweit die Anfrage auf einen
+          Vertrag zielt, sonst Art. 6 Abs. 1 lit. f DSGVO). Die Daten werden gelöscht, wenn die
+          Unterhaltung beendet ist und keine gesetzlichen Aufbewahrungspflichten entgegenstehen.
+        </p>
+
+        <h3>5. Ihre Rechte</h3>
+        <p>
+          Sie haben das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der
+          Verarbeitung, Datenübertragbarkeit und Widerspruch gegen Verarbeitungen, die auf
+          Art. 6 Abs. 1 lit. f DSGVO beruhen, jeweils nach den gesetzlichen Voraussetzungen
+          (Art. 15–21 DSGVO). Außerdem haben Sie das Recht, sich bei einer Datenschutz-Aufsichtsbehörde
+          zu beschweren. Zuständig ist unter anderem die Sächsische Datenschutz- und
+          Transparenzbeauftragte, Devrientstraße 1, 01067 Dresden
+          (<a href="https://www.datenschutz.sachsen.de" rel="noopener noreferrer">datenschutz.sachsen.de</a>).
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
