@@ -144,8 +144,24 @@ body {
 }
 
 .finale-copy {
-  top: 58%;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  transform: none;
+  padding: 18vh 6vw 7vh;
+  background: linear-gradient(
+    to top,
+    rgba(5, 5, 5, 0.94) 0%,
+    rgba(5, 5, 5, 0.78) 42%,
+    rgba(5, 5, 5, 0.2) 78%,
+    rgba(5, 5, 5, 0) 100%
+  );
+}
+
+.finale-card {
   width: min(90vw, 640px);
+  margin: 0 auto;
 }
 
 .finale-copy h2 {
@@ -155,6 +171,8 @@ body {
   line-height: 0.9;
   letter-spacing: 0.06em;
   font-weight: 400;
+  color: #f3efe6;
+  text-shadow: 0 8px 28px rgba(0, 0, 0, 0.85);
 }
 
 .finale-copy .meta {
@@ -162,7 +180,7 @@ body {
   font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 0.18em;
   font-size: 16px;
-  color: #c8c3b8;
+  color: #e6e1d6;
 }
 
 .finale-copy .open {
@@ -170,7 +188,11 @@ body {
   font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 0.28em;
   font-size: 14px;
-  color: #8a1f1f;
+  color: #c43a3a;
+}
+
+.finale-copy .sub {
+  color: #9a958a;
 }
 
 .film-vignette {
@@ -304,7 +326,11 @@ body {
   }
 
   .finale-copy {
-    top: 60%;
+    padding: 16vh 6vw 8vh;
+  }
+
+  .finale-copy h2 {
+    font-size: clamp(36px, 11vw, 64px);
   }
 }
 

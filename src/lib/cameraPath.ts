@@ -38,9 +38,9 @@ export const CAMERA_KEYS: CamKey[] = [
   { t: 0.7, position: [0.1, 2.55, -72.5], target: [0, 2.0, -86], fov: 40 },
   { t: 0.76, position: [-3.8, 3.4, -80.5], target: [0.2, 2.6, -93], fov: 36 },
   { t: 0.825, position: [3.2, 5.6, -90.5], target: [0, 2.4, -101], fov: 38 },
-  { t: 0.88, position: [0.15, 1.45, -105.2], target: [0, 1.12, -113.4], fov: 30 },
-  { t: 0.95, position: [0.0, 1.12, -110.2], target: [0, 1.1, -114.2], fov: 27 },
-  { t: 1.0, position: [0.0, 1.1, -111.4], target: [0, 1.1, -114.2], fov: 26 },
+  { t: 0.88, position: [0.12, 1.42, -104.6], target: [0, 1.05, -114.15], fov: 32 },
+  { t: 0.94, position: [0.0, 1.28, -107.15], target: [0, 0.78, -114.15], fov: 33 },
+  { t: 1.0, position: [0.0, 1.26, -106.85], target: [0, 0.74, -114.15], fov: 33 },
 ]
 
 export const LIGHT_KEYS: LightKey[] = [

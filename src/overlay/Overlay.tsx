@@ -22,7 +22,7 @@ export function Overlay({ reducedMotion }: { reducedMotion: boolean }) {
       const p = scrollProgress.current
       setOpacity(scrollHint.current, windowOpacity(p, -1, 0, 0.05, 0.1))
       setOpacity(leipzig.current, windowOpacity(p, 0.72, 0.76, 0.83, 0.875))
-      setOpacity(finale.current, windowOpacity(p, 0.9, 0.935, 0.995, 1.02))
+      setOpacity(finale.current, windowOpacity(p, 0.88, 0.92, 1.05, 1.1))
       if (progress.current) {
         progress.current.style.transform = `scaleX(${p})`
       }
@@ -87,18 +87,20 @@ export function Overlay({ reducedMotion }: { reducedMotion: boolean }) {
       </div>
 
       <div ref={finale} className="overlay-block finale-copy">
-        <h2>
-          {COPY.fightSoon}
-          <br />
-          {COPY.startsSoon}
-        </h2>
-        <p className="meta">
-          {COPY.gymName}
-          <br />
-          {COPY.city}
-        </p>
-        <p className="open">{COPY.openingSoon}</p>
-        <p className="sub">{COPY.moreSoon}</p>
+        <div className="finale-card">
+          <h2>
+            {COPY.fightSoon}
+            <br />
+            {COPY.startsSoon}
+          </h2>
+          <p className="meta">
+            {COPY.gymName}
+            <br />
+            {COPY.city}
+          </p>
+          <p className="open">{COPY.openingSoon}</p>
+          <p className="sub">{COPY.moreSoon}</p>
+        </div>
       </div>
     </div>
   )
