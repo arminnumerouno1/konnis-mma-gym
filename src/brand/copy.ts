@@ -1,0 +1,15 @@
+export const COPY = {
+  gymName: "KONNI'S MMA GYM",
+  city: 'LEIPZIG',
+  noEgos: 'NO EGOS.',
+  justWork: 'JUST WORK.',
+  mma: 'MMA',
+  grappling: 'GRAPPLING',
+  striking: 'STRIKING',
+  homeOf: "HOME OF KONNI'S MMA GYM.",
+  locationSoon: 'Standort wird bald bekannt gegeben.',
+  fightSoon: 'THE FIGHT',
+  startsSoon: 'STARTS SOON.',
+  openingSoon: 'OPENING SOON',
+  moreSoon: 'Weitere Informationen folgen.',
+} as const
