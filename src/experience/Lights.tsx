@@ -104,8 +104,8 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       <AimedSpot
         channel="gym"
         scale={42}
-        lookAt={[0, 0, -16]}
-        position={[0, 6.1, -14]}
+        lookAt={[-2.4, 0.4, -17]}
+        position={[0.4, 6.1, -12]}
         angle={0.62}
         penumbra={0.72}
         color="#efeae1"
@@ -135,7 +135,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
           distance={20}
         />
       )}
-      <pointLight ref={red} position={[0, 1.7, -17.2]} color="#4a1010" distance={8} decay={2} />
+      <pointLight ref={red} position={[-3.35, 1.65, -17.6]} color="#4a1010" distance={8} decay={2} />
       <AimedSpot
         channel="side"
         lookAt={[0.4, 1.3, -67]}

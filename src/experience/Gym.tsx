@@ -106,7 +106,7 @@ export function Gym({ quality }: GymProps) {
       <LampFixture position={[3.1, 6.35, -38]} />
       <LampFixture position={[0, 6.35, -50]} />
 
-      <OctagonCage position={[0, 0, -17.2]} />
+      <OctagonCage position={[-3.35, 0, -17.6]} />
 
       {Array.from({ length: bags }, (_, i) => (
         <HeavyBag key={i} position={[4.55, 0, -22.4 - i * 2.1]} />

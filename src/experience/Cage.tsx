@@ -34,16 +34,16 @@ function CageFence({
   position: [number, number, number]
   rotation: [number, number, number]
 }) {
-  const alpha = useMemo(() => chainWithRepeat(7, 6), [])
+  const alpha = useMemo(() => chainWithRepeat(5, 4), [])
   return (
     <mesh position={position} rotation={rotation}>
       <planeGeometry args={[width, height]} />
       <meshStandardMaterial
-        color="#cfc9be"
-        metalness={0.28}
-        roughness={0.34}
+        color="#8d8980"
+        metalness={0.22}
+        roughness={0.4}
         alphaMap={alpha}
-        alphaTest={0.42}
+        alphaTest={0.5}
         depthWrite
         side={THREE.DoubleSide}
         polygonOffset
@@ -93,12 +93,12 @@ export function OctagonCage({ position }: { position: [number, number, number] }
       {sides.map((side) => (
         <group key={side.i}>
           <mesh position={[side.ax, POST_H / 2, side.az]}>
-            <cylinderGeometry args={[POST_R, POST_R, POST_H, 8]} />
-            <Steel color="#1a1a1a" />
+            <cylinderGeometry args={[0.07, 0.07, POST_H, 8]} />
+            <Steel color="#3a3a38" />
           </mesh>
-          <mesh position={[side.ax, POST_H + 0.05, side.az]}>
-            <cylinderGeometry args={[0.07, 0.07, 0.1, 8]} />
-            <Pad />
+          <mesh position={[side.ax, POST_H + 0.055, side.az]}>
+            <cylinderGeometry args={[0.085, 0.085, 0.11, 8]} />
+            <Pad color="#2a2a2a" />
           </mesh>
 
           <mesh position={[side.railX, KICK_H / 2, side.railZ]} rotation={[0, side.rotY, 0]}>

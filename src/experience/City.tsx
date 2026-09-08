@@ -1,9 +1,11 @@
 import { COPY } from '../brand/copy'
-import { LEIPZIG_SKYLINE, makeSkylineTexture, type SkylineKind } from '../brand/skyline'
+import { LEIPZIG_SKYLINE, type SkylineKind } from '../brand/skyline'
 import type { QualityLevel } from '../lib/quality'
 import { TypeInSpace } from './TypeInSpace'
-import { useExperience } from '../store'
-import { useMemo } from 'react'
+import { scrollProgress, useExperience } from '../store'
+import { useFrame } from '@react-three/fiber'
+import { useRef } from 'react'
+import type { Group } from 'three'
 
 function BuildingMat({ kind }: { kind: SkylineKind }) {
   if (kind === 'highrise') {
@@ -155,41 +157,30 @@ function Building({
   )
 }
 
+function CityMark({ quality, compact }: { quality: QualityLevel; compact: boolean }) {
+  const ref = useRef<Group>(null)
+  useFrame(() => {
+    if (ref.current) ref.current.visible = !compact && scrollProgress.current > 0.73
+  })
+  return (
+    <group ref={ref} visible={false}>
+      <TypeInSpace position={[0, 5.2, 2.2]} fontSize={1.7} quality={quality} letterSpacing={0.12}>
+        {COPY.city}
+      </TypeInSpace>
+    </group>
+  )
+}
+
 export function City({ quality }: { quality: QualityLevel }) {
   const compact = useExperience((s) => s.compact)
   const width = compact ? 7.4 : 26
   const height = compact ? 6.8 : 11.2
-  const skyTex = useMemo(() => makeSkylineTexture(), [])
 
   return (
     <group position={[0, 0, compact ? -90 : -94]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 4]}>
         <planeGeometry args={[compact ? 16 : 36, compact ? 14 : 16]} />
         <meshStandardMaterial color="#121210" roughness={0.96} metalness={0.06} />
-      </mesh>
-
-      <mesh position={[0, compact ? 2.6 : 3.4, compact ? -4.2 : -6]}>
-        <planeGeometry args={[compact ? 14 : 40, compact ? 8 : 12]} />
-        <meshBasicMaterial
-          color="#4a453c"
-          transparent
-          opacity={0.22}
-          depthWrite={false}
-          fog
-        />
-      </mesh>
-
-      <mesh position={[0, height * 0.46, compact ? -1.6 : -3.2]}>
-        <planeGeometry args={[width * 1.08, height]} />
-        <meshBasicMaterial
-          map={skyTex}
-          color="#e6e0d2"
-          transparent
-          alphaTest={0.12}
-          depthWrite={false}
-          fog
-          toneMapped={false}
-        />
       </mesh>
 
       {LEIPZIG_SKYLINE.map((b) => (
@@ -203,9 +194,7 @@ export function City({ quality }: { quality: QualityLevel }) {
         </group>
       ))}
 
-      <TypeInSpace position={[0, compact ? 4.6 : 3.8, compact ? 5.2 : 8.6]} fontSize={compact ? 1.4 : 2.8} quality={quality} letterSpacing={0.12}>
-        {COPY.city}
-      </TypeInSpace>
+      <CityMark quality={quality} compact={compact} />
     </group>
   )
 }

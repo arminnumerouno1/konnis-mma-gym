@@ -38,15 +38,6 @@ export function Disciplines({ quality }: DisciplinesProps) {
         <boxGeometry args={[11.2, 0.38, 0.42]} />
         <meshStandardMaterial color="#1c1c1a" metalness={0.35} roughness={0.48} />
       </mesh>
-      <mesh position={[0, 2.7, -66.55]} rotation={[0, 0, 0]}>
-        <boxGeometry args={[0.08, 3.6, 0.08]} />
-        <meshStandardMaterial
-          color="#f3eee4"
-          emissive="#f3eee4"
-          emissiveIntensity={1.4}
-          roughness={0.3}
-        />
-      </mesh>
 
       <TypeInSpace
         position={[0, 1.48, -67.8]}
