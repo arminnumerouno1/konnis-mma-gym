@@ -14,11 +14,11 @@ const PLATE_DEPTH = 0.1
 const LOGO_SIZE = 2.42
 
 export function LogoEmblem({ position, scale = 1 }: LogoEmblemProps) {
-  const albedo = useTexture('/brand/konni-logo.jpg')
+  const albedo = useTexture('/brand/konni-logo.png')
 
   useLayoutEffect(() => {
     albedo.colorSpace = THREE.SRGBColorSpace
-    albedo.anisotropy = 8
+    albedo.anisotropy = 16
     albedo.generateMipmaps = true
     albedo.minFilter = THREE.LinearMipmapLinearFilter
     albedo.magFilter = THREE.LinearFilter
@@ -45,6 +45,8 @@ export function LogoEmblem({ position, scale = 1 }: LogoEmblemProps) {
         <planeGeometry args={[LOGO_SIZE, LOGO_SIZE]} />
         <meshBasicMaterial
           map={albedo}
+          transparent
+          alphaTest={0.08}
           toneMapped={false}
           fog={false}
           side={THREE.FrontSide}

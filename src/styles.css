@@ -395,9 +395,10 @@ body {
 
 .loader-logo,
 .story-logo {
-  width: min(62cqw, 240px);
+  width: min(68cqw, 280px);
   height: auto;
   display: block;
+  image-rendering: auto;
 }
 
 .story-logo {
