@@ -51,7 +51,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
     return (
       <main className="story">
         <section className="story-block">
-          <img src="/brand/konnis-logo.jpg" alt="KONNI'S MMA GYM Leipzig" className="story-logo" />
+          <img src="/brand/konni-logo.jpg" alt="KONNI MMA GYM Leipzig" className="story-logo" />
           <p className="kicker">{COPY.gymName}</p>
           <h1>{COPY.city}</h1>
           <p>{COPY.homeOf}</p>

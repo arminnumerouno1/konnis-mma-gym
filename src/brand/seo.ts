@@ -1,16 +1,15 @@
 export const SEO = {
-  title: "KONNI'S MMA GYM Leipzig | MMA-Profi Konrad Dyrschka",
-  shortTitle: "KONNI'S MMA GYM Leipzig",
+  title: 'KONNI MMA GYM Leipzig | MMA-Profi Konrad Dyrschka',
+  shortTitle: 'KONNI MMA GYM Leipzig',
   description:
-    "KONNI'S MMA GYM in Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka. MMA, Grappling und Striking. Eröffnet bald. Standort und Infos folgen.",
+    'KONNI MMA GYM in Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka. MMA, Grappling und Striking. Eröffnet bald. Standort und Infos folgen.',
   ogImagePath: '/og-image.jpg',
-  ogImageAlt:
-    "KONNI'S MMA GYM Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka. Eröffnet bald.",
+  ogImageAlt: 'KONNI MMA GYM Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka. Eröffnet bald.',
   locale: 'de_DE',
-  siteName: "KONNI'S MMA GYM",
+  siteName: 'KONNI MMA GYM',
   themeColor: '#050505',
   keywords:
-    "MMA Gym Leipzig, MMA Training Leipzig, Grappling Leipzig, Striking Leipzig, Kampfsport Leipzig, KONNI'S MMA GYM, MMA-Profi Konrad Dyrschka, Konrad Dyrschka",
+    'MMA Gym Leipzig, MMA Training Leipzig, Grappling Leipzig, Striking Leipzig, Kampfsport Leipzig, KONNI MMA GYM, MMA-Profi Konrad Dyrschka, Konrad Dyrschka',
 } as const
 
 function escapeHtml(value: string): string {
@@ -30,7 +29,7 @@ export function buildSeoHead(siteUrl = ''): string {
     {
       '@type': 'WebSite',
       name: SEO.siteName,
-      alternateName: ["Konnis MMA Gym", "KONNI'S MMA GYM Leipzig"],
+      alternateName: ['Konni MMA Gym', 'KONNI MMA GYM Leipzig'],
       description: SEO.description,
       inLanguage: 'de-DE',
       ...(pageUrl ? { url: pageUrl } : {}),
@@ -38,7 +37,7 @@ export function buildSeoHead(siteUrl = ''): string {
     {
       '@type': 'SportsActivityLocation',
       name: SEO.siteName,
-      alternateName: "KONNI'S MMA GYM Leipzig",
+      alternateName: 'KONNI MMA GYM Leipzig',
       description: SEO.description,
       image: image,
       ...(pageUrl ? { url: pageUrl } : {}),

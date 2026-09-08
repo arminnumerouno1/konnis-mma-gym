@@ -14,7 +14,7 @@ const PLATE_DEPTH = 0.1
 const LOGO_SIZE = 2.42
 
 export function LogoEmblem({ position, scale = 1 }: LogoEmblemProps) {
-  const albedo = useTexture('/brand/konnis-logo.jpg')
+  const albedo = useTexture('/brand/konni-logo.jpg')
 
   useLayoutEffect(() => {
     albedo.colorSpace = THREE.SRGBColorSpace
