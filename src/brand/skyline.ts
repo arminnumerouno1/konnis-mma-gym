@@ -1,3 +1,5 @@
+import * as THREE from 'three'
+
 export type SkylineKind = 'block' | 'spire' | 'church' | 'rathaus' | 'highrise' | 'monument' | 'dome'
 
 export type SkylineBuilding = {
@@ -104,4 +106,32 @@ export function drawBuildingSilhouette(
 
   ctx.closePath()
   ctx.fill()
+}
+
+export function makeSkylineTexture(width = 1024, height = 420): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas')
+  canvas.width = width
+  canvas.height = height
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new THREE.CanvasTexture(canvas)
+  ctx.clearRect(0, 0, width, height)
+  ctx.fillStyle = '#ffffff'
+  const pad = width * 0.03
+  const usable = width - pad * 2
+  const baseline = height - 8
+  const maxH = height * 0.9
+  for (const b of LEIPZIG_SKYLINE) {
+    drawBuildingSilhouette(
+      ctx,
+      pad + b.x * usable,
+      baseline,
+      Math.max(6, b.w * usable),
+      b.h * maxH,
+      b.kind,
+    )
+  }
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.needsUpdate = true
+  return tex
 }

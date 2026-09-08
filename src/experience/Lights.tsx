@@ -58,7 +58,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
   useFrame(() => {
     const s = sampleLights(scrollProgress.current)
     if (red.current) red.current.intensity = s.gym * 5
-    if (cityDir.current) cityDir.current.intensity = s.city * 2.6
+    if (cityDir.current) cityDir.current.intensity = s.city * 4.4
     if (fill.current) fill.current.intensity = (s.intro * introReveal.value + s.finale * 0.8) * 1.15
     gl.toneMappingExposure = s.exposure
     if (scene.fog instanceof THREE.FogExp2) {
@@ -135,7 +135,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
           distance={20}
         />
       )}
-      <pointLight ref={red} position={[-3.1, 2.2, -18.5]} color="#4a1010" distance={8} decay={2} />
+      <pointLight ref={red} position={[0, 1.7, -17.2]} color="#4a1010" distance={8} decay={2} />
       <AimedSpot
         channel="side"
         lookAt={[0.4, 1.3, -67]}
@@ -149,12 +149,13 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       <directionalLight ref={cityDir} position={[-6, 10, -108]} color="#d8d4cc" />
       <AimedSpot
         channel="city"
-        lookAt={[0, 2, -94]}
-        position={[0, 8, -82]}
-        angle={0.7}
-        penumbra={0.8}
-        color="#cfcabe"
-        distance={36}
+        scale={52}
+        lookAt={[0, 3.2, -90]}
+        position={[0, 7.2, -78]}
+        angle={0.62}
+        penumbra={0.78}
+        color="#e8e2d4"
+        distance={40}
       />
 
       <AimedSpot

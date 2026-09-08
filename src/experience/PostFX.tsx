@@ -3,7 +3,14 @@ import { BlendFunction } from 'postprocessing'
 import type { QualityLevel } from '../lib/quality'
 
 export function PostFX({ quality }: { quality: QualityLevel }) {
-  if (quality === 'low') return null
+  if (quality === 'low') {
+    return (
+      <EffectComposer multisampling={0} enableNormalPass={false}>
+        <Vignette offset={0.3} darkness={0.4} eskil={false} />
+        <Noise opacity={0.045} premultiply blendFunction={BlendFunction.OVERLAY} />
+      </EffectComposer>
+    )
+  }
 
   if (quality === 'medium') {
     return (

@@ -40,7 +40,7 @@ export function Experience({
       dpr={quality === 'high' ? [1, 1.5] : [1, 1]}
       shadows={quality === 'high'}
       gl={{
-        antialias: quality !== 'low',
+        antialias: true,
         powerPreference: 'high-performance',
         stencil: false,
         alpha: false,
@@ -58,7 +58,7 @@ export function Experience({
         <World quality={quality} />
         <CameraRig reducedMotion={reducedMotion} />
         <PostFX quality={quality} />
-        <AdaptiveDpr pixelated />
+        <AdaptiveDpr />
         <Preload all />
         <ReadyFlag />
       </Suspense>
