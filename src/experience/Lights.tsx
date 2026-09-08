@@ -156,6 +156,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       <ChannelPoint channel="gym" scale={6.2} position={[-3.35, 1.55, -17.6]} color="#5c1010" distance={8} decay={2} />
       <ChannelPoint channel="gym" scale={3.4} position={[4.5, 1.25, -24.8]} color="#4a1010" distance={6.5} decay={2} />
       <ChannelPoint channel="gym" scale={2.4} position={[-6.6, 1.7, -18.4]} color="#3a0c0c" distance={5.5} decay={2} />
+      <ChannelPoint channel="gym" scale={2.8} position={[-3.9, 2.35, -25.1]} color="#4a1010" distance={5.2} decay={2} />
       <AimedSpot
         channel="gym"
         scale={16}
@@ -214,7 +215,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       )}
       <AimedSpot
         channel="city"
-        scale={18}
+        scale={26}
         lookAt={[0, 3.4, -94]}
         position={[-3.85, 0.55, -82.4]}
         angle={0.42}
@@ -224,7 +225,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       />
       <AimedSpot
         channel="city"
-        scale={18}
+        scale={26}
         lookAt={[0, 3.4, -94]}
         position={[3.85, 0.55, -82.4]}
         angle={0.42}

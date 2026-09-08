@@ -167,6 +167,7 @@ export function AccentLights({ quality }: { quality: QualityLevel }) {
       <HangLamp position={[0.15, 6.22, -66.8]} channel="side" />
 
       <WallSconce position={[-7.52, 2.05, -18.4]} rotation={[0, Math.PI / 2, 0]} channel="gym" />
+      <WallSconce position={[-4.15, 2.55, -25.45]} channel="gym" />
       <WallSconce position={[7.52, 1.92, -33.6]} rotation={[0, -Math.PI / 2, 0]} channel="gym" />
       <WallSconce position={[-7.52, 1.78, -66.2]} rotation={[0, Math.PI / 2, 0]} channel="side" />
 
