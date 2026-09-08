@@ -8,9 +8,10 @@ type LogoEmblemProps = {
   scale?: number
 }
 
-const RADIUS = 1.26
-const DEPTH = 0.09
-const FACE = 2.48
+/** Metal body stays behind the artwork. Bevel was covering the texture. */
+const PLATE_RADIUS = 1.22
+const PLATE_DEPTH = 0.1
+const LOGO_SIZE = 2.42
 
 export function LogoEmblem({ position, scale = 1 }: LogoEmblemProps) {
   const albedo = useTexture('/brand/konnis-logo.jpg')
@@ -20,49 +21,35 @@ export function LogoEmblem({ position, scale = 1 }: LogoEmblemProps) {
     albedo.anisotropy = 8
     albedo.generateMipmaps = true
     albedo.minFilter = THREE.LinearMipmapLinearFilter
+    albedo.magFilter = THREE.LinearFilter
     albedo.needsUpdate = true
   }, [albedo])
 
   const plate = useMemo(() => {
-    const geo = new THREE.ExtrudeGeometry(octagonShape(RADIUS), {
-      depth: DEPTH,
-      bevelEnabled: true,
-      bevelThickness: 0.016,
-      bevelSize: 0.012,
-      bevelSegments: 2,
+    const geo = new THREE.ExtrudeGeometry(octagonShape(PLATE_RADIUS), {
+      depth: PLATE_DEPTH,
+      bevelEnabled: false,
       curveSegments: 1,
     })
-    geo.translate(0, 0, -DEPTH / 2)
+    geo.translate(0, 0, -PLATE_DEPTH - 0.012)
     geo.computeVertexNormals()
     return geo
   }, [])
 
-  const plateMat = useMemo(
-    () =>
-      new THREE.MeshStandardMaterial({
-        color: '#2a2a28',
-        metalness: 0.42,
-        roughness: 0.48,
-      }),
-    [],
-  )
-
-  const faceMat = useMemo(
-    () =>
-      new THREE.MeshBasicMaterial({
-        map: albedo,
-        toneMapped: false,
-        fog: false,
-        side: THREE.DoubleSide,
-      }),
-    [albedo],
-  )
-
   return (
     <group position={position} scale={scale}>
-      <mesh geometry={plate} material={plateMat} castShadow />
-      <mesh position={[0, 0, DEPTH / 2 + 0.004]} material={faceMat}>
-        <planeGeometry args={[FACE, FACE]} />
+      <mesh geometry={plate} castShadow>
+        <meshStandardMaterial color="#2c2c2a" metalness={0.35} roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0, 0.02]} renderOrder={3}>
+        <planeGeometry args={[LOGO_SIZE, LOGO_SIZE]} />
+        <meshBasicMaterial
+          map={albedo}
+          toneMapped={false}
+          fog={false}
+          side={THREE.FrontSide}
+          depthWrite
+        />
       </mesh>
     </group>
   )
