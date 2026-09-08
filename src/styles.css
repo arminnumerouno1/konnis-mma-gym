@@ -56,6 +56,47 @@ body {
   pointer-events: none;
 }
 
+.phone-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  background: #080808;
+  pointer-events: none;
+}
+
+.phone-bezel {
+  width: min(390px, 86vw);
+  height: min(844px, 88vh);
+  border: 9px solid #161616;
+  border-radius: 32px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 0 0 1px #2a2a2a, 0 18px 50px rgba(0, 0, 0, 0.45);
+}
+
+.app.is-phone .viewport {
+  position: absolute;
+}
+
+.view-toggle {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 30;
+  pointer-events: auto;
+  appearance: none;
+  border: 1px solid #3a3a36;
+  background: #111110;
+  color: #e6e1d6;
+  font-family: 'Bebas Neue', sans-serif;
+  letter-spacing: 0.16em;
+  font-size: 14px;
+  padding: 10px 16px;
+  cursor: pointer;
+}
+
 .viewport canvas {
   pointer-events: none;
 }
