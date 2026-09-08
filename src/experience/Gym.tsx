@@ -10,7 +10,7 @@ type GymProps = {
 }
 
 function Steel({ color = '#1a1a1a' }: { color?: string }) {
-  return <meshStandardMaterial color={color} metalness={0.82} roughness={0.38} />
+  return <meshStandardMaterial color={color} metalness={0.38} roughness={0.46} />
 }
 
 function Concrete({ color = '#1b1b19' }: { color?: string }) {
@@ -44,7 +44,7 @@ function CagePanel({
       <planeGeometry args={[width, height]} />
       <meshStandardMaterial
         color="#c9c4ba"
-        metalness={0.78}
+        metalness={0.22}
         roughness={0.32}
         alphaMap={alpha}
         transparent

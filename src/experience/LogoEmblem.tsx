@@ -1,83 +1,68 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo } from 'react'
+import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
-import { drawLogo, drawLogoRoughness } from '../brand/drawLogo'
+import { octagonShape } from '../brand/logoMaps'
 
 type LogoEmblemProps = {
   position: [number, number, number]
   scale?: number
 }
 
-function makeTexture(canvas: HTMLCanvasElement, colorSpace: THREE.ColorSpace): THREE.CanvasTexture {
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.colorSpace = colorSpace
-  tex.anisotropy = 8
-  tex.needsUpdate = true
-  return tex
-}
+const RADIUS = 1.26
+const DEPTH = 0.09
+const FACE = 2.48
 
 export function LogoEmblem({ position, scale = 1 }: LogoEmblemProps) {
-  const [maps, setMaps] = useState<{
-    albedo: THREE.CanvasTexture
-    roughness: THREE.CanvasTexture
-  } | null>(null)
+  const albedo = useTexture('/brand/konnis-logo.jpg')
 
-  useEffect(() => {
-    let cancelled = false
-    const load = async () => {
-      await document.fonts.load('400 120px "Bebas Neue"')
-      if (cancelled) return
-      const albedo = makeTexture(drawLogo(2048), THREE.SRGBColorSpace)
-      const roughness = makeTexture(drawLogoRoughness(1024), THREE.NoColorSpace)
-      setMaps({ albedo, roughness })
-    }
-    void load()
-    return () => {
-      cancelled = true
-    }
+  useLayoutEffect(() => {
+    albedo.colorSpace = THREE.SRGBColorSpace
+    albedo.anisotropy = 8
+    albedo.generateMipmaps = true
+    albedo.minFilter = THREE.LinearMipmapLinearFilter
+    albedo.needsUpdate = true
+  }, [albedo])
+
+  const plate = useMemo(() => {
+    const geo = new THREE.ExtrudeGeometry(octagonShape(RADIUS), {
+      depth: DEPTH,
+      bevelEnabled: true,
+      bevelThickness: 0.016,
+      bevelSize: 0.012,
+      bevelSegments: 2,
+      curveSegments: 1,
+    })
+    geo.translate(0, 0, -DEPTH / 2)
+    geo.computeVertexNormals()
+    return geo
   }, [])
 
   const plateMat = useMemo(
     () =>
       new THREE.MeshStandardMaterial({
-        color: '#1c1c1b',
-        metalness: 0.88,
-        roughness: 0.38,
-        envMapIntensity: 0.35,
+        color: '#2a2a28',
+        metalness: 0.42,
+        roughness: 0.48,
       }),
     [],
   )
 
-  const faceMat = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      color: '#ffffff',
-      metalness: 0.72,
-      roughness: 0.42,
-      transparent: true,
-    })
-    return mat
-  }, [])
-
-  useEffect(() => {
-    if (!maps) return
-    faceMat.map = maps.albedo
-    faceMat.roughnessMap = maps.roughness
-    faceMat.needsUpdate = true
-    return () => {
-      maps.albedo.dispose()
-      maps.roughness.dispose()
-    }
-  }, [maps, faceMat])
+  const faceMat = useMemo(
+    () =>
+      new THREE.MeshBasicMaterial({
+        map: albedo,
+        toneMapped: false,
+        fog: false,
+        side: THREE.DoubleSide,
+      }),
+    [albedo],
+  )
 
   return (
-    <group position={position} scale={scale} rotation={[0, 0, 0]}>
-      <mesh rotation={[Math.PI / 2, 0, Math.PI / 8]} material={plateMat} castShadow>
-        <cylinderGeometry args={[1.22, 1.22, 0.09, 8]} />
-      </mesh>
-      <mesh rotation={[Math.PI / 2, 0, Math.PI / 8]} position={[0, 0, 0.05]} material={faceMat}>
-        <cylinderGeometry args={[1.145, 1.145, 0.012, 8]} />
-      </mesh>
-      <mesh rotation={[Math.PI / 2, 0, Math.PI / 8]} position={[0, 0, -0.05]} material={plateMat}>
-        <cylinderGeometry args={[1.145, 1.145, 0.01, 8]} />
+    <group position={position} scale={scale}>
+      <mesh geometry={plate} material={plateMat} castShadow />
+      <mesh position={[0, 0, DEPTH / 2 + 0.004]} material={faceMat}>
+        <planeGeometry args={[FACE, FACE]} />
       </mesh>
     </group>
   )

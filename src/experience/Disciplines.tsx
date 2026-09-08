@@ -22,7 +22,7 @@ export function Disciplines({ quality }: DisciplinesProps) {
         <planeGeometry args={[10, 4.8]} />
         <meshStandardMaterial
           color="#c8c3b8"
-          metalness={0.8}
+          metalness={0.22}
           roughness={0.3}
           alphaMap={meshTex}
           transparent

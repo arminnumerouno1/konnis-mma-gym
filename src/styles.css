@@ -178,7 +178,7 @@ body {
   inset: 0;
   z-index: 4;
   pointer-events: none;
-  background: radial-gradient(ellipse at center, transparent 46%, rgba(0, 0, 0, 0.55) 100%);
+  background: radial-gradient(ellipse at center, transparent 58%, rgba(0, 0, 0, 0.38) 100%);
 }
 
 .film-grain {
@@ -214,11 +214,15 @@ body {
   gap: 16px;
 }
 
-.loader-mark span {
-  font-family: 'Bebas Neue', sans-serif;
-  letter-spacing: 0.28em;
-  font-size: 15px;
-  color: #cfcabe;
+.loader-logo,
+.story-logo {
+  width: min(46vw, 240px);
+  height: auto;
+  display: block;
+}
+
+.story-logo {
+  margin-bottom: 28px;
 }
 
 .loader-mark i {

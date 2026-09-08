@@ -44,9 +44,9 @@ export const CAMERA_KEYS: CamKey[] = [
 ]
 
 export const LIGHT_KEYS: LightKey[] = [
-  { t: 0.0, intro: 0.12, gym: 0, side: 0, city: 0, finale: 0, fog: 0.062, exposure: 0.32 },
-  { t: 0.05, intro: 1, gym: 0, side: 0, city: 0, finale: 0, fog: 0.05, exposure: 0.64 },
-  { t: 0.15, intro: 0.75, gym: 0.15, side: 0, city: 0, finale: 0, fog: 0.042, exposure: 0.7 },
+  { t: 0.0, intro: 0.82, gym: 0, side: 0, city: 0, finale: 0, fog: 0.034, exposure: 0.92 },
+  { t: 0.05, intro: 1, gym: 0, side: 0, city: 0, finale: 0, fog: 0.03, exposure: 1.02 },
+  { t: 0.15, intro: 0.85, gym: 0.15, side: 0, city: 0, finale: 0, fog: 0.032, exposure: 0.88 },
   { t: 0.23, intro: 0, gym: 1, side: 0, city: 0, finale: 0, fog: 0.03, exposure: 0.74 },
   { t: 0.5, intro: 0, gym: 0.82, side: 0.25, city: 0, finale: 0, fog: 0.028, exposure: 0.76 },
   { t: 0.57, intro: 0, gym: 0.45, side: 0.2, city: 0, finale: 0, fog: 0.034, exposure: 0.68 },

@@ -9,11 +9,11 @@ import { introReveal, scrollProgress } from '../store'
 type Channel = Exclude<keyof LightKey, 't' | 'fog' | 'exposure'>
 
 const SCALE: Record<Channel, number> = {
-  intro: 58,
-  gym: 36,
-  side: 78,
-  city: 18,
-  finale: 44,
+  intro: 96,
+  gym: 52,
+  side: 90,
+  city: 28,
+  finale: 72,
 }
 
 type AimedSpotProps = Omit<ComponentProps<'spotLight'>, 'ref'> & {
@@ -52,12 +52,14 @@ function AimedSpot({ lookAt, channel, scale, reveal, ...props }: AimedSpotProps)
 export function Lights({ quality }: { quality: QualityLevel }) {
   const red = useRef<THREE.PointLight>(null)
   const cityDir = useRef<THREE.DirectionalLight>(null)
+  const fill = useRef<THREE.DirectionalLight>(null)
   const { gl, scene } = useThree()
 
   useFrame(() => {
     const s = sampleLights(scrollProgress.current)
     if (red.current) red.current.intensity = s.gym * 5
     if (cityDir.current) cityDir.current.intensity = s.city * 2.6
+    if (fill.current) fill.current.intensity = (s.intro * introReveal.value + s.finale * 0.8) * 1.15
     gl.toneMappingExposure = s.exposure
     if (scene.fog instanceof THREE.FogExp2) {
       scene.fog.density = s.fog
@@ -70,8 +72,9 @@ export function Lights({ quality }: { quality: QualityLevel }) {
     <>
       <color attach="background" args={['#050505']} />
       <fogExp2 attach="fog" args={['#070706', 0.05]} />
-      <hemisphereLight args={['#2a2a28', '#050505', 0.12]} />
-      <ambientLight intensity={0.035} color="#111110" />
+      <hemisphereLight args={['#3a3a36', '#080807', 0.28]} />
+      <ambientLight intensity={0.12} color="#1a1a18" />
+      <directionalLight ref={fill} position={[0.35, 2.4, 7.2]} color="#f2eee6" />
 
       <AimedSpot
         channel="intro"

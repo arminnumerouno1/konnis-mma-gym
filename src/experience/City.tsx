@@ -8,12 +8,12 @@ const HEIGHT = 11.5
 
 function BuildingMat({ kind }: { kind: SkylineKind }) {
   if (kind === 'highrise') {
-    return <meshStandardMaterial color="#3a3936" metalness={0.72} roughness={0.42} />
+    return <meshStandardMaterial color="#6a6862" metalness={0.28} roughness={0.5} />
   }
   if (kind === 'monument' || kind === 'block') {
-    return <meshStandardMaterial color="#2f2e2b" metalness={0.28} roughness={0.78} />
+    return <meshStandardMaterial color="#4a4944" metalness={0.18} roughness={0.72} />
   }
-  return <meshStandardMaterial color="#353430" metalness={0.48} roughness={0.58} />
+  return <meshStandardMaterial color="#5a5852" metalness={0.22} roughness={0.58} />
 }
 
 function Building({

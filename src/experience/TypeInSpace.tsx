@@ -47,8 +47,10 @@ export function TypeInSpace({
             {children}
             <meshStandardMaterial
               color={front ? color : '#090909'}
-              metalness={front ? 0.62 : 0.08}
-              roughness={front ? 0.36 : 0.92}
+              metalness={front ? 0.18 : 0.06}
+              roughness={front ? 0.48 : 0.92}
+              emissive={front ? color : '#000000'}
+              emissiveIntensity={front ? 0.08 : 0}
             />
           </Text>
         )

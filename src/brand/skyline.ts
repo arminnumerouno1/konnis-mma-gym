@@ -10,9 +10,9 @@ export type SkylineBuilding = {
 }
 
 /**
- * Stylized Leipzig silhouette — same profile for the metal emblem and the 3D city.
- * Read left → right: Völkerschlachtdenkmal, Peterskirche, Neues Rathaus,
- * Thomaskirche, City-Hochhaus, Nikolaikirche.
+ * Stylized Leipzig silhouette for the 3D city scene.
+ * Oriented toward the skyline in the original KONNI'S emblem:
+ * monument, church towers, Neues Rathaus, City-Hochhaus.
  */
 export const LEIPZIG_SKYLINE: SkylineBuilding[] = [
   { id: 'blocks-west', x: 0.0, w: 0.055, h: 0.28, kind: 'block' },

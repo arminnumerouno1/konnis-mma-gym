@@ -24,4 +24,4 @@ Scroll drives camera position, look-target, FOV, lights, and fog. There is no au
 
 ## Brand
 
-The octagon emblem is drawn from a shared Leipzig skyline profile so the 3D city matches the metal plate. The logo graphic stays intact — it is staged as a physical object, not redesigned in 3D.
+The original KONNI'S MMA GYM emblem (bear, crossed swords, octagon, Leipzig skyline) is staged as a thick metal plate. The artwork is not redrawn. The 3D city is a monochrome silhouette in the same family as the skyline in that logo.
