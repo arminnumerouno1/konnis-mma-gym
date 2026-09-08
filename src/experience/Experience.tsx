@@ -4,6 +4,7 @@ import { AdaptiveDpr, Preload } from '@react-three/drei'
 import * as THREE from 'three'
 import type { QualityLevel } from '../lib/quality'
 import { useExperience } from '../store'
+import { AccentLights } from './AccentLights'
 import { CameraRig } from './CameraRig'
 import { Lights } from './Lights'
 import { PostFX } from './PostFX'
@@ -55,6 +56,7 @@ export function Experience({
     >
       <Suspense fallback={null}>
         <Lights quality={quality} />
+        <AccentLights quality={quality} />
         <World quality={quality} />
         <CameraRig reducedMotion={reducedMotion} />
         <PostFX quality={quality} />

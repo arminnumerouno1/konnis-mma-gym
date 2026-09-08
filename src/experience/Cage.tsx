@@ -98,7 +98,17 @@ export function OctagonCage({ position }: { position: [number, number, number] }
           </mesh>
           <mesh position={[side.ax, POST_H + 0.055, side.az]}>
             <cylinderGeometry args={[0.085, 0.085, 0.11, 8]} />
-            <Pad color="#2a2a2a" />
+            {side.i === 1 || side.i === 2 ? (
+              <meshStandardMaterial
+                color="#2a0c0c"
+                emissive="#ff2414"
+                emissiveIntensity={1.15}
+                roughness={0.55}
+                metalness={0.12}
+              />
+            ) : (
+              <Pad color="#2a2a2a" />
+            )}
           </mesh>
 
           <mesh position={[side.railX, KICK_H / 2, side.railZ]} rotation={[0, side.rotY, 0]}>

@@ -23,6 +23,26 @@ type AimedSpotProps = Omit<ComponentProps<'spotLight'>, 'ref'> & {
   reveal?: boolean
 }
 
+function ChannelPoint({
+  channel,
+  scale,
+  reveal,
+  ...props
+}: Omit<ComponentProps<'pointLight'>, 'ref' | 'intensity'> & {
+  channel: Channel
+  scale: number
+  reveal?: boolean
+}) {
+  const ref = useRef<THREE.PointLight>(null)
+  useFrame(() => {
+    const light = ref.current
+    if (!light) return
+    const sampled = sampleLights(scrollProgress.current)[channel]
+    light.intensity = sampled * (reveal ? introReveal.value : 1) * scale
+  })
+  return <pointLight ref={ref} intensity={0} {...props} />
+}
+
 function AimedSpot({ lookAt, channel, scale, reveal, ...props }: AimedSpotProps) {
   const ref = useRef<THREE.SpotLight>(null)
   const [lx, ly, lz] = lookAt
@@ -50,14 +70,12 @@ function AimedSpot({ lookAt, channel, scale, reveal, ...props }: AimedSpotProps)
 }
 
 export function Lights({ quality }: { quality: QualityLevel }) {
-  const red = useRef<THREE.PointLight>(null)
   const cityDir = useRef<THREE.DirectionalLight>(null)
   const fill = useRef<THREE.DirectionalLight>(null)
   const { gl, scene } = useThree()
 
   useFrame(() => {
     const s = sampleLights(scrollProgress.current)
-    if (red.current) red.current.intensity = s.gym * 5
     if (cityDir.current) cityDir.current.intensity = s.city * 5.6
     if (fill.current) fill.current.intensity = (s.intro * introReveal.value + s.finale * 0.8) * 1.15
     gl.toneMappingExposure = s.exposure
@@ -135,7 +153,19 @@ export function Lights({ quality }: { quality: QualityLevel }) {
           distance={20}
         />
       )}
-      <pointLight ref={red} position={[-3.35, 1.65, -17.6]} color="#4a1010" distance={8} decay={2} />
+      <ChannelPoint channel="gym" scale={6.2} position={[-3.35, 1.55, -17.6]} color="#5c1010" distance={8} decay={2} />
+      <ChannelPoint channel="gym" scale={3.4} position={[4.5, 1.25, -24.8]} color="#4a1010" distance={6.5} decay={2} />
+      <ChannelPoint channel="gym" scale={2.4} position={[-6.6, 1.7, -18.4]} color="#3a0c0c" distance={5.5} decay={2} />
+      <AimedSpot
+        channel="gym"
+        scale={16}
+        lookAt={[-3.35, 0.35, -17.6]}
+        position={[-3.35, 5.9, -17.6]}
+        angle={0.4}
+        penumbra={0.55}
+        color="#8a1812"
+        distance={11}
+      />
       <AimedSpot
         channel="side"
         lookAt={[0.4, 1.3, -67]}
@@ -145,6 +175,19 @@ export function Lights({ quality }: { quality: QualityLevel }) {
         color="#f4efe6"
         distance={18}
       />
+      <AimedSpot
+        channel="side"
+        scale={22}
+        lookAt={[0.15, 1.15, -66.8]}
+        position={[-5.8, 3.1, -66.4]}
+        angle={0.55}
+        penumbra={0.62}
+        color="#7a1410"
+        distance={16}
+      />
+      <ChannelPoint channel="side" scale={4.2} position={[0.15, 1.45, -66.8]} color="#4a1010" distance={7} decay={2} />
+      <ChannelPoint channel="intro" reveal scale={2.2} position={[0.55, 0.32, 0.7]} color="#3a0c0c" distance={4.2} decay={2} />
+      <ChannelPoint channel="finale" scale={3.6} position={[0, 0.38, -113.5]} color="#4a1010" distance={5.5} decay={2} />
 
       <directionalLight ref={cityDir} position={[-6, 14, -112]} color="#e2d8c8" />
       <AimedSpot
@@ -169,6 +212,26 @@ export function Lights({ quality }: { quality: QualityLevel }) {
           distance={36}
         />
       )}
+      <AimedSpot
+        channel="city"
+        scale={18}
+        lookAt={[0, 3.4, -94]}
+        position={[-3.85, 0.55, -82.4]}
+        angle={0.42}
+        penumbra={0.7}
+        color="#6a1610"
+        distance={28}
+      />
+      <AimedSpot
+        channel="city"
+        scale={18}
+        lookAt={[0, 3.4, -94]}
+        position={[3.85, 0.55, -82.4]}
+        angle={0.42}
+        penumbra={0.7}
+        color="#6a1610"
+        distance={28}
+      />
 
       <AimedSpot
         channel="finale"

@@ -58,7 +58,7 @@ function LampFixture({ position }: { position: [number, number, number] }) {
       </mesh>
       <mesh position={[0, -0.07, 0]}>
         <cylinderGeometry args={[0.15, 0.15, 0.03, 8]} />
-        <meshStandardMaterial color="#f0ebe2" emissive="#f0ebe2" emissiveIntensity={1.8} />
+        <meshStandardMaterial color="#f0ebe2" emissive="#f0ebe2" emissiveIntensity={2.4} toneMapped={false} />
       </mesh>
     </group>
   )
