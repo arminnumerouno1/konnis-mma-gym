@@ -31,9 +31,9 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
     const loop = () => {
       const p = scrollProgress.current
       setOpacity(scrollHint.current, windowOpacity(p, -1, 0, 0.05, 0.1))
-      setOpacity(noEgos.current, windowOpacity(p, 0.22, 0.26, 0.32, 0.36))
-      setOpacity(justWork.current, windowOpacity(p, 0.33, 0.36, 0.39, 0.42))
-      setOpacity(mma.current, windowOpacity(p, 0.44, 0.48, 0.53, 0.56))
+      setOpacity(noEgos.current, windowOpacity(p, 0.22, 0.26, 0.318, 0.348))
+      setOpacity(justWork.current, windowOpacity(p, 0.322, 0.348, 0.37, 0.392))
+      setOpacity(mma.current, windowOpacity(p, 0.498, 0.528, 0.555, 0.585))
       setOpacity(grappling.current, windowOpacity(p, 0.54, 0.57, 0.61, 0.64))
       setOpacity(striking.current, windowOpacity(p, 0.62, 0.65, 0.69, 0.73))
       setOpacity(leipzig.current, windowOpacity(p, 0.72, 0.76, 0.84, 0.88))
