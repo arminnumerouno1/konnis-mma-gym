@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+# Sitemap eintragen, sobald die Live-Domain feststeht:
+# Sitemap: https://DEINE-DOMAIN/sitemap.xml

@@ -1,0 +1,19 @@
+{
+  "name": "KONNI'S MMA GYM Leipzig",
+  "short_name": "KONNI'S MMA",
+  "description": "MMA, Grappling und Striking in Leipzig. KONNI'S MMA GYM – No Egos. Just Work. Opening soon.",
+  "lang": "de",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
