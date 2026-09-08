@@ -1,7 +1,7 @@
 {
   "name": "KONNI'S MMA GYM Leipzig",
   "short_name": "KONNI'S MMA",
-  "description": "MMA, Grappling und Striking in Leipzig. KONNI'S MMA GYM – No Egos. Just Work. Opening soon.",
+  "description": "KONNI'S MMA GYM in Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka. MMA, Grappling und Striking. Eröffnet bald.",
   "lang": "de",
   "dir": "ltr",
   "start_url": "/",
@@ -11,9 +11,20 @@
   "theme_color": "#050505",
   "icons": [
     {
-      "src": "/apple-touch-icon.png",
-      "sizes": "512x512",
+      "src": "/favicon-48x48.png",
+      "sizes": "48x48",
       "type": "image/png"
+    },
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

@@ -1,15 +1,16 @@
 export const SEO = {
-  title: "KONNI'S MMA GYM Leipzig | MMA, Grappling, Striking",
+  title: "KONNI'S MMA GYM Leipzig | MMA-Profi Konrad Dyrschka",
   shortTitle: "KONNI'S MMA GYM Leipzig",
   description:
-    "MMA, Grappling und Striking in Leipzig. KONNI'S MMA GYM – No Egos. Just Work. Das Underground-Gym öffnet bald. Standort und weitere Infos folgen.",
+    "KONNI'S MMA GYM in Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka. MMA, Grappling und Striking. Eröffnet bald. Standort und Infos folgen.",
   ogImagePath: '/og-image.jpg',
-  ogImageAlt: "KONNI'S MMA GYM Leipzig – Konrad und das Gym-Emblem. MMA, Grappling, Striking. Opening soon.",
+  ogImageAlt:
+    "KONNI'S MMA GYM Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka. Eröffnet bald.",
   locale: 'de_DE',
   siteName: "KONNI'S MMA GYM",
   themeColor: '#050505',
   keywords:
-    "MMA Gym Leipzig, MMA Training Leipzig, Grappling Leipzig, Striking Leipzig, Kampfsport Leipzig, KONNI'S MMA GYM, Konrad Dyrschka, Underground Fight Gym",
+    "MMA Gym Leipzig, MMA Training Leipzig, Grappling Leipzig, Striking Leipzig, Kampfsport Leipzig, KONNI'S MMA GYM, MMA-Profi Konrad Dyrschka, Konrad Dyrschka",
 } as const
 
 function escapeHtml(value: string): string {
@@ -56,6 +57,7 @@ export function buildSeoHead(siteUrl = ''): string {
       founder: {
         '@type': 'Person',
         name: 'Konrad Dyrschka',
+        jobTitle: 'MMA-Profi',
       },
     },
   ]
@@ -95,7 +97,7 @@ export function buildSeoHead(siteUrl = ''): string {
     `<meta name="twitter:image:alt" content="${escapeHtml(SEO.ogImageAlt)}" />`,
     `<meta name="apple-mobile-web-app-title" content="${escapeHtml(SEO.shortTitle)}" />`,
     `<meta name="application-name" content="${escapeHtml(SEO.siteName)}" />`,
-    `<link rel="apple-touch-icon" href="/apple-touch-icon.png" />`,
+    `<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />`,
     `<link rel="image_src" href="${escapeHtml(image)}" />`,
     `<link rel="manifest" href="/site.webmanifest" />`,
     `<script type="application/ld+json">${JSON.stringify(jsonLd)}</script>`,

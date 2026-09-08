@@ -1,6 +1,6 @@
 # KONNI'S MMA GYM — Leipzig
 
-Immersive 3D scroll experience for KONNI'S MMA GYM. The page is a single camera move through an underground fight space: blackout intro, gym, disciplines, the Völkerschlachtdenkmal in Leipzig, trailer end card.
+Immersive 3D scroll experience for KONNI'S MMA GYM — the MMA gym of MMA professional Konrad Dyrschka in Leipzig. The page is a single camera move through the gym: blackout intro, cage, disciplines, the Völkerschlachtdenkmal, trailer end card.
 
 Built with React, Three.js, React Three Fiber, Drei, GSAP ScrollTrigger, and Lenis.
 
