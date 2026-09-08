@@ -44,6 +44,7 @@ export function Overlay({ reducedMotion }: { reducedMotion: boolean }) {
         <section className="story-block">
           <h2>{COPY.noEgos}</h2>
           <h2>{COPY.justWork}</h2>
+          <img src="/brand/konrad.png" alt="Konrad" className="story-fighter" />
         </section>
         <section className="story-block">
           <h2>{COPY.mma}</h2>

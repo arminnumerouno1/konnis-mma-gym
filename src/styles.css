@@ -247,6 +247,13 @@ body {
   margin-bottom: 28px;
 }
 
+.story-fighter {
+  width: min(52vw, 280px);
+  height: auto;
+  display: block;
+  margin: 36px 0 0;
+}
+
 .loader-mark i {
   width: 72px;
   height: 1px;

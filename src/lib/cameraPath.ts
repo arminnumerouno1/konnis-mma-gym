@@ -31,6 +31,7 @@ export const CAMERA_KEYS: CamKey[] = [
   { t: 0.2, position: [0.25, 1.35, -6.2], target: [0, 1.45, -16], fov: 36 },
   { t: 0.28, position: [0.12, 1.52, -15.4], target: [0.05, 1.75, -25.5], fov: 34 },
   { t: 0.36, position: [-0.15, 2.15, -27.2], target: [0, 0.15, -33.6], fov: 38 },
+  { t: 0.395, position: [0.22, 1.46, -34.15], target: [1.05, 1.12, -39.3], fov: 31 },
   { t: 0.43, position: [0.08, 1.48, -36.4], target: [0, 1.52, -45.5], fov: 32 },
   { t: 0.5, position: [0.0, 1.52, -40.2], target: [0, 1.55, -46.2], fov: 27 },
   { t: 0.57, position: [0.28, 1.42, -49.4], target: [0, 1.38, -57.2], fov: 34 },
