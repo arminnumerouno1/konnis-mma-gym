@@ -58,7 +58,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
   useFrame(() => {
     const s = sampleLights(scrollProgress.current)
     if (red.current) red.current.intensity = s.gym * 5
-    if (cityDir.current) cityDir.current.intensity = s.city * 4.4
+    if (cityDir.current) cityDir.current.intensity = s.city * 5.6
     if (fill.current) fill.current.intensity = (s.intro * introReveal.value + s.finale * 0.8) * 1.15
     gl.toneMappingExposure = s.exposure
     if (scene.fog instanceof THREE.FogExp2) {
@@ -149,7 +149,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       <directionalLight ref={cityDir} position={[-6, 14, -112]} color="#e2d8c8" />
       <AimedSpot
         channel="city"
-        scale={74}
+        scale={88}
         lookAt={[0, 5.6, -92]}
         position={[2.6, 13.8, -76]}
         angle={0.48}
