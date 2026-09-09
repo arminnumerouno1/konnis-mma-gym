@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "start": "node server/serve.mjs",
     "waitlist:list": "node server/list-waitlist.mjs",
+    "waitlist:brevo": "node server/brevo-setup.mjs",
     "lint": "oxlint",
     "preview": "vite preview --host 127.0.0.1 --port 43177"
   },

@@ -40,13 +40,14 @@ Without mail credentials, signups are stored in `data/waitlist.json` (gitignored
 npm run waitlist:list
 ```
 
-Do **not** send the newsletters from a private Gmail account. For Germany, use double opt-in and a proper sender. The intended setup is [Brevo](https://www.brevo.com) (EU, GDPR, German UI):
+Do **not** send the newsletters from a private Gmail account. For Germany, use double opt-in and a proper sender. The intended setup is [Brevo](https://www.brevo.com) (EU, GDPR, German UI).
 
-1. Create a list named `Warteliste`.
-2. Create a double-opt-in confirmation template and put its id in `BREVO_DOI_TEMPLATE_ID`.
-3. Put `BREVO_API_KEY` and `BREVO_LIST_ID` in `.env` on the server (never in `VITE_` variables).
-4. In Brevo, add an automation: new confirmed contact → welcome mail.
-5. When the location or opening date is ready, send a **campaign** to that list from Brevo. That is how everyone on the list gets the same update, including unsubscribe.
+1. Create a free account: [app.brevo.com/account/register](https://app.brevo.com/account/register) (use `k.dyrschka@web.de` and confirm the mail).
+2. Create an API key: [app.brevo.com/settings/keys/api](https://app.brevo.com/settings/keys/api). Put it in `.env` as `BREVO_API_KEY` (never `VITE_`).
+3. Run `npm run waitlist:brevo`. That checks the account, creates the list **KONNI MMA GYM Warteliste**, and writes `BREVO_LIST_ID`.
+4. Confirm the sender `k.dyrschka@web.de` in Brevo if you want real outbound mail.
+5. Optional: a double-opt-in template id as `BREVO_DOI_TEMPLATE_ID`.
+6. When the location or opening date is ready, send a **campaign** to that list from Brevo. That is how everyone on the list gets the same update, including unsubscribe.
 
 The live host must be able to run the Node API. A static-only upload of `dist/` will make the form fail. `npm start` is the production shape: static files plus `/api/waitlist`.
 

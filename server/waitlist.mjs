@@ -201,8 +201,22 @@ export function createWaitlistHandler({ dataDir, env }) {
   return async function handleWaitlist(req, res) {
     if (req.method === 'OPTIONS') {
       res.statusCode = 204
-      res.setHeader('allow', 'POST, OPTIONS')
+      res.setHeader('allow', 'GET, POST, OPTIONS')
       res.end()
+      return
+    }
+
+    if (req.method === 'GET') {
+      const apiKey = env.BREVO_API_KEY?.trim()
+      const listId = Number(env.BREVO_LIST_ID)
+      const doi = Number(env.BREVO_DOI_TEMPLATE_ID)
+      const mail =
+        apiKey && Number.isFinite(listId) && listId > 0
+          ? Number.isFinite(doi) && doi > 0
+            ? 'brevo-doi'
+            : 'brevo'
+          : 'off'
+      json(res, 200, { ok: true, mail })
       return
     }
 
