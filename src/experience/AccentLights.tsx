@@ -175,13 +175,6 @@ export function AccentLights({ quality }: { quality: QualityLevel }) {
       <GroundFlood position={[3.85, 0.1, -82.6]} rotation={[0, -0.18, 0]} channel="city" />
       {quality !== 'low' && <GroundFlood position={[0, 0.1, -80.8]} channel="city" />}
 
-      <group position={[0, 0.32, -113.55]}>
-        <RedCore channel="finale" size={0.07} />
-      </group>
-      <group position={[0, 0.28, 0.62]}>
-        <RedCore channel="intro" reveal size={0.04} />
-      </group>
-
       {quality !== 'low' && (
         <>
           <RedVolume position={[-3.35, 4.35, -17.6]} channel="gym" scale={[1.15, 1.05, 1.15]} />
