@@ -54,6 +54,20 @@ function rateLimited(ip) {
 /**
  * @param {import('node:http').IncomingMessage} req
  */
+async function readBody(req) {
+  if (req.body != null && !Buffer.isBuffer(req.body)) {
+    if (typeof req.body === 'object') return req.body
+    if (typeof req.body === 'string') {
+      if (!req.body.trim()) return {}
+      return JSON.parse(req.body)
+    }
+  }
+  return readJsonBody(req)
+}
+
+/**
+ * @param {import('node:http').IncomingMessage} req
+ */
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
     const chunks = []
@@ -119,10 +133,8 @@ async function pushBrevo(env, signup) {
   const templateId = Number(env.BREVO_DOI_TEMPLATE_ID)
   const site = (env.VITE_SITE_URL ?? '').replace(/\/$/, '')
   const redirect = env.BREVO_DOI_REDIRECT_URL?.trim() || `${site || 'http://127.0.0.1:43177'}/?liste=bestaetigt`
-  const attributes = {
-    VORNAME: signup.name,
-    SOURCE: signup.source,
-  }
+  const attributes = { SOURCE: signup.source }
+  if (signup.name) attributes.VORNAME = signup.name
 
   if (Number.isFinite(templateId) && templateId > 0) {
     const response = await fetch('https://api.brevo.com/v3/contacts/doubleOptinConfirmation', {
@@ -199,6 +211,19 @@ export function createWaitlistHandler({ dataDir, env }) {
    * @param {import('node:http').ServerResponse} res
    */
   return async function handleWaitlist(req, res) {
+    try {
+      await runWaitlist(req, res)
+    } catch (error) {
+      console.error('[waitlist]', error)
+      if (!res.headersSent) json(res, 500, { ok: false, error: 'upstream' })
+    }
+  }
+
+  /**
+   * @param {import('node:http').IncomingMessage} req
+   * @param {import('node:http').ServerResponse} res
+   */
+  async function runWaitlist(req, res) {
     if (req.method === 'OPTIONS') {
       res.statusCode = 204
       res.setHeader('allow', 'GET, POST, OPTIONS')
@@ -233,7 +258,7 @@ export function createWaitlistHandler({ dataDir, env }) {
 
     let body
     try {
-      body = await readJsonBody(req)
+      body = await readBody(req)
     } catch (error) {
       json(res, error instanceof Error && error.message === 'too_large' ? 413 : 400, {
         ok: false,
@@ -272,7 +297,11 @@ export function createWaitlistHandler({ dataDir, env }) {
     const existing = signups.some((entry) => entry.email === email)
     if (!existing) {
       signups.push(signup)
-      await saveSignups(file, signups)
+      try {
+        await saveSignups(file, signups)
+      } catch (error) {
+        console.error('[waitlist] local save skipped', error)
+      }
     }
 
     try {

@@ -21,7 +21,13 @@ export async function submitWaitlist(input: {
         company: input.company ?? '',
       }),
     })
-    const data = (await response.json()) as WaitlistResult
+    const text = await response.text()
+    let data: WaitlistResult | null = null
+    try {
+      data = text ? (JSON.parse(text) as WaitlistResult) : null
+    } catch {
+      return { ok: false, error: 'network' }
+    }
     if (!response.ok && data && data.ok === false) return data
     if (data && data.ok) return data
     return { ok: false, error: 'invalid' }

@@ -49,7 +49,15 @@ Do **not** send the newsletters from a private Gmail account. For Germany, use d
 5. Optional: a double-opt-in template id as `BREVO_DOI_TEMPLATE_ID`.
 6. When the location or opening date is ready, send a **campaign** to that list from Brevo. That is how everyone on the list gets the same update, including unsubscribe.
 
-The live host must be able to run the Node API. A static-only upload of `dist/` will make the form fail. `npm start` is the production shape: static files plus `/api/waitlist`.
+The live site is on Vercel. The form needs the serverless route in `api/waitlist.js` **and** these project environment variables (Production + Preview):
+
+- `BREVO_API_KEY`
+- `BREVO_LIST_ID` (`3` for the current KONNI list)
+- `VITE_SITE_URL=https://mma-in-leipzig.de` (build-time, for canonical/OG URLs)
+
+Without those keys the live form cannot reach Brevo. Set them in Vercel → Project → Settings → Environment Variables, then redeploy.
+
+The live host must be able to run the Node API. A static-only upload of `dist/` will make the form fail. `npm start` is the production shape on a VPS: static files plus `/api/waitlist`.
 
 ## How it works
 
