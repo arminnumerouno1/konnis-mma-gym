@@ -397,7 +397,11 @@ body {
 .waitlist {
   width: min(100%, 420px);
   margin: 22px auto 0;
-  text-align: left;
+  text-align: center;
+}
+
+.waitlist.is-done {
+  width: min(100%, 520px);
 }
 
 .waitlist-overlay {
@@ -420,6 +424,7 @@ body {
   line-height: 1.35;
   letter-spacing: 0.03em;
   color: #cfc8bc;
+  text-wrap: balance;
 }
 
 .waitlist-fields {
@@ -476,10 +481,12 @@ body {
   display: flex;
   gap: 10px;
   align-items: flex-start;
+  justify-content: center;
   margin-top: 12px;
   font-size: 13px;
   line-height: 1.4;
   color: #9a958a;
+  text-align: left;
   cursor: pointer;
 }
 
