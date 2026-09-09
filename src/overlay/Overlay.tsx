@@ -67,7 +67,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
       <main className="story">
         <WaitlistConfirmedBanner />
         <section className="story-block">
-          <img src="/brand/konni-logo.png" alt="KONNI MMA GYM Leipzig" className="story-logo" />
+          <img src="/brand/konni-logo.webp" alt="KONNI MMA GYM Leipzig" className="story-logo" />
           <p className="kicker">{COPY.gymName}</p>
           <h1>{COPY.city}</h1>
           <p>{COPY.homeOf}</p>

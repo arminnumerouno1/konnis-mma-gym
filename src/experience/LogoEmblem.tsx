@@ -8,10 +8,20 @@ type LogoEmblemProps = {
 }
 
 const LOGO_HEIGHT = 2.42
-const SOURCE_ASPECT = 1096 / 1164
+const SOURCE_ASPECT = 2202 / 2340
+
+function sharpenEmblem(shader: THREE.WebGLProgramParametersWithUniforms) {
+  shader.fragmentShader = shader.fragmentShader.replace(
+    '#include <map_fragment>',
+    `#include <map_fragment>
+    float emblemW = max(fwidth(diffuseColor.a), 0.0008);
+    diffuseColor.a = smoothstep(0.5 - emblemW, 0.5 + emblemW, diffuseColor.a);
+    if (diffuseColor.a < 0.04) discard;`,
+  )
+}
 
 export function LogoEmblem({ position, scale = 1 }: LogoEmblemProps) {
-  const albedo = useTexture('/brand/konni-logo.png')
+  const albedo = useTexture('/brand/konni-logo.webp')
 
   useLayoutEffect(() => {
     albedo.colorSpace = THREE.SRGBColorSpace
@@ -36,11 +46,13 @@ export function LogoEmblem({ position, scale = 1 }: LogoEmblemProps) {
         <meshBasicMaterial
           map={albedo}
           transparent
-          alphaTest={0.12}
           toneMapped={false}
           fog={false}
-          side={THREE.FrontSide}
           depthWrite
+          side={THREE.FrontSide}
+          onBeforeCompile={sharpenEmblem}
+          customProgramCacheKey={() => 'konni-emblem-edge-aa'}
+          alphaToCoverage
         />
       </mesh>
     </group>

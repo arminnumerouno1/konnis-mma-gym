@@ -26,8 +26,8 @@ export type LightKey = {
 export const CAMERA_KEYS: CamKey[] = [
   { t: 0.0, position: [0.18, 1.08, 10.6], target: [0, 1.06, 0], fov: 30 },
   { t: 0.055, position: [0.06, 1.08, 6.1], target: [0, 1.05, 0], fov: 28 },
-  { t: 0.11, position: [0.0, 1.06, 2.55], target: [0, 1.04, 0.05], fov: 25 },
-  { t: 0.155, position: [1.05, 1.02, 0.55], target: [0.15, 1.02, -3.2], fov: 30 },
+  { t: 0.11, position: [0.0, 1.06, 3.35], target: [0, 1.04, 0.05], fov: 26 },
+  { t: 0.155, position: [0.72, 1.04, 1.15], target: [0.12, 1.04, -3.2], fov: 30 },
   { t: 0.2, position: [0.25, 1.35, -6.2], target: [-1.6, 1.15, -17.2], fov: 36 },
   { t: 0.26, position: [0.18, 1.42, -11.2], target: [0, 1.45, -22], fov: 35 },
   { t: 0.32, position: [0.12, 1.52, -18.4], target: [0.05, 1.7, -28], fov: 34 },
@@ -49,9 +49,9 @@ export const CAMERA_KEYS: CamKey[] = [
 /** Portrait / phone: stay on axis so titles are not cropped. */
 export const CAMERA_KEYS_COMPACT: CamKey[] = [
   { t: 0.0, position: [0, 1.08, 8.6], target: [0, 1.06, 0], fov: 38 },
-  { t: 0.055, position: [0, 1.08, 5.2], target: [0, 1.05, 0], fov: 36 },
-  { t: 0.11, position: [0, 1.06, 3.2], target: [0, 1.04, 0], fov: 34 },
-  { t: 0.16, position: [0.28, 1.04, 0.9], target: [0, 1.04, -4], fov: 38 },
+  { t: 0.055, position: [0, 1.08, 5.7], target: [0, 1.05, 0], fov: 36 },
+  { t: 0.11, position: [0, 1.06, 4.45], target: [0, 1.04, 0], fov: 34 },
+  { t: 0.16, position: [0.18, 1.1, 2.2], target: [0, 1.02, -5.2], fov: 36 },
   { t: 0.2, position: [0.55, 1.28, -10.2], target: [-2.9, 1.02, -17.7], fov: 36 },
   { t: 0.28, position: [0.08, 1.45, -12.6], target: [0, 1.45, -22], fov: 40 },
   { t: 0.355, position: [0, 1.68, -26.8], target: [0, 0.32, -33.0], fov: 42 },
