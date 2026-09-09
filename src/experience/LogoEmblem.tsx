@@ -1,52 +1,42 @@
 import { useLayoutEffect, useMemo } from 'react'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
-import { octagonShape } from '../brand/logoMaps'
 
 type LogoEmblemProps = {
   position: [number, number, number]
   scale?: number
 }
 
-/** Metal body stays behind the artwork. Bevel was covering the texture. */
-const PLATE_RADIUS = 1.22
-const PLATE_DEPTH = 0.1
-const LOGO_SIZE = 2.42
+const LOGO_HEIGHT = 2.42
+const SOURCE_ASPECT = 1096 / 1164
 
 export function LogoEmblem({ position, scale = 1 }: LogoEmblemProps) {
   const albedo = useTexture('/brand/konni-logo.png')
 
   useLayoutEffect(() => {
     albedo.colorSpace = THREE.SRGBColorSpace
-    albedo.anisotropy = 16
-    albedo.generateMipmaps = true
-    albedo.minFilter = THREE.LinearMipmapLinearFilter
+    albedo.generateMipmaps = false
+    albedo.minFilter = THREE.LinearFilter
     albedo.magFilter = THREE.LinearFilter
+    albedo.wrapS = THREE.ClampToEdgeWrapping
+    albedo.wrapT = THREE.ClampToEdgeWrapping
     albedo.needsUpdate = true
   }, [albedo])
 
-  const plate = useMemo(() => {
-    const geo = new THREE.ExtrudeGeometry(octagonShape(PLATE_RADIUS), {
-      depth: PLATE_DEPTH,
-      bevelEnabled: false,
-      curveSegments: 1,
-    })
-    geo.translate(0, 0, -PLATE_DEPTH - 0.012)
-    geo.computeVertexNormals()
-    return geo
-  }, [])
+  const [width, height] = useMemo(() => {
+    const img = albedo.image as { width: number; height: number } | undefined
+    const aspect = img?.height ? img.width / img.height : SOURCE_ASPECT
+    return [LOGO_HEIGHT * aspect, LOGO_HEIGHT] as const
+  }, [albedo])
 
   return (
     <group position={position} scale={scale}>
-      <mesh geometry={plate} castShadow>
-        <meshStandardMaterial color="#2c2c2a" metalness={0.35} roughness={0.5} />
-      </mesh>
-      <mesh position={[0, 0, 0.02]} renderOrder={3}>
-        <planeGeometry args={[LOGO_SIZE, LOGO_SIZE]} />
+      <mesh position={[0, 0, 0.02]} renderOrder={3} frustumCulled={false}>
+        <planeGeometry args={[width, height]} />
         <meshBasicMaterial
           map={albedo}
           transparent
-          alphaTest={0.08}
+          alphaTest={0.12}
           toneMapped={false}
           fog={false}
           side={THREE.FrontSide}

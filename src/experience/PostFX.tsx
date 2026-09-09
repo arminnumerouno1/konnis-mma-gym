@@ -15,7 +15,7 @@ export function PostFX({ quality }: { quality: QualityLevel }) {
   if (quality === 'medium') {
     return (
       <EffectComposer multisampling={0} enableNormalPass={false}>
-        <Bloom intensity={0.14} luminanceThreshold={0.76} luminanceSmoothing={0.36} mipmapBlur />
+        <Bloom intensity={0.1} luminanceThreshold={0.84} luminanceSmoothing={0.28} mipmapBlur />
         <Vignette offset={0.32} darkness={0.48} eskil={false} />
         <Noise opacity={0.05} premultiply blendFunction={BlendFunction.OVERLAY} />
       </EffectComposer>
@@ -24,7 +24,7 @@ export function PostFX({ quality }: { quality: QualityLevel }) {
 
   return (
     <EffectComposer multisampling={0} enableNormalPass={false}>
-      <Bloom intensity={0.26} luminanceThreshold={0.68} luminanceSmoothing={0.32} mipmapBlur />
+      <Bloom intensity={0.14} luminanceThreshold={0.82} luminanceSmoothing={0.26} mipmapBlur />
       <Vignette offset={0.32} darkness={0.48} eskil={false} />
       <Noise opacity={0.085} premultiply blendFunction={BlendFunction.OVERLAY} />
       <ChromaticAberration offset={[0.00045, 0.00028]} radialModulation modulationOffset={0.4} />

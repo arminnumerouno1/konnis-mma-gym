@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useRef } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { AdaptiveDpr, Preload } from '@react-three/drei'
+import { Preload } from '@react-three/drei'
 import * as THREE from 'three'
 import type { QualityLevel } from '../lib/quality'
 import { useExperience } from '../store'
@@ -38,7 +38,8 @@ export function Experience({
     <Canvas
       className="canvas"
       frameloop={reducedMotion ? 'demand' : 'always'}
-      dpr={quality === 'high' ? [1, 1.5] : [1, 1]}
+      dpr={[1, 2]}
+      performance={{ min: 1 }}
       shadows={quality === 'high'}
       gl={{
         antialias: true,
@@ -60,7 +61,6 @@ export function Experience({
         <World quality={quality} />
         <CameraRig reducedMotion={reducedMotion} />
         <PostFX quality={quality} />
-        <AdaptiveDpr />
         <Preload all />
         <ReadyFlag />
       </Suspense>
