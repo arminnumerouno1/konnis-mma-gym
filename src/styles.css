@@ -197,6 +197,36 @@ body {
   opacity: 0;
 }
 
+.intro-mark {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 6cqh 5% 16cqh;
+  pointer-events: none;
+  opacity: 1;
+}
+
+.intro-mark-img {
+  width: min(74cqw, 68cqh, 640px);
+  height: auto;
+  display: block;
+  transform: scale(var(--mark-scale, 1));
+  transform-origin: center center;
+  image-rendering: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.overlay.is-compact .intro-mark {
+  padding: 7cqh 4% 18cqh;
+}
+
+.overlay.is-compact .intro-mark-img {
+  width: min(86cqw, 64cqh, 420px);
+}
+
 .scroll-hint {
   bottom: max(7cqh, calc(18px + env(safe-area-inset-bottom)));
   display: flex;
@@ -318,6 +348,21 @@ body {
 .finale-card {
   width: min(92%, 640px);
   margin: 0 auto;
+}
+
+.finale-logo {
+  display: block;
+  width: min(34%, 168px);
+  height: auto;
+  margin: 0 auto 12px;
+  image-rendering: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.finale-copy.has-waitlist .finale-logo {
+  width: min(26%, 124px);
+  margin-bottom: 8px;
 }
 
 .finale-copy h2 {
@@ -569,13 +614,14 @@ body {
 
 .loader-logo,
 .story-logo {
-  width: min(68cqw, 280px);
+  width: min(74cqw, 68cqh, 640px);
   height: auto;
   display: block;
   image-rendering: auto;
 }
 
 .story-logo {
+  width: min(68cqw, 280px);
   margin-bottom: 28px;
 }
 
@@ -710,6 +756,10 @@ body {
 
 .app.is-compact .finale-copy.has-waitlist h2 {
   font-size: clamp(28px, 11cqw, 46px);
+}
+
+.app.is-compact .finale-logo {
+  width: min(32%, 112px);
 }
 
 .app.is-compact .waitlist-lead,

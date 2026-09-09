@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { COPY } from '../brand/copy'
-import { windowOpacity } from '../lib/math'
+import { smoothstep, windowOpacity } from '../lib/math'
 import { scrollProgress } from '../store'
 import { WaitlistForm } from '../waitlist/WaitlistForm'
+
+const MARK_SRC = '/brand/konni-logo.webp'
 
 function setOpacity(el: HTMLElement | null, value: number) {
   if (!el) return
@@ -24,6 +26,20 @@ function WaitlistConfirmedBanner() {
   )
 }
 
+function Emblem({ className, alt }: { className: string; alt: string }) {
+  return (
+    <img
+      src={MARK_SRC}
+      alt={alt}
+      className={className}
+      width={2202}
+      height={2340}
+      decoding="async"
+      draggable={false}
+    />
+  )
+}
+
 type OverlayProps = {
   reducedMotion: boolean
   compact: boolean
@@ -31,6 +47,7 @@ type OverlayProps = {
 
 export function Overlay({ reducedMotion, compact }: OverlayProps) {
   const scrollHint = useRef<HTMLDivElement>(null)
+  const introMark = useRef<HTMLDivElement>(null)
   const noEgos = useRef<HTMLDivElement>(null)
   const justWork = useRef<HTMLDivElement>(null)
   const mma = useRef<HTMLDivElement>(null)
@@ -45,6 +62,12 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
     let id = 0
     const loop = () => {
       const p = scrollProgress.current
+      const intro = windowOpacity(p, -0.08, 0, 0.05, 0.132)
+      if (introMark.current) {
+        introMark.current.style.opacity = String(intro)
+        introMark.current.hidden = intro < 0.02
+        introMark.current.style.setProperty('--mark-scale', String(1 + 0.03 * smoothstep(0, 0.08, p)))
+      }
       setOpacity(scrollHint.current, windowOpacity(p, -1, 0, 0.05, 0.1))
       setOpacity(noEgos.current, windowOpacity(p, 0.258, 0.286, 0.318, 0.348))
       setOpacity(justWork.current, windowOpacity(p, 0.322, 0.348, 0.368, 0.392))
@@ -67,7 +90,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
       <main className="story">
         <WaitlistConfirmedBanner />
         <section className="story-block">
-          <img src="/brand/konni-logo.webp" alt="KONNI MMA GYM Leipzig" className="story-logo" />
+          <Emblem className="story-logo" alt="KONNI MMA GYM Leipzig" />
           <p className="kicker">{COPY.gymName}</p>
           <h1>{COPY.city}</h1>
           <p>{COPY.homeOf}</p>
@@ -109,6 +132,10 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
         <div ref={progress} className="progress-bar" />
       </div>
 
+      <div ref={introMark} className="intro-mark">
+        <Emblem className="intro-mark-img" alt="KONNI MMA GYM Leipzig" />
+      </div>
+
       <div ref={scrollHint} className="overlay-block scroll-hint">
         <span>SCROLL</span>
         <i />
@@ -142,6 +169,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
 
       <div ref={finale} className="overlay-block finale-copy has-waitlist" hidden>
         <div className="finale-card">
+          <Emblem className="finale-logo" alt="" />
           <h2>
             {COPY.fightSoon}
             <br />

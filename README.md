@@ -65,4 +65,4 @@ Scroll drives camera position, look-target, FOV, lights, and fog. There is no au
 
 ## Brand
 
-The KONNI MMA GYM emblem is the original artwork, extracted from the designer PDF (a 1254×1254 Photoshop raster, not a vector file). Edges are rebuilt with a distance field and a 2× WebP so the intro dolly does not stair-step. Infinitely sharp corners would still need an AI, EPS, or SVG from the designer. The Leipzig beat is a 3D Völkerschlachtdenkmal — mound, staircase, granite hall, bell dome, and the twelve guardians — not a generic skyline.
+The KONNI MMA GYM emblem is a 2D image in the intro and finale — the browser draws the edges, not the 3D camera. The file is still a raster from the designer PDF (1254×1254 Photoshop JPEG, not a vector). Infinitely sharp corners would need an AI, EPS, or SVG. The Leipzig beat is a 3D Völkerschlachtdenkmal — mound, staircase, granite hall, bell dome, and the twelve guardians — not a generic skyline.
