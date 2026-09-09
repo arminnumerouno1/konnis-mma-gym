@@ -1,12 +1,27 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { COPY } from '../brand/copy'
 import { windowOpacity } from '../lib/math'
 import { scrollProgress } from '../store'
+import { WaitlistForm } from '../waitlist/WaitlistForm'
 
 function setOpacity(el: HTMLElement | null, value: number) {
   if (!el) return
   el.style.opacity = String(value)
   el.hidden = value < 0.02
+}
+
+function WaitlistConfirmedBanner() {
+  const [visible] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return new URLSearchParams(window.location.search).get('liste') === 'bestaetigt'
+  })
+
+  if (!visible) return null
+  return (
+    <p className="waitlist-banner" role="status">
+      {COPY.waitlistConfirmed}
+    </p>
+  )
 }
 
 type OverlayProps = {
@@ -50,6 +65,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
   if (reducedMotion) {
     return (
       <main className="story">
+        <WaitlistConfirmedBanner />
         <section className="story-block">
           <img src="/brand/konni-logo.png" alt="KONNI MMA GYM Leipzig" className="story-logo" />
           <p className="kicker">{COPY.gymName}</p>
@@ -80,7 +96,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
           <p>{COPY.gymName}</p>
           <p>{COPY.city}</p>
           <p>{COPY.openingSoon}</p>
-          <p>{COPY.moreSoon}</p>
+          <WaitlistForm variant="page" />
         </section>
       </main>
     )
@@ -88,6 +104,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
 
   return (
     <div className={compact ? 'overlay is-compact' : 'overlay'}>
+      <WaitlistConfirmedBanner />
       <div className="progress-track">
         <div ref={progress} className="progress-bar" />
       </div>
@@ -123,7 +140,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
         <p className="sub">{COPY.locationSoon}</p>
       </div>
 
-      <div ref={finale} className="overlay-block finale-copy" hidden>
+      <div ref={finale} className="overlay-block finale-copy has-waitlist" hidden>
         <div className="finale-card">
           <h2>
             {COPY.fightSoon}
@@ -136,7 +153,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
             {COPY.city}
           </p>
           <p className="open">{COPY.openingSoon}</p>
-          <p className="sub">{COPY.moreSoon}</p>
+          <WaitlistForm />
         </div>
       </div>
     </div>

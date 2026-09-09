@@ -1,19 +1,20 @@
 import react from '@vitejs/plugin-react'
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { buildSeoHead } from './src/brand/seo.ts'
+import { waitlistDataDir, waitlistPlugin } from './server/waitlist-plugin.ts'
 
-function siteUrl(): string {
-  return (process.env.VITE_SITE_URL ?? '').replace(/\/$/, '')
+function siteUrl(envUrl = ''): string {
+  return (envUrl || process.env.VITE_SITE_URL || '').replace(/\/$/, '')
 }
 
-function seoPlugin(): Plugin {
+function seoPlugin(envUrl = ''): Plugin {
   return {
     name: 'konnis-seo',
     transformIndexHtml(html) {
-      return html.replace('<!--seo-head-->', buildSeoHead(siteUrl()))
+      return html.replace('<!--seo-head-->', buildSeoHead(siteUrl(envUrl)))
     },
     generateBundle() {
-      const origin = siteUrl()
+      const origin = siteUrl(envUrl)
       if (!origin) return
       this.emitFile({
         type: 'asset',
@@ -37,16 +38,20 @@ function seoPlugin(): Plugin {
   }
 }
 
-export default defineConfig({
-  plugins: [react(), seoPlugin()],
-  server: {
-    host: '127.0.0.1',
-    port: 43177,
-    strictPort: true,
-  },
-  preview: {
-    host: '127.0.0.1',
-    port: 43177,
-    strictPort: true,
-  },
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+    plugins: [react(), seoPlugin(env.VITE_SITE_URL), waitlistPlugin(env, waitlistDataDir(process.cwd()))],
+    server: {
+      host: '127.0.0.1',
+      port: 43177,
+      strictPort: true,
+    },
+    preview: {
+      host: '127.0.0.1',
+      port: 43177,
+      strictPort: true,
+    },
+  }
 })

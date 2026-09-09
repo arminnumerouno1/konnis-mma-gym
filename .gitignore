@@ -23,6 +23,7 @@ id_rsa
 id_rsa.pub
 credentials.json
 secrets.json
+data/waitlist.json
 
 # Editor directories and files
 .vscode/*

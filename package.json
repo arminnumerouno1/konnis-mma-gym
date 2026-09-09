@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 43177",
     "build": "tsc -b && vite build",
+    "start": "node server/serve.mjs",
+    "waitlist:list": "node server/list-waitlist.mjs",
     "lint": "oxlint",
     "preview": "vite preview --host 127.0.0.1 --port 43177"
   },

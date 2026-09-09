@@ -30,6 +30,26 @@ VITE_SITE_URL=https://www.example.com npm run build
 
 Copy `.env.example` to `.env` if you want that URL during local `npm run dev`. After launch, add the sitemap line in `public/robots.txt`.
 
+## Waitlist
+
+The finale has a waitlist form for opening and location updates. It posts to `/api/waitlist`. In `npm run dev` and `npm run preview` Vite serves that route. After `npm run build`, `npm start` serves `dist/` plus the same API.
+
+Without mail credentials, signups are stored in `data/waitlist.json` (gitignored). List them with:
+
+```bash
+npm run waitlist:list
+```
+
+Do **not** send the newsletters from a private Gmail account. For Germany, use double opt-in and a proper sender. The intended setup is [Brevo](https://www.brevo.com) (EU, GDPR, German UI):
+
+1. Create a list named `Warteliste`.
+2. Create a double-opt-in confirmation template and put its id in `BREVO_DOI_TEMPLATE_ID`.
+3. Put `BREVO_API_KEY` and `BREVO_LIST_ID` in `.env` on the server (never in `VITE_` variables).
+4. In Brevo, add an automation: new confirmed contact → welcome mail.
+5. When the location or opening date is ready, send a **campaign** to that list from Brevo. That is how everyone on the list gets the same update, including unsubscribe.
+
+The live host must be able to run the Node API. A static-only upload of `dist/` will make the form fail. `npm start` is the production shape: static files plus `/api/waitlist`.
+
 ## How it works
 
 Scroll drives camera position, look-target, FOV, lights, and fog. There is no autoplay against the user. Desktop uses a full lighting and post-process pass. Mobile and weaker GPUs drop particles, lights, and effects automatically. On narrow screens and in the Handy-Ansicht, slogans switch from 3D type to large HTML captions sized to the stage, not the desktop window. `prefers-reduced-motion` freezes the camera and shows the same copy as a readable page.
