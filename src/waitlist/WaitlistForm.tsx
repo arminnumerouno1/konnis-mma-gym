@@ -15,6 +15,7 @@ const successCopy: Record<WaitlistConfirmation, string> = {
 
 const errorCopy = {
   email: COPY.waitlistInvalid,
+  name: COPY.waitlistInvalid,
   consent: COPY.waitlistInvalid,
   rate: COPY.waitlistRate,
   upstream: COPY.waitlistError,
@@ -33,6 +34,10 @@ export function WaitlistForm({ variant = 'overlay' }: WaitlistFormProps) {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+    if (name.trim().length < 2 || !email.trim() || !consent) {
+      setError(COPY.waitlistInvalid)
+      return
+    }
     setPending(true)
     const honey = String(new FormData(event.currentTarget).get('company') ?? '')
     const result = await submitWaitlist({ email, name, consent, company: honey })
@@ -85,6 +90,8 @@ export function WaitlistForm({ variant = 'overlay' }: WaitlistFormProps) {
           value={name}
           onChange={(event) => setName(event.target.value)}
           maxLength={80}
+          required
+          autoCapitalize="words"
         />
         <button type="submit" disabled={pending}>
           {pending ? COPY.waitlistPending : COPY.waitlistSubmit}

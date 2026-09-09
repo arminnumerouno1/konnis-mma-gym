@@ -2,7 +2,7 @@ export type WaitlistConfirmation = 'saved' | 'email' | 'listed' | 'duplicate'
 
 export type WaitlistResult =
   | { ok: true; confirmation: WaitlistConfirmation }
-  | { ok: false; error: 'email' | 'consent' | 'rate' | 'upstream' | 'network' | 'invalid' }
+  | { ok: false; error: 'email' | 'name' | 'consent' | 'rate' | 'upstream' | 'network' | 'invalid' }
 
 export async function submitWaitlist(input: {
   email: string

@@ -26,6 +26,13 @@ export function isValidEmail(email) {
 }
 
 /**
+ * @param {string} name
+ */
+export function isValidName(name) {
+  return name.length >= 2 && name.length <= 80
+}
+
+/**
  * @param {import('node:http').IncomingMessage} req
  */
 function clientIp(req) {
@@ -133,8 +140,7 @@ async function pushBrevo(env, signup) {
   const templateId = Number(env.BREVO_DOI_TEMPLATE_ID)
   const site = (env.VITE_SITE_URL ?? '').replace(/\/$/, '')
   const redirect = env.BREVO_DOI_REDIRECT_URL?.trim() || `${site || 'http://127.0.0.1:43177'}/?liste=bestaetigt`
-  const attributes = { SOURCE: signup.source }
-  if (signup.name) attributes.VORNAME = signup.name
+  const attributes = { SOURCE: signup.source, VORNAME: signup.name }
 
   if (Number.isFinite(templateId) && templateId > 0) {
     const response = await fetch('https://api.brevo.com/v3/contacts/doubleOptinConfirmation', {
@@ -281,6 +287,10 @@ export function createWaitlistHandler({ dataDir, env }) {
     const name = String(body.name ?? '')
       .trim()
       .slice(0, 80)
+    if (!isValidName(name)) {
+      json(res, 400, { ok: false, error: 'name' })
+      return
+    }
     if (!isValidEmail(email)) {
       json(res, 400, { ok: false, error: 'email' })
       return
