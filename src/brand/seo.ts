@@ -41,7 +41,7 @@ export function buildSeoHead(siteUrl = ''): string {
       description: SEO.description,
       image: image,
       ...(pageUrl ? { url: pageUrl } : {}),
-      email: 'k.dyrschka@web.de',
+      email: 'info@mma-in-leipzig.de',
       address: {
         '@type': 'PostalAddress',
         addressLocality: 'Leipzig',

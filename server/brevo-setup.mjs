@@ -45,7 +45,7 @@ if (!apiKey) {
   console.error(`Kein BREVO_API_KEY.
 
 1. Kostenloses Konto: https://app.brevo.com/account/register
-   Am besten mit k.dyrschka@web.de anlegen und die Mail bestätigen.
+   Am besten mit info@mma-in-leipzig.de anlegen und die Mail bestätigen.
 2. Danach: https://app.brevo.com/settings/keys/api
    „API-Schlüssel erzeugen“, Namen KONNI MMA GYM geben, Schlüssel kopieren.
 3. Hier im Chat nur den Schlüssel schicken (nicht das Passwort).
@@ -133,7 +133,7 @@ console.log(`
 Fertig. BREVO_LIST_ID=${list.id} steht in .env (nicht im Git).
 
 Als Nächstes in Brevo, wenn ihr Mails wirklich rausschicken wollt:
-- Absender k.dyrschka@web.de bestätigen
+- Absender info@mma-in-leipzig.de bestätigen
 - Optional Double-Opt-in-Template, dann BREVO_DOI_TEMPLATE_ID setzen
 - Kampagnen an die Liste „${LIST_NAME}“
 

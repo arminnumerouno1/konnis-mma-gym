@@ -42,10 +42,10 @@ npm run waitlist:list
 
 Do **not** send the newsletters from a private Gmail account. For Germany, use double opt-in and a proper sender. The intended setup is [Brevo](https://www.brevo.com) (EU, GDPR, German UI).
 
-1. Create a free account: [app.brevo.com/account/register](https://app.brevo.com/account/register) (use `k.dyrschka@web.de` and confirm the mail).
+1. Create a free account: [app.brevo.com/account/register](https://app.brevo.com/account/register) (use `info@mma-in-leipzig.de` and confirm the mail).
 2. Create an API key: [app.brevo.com/settings/keys/api](https://app.brevo.com/settings/keys/api). Put it in `.env` as `BREVO_API_KEY` (never `VITE_`).
 3. Run `npm run waitlist:brevo`. That checks the account, creates the list **KONNI MMA GYM Warteliste**, and writes `BREVO_LIST_ID`.
-4. Confirm the sender `k.dyrschka@web.de` in Brevo if you want real outbound mail.
+4. Confirm the sender `info@mma-in-leipzig.de` in Brevo if you want real outbound mail.
 5. Optional: a double-opt-in template id as `BREVO_DOI_TEMPLATE_ID`.
 6. When the location or opening date is ready, send a **campaign** to that list from Brevo. That is how everyone on the list gets the same update, including unsubscribe.
 
