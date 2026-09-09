@@ -20,7 +20,7 @@ npm run preview
 
 ## Share preview and SEO
 
-Tab title, Google snippet, and Open-Graph/Twitter cards are defined in `src/brand/seo.ts`. The share image is `public/og-image.jpg` (1200×630).
+Tab title, Google snippet, and Open-Graph/Twitter cards are defined in `src/brand/seo.ts`. The share image is `public/og-image.jpg` (1200×630). Rebuild it with `python3 scripts/make-og-image.py`.
 
 For a live domain, set the public URL (no trailing slash) so Canonical, `og:url`, and `sitemap.xml` become absolute:
 
