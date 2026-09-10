@@ -48,6 +48,7 @@ type OverlayProps = {
 export function Overlay({ reducedMotion, compact }: OverlayProps) {
   const scrollHint = useRef<HTMLDivElement>(null)
   const introMark = useRef<HTMLDivElement>(null)
+  const showUp = useRef<HTMLDivElement>(null)
   const noEgos = useRef<HTMLDivElement>(null)
   const justWork = useRef<HTMLDivElement>(null)
   const mma = useRef<HTMLDivElement>(null)
@@ -69,6 +70,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
         introMark.current.style.setProperty('--mark-scale', String(1 + 0.03 * smoothstep(0, 0.08, p)))
       }
       setOpacity(scrollHint.current, windowOpacity(p, -1, 0, 0.05, 0.1))
+      setOpacity(showUp.current, windowOpacity(p, 0.165, 0.192, 0.232, 0.262))
       setOpacity(noEgos.current, windowOpacity(p, 0.258, 0.286, 0.318, 0.348))
       setOpacity(justWork.current, windowOpacity(p, 0.322, 0.348, 0.368, 0.392))
       setOpacity(mma.current, windowOpacity(p, 0.498, 0.528, 0.555, 0.585))
@@ -96,6 +98,7 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
           <p>{COPY.homeOf}</p>
         </section>
         <section className="story-block">
+          <h2>{COPY.showUp}</h2>
           <h2>{COPY.noEgos}</h2>
           <h2>{COPY.justWork}</h2>
           <img src="/brand/konrad.png" alt="Konrad" className="story-fighter" />
@@ -143,6 +146,9 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
 
       {compact && (
         <>
+          <div ref={showUp} className="caption caption-arrive" hidden>
+            <p>{COPY.showUp}</p>
+          </div>
           <div ref={noEgos} className="caption" hidden>
             <p>{COPY.noEgos}</p>
           </div>

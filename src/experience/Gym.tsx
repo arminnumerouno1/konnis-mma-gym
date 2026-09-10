@@ -1,6 +1,6 @@
 import { COPY } from '../brand/copy'
 import type { QualityLevel } from '../lib/quality'
-import { SparringRing } from './Ring'
+import { Arrival } from './Arrival'
 import { TypeInSpace } from './TypeInSpace'
 import { sharedNoise } from './textures'
 
@@ -117,12 +117,22 @@ export function Gym({ quality }: GymProps) {
       ))}
 
       <LampFixture position={[0, 6.35, -14]} />
-      <LampFixture position={[-1.2, 6.35, -17.45]} />
+      <LampFixture position={[-1.2, 6.35, -16.9]} />
       <LampFixture position={[-3.2, 6.35, -26]} />
       <LampFixture position={[3.1, 6.35, -38]} />
       <LampFixture position={[0, 6.35, -50]} />
 
-      <SparringRing position={[-1.2, 0, -17.45]} />
+      <Arrival position={[-1.2, 0, -16.9]} />
+
+      <TypeInSpace
+        position={[-1.2, 0.07, -18.15]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        fontSize={0.78}
+        quality={quality}
+        letterSpacing={0.1}
+      >
+        {COPY.showUp}
+      </TypeInSpace>
 
       <mesh position={[7.52, 2.35, -21.8]}>
         <boxGeometry args={[0.06, 0.08, 3.4]} />

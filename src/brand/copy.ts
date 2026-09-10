@@ -3,6 +3,7 @@ export const COPY = {
   city: 'LEIPZIG',
   noEgos: 'NO EGOS.',
   justWork: 'JUST WORK.',
+  showUp: 'SHOW UP.',
   mma: 'MMA',
   grappling: 'GRAPPLING',
   striking: 'STRIKING',
