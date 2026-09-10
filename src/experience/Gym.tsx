@@ -1,5 +1,6 @@
 import { COPY } from '../brand/copy'
 import type { QualityLevel } from '../lib/quality'
+import { SparringRing } from './Ring'
 import { TypeInSpace } from './TypeInSpace'
 import { sharedNoise } from './textures'
 
@@ -18,44 +19,24 @@ function Concrete({ color = '#1b1b19' }: { color?: string }) {
   )
 }
 
-function HeavyBag({
+function ThaiPad({
   position,
   rotationY = 0,
-  sway = 0.03,
-  leather = '#2a1412',
+  color,
 }: {
   position: [number, number, number]
   rotationY?: number
-  sway?: number
-  leather?: string
+  color: string
 }) {
   return (
-    <group position={position} rotation={[0, rotationY, sway]}>
-      <mesh position={[0, 4.92, 0]}>
-        <cylinderGeometry args={[0.011, 0.011, 3.05, 6]} />
-        <Steel color="#111" />
+    <group position={position} rotation={[0, rotationY, 0]}>
+      <mesh>
+        <boxGeometry args={[0.3, 0.62, 0.11]} />
+        <meshStandardMaterial color={color} roughness={0.78} metalness={0.05} />
       </mesh>
-      <mesh position={[0, 3.38, 0]} rotation={[Math.PI / 2, 0, 0]}>
-        <torusGeometry args={[0.042, 0.011, 8, 12]} />
-        <Steel color="#2a2a2a" />
-      </mesh>
-      {[-0.07, 0.07].map((x) => (
-        <mesh key={x} position={[x, 2.48, 0]}>
-          <boxGeometry args={[0.038, 0.32, 0.028]} />
-          <meshStandardMaterial color="#241010" roughness={0.82} metalness={0.08} />
-        </mesh>
-      ))}
-      <mesh position={[0, 1.55, 0]}>
-        <capsuleGeometry args={[0.22, 1.18, 6, 12]} />
-        <meshStandardMaterial color={leather} roughness={0.82} metalness={0.06} />
-      </mesh>
-      <mesh position={[0, 1.78, 0]}>
-        <cylinderGeometry args={[0.228, 0.228, 0.11, 12]} />
-        <meshStandardMaterial color="#8a1812" roughness={0.68} metalness={0.08} />
-      </mesh>
-      <mesh position={[0, 0.78, 0]}>
-        <cylinderGeometry args={[0.2, 0.175, 0.08, 12]} />
-        <meshStandardMaterial color="#120808" roughness={0.9} metalness={0.06} />
+      <mesh position={[0, 0.36, 0]}>
+        <boxGeometry args={[0.09, 0.1, 0.04]} />
+        <meshStandardMaterial color="#1a1a1a" roughness={0.7} metalness={0.08} />
       </mesh>
     </group>
   )
@@ -91,17 +72,16 @@ function LampFixture({ position }: { position: [number, number, number] }) {
   )
 }
 
-const HERO_BAGS: { position: [number, number, number]; rotationY: number; sway: number; leather: string }[] = [
-  { position: [-4.25, 0, -16.45], rotationY: 0.14, sway: 0.05, leather: '#2c1513' },
-  { position: [-2.35, 0, -17.15], rotationY: -0.22, sway: -0.04, leather: '#261210' },
-  { position: [-4.55, 0, -18.85], rotationY: 0.32, sway: 0.02, leather: '#301816' },
-  { position: [-2.15, 0, -18.55], rotationY: -0.08, sway: -0.06, leather: '#241110' },
+const PADS: { z: number; color: string }[] = [
+  { z: -20.4, color: '#8a1812' },
+  { z: -21.35, color: '#1c1c1c' },
+  { z: -22.3, color: '#8a1812' },
+  { z: -23.25, color: '#d8cfc2' },
 ]
 
 export function Gym({ quality }: GymProps) {
   const beams = quality === 'low' ? [-12, -24, -36, -48] : [-10, -18, -26, -34, -42, -50, -58]
-  const wallBags = quality === 'low' ? 2 : 4
-  const heroBags = quality === 'low' ? HERO_BAGS.slice(0, 3) : HERO_BAGS
+  const pads = quality === 'low' ? PADS.slice(0, 3) : PADS
 
   return (
     <group>
@@ -137,30 +117,21 @@ export function Gym({ quality }: GymProps) {
       ))}
 
       <LampFixture position={[0, 6.35, -14]} />
+      <LampFixture position={[-1.2, 6.35, -17.45]} />
       <LampFixture position={[-3.2, 6.35, -26]} />
       <LampFixture position={[3.1, 6.35, -38]} />
       <LampFixture position={[0, 6.35, -50]} />
 
-      <mesh position={[-3.35, 6.55, -17.5]}>
-        <boxGeometry args={[3.8, 0.08, 0.22]} />
+      <SparringRing position={[-1.2, 0, -17.45]} />
+
+      <mesh position={[7.52, 2.35, -21.8]}>
+        <boxGeometry args={[0.06, 0.08, 3.4]} />
         <Steel color="#141414" />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-3.3, 0.025, -17.5]} receiveShadow>
-        <planeGeometry args={[4.6, 4.8]} />
-        <meshStandardMaterial color="#2a1012" roughness={0.95} metalness={0.02} />
-      </mesh>
-      {heroBags.map((bag) => (
-        <HeavyBag key={bag.position.join(',')} {...bag} />
+      {pads.map((pad) => (
+        <ThaiPad key={pad.z} position={[7.35, 1.72, pad.z]} rotationY={-Math.PI / 2} color={pad.color} />
       ))}
 
-      {Array.from({ length: wallBags }, (_, i) => (
-        <HeavyBag key={`wall-${i}`} position={[4.55, 0, -22.4 - i * 2.1]} rotationY={0.08} sway={0.02} />
-      ))}
-
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[3.4, 0.025, -28]} receiveShadow>
-        <planeGeometry args={[2.8, 3.2]} />
-        <meshStandardMaterial color="#2a1012" roughness={0.95} metalness={0.02} />
-      </mesh>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-2.2, 0.02, -33]} receiveShadow>
         <planeGeometry args={[4.2, 3.6]} />
         <meshStandardMaterial color="#241010" roughness={0.96} metalness={0.02} />

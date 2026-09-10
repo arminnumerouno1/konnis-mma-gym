@@ -29,7 +29,7 @@ export function Volumetric({ quality }: { quality: QualityLevel }) {
   if (quality === 'low') return null
   return (
     <group>
-      <Cone position={[0, 4.4, -14]} rotation={[Math.PI, 0, 0]} />
+      <Cone position={[-1.2, 4.4, -17.45]} rotation={[Math.PI, 0, 0]} scale={[1.15, 1, 1.15]} />
       <Cone position={[-3.2, 4.4, -26]} rotation={[Math.PI, 0, 0]} scale={[0.85, 1, 0.85]} />
       {quality === 'high' && <Cone position={[3.1, 4.4, -38]} rotation={[Math.PI, 0, 0]} scale={[0.75, 1, 0.75]} />}
       {quality === 'high' && <Cone position={[0, 4.4, -94]} rotation={[Math.PI, 0, 0]} scale={[1.2, 1.05, 1.2]} />}

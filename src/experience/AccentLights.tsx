@@ -161,9 +161,7 @@ function RedVolume({
 export function AccentLights({ quality }: { quality: QualityLevel }) {
   return (
     <group>
-      <HangLamp position={[-3.35, 6.28, -17.6]} channel="gym" />
-      <HangLamp position={[-2.45, 6.28, -16.7]} channel="gym" />
-      <HangLamp position={[4.5, 6.28, -24.8]} channel="gym" />
+      <HangLamp position={[-1.2, 6.28, -17.45]} channel="gym" />
       {quality !== 'low' && <HangLamp position={[0, 6.28, -50.2]} channel="gym" />}
       <HangLamp position={[0.15, 6.22, -66.8]} channel="side" />
 
@@ -179,8 +177,7 @@ export function AccentLights({ quality }: { quality: QualityLevel }) {
 
       {quality !== 'low' && (
         <>
-          <RedVolume position={[-3.35, 4.35, -17.6]} channel="gym" scale={[1.15, 1.05, 1.15]} />
-          <RedVolume position={[4.5, 4.35, -24.8]} channel="gym" scale={[0.72, 0.9, 0.72]} />
+          <RedVolume position={[-1.2, 4.35, -17.45]} channel="gym" scale={[1.45, 1.05, 1.45]} />
           <RedVolume position={[0.15, 4.3, -66.8]} channel="side" scale={[0.82, 0.95, 0.82]} />
           <RedVolume position={[0, 4.35, -94]} channel="city" scale={[1.35, 1.1, 1.35]} />
         </>
