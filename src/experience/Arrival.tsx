@@ -80,31 +80,6 @@ function Duffel({ position, rotationY = 0 }: { position: [number, number, number
   )
 }
 
-function Glove({
-  position,
-  rotation = [0, 0, 0],
-}: {
-  position: [number, number, number]
-  rotation?: [number, number, number]
-}) {
-  return (
-    <group position={position} rotation={rotation} scale={1.15}>
-      <mesh position={[0, 0.05, 0.02]}>
-        <boxGeometry args={[0.17, 0.09, 0.22]} />
-        <Leather color="#1c1210" />
-      </mesh>
-      <mesh position={[0, 0.055, 0.14]}>
-        <boxGeometry args={[0.16, 0.08, 0.09]} />
-        <Leather color="#8a1812" />
-      </mesh>
-      <mesh position={[0, 0.038, -0.11]}>
-        <boxGeometry args={[0.1, 0.055, 0.1]} />
-        <Leather color="#121010" />
-      </mesh>
-    </group>
-  )
-}
-
 function Shoe({ position, rotationY = 0 }: { position: [number, number, number]; rotationY?: number }) {
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
@@ -128,8 +103,6 @@ export function Arrival({ position }: { position: [number, number, number] }) {
       <group scale={0.88} position={[-0.42, 0.52, 2.02]}>
         <Duffel position={[0, 0, 0]} rotationY={0.35} />
       </group>
-      <Glove position={[0.38, 0.46, 2.08]} rotation={[-0.12, 0.55, 0.18]} />
-      <Glove position={[0.55, 0.46, 1.92]} rotation={[-0.08, -0.4, -0.12]} />
       <Shoe position={[-1.15, 0, 2.52]} rotationY={0.4} />
       <Shoe position={[-0.98, 0, 2.58]} rotationY={0.22} />
     </group>

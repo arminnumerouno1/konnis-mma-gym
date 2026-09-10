@@ -65,4 +65,4 @@ Scroll drives camera position, look-target, FOV, lights, and fog. There is no au
 
 ## Brand
 
-The KONNI MMA GYM emblem is a 2D image in the intro and finale — the browser draws the edges, not the 3D camera. The file is still a raster from the designer PDF (1254×1254 Photoshop JPEG, not a vector). Infinitely sharp corners would need an AI, EPS, or SVG. The first gym beat is arrival: mats, a bench with gloves, and SHOW UP. The Leipzig beat is the octagon cage in a hall.
+The KONNI MMA GYM emblem is a 2D image in the intro and finale — the browser draws the edges, not the 3D camera. The file is still a raster from the designer PDF (1254×1254 Photoshop JPEG, not a vector). Infinitely sharp corners would need an AI, EPS, or SVG. The first gym beat is arrival on the mats — BALD GEHT'S LOS. — then the camera passes between two heavy bags. The Leipzig beat is the octagon cage in a hall.

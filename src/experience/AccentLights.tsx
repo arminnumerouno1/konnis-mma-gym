@@ -162,6 +162,7 @@ export function AccentLights({ quality }: { quality: QualityLevel }) {
   return (
     <group>
       <HangLamp position={[-1.2, 6.28, -16.9]} channel="gym" />
+      <HangLamp position={[0, 6.28, -20.55]} channel="gym" />
       {quality !== 'low' && <HangLamp position={[0, 6.28, -50.2]} channel="gym" />}
       <HangLamp position={[0.15, 6.22, -66.8]} channel="side" />
 

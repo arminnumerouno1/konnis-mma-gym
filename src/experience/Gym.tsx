@@ -57,6 +57,49 @@ function IBeam({ z }: { z: number }) {
   )
 }
 
+function HeavyBag({
+  position,
+  rotationY = 0,
+  sway = 0.03,
+  leather = '#2a1412',
+}: {
+  position: [number, number, number]
+  rotationY?: number
+  sway?: number
+  leather?: string
+}) {
+  return (
+    <group position={position} rotation={[0, rotationY, sway]}>
+      <mesh position={[0, 4.92, 0]}>
+        <cylinderGeometry args={[0.011, 0.011, 3.05, 6]} />
+        <Steel color="#111" />
+      </mesh>
+      <mesh position={[0, 3.38, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.042, 0.011, 8, 12]} />
+        <Steel color="#2a2a2a" />
+      </mesh>
+      {[-0.07, 0.07].map((x) => (
+        <mesh key={x} position={[x, 2.48, 0]}>
+          <boxGeometry args={[0.038, 0.32, 0.028]} />
+          <meshStandardMaterial color="#241010" roughness={0.82} metalness={0.08} />
+        </mesh>
+      ))}
+      <mesh position={[0, 1.55, 0]}>
+        <capsuleGeometry args={[0.24, 1.22, 6, 12]} />
+        <meshStandardMaterial color={leather} roughness={0.82} metalness={0.06} emissive="#3a0808" emissiveIntensity={0.18} />
+      </mesh>
+      <mesh position={[0, 1.78, 0]}>
+        <cylinderGeometry args={[0.248, 0.248, 0.11, 12]} />
+        <meshStandardMaterial color="#8a1812" roughness={0.68} metalness={0.08} />
+      </mesh>
+      <mesh position={[0, 0.76, 0]}>
+        <cylinderGeometry args={[0.22, 0.19, 0.08, 12]} />
+        <meshStandardMaterial color="#120808" roughness={0.9} metalness={0.06} />
+      </mesh>
+    </group>
+  )
+}
+
 function LampFixture({ position }: { position: [number, number, number] }) {
   return (
     <group position={position}>
@@ -118,6 +161,7 @@ export function Gym({ quality }: GymProps) {
 
       <LampFixture position={[0, 6.35, -14]} />
       <LampFixture position={[-1.2, 6.35, -16.9]} />
+      <LampFixture position={[0, 6.35, -20.55]} />
       <LampFixture position={[-3.2, 6.35, -26]} />
       <LampFixture position={[3.1, 6.35, -38]} />
       <LampFixture position={[0, 6.35, -50]} />
@@ -125,14 +169,22 @@ export function Gym({ quality }: GymProps) {
       <Arrival position={[-1.2, 0, -16.9]} />
 
       <TypeInSpace
-        position={[-1.2, 0.07, -18.15]}
+        position={[-1.2, 0.07, -18.05]}
         rotation={[-Math.PI / 2, 0, 0]}
-        fontSize={0.78}
+        fontSize={0.48}
         quality={quality}
-        letterSpacing={0.1}
+        letterSpacing={0.06}
+        maxWidth={5.6}
       >
-        {COPY.showUp}
+        {COPY.hereWeGo}
       </TypeInSpace>
+
+      <mesh position={[0, 6.55, -20.55]}>
+        <boxGeometry args={[3.2, 0.08, 0.22]} />
+        <Steel color="#141414" />
+      </mesh>
+      <HeavyBag position={[-0.92, 0, -20.55]} rotationY={0.1} sway={0.045} leather="#2c1513" />
+      <HeavyBag position={[0.92, 0, -20.55]} rotationY={-0.12} sway={-0.04} leather="#261210" />
 
       <mesh position={[7.52, 2.35, -21.8]}>
         <boxGeometry args={[0.06, 0.08, 3.4]} />
