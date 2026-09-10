@@ -1,6 +1,5 @@
 import { COPY } from '../brand/copy'
 import type { QualityLevel } from '../lib/quality'
-import { OctagonCage } from './Cage'
 import { TypeInSpace } from './TypeInSpace'
 import { sharedNoise } from './textures'
 
@@ -19,16 +18,44 @@ function Concrete({ color = '#1b1b19' }: { color?: string }) {
   )
 }
 
-function HeavyBag({ position }: { position: [number, number, number] }) {
+function HeavyBag({
+  position,
+  rotationY = 0,
+  sway = 0.03,
+  leather = '#1a0d0d',
+}: {
+  position: [number, number, number]
+  rotationY?: number
+  sway?: number
+  leather?: string
+}) {
   return (
-    <group position={position}>
-      <mesh position={[0, 3.35, 0]}>
-        <cylinderGeometry args={[0.012, 0.012, 1.5, 6]} />
+    <group position={position} rotation={[0, rotationY, sway]}>
+      <mesh position={[0, 4.92, 0]}>
+        <cylinderGeometry args={[0.011, 0.011, 3.05, 6]} />
         <Steel color="#111" />
       </mesh>
-      <mesh position={[0, 1.62, 0]}>
-        <capsuleGeometry args={[0.2, 1.12, 4, 8]} />
-        <meshStandardMaterial color="#1a0d0d" roughness={0.88} metalness={0.08} />
+      <mesh position={[0, 3.38, 0]} rotation={[Math.PI / 2, 0, 0]}>
+        <torusGeometry args={[0.042, 0.011, 8, 12]} />
+        <Steel color="#2a2a2a" />
+      </mesh>
+      {[-0.07, 0.07].map((x) => (
+        <mesh key={x} position={[x, 2.48, 0]}>
+          <boxGeometry args={[0.038, 0.32, 0.028]} />
+          <meshStandardMaterial color="#241010" roughness={0.82} metalness={0.08} />
+        </mesh>
+      ))}
+      <mesh position={[0, 1.55, 0]}>
+        <capsuleGeometry args={[0.22, 1.18, 6, 12]} />
+        <meshStandardMaterial color={leather} roughness={0.88} metalness={0.08} />
+      </mesh>
+      <mesh position={[0, 1.78, 0]}>
+        <cylinderGeometry args={[0.228, 0.228, 0.11, 12]} />
+        <meshStandardMaterial color="#6a1210" roughness={0.72} metalness={0.1} />
+      </mesh>
+      <mesh position={[0, 0.78, 0]}>
+        <cylinderGeometry args={[0.2, 0.175, 0.08, 12]} />
+        <meshStandardMaterial color="#120808" roughness={0.9} metalness={0.06} />
       </mesh>
     </group>
   )
@@ -64,9 +91,17 @@ function LampFixture({ position }: { position: [number, number, number] }) {
   )
 }
 
+const HERO_BAGS: { position: [number, number, number]; rotationY: number; sway: number; leather: string }[] = [
+  { position: [-4.25, 0, -16.45], rotationY: 0.14, sway: 0.05, leather: '#1a0c0c' },
+  { position: [-2.35, 0, -17.15], rotationY: -0.22, sway: -0.04, leather: '#160b0b' },
+  { position: [-4.55, 0, -18.85], rotationY: 0.32, sway: 0.02, leather: '#1c0e0e' },
+  { position: [-2.15, 0, -18.55], rotationY: -0.08, sway: -0.06, leather: '#140a0a' },
+]
+
 export function Gym({ quality }: GymProps) {
   const beams = quality === 'low' ? [-12, -24, -36, -48] : [-10, -18, -26, -34, -42, -50, -58]
-  const bags = quality === 'low' ? 2 : 4
+  const wallBags = quality === 'low' ? 2 : 4
+  const heroBags = quality === 'low' ? HERO_BAGS.slice(0, 3) : HERO_BAGS
 
   return (
     <group>
@@ -106,10 +141,20 @@ export function Gym({ quality }: GymProps) {
       <LampFixture position={[3.1, 6.35, -38]} />
       <LampFixture position={[0, 6.35, -50]} />
 
-      <OctagonCage position={[-3.35, 0, -17.6]} />
+      <mesh position={[-3.35, 6.55, -17.5]}>
+        <boxGeometry args={[3.8, 0.08, 0.22]} />
+        <Steel color="#141414" />
+      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[-3.3, 0.025, -17.5]} receiveShadow>
+        <planeGeometry args={[4.6, 4.8]} />
+        <meshStandardMaterial color="#2a1012" roughness={0.95} metalness={0.02} />
+      </mesh>
+      {heroBags.map((bag) => (
+        <HeavyBag key={bag.position.join(',')} {...bag} />
+      ))}
 
-      {Array.from({ length: bags }, (_, i) => (
-        <HeavyBag key={i} position={[4.55, 0, -22.4 - i * 2.1]} />
+      {Array.from({ length: wallBags }, (_, i) => (
+        <HeavyBag key={`wall-${i}`} position={[4.55, 0, -22.4 - i * 2.1]} rotationY={0.08} sway={0.02} />
       ))}
 
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[3.4, 0.025, -28]} receiveShadow>

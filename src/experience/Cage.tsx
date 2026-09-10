@@ -53,7 +53,13 @@ function CageFence({
   )
 }
 
-export function OctagonCage({ position }: { position: [number, number, number] }) {
+export function OctagonCage({
+  position,
+  scale = 1,
+}: {
+  position: [number, number, number]
+  scale?: number
+}) {
   const sides = Array.from({ length: SIDES }, (_, i) => {
     const a = octagonPoint(i)
     const b = octagonPoint(i + 1)
@@ -80,7 +86,7 @@ export function OctagonCage({ position }: { position: [number, number, number] }
   })
 
   return (
-    <group position={position}>
+    <group position={position} scale={scale}>
       <mesh position={[0, 0.05, 0]} rotation={[0, ANGLE0, 0]}>
         <cylinderGeometry args={[RADIUS - 0.08, RADIUS - 0.08, 0.1, SIDES]} />
         <meshStandardMaterial color="#1a1212" roughness={0.92} metalness={0.04} />

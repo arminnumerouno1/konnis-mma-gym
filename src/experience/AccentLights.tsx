@@ -171,15 +171,17 @@ export function AccentLights({ quality }: { quality: QualityLevel }) {
       <WallSconce position={[7.52, 1.92, -33.6]} rotation={[0, -Math.PI / 2, 0]} channel="gym" />
       <WallSconce position={[-7.52, 1.78, -66.2]} rotation={[0, Math.PI / 2, 0]} channel="side" />
 
-      <GroundFlood position={[-3.85, 0.1, -82.6]} rotation={[0, 0.18, 0]} channel="city" />
-      <GroundFlood position={[3.85, 0.1, -82.6]} rotation={[0, -0.18, 0]} channel="city" />
-      {quality !== 'low' && <GroundFlood position={[0, 0.1, -80.8]} channel="city" />}
+      <HangLamp position={[0, 6.22, -94]} channel="city" />
+      <GroundFlood position={[-2.8, 0.1, -91.4]} rotation={[0, 0.22, 0]} channel="city" />
+      <GroundFlood position={[2.8, 0.1, -91.4]} rotation={[0, -0.22, 0]} channel="city" />
+      {quality !== 'low' && <GroundFlood position={[0, 0.1, -90.6]} channel="city" />}
 
       {quality !== 'low' && (
         <>
           <RedVolume position={[-3.35, 4.35, -17.6]} channel="gym" scale={[1.15, 1.05, 1.15]} />
           <RedVolume position={[4.5, 4.35, -24.8]} channel="gym" scale={[0.72, 0.9, 0.72]} />
           <RedVolume position={[0.15, 4.3, -66.8]} channel="side" scale={[0.82, 0.95, 0.82]} />
+          <RedVolume position={[0, 4.35, -94]} channel="city" scale={[1.35, 1.1, 1.35]} />
         </>
       )}
     </group>

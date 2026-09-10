@@ -1,6 +1,6 @@
 # KONNI MMA GYM — Leipzig
 
-Immersive 3D scroll experience for KONNI MMA GYM — the MMA gym of MMA professional Konrad Dyrschka in Leipzig. The page is a single camera move through the gym: blackout intro, cage, disciplines, the Völkerschlachtdenkmal, trailer end card.
+Immersive 3D scroll experience for KONNI MMA GYM — the MMA gym of MMA professional Konrad Dyrschka in Leipzig. The page is a single camera move through the gym: blackout intro, heavy bags, disciplines, the octagon cage, trailer end card.
 
 Built with React, Three.js, React Three Fiber, Drei, GSAP ScrollTrigger, and Lenis.
 
@@ -65,4 +65,4 @@ Scroll drives camera position, look-target, FOV, lights, and fog. There is no au
 
 ## Brand
 
-The KONNI MMA GYM emblem is a 2D image in the intro and finale — the browser draws the edges, not the 3D camera. The file is still a raster from the designer PDF (1254×1254 Photoshop JPEG, not a vector). Infinitely sharp corners would need an AI, EPS, or SVG. The Leipzig beat is a 3D Völkerschlachtdenkmal — mound, staircase, granite hall, bell dome, and the twelve guardians — not a generic skyline.
+The KONNI MMA GYM emblem is a 2D image in the intro and finale — the browser draws the edges, not the 3D camera. The file is still a raster from the designer PDF (1254×1254 Photoshop JPEG, not a vector). Infinitely sharp corners would need an AI, EPS, or SVG. The first gym beat is a cluster of heavy bags. The Leipzig beat is the octagon cage in a hall — not a city monument.

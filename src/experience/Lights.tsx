@@ -76,7 +76,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
 
   useFrame(() => {
     const s = sampleLights(scrollProgress.current)
-    if (cityDir.current) cityDir.current.intensity = s.city * 5.6
+    if (cityDir.current) cityDir.current.intensity = s.city * 2.2
     if (fill.current) fill.current.intensity = (s.intro * introReveal.value + s.finale * 0.8) * 1.15
     gl.toneMappingExposure = s.exposure
     if (scene.fog instanceof THREE.FogExp2) {
@@ -190,49 +190,40 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       <ChannelPoint channel="intro" reveal scale={2.2} position={[0.55, 0.32, 0.7]} color="#3a0c0c" distance={4.2} decay={2} />
       <ChannelPoint channel="finale" scale={3.6} position={[0, 0.38, -113.5]} color="#4a1010" distance={5.5} decay={2} />
 
-      <directionalLight ref={cityDir} position={[-6, 14, -112]} color="#e2d8c8" />
+      <directionalLight ref={cityDir} position={[-4.2, 7.2, -86]} color="#e8e2d6" />
       <AimedSpot
         channel="city"
-        scale={88}
-        lookAt={[0, 5.6, -92]}
-        position={[2.6, 13.8, -76]}
-        angle={0.48}
-        penumbra={0.7}
-        color="#efe6d4"
-        distance={48}
+        scale={42}
+        lookAt={[0, 1.0, -94]}
+        position={[1.2, 6.4, -86]}
+        angle={0.55}
+        penumbra={0.72}
+        color="#efeae1"
+        distance={24}
       />
       {quality !== 'low' && (
         <AimedSpot
           channel="city"
-          scale={26}
-          lookAt={[0, 6.4, -94]}
-          position={[-8.4, 9.2, -82]}
-          angle={0.55}
-          penumbra={0.82}
-          color="#c8c0b0"
-          distance={36}
+          scale={22}
+          lookAt={[0, 0.85, -94]}
+          position={[-5.4, 5.8, -90]}
+          angle={0.5}
+          penumbra={0.75}
+          color="#ebe6dc"
+          distance={20}
         />
       )}
       <AimedSpot
         channel="city"
-        scale={26}
-        lookAt={[0, 3.4, -94]}
-        position={[-3.85, 0.55, -82.4]}
+        scale={18}
+        lookAt={[0, 0.45, -94]}
+        position={[0, 6.1, -94]}
         angle={0.42}
-        penumbra={0.7}
-        color="#6a1610"
-        distance={28}
+        penumbra={0.55}
+        color="#8a1812"
+        distance={12}
       />
-      <AimedSpot
-        channel="city"
-        scale={26}
-        lookAt={[0, 3.4, -94]}
-        position={[3.85, 0.55, -82.4]}
-        angle={0.42}
-        penumbra={0.7}
-        color="#6a1610"
-        distance={28}
-      />
+      <ChannelPoint channel="city" scale={5.2} position={[0, 1.45, -94]} color="#5c1010" distance={8} decay={2} />
 
       <AimedSpot
         channel="finale"
