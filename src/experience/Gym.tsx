@@ -22,7 +22,7 @@ function HeavyBag({
   position,
   rotationY = 0,
   sway = 0.03,
-  leather = '#1a0d0d',
+  leather = '#2a1412',
 }: {
   position: [number, number, number]
   rotationY?: number
@@ -47,11 +47,11 @@ function HeavyBag({
       ))}
       <mesh position={[0, 1.55, 0]}>
         <capsuleGeometry args={[0.22, 1.18, 6, 12]} />
-        <meshStandardMaterial color={leather} roughness={0.88} metalness={0.08} />
+        <meshStandardMaterial color={leather} roughness={0.82} metalness={0.06} />
       </mesh>
       <mesh position={[0, 1.78, 0]}>
         <cylinderGeometry args={[0.228, 0.228, 0.11, 12]} />
-        <meshStandardMaterial color="#6a1210" roughness={0.72} metalness={0.1} />
+        <meshStandardMaterial color="#8a1812" roughness={0.68} metalness={0.08} />
       </mesh>
       <mesh position={[0, 0.78, 0]}>
         <cylinderGeometry args={[0.2, 0.175, 0.08, 12]} />
@@ -92,10 +92,10 @@ function LampFixture({ position }: { position: [number, number, number] }) {
 }
 
 const HERO_BAGS: { position: [number, number, number]; rotationY: number; sway: number; leather: string }[] = [
-  { position: [-4.25, 0, -16.45], rotationY: 0.14, sway: 0.05, leather: '#1a0c0c' },
-  { position: [-2.35, 0, -17.15], rotationY: -0.22, sway: -0.04, leather: '#160b0b' },
-  { position: [-4.55, 0, -18.85], rotationY: 0.32, sway: 0.02, leather: '#1c0e0e' },
-  { position: [-2.15, 0, -18.55], rotationY: -0.08, sway: -0.06, leather: '#140a0a' },
+  { position: [-4.25, 0, -16.45], rotationY: 0.14, sway: 0.05, leather: '#2c1513' },
+  { position: [-2.35, 0, -17.15], rotationY: -0.22, sway: -0.04, leather: '#261210' },
+  { position: [-4.55, 0, -18.85], rotationY: 0.32, sway: 0.02, leather: '#301816' },
+  { position: [-2.15, 0, -18.55], rotationY: -0.08, sway: -0.06, leather: '#241110' },
 ]
 
 export function Gym({ quality }: GymProps) {
