@@ -179,6 +179,7 @@ export function AccentLights({ quality }: { quality: QualityLevel }) {
       {quality !== 'low' && (
         <>
           <RedVolume position={[-1.2, 4.35, -16.9]} channel="gym" scale={[1.55, 1.05, 1.55]} />
+          <RedVolume position={[0, 4.35, -20.55]} channel="gym" scale={[1.25, 1.05, 1.25]} />
           <RedVolume position={[0.15, 4.3, -66.8]} channel="side" scale={[0.82, 0.95, 0.82]} />
           <RedVolume position={[0, 4.35, -94]} channel="city" scale={[1.35, 1.1, 1.35]} />
         </>

@@ -170,14 +170,45 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       <ChannelPoint channel="gym" scale={2.8} position={[-3.9, 2.35, -25.1]} color="#4a1010" distance={5.2} decay={2} />
       <AimedSpot
         channel="gym"
-        scale={20}
-        lookAt={[0, 1.25, -20.55]}
-        position={[0, 3.6, -17.6]}
-        angle={0.46}
-        penumbra={0.55}
-        color="#efe8dc"
-        distance={12}
+        scale={42}
+        lookAt={[0, 1.35, -20.55]}
+        position={[0, 3.4, -16.8]}
+        angle={0.5}
+        penumbra={0.5}
+        color="#f4efe6"
+        distance={14}
       />
+      <AimedSpot
+        channel="gym"
+        scale={30}
+        lookAt={[-0.92, 1.4, -20.55]}
+        position={[-0.15, 2.55, -17.6]}
+        angle={0.32}
+        penumbra={0.45}
+        color="#f2eee6"
+        distance={10}
+      />
+      <AimedSpot
+        channel="gym"
+        scale={30}
+        lookAt={[0.92, 1.4, -20.55]}
+        position={[0.15, 2.55, -17.6]}
+        angle={0.32}
+        penumbra={0.45}
+        color="#f2eee6"
+        distance={10}
+      />
+      <AimedSpot
+        channel="gym"
+        scale={24}
+        lookAt={[0, 1.2, -20.55]}
+        position={[0, 5.85, -20.55]}
+        angle={0.48}
+        penumbra={0.55}
+        color="#efeae1"
+        distance={11}
+      />
+      <ChannelPoint channel="gym" scale={7.2} position={[0, 1.55, -20.55]} color="#f0e6d8" distance={5.5} decay={2} />
       <AimedSpot
         channel="side"
         lookAt={[0.4, 1.3, -67]}

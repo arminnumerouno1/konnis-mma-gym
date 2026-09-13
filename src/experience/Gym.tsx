@@ -86,15 +86,15 @@ function HeavyBag({
       ))}
       <mesh position={[0, 1.55, 0]}>
         <capsuleGeometry args={[0.24, 1.22, 6, 12]} />
-        <meshStandardMaterial color={leather} roughness={0.82} metalness={0.06} emissive="#3a0808" emissiveIntensity={0.18} />
+        <meshStandardMaterial color={leather} roughness={0.7} metalness={0.05} emissive="#4a1810" emissiveIntensity={0.28} />
       </mesh>
       <mesh position={[0, 1.78, 0]}>
         <cylinderGeometry args={[0.248, 0.248, 0.11, 12]} />
-        <meshStandardMaterial color="#8a1812" roughness={0.68} metalness={0.08} />
+        <meshStandardMaterial color="#c4281c" roughness={0.55} metalness={0.08} emissive="#7a1410" emissiveIntensity={0.22} />
       </mesh>
       <mesh position={[0, 0.76, 0]}>
         <cylinderGeometry args={[0.22, 0.19, 0.08, 12]} />
-        <meshStandardMaterial color="#120808" roughness={0.9} metalness={0.06} />
+        <meshStandardMaterial color="#2a1612" roughness={0.84} metalness={0.06} />
       </mesh>
     </group>
   )
@@ -183,8 +183,8 @@ export function Gym({ quality }: GymProps) {
         <boxGeometry args={[3.2, 0.08, 0.22]} />
         <Steel color="#141414" />
       </mesh>
-      <HeavyBag position={[-0.92, 0, -20.55]} rotationY={0.1} sway={0.045} leather="#2c1513" />
-      <HeavyBag position={[0.92, 0, -20.55]} rotationY={-0.12} sway={-0.04} leather="#261210" />
+      <HeavyBag position={[-0.92, 0, -20.55]} rotationY={0.1} sway={0.045} leather="#6a3a2c" />
+      <HeavyBag position={[0.92, 0, -20.55]} rotationY={-0.12} sway={-0.04} leather="#5a3228" />
 
       <mesh position={[7.52, 2.35, -21.8]}>
         <boxGeometry args={[0.06, 0.08, 3.4]} />
