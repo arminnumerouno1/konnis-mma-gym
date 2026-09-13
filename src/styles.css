@@ -597,7 +597,12 @@ body {
 }
 
 .app.is-compact .film-vignette {
-  background: radial-gradient(ellipse at 50% 42%, transparent 68%, rgba(0, 0, 0, 0.2) 100%);
+  background: radial-gradient(ellipse at 50% 42%, transparent 70%, rgba(0, 0, 0, 0.16) 100%);
+}
+
+.app.is-compact .film-grain {
+  animation: none;
+  opacity: 0.045;
 }
 
 .film-grain {

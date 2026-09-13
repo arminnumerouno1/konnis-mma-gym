@@ -3,17 +3,14 @@ import { BlendFunction } from 'postprocessing'
 import type { QualityLevel } from '../lib/quality'
 
 export function PostFX({ quality }: { quality: QualityLevel }) {
-  // Low: skip the extra render target so the intro mark stays sharp on phones.
-  // Film grain and vignette already live in CSS. Chromatic aberration is off —
-  // it fringed the emblem edges on the dolly-in.
-  if (quality === 'low') return null
-
-  const grain = quality === 'high' ? 0.07 : 0.05
+  // Extra render target + vignette stacked on the CSS film layer and crushed
+  // midtones on phones. Keep the pass for high desktops only.
+  if (quality !== 'high') return null
 
   return (
     <EffectComposer multisampling={0} enableNormalPass={false}>
-      <Vignette offset={0.32} darkness={0.48} eskil={false} />
-      <Noise opacity={grain} premultiply blendFunction={BlendFunction.OVERLAY} />
+      <Vignette offset={0.38} darkness={0.28} eskil={false} />
+      <Noise opacity={0.05} premultiply blendFunction={BlendFunction.OVERLAY} />
     </EffectComposer>
   )
 }

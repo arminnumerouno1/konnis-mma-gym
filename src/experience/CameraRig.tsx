@@ -34,8 +34,11 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
     look.z = THREE.MathUtils.damp(look.z, target.z, lambda, dt)
     camera.lookAt(look)
     if (camera instanceof THREE.PerspectiveCamera) {
-      camera.fov = THREE.MathUtils.damp(camera.fov, fov, 6.5, dt)
-      camera.updateProjectionMatrix()
+      const nextFov = THREE.MathUtils.damp(camera.fov, fov, 6.5, dt)
+      if (Math.abs(nextFov - camera.fov) > 0.02) {
+        camera.fov = nextFov
+        camera.updateProjectionMatrix()
+      }
     }
   })
 

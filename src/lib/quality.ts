@@ -16,10 +16,13 @@ export function detectQuality(): QualityLevel {
   const cores = navigator.hardwareConcurrency ?? 8
 
   if (saveData) return 'low'
-  if ((coarse && small) || (memory !== undefined && memory <= 4) || cores <= 4) {
-    return 'low'
+  if (memory !== undefined && memory <= 2) return 'low'
+  if (cores <= 2) return 'low'
+  if (coarse && small && memory !== undefined && memory <= 4 && cores <= 4) return 'low'
+  if (coarse || small || (memory !== undefined && memory <= 4) || cores <= 4) {
+    return 'medium'
   }
-  if (coarse || small || (memory !== undefined && memory <= 6) || cores <= 6) {
+  if ((memory !== undefined && memory <= 6) || cores <= 6) {
     return 'medium'
   }
   return 'high'

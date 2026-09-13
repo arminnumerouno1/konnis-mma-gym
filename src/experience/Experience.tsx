@@ -38,11 +38,11 @@ export function Experience({
     <Canvas
       className="canvas"
       frameloop={reducedMotion ? 'demand' : 'always'}
-      dpr={[1, 2]}
-      performance={{ min: 1 }}
+      dpr={quality === 'low' ? [1, 1.15] : quality === 'medium' ? [1, 1.5] : [1, 1.75]}
+      performance={{ min: quality === 'low' ? 0.55 : 0.7 }}
       shadows={quality === 'high'}
       gl={{
-        antialias: true,
+        antialias: quality !== 'low',
         powerPreference: 'high-performance',
         stencil: false,
         alpha: false,
@@ -50,8 +50,8 @@ export function Experience({
       camera={{ fov: 30, near: 0.12, far: 180, position: [0.18, 1.08, 10.6] }}
       onCreated={({ gl }) => {
         gl.setClearColor('#050505', 1)
-        gl.toneMapping = THREE.ACESFilmicToneMapping
-        gl.toneMappingExposure = 0.45
+        gl.toneMapping = THREE.NeutralToneMapping
+        gl.toneMappingExposure = 1.08
         gl.outputColorSpace = THREE.SRGBColorSpace
       }}
     >
@@ -61,7 +61,7 @@ export function Experience({
         <World quality={quality} />
         <CameraRig reducedMotion={reducedMotion} />
         <PostFX quality={quality} />
-        <Preload all />
+        {quality === 'high' && <Preload all />}
         <ReadyFlag />
       </Suspense>
     </Canvas>

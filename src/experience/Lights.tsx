@@ -72,12 +72,17 @@ function AimedSpot({ lookAt, channel, scale, reveal, ...props }: AimedSpotProps)
 export function Lights({ quality }: { quality: QualityLevel }) {
   const cityDir = useRef<THREE.DirectionalLight>(null)
   const fill = useRef<THREE.DirectionalLight>(null)
+  const hemi = useRef<THREE.HemisphereLight>(null)
+  const amb = useRef<THREE.AmbientLight>(null)
   const { gl, scene } = useThree()
+  const lean = quality === 'low'
 
   useFrame(() => {
     const s = sampleLights(scrollProgress.current)
     if (cityDir.current) cityDir.current.intensity = s.city * 2.2
     if (fill.current) fill.current.intensity = (s.intro * introReveal.value + s.finale * 0.8) * 1.15
+    if (hemi.current) hemi.current.intensity = 0.32 + s.gym * 0.55 + s.city * 0.12
+    if (amb.current) amb.current.intensity = 0.16 + s.gym * 0.28
     gl.toneMappingExposure = s.exposure
     if (scene.fog instanceof THREE.FogExp2) {
       scene.fog.density = s.fog
@@ -90,8 +95,8 @@ export function Lights({ quality }: { quality: QualityLevel }) {
     <>
       <color attach="background" args={['#050505']} />
       <fogExp2 attach="fog" args={['#070706', 0.05]} />
-      <hemisphereLight args={['#3a3a36', '#080807', 0.28]} />
-      <ambientLight intensity={0.12} color="#1a1a18" />
+      <hemisphereLight ref={hemi} args={['#6a6860', '#0c0c0a', 0.32]} />
+      <ambientLight ref={amb} intensity={0.16} color="#2c2a26" />
       <directionalLight ref={fill} position={[0.35, 2.4, 7.2]} color="#f2eee6" />
 
       <AimedSpot
@@ -164,51 +169,52 @@ export function Lights({ quality }: { quality: QualityLevel }) {
         />
       )}
       <ChannelPoint channel="gym" scale={3.2} position={[-1.2, 0.55, -16.5]} color="#5c1010" distance={6.5} decay={2} />
-      <ChannelPoint channel="gym" scale={3.8} position={[0, 1.45, -19.6]} color="#5c1010" distance={6.5} decay={2} />
-      <ChannelPoint channel="gym" scale={3.2} position={[7.1, 1.7, -21.8]} color="#4a1010" distance={5.5} decay={2} />
-      <ChannelPoint channel="gym" scale={2.4} position={[-6.6, 1.7, -18.4]} color="#3a0c0c" distance={5.5} decay={2} />
-      <ChannelPoint channel="gym" scale={2.8} position={[-3.9, 2.35, -25.1]} color="#4a1010" distance={5.2} decay={2} />
+      {!lean && <ChannelPoint channel="gym" scale={3.2} position={[7.1, 1.7, -21.8]} color="#4a1010" distance={5.5} decay={2} />}
+      {!lean && <ChannelPoint channel="gym" scale={2.4} position={[-6.6, 1.7, -18.4]} color="#3a0c0c" distance={5.5} decay={2} />}
+      {!lean && <ChannelPoint channel="gym" scale={2.8} position={[-3.9, 2.35, -25.1]} color="#4a1010" distance={5.2} decay={2} />}
       <AimedSpot
         channel="gym"
-        scale={42}
+        scale={48}
         lookAt={[0, 1.35, -19.6]}
-        position={[0, 3.4, -16.2]}
-        angle={0.5}
-        penumbra={0.5}
-        color="#f4efe6"
+        position={[0, 3.2, -15.8]}
+        angle={0.52}
+        penumbra={0.48}
+        color="#fff4e6"
         distance={14}
       />
       <AimedSpot
         channel="gym"
-        scale={30}
-        lookAt={[-0.82, 1.4, -19.6]}
-        position={[-0.15, 2.55, -16.9]}
-        angle={0.32}
-        penumbra={0.45}
-        color="#f2eee6"
+        scale={34}
+        lookAt={[-0.86, 1.45, -19.6]}
+        position={[-0.2, 2.4, -16.6]}
+        angle={0.3}
+        penumbra={0.4}
+        color="#fff1dc"
         distance={10}
       />
       <AimedSpot
         channel="gym"
-        scale={30}
-        lookAt={[0.82, 1.4, -19.6]}
-        position={[0.15, 2.55, -16.9]}
-        angle={0.32}
-        penumbra={0.45}
-        color="#f2eee6"
+        scale={34}
+        lookAt={[0.86, 1.45, -19.6]}
+        position={[0.2, 2.4, -16.6]}
+        angle={0.3}
+        penumbra={0.4}
+        color="#fff1dc"
         distance={10}
       />
-      <AimedSpot
-        channel="gym"
-        scale={24}
-        lookAt={[0, 1.2, -19.6]}
-        position={[0, 5.85, -19.6]}
-        angle={0.48}
-        penumbra={0.55}
-        color="#efeae1"
-        distance={11}
-      />
-      <ChannelPoint channel="gym" scale={7.2} position={[0, 1.55, -19.6]} color="#f0e6d8" distance={5.5} decay={2} />
+      {!lean && (
+        <AimedSpot
+          channel="gym"
+          scale={24}
+          lookAt={[0, 1.2, -19.6]}
+          position={[0, 5.85, -19.6]}
+          angle={0.48}
+          penumbra={0.55}
+          color="#efeae1"
+          distance={11}
+        />
+      )}
+      <ChannelPoint channel="gym" scale={9.5} position={[0, 1.55, -19.4]} color="#ffe8c8" distance={6.2} decay={1.7} />
       <AimedSpot
         channel="side"
         lookAt={[0.4, 1.3, -67]}

@@ -4,7 +4,7 @@ import { smoothstep, windowOpacity } from '../lib/math'
 import { scrollProgress } from '../store'
 import { WaitlistForm } from '../waitlist/WaitlistForm'
 
-const MARK_SRC = '/brand/konni-logo.webp'
+const MARK_SRC = '/brand/konni-logo-ui.webp'
 
 function setOpacity(el: HTMLElement | null, value: number) {
   if (!el) return
@@ -32,8 +32,8 @@ function Emblem({ className, alt }: { className: string; alt: string }) {
       src={MARK_SRC}
       alt={alt}
       className={className}
-      width={2202}
-      height={2340}
+      width={880}
+      height={935}
       decoding="async"
       draggable={false}
     />
