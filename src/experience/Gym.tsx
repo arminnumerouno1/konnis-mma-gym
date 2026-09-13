@@ -193,8 +193,8 @@ export function Gym({ quality }: GymProps) {
         <boxGeometry args={[3.2, 0.08, 0.22]} />
         <meshBasicMaterial color="#c8c2b6" toneMapped={false} fog={false} />
       </mesh>
-      <HeavyBag position={[-0.92, 0, -19.6]} rotationY={0.1} sway={0.045} leather="#f3c392" sheen="#ffe8cc" />
-      <HeavyBag position={[0.92, 0, -19.6]} rotationY={-0.12} sway={-0.04} leather="#e8b27a" sheen="#ffd8b0" />
+      <HeavyBag position={[-0.82, 0, -19.6]} rotationY={0.1} sway={0.045} leather="#f3c392" sheen="#ffe8cc" />
+      <HeavyBag position={[0.82, 0, -19.6]} rotationY={-0.12} sway={-0.04} leather="#e8b27a" sheen="#ffd8b0" />
 
       <mesh position={[7.52, 2.35, -21.8]}>
         <boxGeometry args={[0.06, 0.08, 3.4]} />

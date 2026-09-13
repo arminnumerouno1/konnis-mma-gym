@@ -181,7 +181,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       <AimedSpot
         channel="gym"
         scale={30}
-        lookAt={[-0.92, 1.4, -19.6]}
+        lookAt={[-0.82, 1.4, -19.6]}
         position={[-0.15, 2.55, -16.9]}
         angle={0.32}
         penumbra={0.45}
@@ -191,7 +191,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       <AimedSpot
         channel="gym"
         scale={30}
-        lookAt={[0.92, 1.4, -19.6]}
+        lookAt={[0.82, 1.4, -19.6]}
         position={[0.15, 2.55, -16.9]}
         angle={0.32}
         penumbra={0.45}
