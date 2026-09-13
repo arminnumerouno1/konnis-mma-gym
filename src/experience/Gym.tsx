@@ -2,7 +2,7 @@ import { COPY } from '../brand/copy'
 import type { QualityLevel } from '../lib/quality'
 import { Arrival } from './Arrival'
 import { TypeInSpace } from './TypeInSpace'
-import { sharedNoise } from './textures'
+import { sharedLeather, sharedNoise } from './textures'
 
 type GymProps = {
   quality: QualityLevel
@@ -57,16 +57,18 @@ function IBeam({ z }: { z: number }) {
   )
 }
 
-function LeatherSkin({ color }: { color: string }) {
+function LeatherSkin({ color, emit = 0.2 }: { color: string; emit?: number }) {
   const grain = sharedNoise()
+  const hide = sharedLeather()
   return (
     <meshStandardMaterial
       color={color}
-      roughness={0.52}
-      metalness={0.04}
+      map={hide}
+      roughness={0.78}
+      metalness={0.03}
       roughnessMap={grain}
-      emissive={color}
-      emissiveIntensity={0.42}
+      emissive="#5a2810"
+      emissiveIntensity={emit}
       fog={false}
     />
   )
@@ -87,9 +89,9 @@ function HeavyBag({
 }) {
   return (
     <group position={position} rotation={[0, rotationY, sway]} scale={1.2}>
-      <pointLight position={[0.18, 1.62, 0.72]} color="#fff6e8" intensity={18} distance={3.8} decay={1.35} />
+      <pointLight position={[0.16, 1.58, 0.62]} color="#ffd8b0" intensity={6.5} distance={3.0} decay={1.65} />
       {quality !== 'low' && (
-        <pointLight position={[-0.22, 1.15, 0.38]} color="#ffe4c4" intensity={7} distance={2.6} decay={1.6} />
+        <pointLight position={[-0.2, 1.1, 0.34]} color="#ffd2a8" intensity={4} distance={2.4} decay={1.7} />
       )}
       <mesh position={[0, 4.92, 0]}>
         <cylinderGeometry args={[0.015, 0.015, 3.05, 6]} />
@@ -102,7 +104,7 @@ function HeavyBag({
       {[-0.065, 0.065].map((x) => (
         <mesh key={x} position={[x, 2.48, 0]}>
           <boxGeometry args={[0.038, 0.32, 0.028]} />
-          <LeatherSkin color="#e8c4a4" />
+          <LeatherSkin color="#a86c38" emit={0.18} />
         </mesh>
       ))}
       <mesh position={[0, 1.55, 0]}>
@@ -112,23 +114,16 @@ function HeavyBag({
       {[1.18, 1.48, 2.08].map((y) => (
         <mesh key={y} position={[0, y, 0]}>
           <cylinderGeometry args={[0.262, 0.262, 0.045, 20]} />
-          <LeatherSkin color="#d4a878" />
+          <LeatherSkin color="#8a5428" emit={0.16} />
         </mesh>
       ))}
       <mesh position={[0, 1.78, 0]}>
         <cylinderGeometry args={[0.268, 0.268, 0.12, 20]} />
-        <meshStandardMaterial
-          color="#ff3a26"
-          roughness={0.42}
-          metalness={0.06}
-          emissive="#ff2a18"
-          emissiveIntensity={0.7}
-          fog={false}
-        />
+        <meshBasicMaterial color="#e01210" toneMapped={false} fog={false} />
       </mesh>
       <mesh position={[0, 0.74, 0]}>
         <cylinderGeometry args={[0.23, 0.195, 0.09, 16]} />
-        <LeatherSkin color="#c88858" />
+        <LeatherSkin color="#8a5030" emit={0.12} />
       </mesh>
     </group>
   )
@@ -164,7 +159,7 @@ export function Gym({ quality }: GymProps) {
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, -34]} receiveShadow>
         <planeGeometry args={[22, 68]} />
-        <Concrete color="#141412" />
+        <Concrete color="#1c1c18" />
       </mesh>
 
       <mesh position={[-7.9, 3.4, -34]}>
@@ -217,8 +212,8 @@ export function Gym({ quality }: GymProps) {
         <boxGeometry args={[3.2, 0.08, 0.22]} />
         <meshStandardMaterial color="#8a8680" metalness={0.45} roughness={0.4} fog={false} />
       </mesh>
-      <HeavyBag position={[-0.86, 0, -19.6]} rotationY={0.08} sway={0.04} leather="#f3c8a4" quality={quality} />
-      <HeavyBag position={[0.86, 0, -19.6]} rotationY={-0.1} sway={-0.035} leather="#e8b888" quality={quality} />
+      <HeavyBag position={[-0.86, 0, -19.6]} rotationY={0.08} sway={0.04} leather="#b07840" quality={quality} />
+      <HeavyBag position={[0.86, 0, -19.6]} rotationY={-0.1} sway={-0.035} leather="#9e6836" quality={quality} />
 
       <mesh position={[7.52, 2.35, -21.8]}>
         <boxGeometry args={[0.06, 0.08, 3.4]} />
@@ -244,7 +239,7 @@ export function Gym({ quality }: GymProps) {
 
       <mesh position={[0, 2.05, -25.6]}>
         <boxGeometry args={[8.4, 3.6, 0.22]} />
-        <Concrete color="#1c1c18" />
+        <meshStandardMaterial color="#5a564e" roughness={0.86} metalness={0.06} />
       </mesh>
 
       <TypeInSpace position={[0, 2.15, -25.42]} fontSize={1.05} quality={quality} letterSpacing={0.06}>

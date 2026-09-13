@@ -92,10 +92,45 @@ export function makeSoftParticle(size = 64): THREE.CanvasTexture {
   return tex
 }
 
+export function makeLeatherTexture(size = 256): THREE.CanvasTexture {
+  const canvas = document.createElement('canvas')
+  canvas.width = size
+  canvas.height = size
+  const ctx = canvas.getContext('2d')
+  if (!ctx) return new THREE.CanvasTexture(canvas)
+  const img = ctx.createImageData(size, size)
+  for (let y = 0; y < size; y += 1) {
+    for (let x = 0; x < size; x += 1) {
+      const n =
+        noise(x * 0.11, y * 0.18) * 0.5 +
+        noise(x * 0.35, y * 0.08) * 0.32 +
+        noise(x * 0.9, y * 0.9) * 0.18
+      const wear = noise(x * 0.04, y * 0.22)
+      const r = 168 + (n - 0.5) * 70 + wear * 12
+      const g = 104 + (n - 0.5) * 46 - wear * 8
+      const b = 58 + (n - 0.5) * 28 - wear * 10
+      const i = (y * size + x) * 4
+      img.data[i] = r
+      img.data[i + 1] = g
+      img.data[i + 2] = b
+      img.data[i + 3] = 255
+    }
+  }
+  ctx.putImageData(img, 0, 0)
+  const tex = new THREE.CanvasTexture(canvas)
+  tex.wrapS = THREE.RepeatWrapping
+  tex.wrapT = THREE.RepeatWrapping
+  tex.colorSpace = THREE.SRGBColorSpace
+  tex.repeat.set(1.4, 2.2)
+  tex.needsUpdate = true
+  return tex
+}
+
 const cache: {
   noise?: THREE.CanvasTexture
   chain?: THREE.CanvasTexture
   particle?: THREE.CanvasTexture
+  leather?: THREE.CanvasTexture
 } = {}
 
 export function sharedNoise(): THREE.CanvasTexture {
@@ -111,6 +146,11 @@ export function sharedChain(): THREE.CanvasTexture {
 export function sharedParticle(): THREE.CanvasTexture {
   cache.particle ??= makeSoftParticle()
   return cache.particle
+}
+
+export function sharedLeather(): THREE.CanvasTexture {
+  cache.leather ??= makeLeatherTexture()
+  return cache.leather
 }
 
 export function chainWithRepeat(x: number, y: number): THREE.CanvasTexture {

@@ -81,8 +81,8 @@ export function Lights({ quality }: { quality: QualityLevel }) {
     const s = sampleLights(scrollProgress.current)
     if (cityDir.current) cityDir.current.intensity = s.city * 2.2
     if (fill.current) fill.current.intensity = (s.intro * introReveal.value + s.finale * 0.8) * 1.15
-    if (hemi.current) hemi.current.intensity = 0.32 + s.gym * 0.55 + s.city * 0.12
-    if (amb.current) amb.current.intensity = 0.16 + s.gym * 0.28
+    if (hemi.current) hemi.current.intensity = 0.3 + s.gym * 0.22 + s.city * 0.1
+    if (amb.current) amb.current.intensity = 0.15 + s.gym * 0.12
     gl.toneMappingExposure = s.exposure
     if (scene.fog instanceof THREE.FogExp2) {
       scene.fog.density = s.fog
@@ -174,7 +174,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       {!lean && <ChannelPoint channel="gym" scale={2.8} position={[-3.9, 2.35, -25.1]} color="#4a1010" distance={5.2} decay={2} />}
       <AimedSpot
         channel="gym"
-        scale={48}
+        scale={32}
         lookAt={[0, 1.35, -19.6]}
         position={[0, 3.2, -15.8]}
         angle={0.52}
@@ -184,7 +184,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       />
       <AimedSpot
         channel="gym"
-        scale={34}
+        scale={22}
         lookAt={[-0.86, 1.45, -19.6]}
         position={[-0.2, 2.4, -16.6]}
         angle={0.3}
@@ -194,7 +194,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       />
       <AimedSpot
         channel="gym"
-        scale={34}
+        scale={22}
         lookAt={[0.86, 1.45, -19.6]}
         position={[0.2, 2.4, -16.6]}
         angle={0.3}
@@ -215,6 +215,16 @@ export function Lights({ quality }: { quality: QualityLevel }) {
         />
       )}
       <ChannelPoint channel="gym" scale={9.5} position={[0, 1.55, -19.4]} color="#ffe8c8" distance={6.2} decay={1.7} />
+      <AimedSpot
+        channel="gym"
+        scale={36}
+        lookAt={[0, 1.6, -25.4]}
+        position={[0.4, 3.6, -20.2]}
+        angle={0.55}
+        penumbra={0.6}
+        color="#f2eadc"
+        distance={14}
+      />
       <AimedSpot
         channel="side"
         lookAt={[0.4, 1.3, -67]}
@@ -241,7 +251,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       <directionalLight ref={cityDir} position={[-4.2, 7.2, -86]} color="#e8e2d6" />
       <AimedSpot
         channel="city"
-        scale={42}
+        scale={56}
         lookAt={[0, 1.0, -94]}
         position={[1.2, 6.4, -86]}
         angle={0.55}
@@ -263,7 +273,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       )}
       <AimedSpot
         channel="city"
-        scale={18}
+        scale={26}
         lookAt={[0, 0.45, -94]}
         position={[0, 6.1, -94]}
         angle={0.42}

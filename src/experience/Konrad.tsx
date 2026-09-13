@@ -135,7 +135,7 @@ type KonradProps = {
 
 export function Konrad({ position = DESKTOP_POS }: KonradProps) {
   const compact = useExperience((s) => s.compact)
-  const map = useTexture('/brand/konrad.png')
+  const map = useTexture('/brand/konrad.webp')
   const particle = useMemo(() => sharedParticle(), [])
   const group = useRef<THREE.Group>(null)
   const matRef = useRef<THREE.ShaderMaterial>(null)
