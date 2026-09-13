@@ -57,19 +57,19 @@ function IBeam({ z }: { z: number }) {
   )
 }
 
-function LeatherSkin({ color, emit = 0.16 }: { color: string; emit?: number }) {
+function LeatherSkin({ color, emit = 0.08 }: { color: string; emit?: number }) {
   const grain = sharedNoise()
   const hide = sharedLeather()
   return (
     <meshStandardMaterial
       color={color}
       map={hide}
-      roughness={0.74}
+      roughness={0.78}
       metalness={0.02}
       roughnessMap={grain}
       bumpMap={grain}
-      bumpScale={0.045}
-      emissive="#c49a68"
+      bumpScale={0.08}
+      emissive="#b88958"
       emissiveIntensity={emit}
       fog={false}
     />
@@ -80,7 +80,7 @@ function HeavyBag({
   position,
   rotationY = 0,
   sway = 0.03,
-  leather = '#f4d8b4',
+  leather = '#f0d2ae',
   quality,
 }: {
   position: [number, number, number]
@@ -91,9 +91,9 @@ function HeavyBag({
 }) {
   return (
     <group position={position} rotation={[0, rotationY, sway]} scale={1.2}>
-      <pointLight position={[0.18, 1.55, 0.68]} color="#fff4e4" intensity={8.2} distance={3.2} decay={1.55} />
+      <pointLight position={[0.2, 1.52, 0.7]} color="#ffe8c8" intensity={2.1} distance={2.8} decay={1.7} />
       {quality !== 'low' && (
-        <pointLight position={[-0.2, 1.12, 0.36]} color="#ffe8cc" intensity={4.4} distance={2.5} decay={1.65} />
+        <pointLight position={[-0.18, 1.1, 0.34]} color="#f6d4a8" intensity={1.4} distance={2.2} decay={1.75} />
       )}
       <mesh position={[0, 4.92, 0]}>
         <cylinderGeometry args={[0.015, 0.015, 3.05, 6]} />
@@ -106,26 +106,30 @@ function HeavyBag({
       {[-0.065, 0.065].map((x) => (
         <mesh key={x} position={[x, 2.48, 0]}>
           <boxGeometry args={[0.038, 0.32, 0.028]} />
-          <LeatherSkin color="#d4b08a" emit={0.14} />
+          <LeatherSkin color="#8f6840" emit={0.05} />
         </mesh>
       ))}
       <mesh position={[0, 1.55, 0]}>
         <capsuleGeometry args={[0.255, 1.24, 8, 20]} />
         <LeatherSkin color={leather} />
       </mesh>
+      <mesh position={[0.252, 1.55, 0.02]}>
+        <boxGeometry args={[0.014, 1.68, 0.018]} />
+        <LeatherSkin color="#7a5630" emit={0.04} />
+      </mesh>
       {[1.18, 1.48, 2.08].map((y) => (
         <mesh key={y} position={[0, y, 0]}>
           <cylinderGeometry args={[0.264, 0.264, 0.042, 20]} />
-          <LeatherSkin color="#e0c09a" emit={0.14} />
+          <LeatherSkin color="#8a6238" emit={0.05} />
         </mesh>
       ))}
       <mesh position={[0, 1.78, 0]}>
-        <cylinderGeometry args={[0.274, 0.274, 0.145, 20]} />
+        <cylinderGeometry args={[0.282, 0.282, 0.2, 22]} />
         <meshBasicMaterial color="#e20810" toneMapped={false} fog={false} />
       </mesh>
       <mesh position={[0, 0.74, 0]}>
         <cylinderGeometry args={[0.23, 0.195, 0.09, 16]} />
-        <LeatherSkin color="#d2a878" emit={0.12} />
+        <LeatherSkin color="#8a5e34" emit={0.04} />
       </mesh>
     </group>
   )
@@ -214,8 +218,8 @@ export function Gym({ quality }: GymProps) {
         <boxGeometry args={[3.2, 0.08, 0.22]} />
         <meshStandardMaterial color="#8a8680" metalness={0.45} roughness={0.4} fog={false} />
       </mesh>
-      <HeavyBag position={[-0.86, 0, -19.6]} rotationY={0.08} sway={0.04} leather="#f4d8b4" quality={quality} />
-      <HeavyBag position={[0.86, 0, -19.6]} rotationY={-0.1} sway={-0.035} leather="#ebc8a4" quality={quality} />
+      <HeavyBag position={[-0.86, 0, -19.6]} rotationY={0.08} sway={0.04} leather="#f3d3a8" quality={quality} />
+      <HeavyBag position={[0.86, 0, -19.6]} rotationY={-0.1} sway={-0.035} leather="#e6c294" quality={quality} />
 
       <mesh position={[7.52, 2.35, -21.8]}>
         <boxGeometry args={[0.06, 0.08, 3.4]} />

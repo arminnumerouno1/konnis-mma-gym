@@ -174,7 +174,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       {!lean && <ChannelPoint channel="gym" scale={2.8} position={[-3.9, 2.35, -25.1]} color="#4a1010" distance={5.2} decay={2} />}
       <AimedSpot
         channel="gym"
-        scale={32}
+        scale={16}
         lookAt={[0, 1.35, -19.6]}
         position={[0, 3.2, -15.8]}
         angle={0.52}
@@ -184,7 +184,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       />
       <AimedSpot
         channel="gym"
-        scale={22}
+        scale={10}
         lookAt={[-0.86, 1.45, -19.6]}
         position={[-0.2, 2.4, -16.6]}
         angle={0.3}
@@ -194,7 +194,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       />
       <AimedSpot
         channel="gym"
-        scale={22}
+        scale={10}
         lookAt={[0.86, 1.45, -19.6]}
         position={[0.2, 2.4, -16.6]}
         angle={0.3}
@@ -205,7 +205,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
       {!lean && (
         <AimedSpot
           channel="gym"
-          scale={24}
+          scale={12}
           lookAt={[0, 1.2, -19.6]}
           position={[0, 5.85, -19.6]}
           angle={0.48}
@@ -214,7 +214,7 @@ export function Lights({ quality }: { quality: QualityLevel }) {
           distance={11}
         />
       )}
-      <ChannelPoint channel="gym" scale={9.5} position={[0, 1.55, -19.4]} color="#ffe8c8" distance={6.2} decay={1.7} />
+      <ChannelPoint channel="gym" scale={3.6} position={[0, 1.55, -19.4]} color="#f0d2a4" distance={5.4} decay={1.8} />
       <AimedSpot
         channel="gym"
         scale={36}
