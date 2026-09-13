@@ -209,7 +209,7 @@ body {
 }
 
 .intro-mark-img {
-  width: min(74cqw, 68cqh, 640px);
+  width: min(48cqw, 42cqh, 400px);
   height: auto;
   display: block;
   transform: scale(var(--mark-scale, 1));
@@ -224,7 +224,7 @@ body {
 }
 
 .overlay.is-compact .intro-mark-img {
-  width: min(86cqw, 64cqh, 420px);
+  width: min(58cqw, 38cqh, 240px);
 }
 
 .scroll-hint {
@@ -378,7 +378,7 @@ body {
 }
 
 .finale-copy.has-waitlist .finale-logo {
-  width: min(26%, 124px);
+  width: min(22%, 104px);
   margin-bottom: 8px;
 }
 
@@ -640,14 +640,14 @@ body {
 
 .loader-logo,
 .story-logo {
-  width: min(74cqw, 68cqh, 640px);
+  width: min(48cqw, 42cqh, 400px);
   height: auto;
   display: block;
   image-rendering: auto;
 }
 
 .story-logo {
-  width: min(68cqw, 280px);
+  width: min(52cqw, 220px);
   margin-bottom: 28px;
 }
 
@@ -785,7 +785,11 @@ body {
 }
 
 .app.is-compact .finale-logo {
-  width: min(32%, 112px);
+  width: min(26%, 88px);
+}
+
+.app.is-compact .loader-logo {
+  width: min(58cqw, 38cqh, 240px);
 }
 
 .app.is-compact .waitlist-lead,

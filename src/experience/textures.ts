@@ -101,14 +101,17 @@ export function makeLeatherTexture(size = 256): THREE.CanvasTexture {
   const img = ctx.createImageData(size, size)
   for (let y = 0; y < size; y += 1) {
     for (let x = 0; x < size; x += 1) {
-      const n =
-        noise(x * 0.11, y * 0.18) * 0.5 +
-        noise(x * 0.35, y * 0.08) * 0.32 +
-        noise(x * 0.9, y * 0.9) * 0.18
-      const wear = noise(x * 0.04, y * 0.22)
-      const r = 168 + (n - 0.5) * 70 + wear * 12
-      const g = 104 + (n - 0.5) * 46 - wear * 8
-      const b = 58 + (n - 0.5) * 28 - wear * 10
+      const hide =
+        noise(x * 0.09, y * 0.16) * 0.46 +
+        noise(x * 0.28, y * 0.07) * 0.28 +
+        noise(x * 0.85, y * 0.85) * 0.26
+      const pore = noise(x * 1.7, y * 1.7)
+      const crease = noise(x * 0.05, y * 0.26)
+      const wear = noise(x * 0.035, y * 0.2)
+      const shade = (hide - 0.5) * 34 + (pore - 0.5) * 40 + (crease - 0.5) * 18
+      const r = 236 + shade + wear * 6
+      const g = 214 + shade * 0.82 - wear * 4
+      const b = 186 + shade * 0.62 - wear * 8
       const i = (y * size + x) * 4
       img.data[i] = r
       img.data[i + 1] = g
@@ -121,7 +124,7 @@ export function makeLeatherTexture(size = 256): THREE.CanvasTexture {
   tex.wrapS = THREE.RepeatWrapping
   tex.wrapT = THREE.RepeatWrapping
   tex.colorSpace = THREE.SRGBColorSpace
-  tex.repeat.set(1.4, 2.2)
+  tex.repeat.set(1.8, 2.8)
   tex.needsUpdate = true
   return tex
 }
