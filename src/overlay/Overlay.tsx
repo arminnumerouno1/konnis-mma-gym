@@ -71,8 +71,8 @@ export function Overlay({ reducedMotion, compact }: OverlayProps) {
       }
       setOpacity(scrollHint.current, windowOpacity(p, -1, 0, 0.05, 0.1))
       setOpacity(hereWeGo.current, windowOpacity(p, 0.165, 0.192, 0.228, 0.252))
-      setOpacity(noEgos.current, windowOpacity(p, 0.338, 0.352, 0.365, 0.382))
-      setOpacity(justWork.current, windowOpacity(p, 0.348, 0.362, 0.388, 0.405))
+      setOpacity(noEgos.current, windowOpacity(p, 0.332, 0.348, 0.368, 0.388))
+      setOpacity(justWork.current, windowOpacity(p, 0.366, 0.38, 0.398, 0.42))
       setOpacity(mma.current, windowOpacity(p, 0.498, 0.528, 0.555, 0.585))
       setOpacity(grappling.current, windowOpacity(p, 0.54, 0.57, 0.61, 0.64))
       setOpacity(striking.current, windowOpacity(p, 0.62, 0.65, 0.69, 0.73))

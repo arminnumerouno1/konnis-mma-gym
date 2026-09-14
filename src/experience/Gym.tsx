@@ -243,12 +243,21 @@ export function Gym({ quality }: GymProps) {
         <Steel color="#262626" />
       </mesh>
 
-      <mesh position={[0, 2.05, -25.6]}>
-        <boxGeometry args={[8.4, 3.6, 0.22]} />
+      {/* Partition with a doorway so the camera walks through instead of clipping. */}
+      <mesh position={[-2.95, 2.05, -25.6]}>
+        <boxGeometry args={[2.5, 3.6, 0.22]} />
+        <meshStandardMaterial color="#5a564e" roughness={0.86} metalness={0.06} />
+      </mesh>
+      <mesh position={[2.95, 2.05, -25.6]}>
+        <boxGeometry args={[2.5, 3.6, 0.22]} />
+        <meshStandardMaterial color="#5a564e" roughness={0.86} metalness={0.06} />
+      </mesh>
+      <mesh position={[0, 3.3, -25.6]}>
+        <boxGeometry args={[3.4, 1.1, 0.22]} />
         <meshStandardMaterial color="#5a564e" roughness={0.86} metalness={0.06} />
       </mesh>
 
-      <TypeInSpace position={[0, 2.15, -25.42]} fontSize={1.05} quality={quality} letterSpacing={0.06}>
+      <TypeInSpace position={[0, 3.26, -25.42]} fontSize={0.95} quality={quality} letterSpacing={0.06}>
         {COPY.noEgos}
       </TypeInSpace>
 
