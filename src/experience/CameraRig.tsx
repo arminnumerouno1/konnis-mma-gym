@@ -12,7 +12,8 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
   const look = useMemo(() => new THREE.Vector3(), [])
 
   useLayoutEffect(() => {
-    const fov = sampleCameraInto(reducedMotion ? 0.1 : 0, pos, target, compact)
+    const t = reducedMotion ? 0.1 : scrollProgress.current
+    const fov = sampleCameraInto(t, pos, target, compact)
     camera.position.copy(pos)
     look.copy(target)
     camera.lookAt(look)

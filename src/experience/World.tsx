@@ -31,7 +31,7 @@ function useAfterProgress(threshold: number) {
 
 export function World({ quality }: { quality: QualityLevel }) {
   const dust = quality === 'high' ? 90 : quality === 'medium' ? 36 : 12
-  const fighter = useAfterProgress(0.26)
+  const fighter = useAfterProgress(0.12)
   const city = useAfterProgress(0.58)
 
   return (
