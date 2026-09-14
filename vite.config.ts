@@ -11,7 +11,7 @@ function seoPlugin(envUrl = ''): Plugin {
   return {
     name: 'konnis-seo',
     transformIndexHtml(html) {
-      return html.replace('<!--seo-head-->', buildSeoHead(siteUrl(envUrl)))
+      return html.replace('<!-- Angaben für Suchmaschinen -->', buildSeoHead(siteUrl(envUrl)))
     },
     generateBundle() {
       const origin = siteUrl(envUrl)

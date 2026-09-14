@@ -243,7 +243,6 @@ export function Gym({ quality }: GymProps) {
         <Steel color="#262626" />
       </mesh>
 
-      {/* Partition with a doorway so the camera walks through instead of clipping. */}
       <mesh position={[-2.95, 2.05, -25.6]}>
         <boxGeometry args={[2.5, 3.6, 0.22]} />
         <meshStandardMaterial color="#5a564e" roughness={0.86} metalness={0.06} />
