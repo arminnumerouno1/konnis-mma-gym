@@ -92,45 +92,10 @@ export function makeSoftParticle(size = 64): THREE.CanvasTexture {
   return tex
 }
 
-export function makeLeatherTexture(size = 256): THREE.CanvasTexture {
-  const canvas = document.createElement('canvas')
-  canvas.width = size
-  canvas.height = size
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return new THREE.CanvasTexture(canvas)
-  const img = ctx.createImageData(size, size)
-  for (let y = 0; y < size; y += 1) {
-    for (let x = 0; x < size; x += 1) {
-      const blotch = noise(x * 0.07, y * 0.09)
-      const pebble = noise(x * 0.2, y * 0.2)
-      const hide = noise(x * 0.48, y * 0.48)
-      const pit = Math.max(0, 0.55 - pebble) * 95 + Math.max(0, 0.5 - blotch) * 48
-      const crease = (noise(x * 0.045, y * 0.2) - 0.5) * 28
-      const r = 186 + (hide - 0.5) * 22 - pit + crease
-      const g = 146 + (hide - 0.5) * 16 - pit * 0.9 + crease * 0.65
-      const b = 108 + (hide - 0.5) * 12 - pit * 0.72 + crease * 0.4
-      const i = (y * size + x) * 4
-      img.data[i] = r
-      img.data[i + 1] = g
-      img.data[i + 2] = b
-      img.data[i + 3] = 255
-    }
-  }
-  ctx.putImageData(img, 0, 0)
-  const tex = new THREE.CanvasTexture(canvas)
-  tex.wrapS = THREE.RepeatWrapping
-  tex.wrapT = THREE.RepeatWrapping
-  tex.colorSpace = THREE.SRGBColorSpace
-  tex.repeat.set(0.95, 1.35)
-  tex.needsUpdate = true
-  return tex
-}
-
 const cache: {
   noise?: THREE.CanvasTexture
   chain?: THREE.CanvasTexture
   particle?: THREE.CanvasTexture
-  leather?: THREE.CanvasTexture
 } = {}
 
 export function sharedNoise(): THREE.CanvasTexture {
@@ -146,11 +111,6 @@ export function sharedChain(): THREE.CanvasTexture {
 export function sharedParticle(): THREE.CanvasTexture {
   cache.particle ??= makeSoftParticle()
   return cache.particle
-}
-
-export function sharedLeather(): THREE.CanvasTexture {
-  cache.leather ??= makeLeatherTexture()
-  return cache.leather
 }
 
 export function chainWithRepeat(x: number, y: number): THREE.CanvasTexture {
