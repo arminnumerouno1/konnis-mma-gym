@@ -28,13 +28,16 @@ function CageFence({
   height,
   position,
   rotation,
+  repeat = [5, 4],
 }: {
   width: number
   height: number
   position: [number, number, number]
   rotation: [number, number, number]
+  repeat?: [number, number]
 }) {
-  const alpha = useMemo(() => chainWithRepeat(5, 4), [])
+  const [repeatX, repeatY] = repeat
+  const alpha = useMemo(() => chainWithRepeat(repeatX, repeatY), [repeatX, repeatY])
   return (
     <mesh position={position} rotation={rotation}>
       <planeGeometry args={[width, height]} />
@@ -51,6 +54,79 @@ function CageFence({
         fog={false}
       />
     </mesh>
+  )
+}
+
+const AISLE_POST_H = 1.92
+const AISLE_FENCE_H = 1.62
+const AISLE_KICK = 0.26
+
+/** Chain-link run the camera walks through after the mats, toward NO EGOS. */
+export function CageAisle({
+  x = 1.28,
+  z0 = -19.42,
+  z1 = -25.28,
+}: {
+  x?: number
+  z0?: number
+  z1?: number
+}) {
+  const zMin = Math.min(z0, z1)
+  const zMax = Math.max(z0, z1)
+  const length = zMax - zMin
+  const zMid = (zMin + zMax) / 2
+  const zs = [0, 0.25, 0.5, 0.75, 1].map((u) => zMin + length * u)
+  const fenceRepeat: [number, number] = [Math.max(8, Math.round(length * 1.85)), 4]
+
+  return (
+    <group>
+      {([-x, x] as const).map((side) => (
+        <group key={side}>
+          {zs.map((z, i) => (
+            <group key={z}>
+              <mesh position={[side, AISLE_POST_H / 2, z]}>
+                <cylinderGeometry args={[0.065, 0.065, AISLE_POST_H, 8]} />
+                <Steel color="#8a8680" />
+              </mesh>
+              <mesh position={[side, AISLE_POST_H + 0.05, z]}>
+                <cylinderGeometry args={[0.08, 0.08, 0.1, 8]} />
+                {i >= zs.length - 2 ? (
+                  <meshStandardMaterial
+                    color="#2a0c0c"
+                    emissive="#ff2414"
+                    emissiveIntensity={1.05}
+                    roughness={0.55}
+                    metalness={0.12}
+                    fog={false}
+                  />
+                ) : (
+                  <Pad color="#4a4844" />
+                )}
+              </mesh>
+            </group>
+          ))}
+          <mesh position={[side, AISLE_KICK / 2, zMid]}>
+            <boxGeometry args={[0.07, AISLE_KICK, length]} />
+            <Pad color="#3a3632" />
+          </mesh>
+          <CageFence
+            width={length - 0.12}
+            height={AISLE_FENCE_H}
+            position={[side, AISLE_KICK + AISLE_FENCE_H / 2, zMid]}
+            rotation={[0, Math.PI / 2, 0]}
+            repeat={fenceRepeat}
+          />
+          <mesh position={[side, 1.02, zMid]}>
+            <boxGeometry args={[0.055, 0.045, length]} />
+            <Steel />
+          </mesh>
+          <mesh position={[side, AISLE_POST_H - 0.02, zMid]}>
+            <boxGeometry args={[0.09, 0.09, length]} />
+            <Pad color="#3a3834" />
+          </mesh>
+        </group>
+      ))}
+    </group>
   )
 }
 

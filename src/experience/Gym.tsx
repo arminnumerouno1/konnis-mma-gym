@@ -1,6 +1,7 @@
 import { COPY } from '../brand/copy'
 import type { QualityLevel } from '../lib/quality'
 import { Arrival } from './Arrival'
+import { CageAisle } from './Cage'
 import { TypeInSpace } from './TypeInSpace'
 import { sharedNoise } from './textures'
 
@@ -135,6 +136,8 @@ export function Gym({ quality }: GymProps) {
       >
         {COPY.hereWeGo}
       </TypeInSpace>
+
+      <CageAisle />
 
       <mesh position={[7.52, 2.35, -21.8]}>
         <boxGeometry args={[0.06, 0.08, 3.4]} />
