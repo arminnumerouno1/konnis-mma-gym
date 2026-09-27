@@ -110,6 +110,10 @@ function Impressum() {
                 <a href={GYM.whatsapp} target="_blank" rel="noreferrer">
                   {row.value}
                 </a>
+              ) : row.label === 'Umsetzung' ? (
+                <a href={GYM.siteBy.url} target="_blank" rel="noreferrer">
+                  {row.value}
+                </a>
               ) : (
                 row.value
               )}

@@ -23,6 +23,7 @@ export const IMPRESSUM = {
       label: 'Inhaltlich verantwortlich',
       value: `${GYM.partners[0]}, ${GYM_ADDRESS} (gemäß § 18 Abs. 2 MStV)`,
     },
+    { label: 'Umsetzung', value: GYM.siteBy.name },
   ],
   notes: [
     'Dieses Impressum gilt für die Website von KONNI MMA GYM einschließlich der Unterseiten, des Online-Mitgliedschaftsformulars und der verlinkten Gym-Kanäle, soweit wir sie selbst betreiben.',

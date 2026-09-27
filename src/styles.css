@@ -1560,6 +1560,15 @@ p,
   font-size: 14px;
 }
 
+.imprint a {
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.imprint a:hover {
+  color: var(--red-2);
+}
+
 .cookie {
   position: fixed;
   inset: auto 0 0;

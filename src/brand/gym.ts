@@ -36,6 +36,10 @@ export const GYM = {
     { days: 'Sonntag', time: 'geschlossen' },
   ],
   hoursNote: 'Geplante Zeiten zum Start. Kann sich noch verschieben.',
+  siteBy: {
+    name: 'Armin Scholtz',
+    url: 'https://energie-berater-plus.de',
+  },
 } as const
 
 export const GYM_ADDRESS = `${GYM.street}, ${GYM.zip} ${GYM.city}`

@@ -94,6 +94,7 @@ export const COPY = {
   locMail: 'Kündigung und Verträge',
   footerTag: 'KONNI MMA GYM · Leipzig',
   footerFollow: 'Folgt uns auf Instagram',
+  footerMade: 'Website',
   footerCookies: 'Cookies',
   cookieTitle: 'Cookies',
   cookieText:
