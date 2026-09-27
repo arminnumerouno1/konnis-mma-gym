@@ -238,17 +238,17 @@ export function Home() {
       <section className="impact" id="training">
         <p className="impact-kicker">{COPY.trainTitle}</p>
         <article className="impact-row">
-          <span>01</span>
+          <span>1.</span>
           <h3>{COPY.mma}</h3>
           <p>{COPY.mmaText}</p>
         </article>
         <article className="impact-row">
-          <span>02</span>
+          <span>2.</span>
           <h3>{COPY.grappling}</h3>
           <p>{COPY.grapplingText}</p>
         </article>
         <article className="impact-row">
-          <span>03</span>
+          <span>3.</span>
           <h3>{COPY.striking}</h3>
           <p>{COPY.strikingText}</p>
         </article>
