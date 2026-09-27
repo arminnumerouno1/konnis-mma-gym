@@ -170,16 +170,18 @@ export function Home() {
       <section className="hero-slam" id="top">
         <div className="hero-flash" aria-hidden="true" />
         <div className="hero-slash" aria-hidden="true" />
-        <div className="hero-logo-wrap">
-          <img className="hero-logo ghost cyan" src={GYM.logo} alt="" width={640} height={680} />
-          <img className="hero-logo ghost red" src={GYM.logo} alt="" width={640} height={680} />
-          <img className="hero-logo" src={GYM.logo} alt={GYM.name} width={640} height={680} />
+        <div className="hero-poster">
+          <div className="hero-logo-wrap">
+            <img className="hero-logo ghost cyan" src={GYM.logo} alt="" width={640} height={680} />
+            <img className="hero-logo ghost red" src={GYM.logo} alt="" width={640} height={680} />
+            <img className="hero-logo" src={GYM.logo} alt={GYM.name} width={640} height={680} />
+          </div>
+          <p className="hero-stamp">{COPY.heroStamp}</p>
+          <h1>
+            <span className="hero-name">{COPY.heroName}</span>
+            <span className="hero-mma">{COPY.heroMma}</span>
+          </h1>
         </div>
-        <p className="hero-stamp">{COPY.heroStamp}</p>
-        <h1>
-          <span className="hero-name">{COPY.heroName}</span>
-          <span className="hero-mma">{COPY.heroMma}</span>
-        </h1>
         <p className="hero-hit">{COPY.heroHit}</p>
         <div className="hero-actions">
           <Link className="btn btn-solid btn-xl" href="/#probetraining">

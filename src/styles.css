@@ -297,7 +297,7 @@ p,
   justify-content: center;
   text-align: center;
   overflow: hidden;
-  padding: calc(var(--nav) + 20px) 5vw 48px;
+  padding: calc(var(--nav) + 8px) 4vw 20px;
   background:
     radial-gradient(ellipse at 50% 42%, rgba(196, 18, 26, 0.22), transparent 42%),
     #070707;
@@ -324,10 +324,16 @@ p,
   animation: slashIn 0.55s cubic-bezier(0.15, 0.8, 0.2, 1) 0.28s forwards;
 }
 
+.hero-poster {
+  position: relative;
+  z-index: 1;
+  width: min(92vw, 720px);
+}
+
 .hero-logo-wrap {
   position: relative;
-  width: min(72vw, 420px);
-  z-index: 1;
+  width: min(48vw, 260px);
+  margin: 0 auto;
 }
 
 .hero-logo {
@@ -368,37 +374,39 @@ p,
 }
 
 .hero-stamp {
-  margin: 28px 0 0;
+  margin: 10px 0 0;
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  font-size: 13px;
-  color: var(--gold);
+  font-size: 15px;
+  color: #e4c04a;
   animation: fadeUp 0.5s ease 1.05s forwards;
 }
 
 .hero-slam h1 {
-  margin: 6px 0 0;
+  margin: -18px 0 0;
   display: grid;
   animation: fadeUp 0.55s ease 1.18s forwards;
 }
 
 .hero-name {
-  font-size: clamp(64px, 16vw, 168px);
+  font-size: clamp(52px, 12vw, 118px);
   letter-spacing: 0.02em;
-  line-height: 0.82;
-  text-shadow: 0 0 0 #fff, 8px 0 0 var(--red);
+  line-height: 0.8;
+  text-shadow: 6px 0 0 var(--red);
 }
 
 .hero-mma {
   color: var(--red);
-  font-size: clamp(72px, 20vw, 200px);
-  line-height: 0.78;
+  font-size: clamp(58px, 14vw, 140px);
+  line-height: 0.72;
   letter-spacing: 0.04em;
 }
 
 .hero-hit {
-  margin: 8px 0 22px;
-  font-size: clamp(18px, 2.4vw, 26px);
+  position: relative;
+  z-index: 1;
+  margin: 6px 0 16px;
+  font-size: clamp(16px, 2vw, 22px);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   animation: fadeUp 0.5s ease 1.32s forwards;
@@ -412,6 +420,8 @@ p,
 }
 
 .hero-slam .hero-actions {
+  position: relative;
+  z-index: 1;
   animation: fadeUp 0.5s ease 1.42s forwards;
 }
 
@@ -579,8 +589,17 @@ p,
 }
 
 @keyframes slashIn {
-  to {
+  0% {
+    transform: rotate(-8deg) scaleX(0);
+    opacity: 1;
+  }
+  55% {
     transform: rotate(-8deg) scaleX(1);
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(-8deg) scaleX(1);
+    opacity: 0;
   }
 }
 
@@ -1321,7 +1340,7 @@ p,
   }
 
   .hero-logo-wrap {
-    width: min(78vw, 300px);
+    width: min(56vw, 220px);
   }
 
   .form-grid,
@@ -1352,10 +1371,22 @@ p,
   }
 }
 
+@media (max-height: 760px) {
+  .hero-logo-wrap {
+    width: min(40vw, 200px);
+  }
+
+  .hero-name {
+    font-size: clamp(44px, 10vw, 84px);
+  }
+
+  .hero-mma {
+    font-size: clamp(48px, 11vw, 96px);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-logo,
-  .hero-flash,
-  .hero-slash,
   .hero-stamp,
   .hero-slam h1,
   .hero-hit,
@@ -1365,5 +1396,12 @@ p,
     opacity: 1;
     transform: none;
     filter: none;
+  }
+
+  .hero-flash,
+  .hero-slash,
+  .hero-logo.ghost {
+    animation: none;
+    opacity: 0;
   }
 }
