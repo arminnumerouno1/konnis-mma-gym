@@ -3,7 +3,6 @@ import { COPY, FAQ } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
 import { PLANS, type Plan } from '../brand/plans'
 import { submitTrial } from '../contact/api'
-import { InstagramEmbed } from '../components/InstagramEmbed'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
 import { useSiteMotion } from '../lib/useSiteMotion'
@@ -316,16 +315,6 @@ export function Home() {
             {COPY.ctaJoin}
           </Link>
         </div>
-      </section>
-
-      <section className="ig" id="instagram" data-reveal>
-        <p className="ig-kicker">{COPY.igKicker}</p>
-        <h2>{COPY.igTitle}</h2>
-        <p className="ig-lead">{COPY.igLead}</p>
-        <InstagramEmbed />
-        <a className="btn btn-ghost" href={GYM.instagram} target="_blank" rel="noreferrer">
-          {COPY.igCta}
-        </a>
       </section>
 
       <section className="block schedule" id="plan" data-reveal>

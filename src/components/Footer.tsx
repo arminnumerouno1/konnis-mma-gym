@@ -3,12 +3,28 @@ import { GYM, GYM_ADDRESS } from '../brand/gym'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
 
+function InstagramIcon() {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+      <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" strokeWidth="1.7" />
+      <circle cx="17.2" cy="6.8" r="1.15" fill="currentColor" />
+    </svg>
+  )
+}
+
 export function Footer() {
   return (
     <footer className="footer">
       <div className="footer-top">
-        <img src={GYM.logo} alt="" width={72} height={76} />
-        <p className="footer-tag">{COPY.footerTag}</p>
+        <div className="footer-brand">
+          <img src={GYM.logo} alt="" width={72} height={76} />
+          <p className="footer-tag">{COPY.footerTag}</p>
+        </div>
+        <a className="footer-ig" href={GYM.instagram} target="_blank" rel="noreferrer">
+          <InstagramIcon />
+          <span>{COPY.footerFollow}</span>
+        </a>
       </div>
       <div className="footer-grid">
         <div>
@@ -21,10 +37,6 @@ export function Footer() {
             <a href={`mailto:${GYM.email}`}>{GYM.email}</a>
             <br />
             <a href={GYM.phoneHref}>{GYM.phone}</a>
-            <br />
-            <a href={GYM.instagram} target="_blank" rel="noreferrer">
-              {GYM.instagramHandle}
-            </a>
           </p>
         </div>
         <div>
@@ -71,7 +83,9 @@ export function Footer() {
           </ul>
         </div>
       </div>
-      <p className="footer-copy">© {new Date().getFullYear()} {GYM.legalName}</p>
+      <p className="footer-copy">
+        © {new Date().getFullYear()} {GYM.legalName}
+      </p>
     </footer>
   )
 }

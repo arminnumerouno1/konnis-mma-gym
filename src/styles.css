@@ -671,48 +671,6 @@ p,
   margin-top: 36px;
 }
 
-.ig {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  padding: 72px 6vw 88px;
-  background: #080808;
-}
-
-.ig-kicker {
-  margin: 0 0 8px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--gold);
-}
-
-.ig h2 {
-  margin: 0 0 14px;
-  font-size: clamp(56px, 10vw, 120px);
-  line-height: 0.82;
-}
-
-.ig-lead {
-  margin: 0 0 8px;
-  max-width: 34rem;
-  font-size: 20px;
-  color: #d8d2c8;
-}
-
-.ig-embed {
-  width: min(100%, 480px);
-  margin: 28px 0 24px;
-}
-
-.ig-embed blockquote {
-  margin: 0 auto !important;
-}
-
-.ig .btn {
-  margin-top: 4px;
-}
-
 .duo {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1510,8 +1468,15 @@ p,
 .footer-top {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 18px;
   margin-bottom: 28px;
+}
+
+.footer-brand {
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
 
 .footer-top img {
@@ -1522,6 +1487,22 @@ p,
   margin: 0;
   font-size: 18px;
   color: var(--muted);
+}
+
+.footer-ig {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+  letter-spacing: 0.04em;
+}
+
+.footer-ig:hover {
+  color: var(--red-2);
+}
+
+.footer-ig svg {
+  flex-shrink: 0;
 }
 
 .footer-grid {
@@ -1565,6 +1546,10 @@ p,
   .footer-grid,
   .duo {
     grid-template-columns: 1fr;
+  }
+
+  .footer-top {
+    flex-wrap: wrap;
   }
 
   .duo-shot img {
