@@ -202,7 +202,9 @@ export function Home() {
         <p className="opening-kicker">{COPY.aboutKicker}</p>
         <p className="opening-date">{COPY.aboutDate}</p>
         <h2>
-          {COPY.aboutTitleStart} <span className="opening-when">{COPY.aboutTitleDate}</span> {COPY.aboutTitleEnd}
+          {COPY.aboutTitleStart}
+          <br />
+          <span className="opening-when">{COPY.aboutTitleDate}</span> {COPY.aboutTitleEnd}
         </h2>
         <div className="opening-copy">
           {COPY.aboutParas.map((para) => (

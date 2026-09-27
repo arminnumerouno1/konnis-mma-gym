@@ -18,8 +18,8 @@ export const COPY = {
   navContact: 'Kontakt',
   aboutKicker: 'Eröffnung',
   aboutDate: '02.11.2026',
-  aboutTitleStart: 'KONNI MMA GYM eröffnet am',
-  aboutTitleDate: '2. November 2026',
+  aboutTitleStart: 'KONNI MMA GYM eröffnet',
+  aboutTitleDate: 'am 2. November 2026',
   aboutTitleEnd: 'in Leipzig! 🥊',
   aboutParas: [
     'Nach vielen Wochen Arbeit ist es endlich so weit. Am 2. November eröffnen Konrad Dyrschka und Mehmet-Deniz Celik das KONNI MMA GYM in der Wittenberger Straße 15 in Leipzig.',
