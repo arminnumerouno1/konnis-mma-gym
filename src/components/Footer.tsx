@@ -66,19 +66,10 @@ export function Footer() {
           </ul>
         </div>
         <div>
-          <p className="footer-kicker">PDFs</p>
+          <p className="footer-kicker">{COPY.legalDownload}</p>
           <ul>
             <li>
-              <a href="/legal/agb.pdf">AGB</a>
-            </li>
-            <li>
-              <a href="/legal/widerrufsbelehrung.pdf">Widerruf</a>
-            </li>
-            <li>
-              <a href="/legal/mitgliedsvertrag-12-monate.pdf">Vertrag 12 Monate</a>
-            </li>
-            <li>
-              <a href="/legal/mitgliedsvertrag-24-monate.pdf">Vertrag 24 Monate</a>
+              <a href="/legal/widerrufsbelehrung.pdf">{COPY.withdrawPdf}</a>
             </li>
           </ul>
         </div>

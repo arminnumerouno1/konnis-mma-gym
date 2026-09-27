@@ -225,11 +225,7 @@ export function Join({ plan }: JoinProps) {
           </p>
         </article>
         <div className="legal-downloads">
-          <a href="/legal/agb.pdf">AGB PDF</a>
-          <a href="/legal/widerrufsbelehrung.pdf">Widerruf PDF</a>
-          <a href={summary.plan.contract === '12' ? '/legal/mitgliedsvertrag-12-monate.pdf' : '/legal/mitgliedsvertrag-24-monate.pdf'}>
-            Vertragsmuster PDF
-          </a>
+          <a href="/legal/widerrufsbelehrung.pdf">{COPY.withdrawPdf}</a>
         </div>
         <Link className="btn btn-ghost" href="/">
           Zur Startseite

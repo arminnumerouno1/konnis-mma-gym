@@ -41,14 +41,11 @@ Live auf Vercel braucht `api/mitglied.js`. Optional dieselben Brevo-Variablen wi
 
 ## Rechtstexte
 
-Originale liegen in `public/legal/`:
+AGB, Impressum und Datenschutz stehen als Seiten. Als PDF liegt nur die Widerrufsbelehrung:
 
-- `agb.pdf` — Stand September 2026
-- `widerrufsbelehrung.pdf`
-- `mitgliedsvertrag-12-monate.pdf`
-- `mitgliedsvertrag-24-monate.pdf`
+- `public/legal/widerrufsbelehrung.pdf` — Stand 27. September 2026
 
-Anbieter: KONNIMMAGYM GbR, Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig, info@mma-in-leipzig.de.
+Anbieter: KONNI MMA GYM GbR, Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig, info@mma-in-leipzig.de.
 
 ## SEO
 

@@ -1,6 +1,6 @@
 import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
-import { AGB, CONTRACT_INTRO, HOUSE_RULES, IMPRESSUM, PRIVACY, WITHDRAWAL } from '../brand/legal'
+import { AGB, CONTRACT_INTRO, HOUSE_RULES, IMPRESSUM, ODR_URL, PRIVACY, WITHDRAWAL } from '../brand/legal'
 import { Link } from '../lib/Link'
 import { href, type RouteName } from '../lib/router'
 
@@ -31,16 +31,14 @@ export function Legal({ name }: LegalProps) {
       {name === 'datenschutz' ? (
         <>
           <h1>{COPY.privacy}</h1>
+          <p>Stand: {GYM.agbStand}</p>
           <Blocks blocks={PRIVACY} />
         </>
       ) : null}
       {name === 'agb' ? (
         <>
           <h1>{COPY.agb}</h1>
-          <p>
-            Original:{' '}
-            <a href="/legal/agb.pdf">AGB als PDF</a>
-          </p>
+          <p>Stand: {GYM.agbStand}</p>
           <Blocks blocks={AGB} />
         </>
       ) : null}
@@ -72,7 +70,7 @@ function Impressum() {
           <div key={row.label}>
             <dt>{row.label}</dt>
             <dd>
-              {row.label === 'Kontakt' || row.label === 'E-Mail (Verträge)' ? (
+              {row.label === 'E-Mail' || row.label === 'E-Mail (Verträge)' ? (
                 <a href={`mailto:${row.value}`}>{row.value}</a>
               ) : row.label === 'Telefon' ? (
                 <a href={GYM.phoneHref}>{row.value}</a>
@@ -86,6 +84,23 @@ function Impressum() {
       {IMPRESSUM.notes.map((note) => (
         <p key={note}>{note}</p>
       ))}
+      <h2>{IMPRESSUM.odrTitle}</h2>
+      {IMPRESSUM.odr.map((note) =>
+        note.startsWith('OS-Plattform') ? (
+          <p key={note}>
+            OS-Plattform:{' '}
+            <a href={ODR_URL} target="_blank" rel="noreferrer">
+              {ODR_URL}
+            </a>
+          </p>
+        ) : (
+          <p key={note}>{note}</p>
+        ),
+      )}
+      <h2>{IMPRESSUM.vsbgTitle}</h2>
+      {IMPRESSUM.vsbg.map((note) => (
+        <p key={note}>{note}</p>
+      ))}
     </>
   )
 }
@@ -94,8 +109,14 @@ function Withdrawal() {
   return (
     <>
       <h1>Widerrufsbelehrung</h1>
+      <p>Stand: {WITHDRAWAL.stand}</p>
+      {WITHDRAWAL.provider.map((line) => (
+        <p key={line}>{line}</p>
+      ))}
       <p>
-        Original: <a href="/legal/widerrufsbelehrung.pdf">Widerruf als PDF</a>
+        <a className="btn btn-ghost" href="/legal/widerrufsbelehrung.pdf">
+          {COPY.withdrawPdf}
+        </a>
       </p>
       <h2>Widerrufsrecht</h2>
       {WITHDRAWAL.right.map((p) => (
@@ -105,15 +126,12 @@ function Withdrawal() {
       {WITHDRAWAL.effects.map((p) => (
         <p key={p}>{p}</p>
       ))}
-      <h2>Bereits in Anspruch genommene Leistungen</h2>
-      {WITHDRAWAL.used.map((p) => (
-        <p key={p}>{p}</p>
-      ))}
-      <h2>Erklärung zum vorzeitigen Leistungsbeginn</h2>
+      <h2>Erklärung zum Leistungsbeginn während der Widerrufsfrist</h2>
       {WITHDRAWAL.early.map((p) => (
         <p key={p}>{p}</p>
       ))}
       <h2>Muster-Widerrufsformular</h2>
+      <p>{WITHDRAWAL.formLead}</p>
       {WITHDRAWAL.form.map((p) => (
         <p key={p}>{p}</p>
       ))}
@@ -122,14 +140,10 @@ function Withdrawal() {
 }
 
 function Contract({ months }: { months: 12 | 24 }) {
-  const pdf = months === 12 ? '/legal/mitgliedsvertrag-12-monate.pdf' : '/legal/mitgliedsvertrag-24-monate.pdf'
   return (
     <>
       <h1>Mitgliedsvertrag · {months} Monate</h1>
       <p>{CONTRACT_INTRO[String(months) as '12' | '24']}</p>
-      <p>
-        Original: <a href={pdf}>Vertrag als PDF</a>
-      </p>
       <h2>1. Vertragsparteien</h2>
       <p>
         Anbieter: {GYM.legalName}, vertreten durch {GYM.partners.join(' und ')}, {GYM.street}, {GYM.zip} {GYM.city}.

@@ -102,6 +102,8 @@ export const COPY = {
   house: 'Hausordnung',
   contract12: 'Vertrag 12 Monate',
   contract24: 'Vertrag 24 Monate',
+  legalDownload: 'Download',
+  withdrawPdf: 'Widerrufsbelehrung als PDF',
   joinPageKicker: 'Mitgliedschaft',
   joinPageTitle: 'Vertrag online abschließen',
   joinPageLead:
@@ -130,11 +132,11 @@ export const COPY = {
   next: 'Weiter',
   successTitle: 'Anmeldung ist raus.',
   successLead:
-    'Wir haben deinen Vertrag. Unten die Zusammenfassung. PDFs zum Download. Widerruf: 14 Tage.',
+    'Wir haben deinen Vertrag. Unten die Zusammenfassung. Die Widerrufsbelehrung kannst du als PDF mitnehmen. Widerruf: 14 Tage.',
   invalid: 'Bitte alle Pflichtfelder sauber ausfüllen.',
   error: 'Das hat nicht geklappt. Versuch es gleich noch einmal.',
   rate: 'Zu viele Versuche. Warte kurz und versuch es erneut.',
-  consentAgb: 'Ich habe die AGB (Stand September 2026) gelesen und akzeptiere sie.',
+  consentAgb: 'Ich habe die AGB (Stand 27. September 2026) gelesen und akzeptiere sie.',
   consentHouse: 'Ich habe die Hausordnung gelesen. Sie ist Teil des Vertrags.',
   consentWithdraw: 'Ich habe die Widerrufsbelehrung gelesen, inklusive Muster-Formular.',
   consentPrivacy: 'Ich habe die Datenschutzerklärung gelesen.',

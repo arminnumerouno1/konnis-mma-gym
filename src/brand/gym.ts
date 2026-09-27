@@ -1,6 +1,6 @@
 export const GYM = {
   name: 'KONNI MMA GYM',
-  legalName: 'KONNIMMAGYM GbR',
+  legalName: 'KONNI MMA GYM GbR',
   short: 'KONNI',
   city: 'Leipzig',
   street: 'Wittenberger Straße 15',
@@ -14,8 +14,8 @@ export const GYM = {
   instagram: 'https://www.instagram.com/konnimmagym/',
   instagramHandle: '@konnimmagym',
   partners: ['Konrad Dyrschka', 'Mehmet-Deniz Celik'] as const,
-  agbStand: 'September 2026',
-  agbDate: '26.09.2026',
+  agbStand: '27. September 2026',
+  agbDate: '27.09.2026',
   mapsUrl:
     'https://www.openstreetmap.org/search?query=Wittenberger%20Stra%C3%9Fe%2015%2C%2004129%20Leipzig',
   logo: '/brand/konni-logo-ui.webp',
