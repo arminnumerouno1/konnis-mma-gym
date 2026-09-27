@@ -45,12 +45,12 @@ export const COPY = {
   whoKicker: 'Für wen',
   whoTitle: 'Jeder.',
   whoLead:
-    'Egal ob Anfänger, Profi, Student oder die Mama von nebenan. Wer trainieren will, ist hier willkommen.',
+    'Das Gym ist für alle da, die Lust auf Training haben. Ob du Anfänger bist, schon kämpfst, studierst oder die Mama von nebenan bist.',
   whoPeople: [
-    ['Anfänger', 'Noch nie auf der Matte? Genau richtig. Wir fangen bei null an.'],
-    ['Profi', 'Du kämpfst schon. Hier trainierst du trotzdem mit — Takt, Partner, Druck.'],
-    ['Student', 'Nach der Uni auf die Matte. Kein Elite-Club, kein Filter.'],
-    ['Mama von nebenan', 'Kraft, Halt, klare Regeln. Du gehörst dazu.'],
+    ['Anfänger', 'Du musst nichts können. Sag uns vorher Bescheid, dann passen wir die Stunde an.'],
+    ['Profi', 'Wenn du schon kämpfst, findest du hier Leute, mit denen du ernsthaft arbeiten kannst.'],
+    ['Student', 'Viele kommen nach der Uni oder zwischen den Vorlesungen. Du brauchst keinen freien Tag dafür.'],
+    ['Mama von nebenan', 'Du willst dich bewegen und musst dafür kein Kämpfer sein. Schau einfach vorbei und probier es aus.'],
   ],
   teamTitle: 'Wer hier steht.',
   teamLead: 'Zwei Gesellschafter. Einer kommt aus dem Käfig.',
