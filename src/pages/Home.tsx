@@ -201,7 +201,9 @@ export function Home() {
       <section className="opening" id="studio" data-reveal>
         <p className="opening-kicker">{COPY.aboutKicker}</p>
         <p className="opening-date">{COPY.aboutDate}</p>
-        <h2>{COPY.aboutTitle}</h2>
+        <h2>
+          {COPY.aboutTitleStart} <span className="opening-when">{COPY.aboutTitleDate}</span> {COPY.aboutTitleEnd}
+        </h2>
         <div className="opening-copy">
           {COPY.aboutParas.map((para) => (
             <p key={para}>{para}</p>
@@ -217,7 +219,7 @@ export function Home() {
             {COPY.aboutZip}
           </p>
           <p>
-            <span>📅</span> {COPY.aboutWhen}
+            <span>📅</span> <span className="opening-when">{COPY.aboutWhen}</span>
           </p>
         </div>
         <p className="opening-close">{COPY.aboutClose}</p>

@@ -480,9 +480,13 @@ p,
 
 .opening h2 {
   margin: 0 0 28px;
-  font-size: clamp(28px, 4.6vw, 48px);
-  max-width: 18ch;
+  font-size: clamp(26px, 4vw, 44px);
+  max-width: 36rem;
   line-height: 0.95;
+}
+
+.opening-when {
+  white-space: nowrap;
 }
 
 .opening-copy {
