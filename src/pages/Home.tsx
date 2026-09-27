@@ -221,6 +221,20 @@ export function Home() {
         </div>
       </section>
 
+      <section className="halle" aria-label="Die Halle">
+        {(
+          [
+            [GYM.hall.cage, ''],
+            [GYM.hall.floor, ''],
+            [GYM.hall.depth, ''],
+            [GYM.hall.marks, ''],
+            [GYM.hall.ropes, ''],
+          ] as const
+        ).map(([src, alt]) => (
+          <img key={src} src={src} alt={alt} width={640} height={426} />
+        ))}
+      </section>
+
       <section className="impact" id="training">
         <p className="impact-kicker">{COPY.trainTitle}</p>
         <article className="impact-row">

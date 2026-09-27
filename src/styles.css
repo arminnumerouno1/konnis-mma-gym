@@ -458,8 +458,23 @@ p,
   text-align: center;
   padding: 80px 6vw 88px;
   background:
-    radial-gradient(ellipse at 50% 0%, rgba(196, 18, 26, 0.18), transparent 46%),
-    #0a0a0a;
+    linear-gradient(180deg, rgba(8, 8, 8, 0.86), rgba(8, 8, 8, 0.94)),
+    url('/brand/halle/cage.jpg') center 42% / cover no-repeat;
+}
+
+.halle {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  height: 168px;
+  overflow: hidden;
+  background: #050505;
+}
+
+.halle img {
+  width: 100%;
+  height: 168px;
+  object-fit: cover;
+  filter: brightness(0.68) contrast(1.05);
 }
 
 .opening-kicker {
@@ -534,6 +549,9 @@ p,
 
 .impact {
   padding: 0;
+  background:
+    linear-gradient(180deg, rgba(8, 8, 8, 0.9), rgba(8, 8, 8, 0.94)),
+    url('/brand/halle/marks.jpg') center / cover no-repeat;
 }
 
 .impact-kicker {
@@ -795,7 +813,9 @@ p,
   position: relative;
   margin-top: 24px;
   border: 1px solid var(--line);
-  background: #171717;
+  background:
+    linear-gradient(180deg, rgba(10, 10, 10, 0.55), rgba(10, 10, 10, 0.72)),
+    url('/brand/halle/floor.jpg') center / cover no-repeat;
   min-height: 260px;
   overflow: hidden;
 }
@@ -886,6 +906,18 @@ p,
 
 .trial-done {
   margin-top: 16px;
+}
+
+.trial {
+  background:
+    linear-gradient(90deg, rgba(10, 10, 10, 0.9), rgba(10, 10, 10, 0.93)),
+    url('/brand/halle/ropes.jpg') right center / cover no-repeat;
+}
+
+.contact {
+  background:
+    linear-gradient(180deg, rgba(8, 8, 8, 0.9), rgba(8, 8, 8, 0.94)),
+    url('/brand/halle/depth.jpg') center / cover no-repeat;
 }
 
 .faq-list {
@@ -1384,6 +1416,13 @@ p,
 
   .duo-shot img {
     height: 52vh;
+  }
+
+  .halle {
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: 72vw;
+    overflow-x: auto;
   }
 
   .hero-logo-wrap {

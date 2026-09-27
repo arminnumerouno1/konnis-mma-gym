@@ -21,6 +21,13 @@ export const GYM = {
   logo: '/brand/konni-logo-ui.webp',
   konrad: '/brand/konrad.png',
   mehmet: '/brand/mehmet.png',
+  hall: {
+    cage: '/brand/halle/cage.jpg',
+    floor: '/brand/halle/floor.jpg',
+    depth: '/brand/halle/depth.jpg',
+    marks: '/brand/halle/marks.jpg',
+    ropes: '/brand/halle/ropes.jpg',
+  },
   hours: [
     { days: 'Montag–Freitag', time: '15:30–21:30' },
     { days: 'Samstag', time: '10:00–14:00' },
