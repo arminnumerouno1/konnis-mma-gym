@@ -32,7 +32,7 @@ export function Nav({ route }: NavProps) {
       <Link href="/" className="nav-brand" onClick={() => setOpen(false)}>
         <img src={GYM.logo} alt={GYM.name} width={56} height={60} />
         <span>
-          KONNI MMA
+          {COPY.gymName}
           <small>Leipzig</small>
         </span>
       </Link>

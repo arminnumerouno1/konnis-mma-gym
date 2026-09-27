@@ -220,6 +220,7 @@ p,
   font-family: 'Bebas Neue', sans-serif;
   letter-spacing: 0.08em;
   font-size: 22px;
+  white-space: nowrap;
 }
 
 .nav-brand img {
