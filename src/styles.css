@@ -452,6 +452,10 @@ p,
 }
 
 .opening {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  gap: 36px 56px;
+  align-items: end;
   padding: 72px 6vw 80px;
   background:
     linear-gradient(90deg, #c4121a 8px, transparent 8px),
@@ -469,27 +473,36 @@ p,
 .opening-date {
   margin: 0;
   font-family: 'Bebas Neue', sans-serif;
-  font-size: clamp(72px, 16vw, 168px);
+  font-size: clamp(72px, 14vw, 148px);
   line-height: 0.82;
   letter-spacing: 0.02em;
 }
 
 .opening h2 {
-  margin: 8px 0 16px;
-  font-size: clamp(36px, 7vw, 72px);
-  max-width: 16ch;
+  margin: 0 0 16px;
+  font-size: clamp(32px, 5vw, 56px);
+  max-width: 18ch;
 }
 
 .opening .lead {
-  font-size: clamp(20px, 2.6vw, 30px);
-  max-width: 34ch;
+  font-size: clamp(20px, 2.2vw, 26px);
+  max-width: 42ch;
   color: #fff;
 }
 
+.opening-copy p {
+  max-width: 46ch;
+}
+
 .opening-note {
-  margin: 18px 0 0;
   color: var(--muted);
-  max-width: 40ch;
+}
+
+.opening-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
 }
 
 .impact {
@@ -1355,7 +1368,8 @@ p,
   .trial-form,
   .contact-grid,
   .footer-grid,
-  .fighter {
+  .fighter,
+  .opening {
     grid-template-columns: 1fr;
   }
 

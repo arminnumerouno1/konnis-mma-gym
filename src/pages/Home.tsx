@@ -199,11 +199,25 @@ export function Home() {
       </p>
 
       <section className="opening" id="studio" data-reveal>
-        <p className="opening-kicker">{COPY.aboutKicker}</p>
-        <p className="opening-date">{COPY.aboutDate}</p>
-        <h2>{COPY.aboutTitle}</h2>
-        <p className="lead">{COPY.aboutBody}</p>
-        <p className="opening-note">{COPY.aboutNote}</p>
+        <div className="opening-head">
+          <p className="opening-kicker">{COPY.aboutKicker}</p>
+          <p className="opening-date">{COPY.aboutDate}</p>
+        </div>
+        <div className="opening-copy">
+          <h2>{COPY.aboutTitle}</h2>
+          <p className="lead">{COPY.aboutLead}</p>
+          <p>{COPY.aboutBody}</p>
+          <p>{COPY.aboutMore}</p>
+          <p className="opening-note">{COPY.aboutNote}</p>
+          <div className="opening-actions">
+            <Link className="btn btn-solid btn-xl" href={href('join')}>
+              {COPY.ctaJoinNow}
+            </Link>
+            <Link className="btn btn-ghost btn-xl" href="/#probetraining">
+              {COPY.ctaTrial}
+            </Link>
+          </div>
+        </div>
       </section>
 
       <section className="impact" id="training">

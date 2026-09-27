@@ -16,11 +16,17 @@ export const COPY = {
   navTrial: 'Probetraining',
   navFaq: 'FAQ',
   navContact: 'Kontakt',
-  aboutKicker: 'Eröffnung',
+  aboutKicker: 'Eröffnung · Leipzig',
   aboutDate: '02.11.2026',
-  aboutTitle: 'Mit Gästen. Mit Käfig.',
-  aboutBody: 'KONNI MMA GYM macht auf. Konrad auf der Matte, Gäste im Haus, Leipzig zum ersten Mal in der Wittenberger Straße 15.',
-  aboutNote: 'Mitgliedschaft jetzt. Zahlen erst, wenn der Betrieb wirklich läuft.',
+  aboutTitle: 'Nach langem Warten ist es soweit.',
+  aboutLead:
+    'KONNI MMA GYM öffnet. Nicht irgendwann, nicht als leere Halle hinter einem Bauzaun — am 2. November 2026 steht der Käfig, und der Betrieb beginnt.',
+  aboutBody:
+    'Konrad Dyrschka und Mehmet-Deniz Celik haben das Studio in der Wittenberger Straße 15 aufgebaut. MMA, Grappling, Striking unter einem Dach, von jemandem, der selbst im Käfig steht. Der Eröffnungstag ist kein stilles Aufschließen: Gäste im Haus, Matten frei, erster Gong in Leipzig.',
+  aboutMore:
+    'Wer von Anfang an dabei sein will, kann die Mitgliedschaft jetzt online abschließen. First 50 gilt, solange Plätze da sind. Zahlen tust du erst, wenn der reguläre Trainingsbetrieb wirklich läuft — nicht vorher.',
+  aboutNote: 'Adresse: Wittenberger Straße 15, 04129 Leipzig. Gäste für den 2. November geben wir bekannt, sobald sie feststehen.',
+  ctaJoinNow: 'Jetzt Mitglied werden',
   trainTitle: 'Drei Waffen.',
   mma: 'MMA',
   mmaText: 'Alles zusammen. Stand, Clinch, Boden — eine Sprache.',
