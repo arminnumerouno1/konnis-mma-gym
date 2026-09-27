@@ -125,8 +125,9 @@ export const PRIVACY: LegalBlock[] = [
     title: '5. Mitgliedschaft und Day Pass',
     paragraphs: [
       'Beim Online-Vertrag verarbeiten wir die angegebenen Vertragsdaten: Name, Geburtsdatum, Anschrift, E-Mail, Telefon, Tarif, Bestätigungen, digitale Unterschrift, bei Minderjährigen die Daten der gesetzlichen Vertretung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertrag) und Art. 6 Abs. 1 lit. c DSGVO, soweit gesetzliche Aufbewahrung gilt.',
+      'Die Monatsbeiträge der 12- und 24-Monats-Verträge werden per SEPA-Lastschrift eingezogen. IBAN, Kontoinhaber und Mandatsdaten verarbeiten wir zur Zahlung (Art. 6 Abs. 1 lit. b DSGVO), sobald du sie uns mitteilst.',
       'Ohne diese Daten kommt kein Online-Vertrag zustande. Die Daten bleiben für die Vertragsdauer und danach so lange, wie handels- und steuerrechtliche Pflichten das verlangen — in der Regel bis zu zehn Jahre nach Vertragsende.',
-      `Änderungen von Anschrift, E-Mail und Zahlweg bitte zeitnah an ${GYM.legalEmail}.`,
+      `Änderungen von Anschrift, E-Mail, Bankverbindung und Zahlweg bitte zeitnah an ${GYM.legalEmail}.`,
     ],
   },
   {

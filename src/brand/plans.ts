@@ -77,7 +77,7 @@ export const PLANS: Plan[] = [
 
 export const SIGNUP_FEE = 0
 export const PAYMENT_NOTE =
-  'Du überweist den Beitrag selbst so, dass er spätestens am 1. des Monats da ist. Die Kontoverbindung schicken wir dir vor der Eröffnung.'
+  'Bei 12- und 24-Monats-Verträgen ziehen wir den Monatsbeitrag per SEPA-Lastschrift ein, in der Regel zum 1. des Monats. Mandat und Kontodaten klären wir vor dem ersten Einzug. Zahlungspflicht erst ab echter Eröffnung.'
 
 export function planById(id: string | null | undefined): Plan | undefined {
   return PLANS.find((plan) => plan.id === id)

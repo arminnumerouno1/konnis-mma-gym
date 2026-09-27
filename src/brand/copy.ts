@@ -76,7 +76,7 @@ export const COPY = {
   priceTitle: 'Tarife.',
   priceLead: 'Unlimited Training in jedem Monatstarif. Standard, Flex oder Day Pass.',
   priceFoot:
-    'Überweisung bis zum 1. des Monats. Aufnahmegebühr 0 €. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
+    'SEPA-Lastschrift zum 1. des Monats. Aufnahmegebühr 0 €. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
   trialTitle: 'Komm vorbei.',
   trialLead: 'Eine Einheit. Kein Vertrag. Wenn du bleibst, bleibst du.',
   trialName: 'Name',
@@ -166,7 +166,7 @@ export const COPY = {
   consentGuardian: 'Ich bin gesetzliche Vertretung und stimme dem Vertrag zu.',
   consentSign: 'Ich unterschreibe diesen Vertrag elektronisch. Der Text gilt wie auf Papier.',
   payNote:
-    'Zahlung per eigener Überweisung, nicht per Lastschrift. Konto teilen wir vor der Eröffnung mit. Verwendungszweck: Mitgliedsbeitrag plus dein Name.',
+    'Monatsbeiträge per SEPA-Lastschrift, in der Regel zum 1. des Monats. Mandat und Kontodaten klären wir vor dem ersten Einzug. Zahlungspflicht erst ab echter Eröffnung.',
 } as const
 
 export const FAQ = [
@@ -180,7 +180,7 @@ export const FAQ = [
   },
   {
     q: 'Was bringe ich mit?',
-    a: 'T-Shirt, kurze Hose, Handtuch, Flip-Flops für die Halle. Handschuhe und Schoner, wenn du welche hast. Sonst sag Bescheid.',
+    a: 'T-Shirt, kurze Hose, Handtuch, Flipflops/Badelatschen für die Halle. Handschuhe und Schoner, wenn du welche hast. Sonst sag Bescheid.',
   },
   {
     q: 'Wann zahle ich?',
@@ -188,7 +188,7 @@ export const FAQ = [
   },
   {
     q: 'Wie wird bezahlt?',
-    a: 'Du überweist selbst, so dass der Beitrag am 1. da ist. Die Kontodaten schicken wir vor der Eröffnung. Keine Lastschrift.',
+    a: 'Bei 12- und 24-Monats-Verträgen ziehen wir den Beitrag per SEPA-Lastschrift ein, in der Regel zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung. Mandat und Kontodaten klären wir vor dem ersten Einzug.',
   },
   {
     q: 'Kann ich unter 18 trainieren?',

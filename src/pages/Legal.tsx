@@ -197,11 +197,15 @@ function Contract({ months }: { months: 12 | 24 }) {
         gezahlte Beträge werden erstattet.
       </p>
       <p>
-        Du überweist den Monatsbeitrag so, dass er spätestens am 1. da ist. Fällt der 1. auf ein Wochenende oder
-        einen Feiertag, gilt der nächste Bankarbeitstag. Der erste angebrochene Monat wird anteilig berechnet.
-        Aufnahmegebühr: 0 €, fällig mit Beginn der Zahlungspflicht.
+        Die Monatsbeiträge werden per SEPA-Lastschrift eingezogen. Fälligkeit ist der 1. des Monats. Fällt der 1.
+        auf ein Wochenende oder einen Feiertag, gilt der nächste Bankarbeitstag. Der erste angebrochene Monat wird
+        anteilig berechnet. Aufnahmegebühr: 0 €, fällig mit Beginn der Zahlungspflicht.
       </p>
-      <p>Konto teilen wir vor der Eröffnung mit. Verwendungszweck: Mitgliedsbeitrag / dein Name.</p>
+      <p>
+        Du erteilst uns ein SEPA-Lastschriftmandat. Gläubiger-Identifikationsnummer und Mandatsreferenz teilen wir
+        vor dem ersten Einzug mit. Das Konto muss am Abbuchungstag gedeckt sein. Rücklastschriftkosten, die du zu
+        vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.
+      </p>
       <h2>3. Laufzeit und Kündigung</h2>
       <p>
         Anfängliche Vertragsdauer: {months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das

@@ -35,7 +35,7 @@ Tarife:
 - Flex — 109,99 € / Monat, 12 Monate
 - Day Pass — 19,99 € / Tag
 
-Zahlung laut Vertrag per eigener Überweisung bis zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung. Konto teilt das Gym vor dem Start mit.
+Zahlung laut 12- und 24-Monats-Vertrag per SEPA-Lastschrift, in der Regel zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung.
 
 Live auf Vercel braucht `api/mitglied.js`. Optional dieselben Brevo-Variablen wie die alte Warteliste.
 
