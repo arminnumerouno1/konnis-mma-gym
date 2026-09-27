@@ -167,57 +167,73 @@ export function Home() {
 
   return (
     <main className="home">
-      <section className="hero hero-logo-only" id="top">
-        <img className="hero-logo" src={GYM.logo} alt={GYM.name} width={520} height={552} />
-        <p className="hero-place">{COPY.heroPlace}</p>
-        <p className="hero-line">{COPY.heroLine}</p>
+      <section className="hero-slam" id="top">
+        <div className="hero-flash" aria-hidden="true" />
+        <div className="hero-slash" aria-hidden="true" />
+        <div className="hero-logo-wrap">
+          <img className="hero-logo ghost cyan" src={GYM.logo} alt="" width={640} height={680} />
+          <img className="hero-logo ghost red" src={GYM.logo} alt="" width={640} height={680} />
+          <img className="hero-logo" src={GYM.logo} alt={GYM.name} width={640} height={680} />
+        </div>
+        <p className="hero-stamp">{COPY.heroStamp}</p>
+        <h1>
+          <span className="hero-name">{COPY.heroName}</span>
+          <span className="hero-mma">{COPY.heroMma}</span>
+        </h1>
+        <p className="hero-hit">{COPY.heroHit}</p>
         <div className="hero-actions">
-          <Link className="btn btn-solid" href="/#probetraining">
+          <Link className="btn btn-solid btn-xl" href="/#probetraining">
             {COPY.ctaTrial}
           </Link>
-          <Link className="btn btn-ghost" href={href('join')}>
+          <Link className="btn btn-ghost btn-xl" href={href('join')}>
             {COPY.ctaJoin}
           </Link>
         </div>
       </section>
 
-      <section className="block about" id="studio">
+      <p className="tape" aria-hidden="true">
+        <span>KONRAD DYRSCHKA · MMA PRO · LEIPZIG · CAGE · MATS · NO MERCY · </span>
+        <span>KONRAD DYRSCHKA · MMA PRO · LEIPZIG · CAGE · MATS · NO MERCY · </span>
+      </p>
+
+      <section className="block about punch" id="studio" data-reveal>
         <h2>{COPY.aboutTitle}</h2>
         <p className="lead">{COPY.aboutBody}</p>
         <p>{COPY.aboutNote}</p>
       </section>
 
-      <section className="block training" id="training">
-        <h2>{COPY.trainTitle}</h2>
-        <div className="train-rows">
-          <div>
-            <h3>{COPY.mma}</h3>
-            <p>{COPY.mmaText}</p>
-          </div>
-          <div>
-            <h3>{COPY.grappling}</h3>
-            <p>{COPY.grapplingText}</p>
-          </div>
-          <div>
-            <h3>{COPY.striking}</h3>
-            <p>{COPY.strikingText}</p>
-          </div>
-        </div>
+      <section className="impact" id="training">
+        <p className="impact-kicker">{COPY.trainTitle}</p>
+        <article className="impact-row">
+          <span>01</span>
+          <h3>{COPY.mma}</h3>
+          <p>{COPY.mmaText}</p>
+        </article>
+        <article className="impact-row">
+          <span>02</span>
+          <h3>{COPY.grappling}</h3>
+          <p>{COPY.grapplingText}</p>
+        </article>
+        <article className="impact-row">
+          <span>03</span>
+          <h3>{COPY.striking}</h3>
+          <p>{COPY.strikingText}</p>
+        </article>
       </section>
 
-      <section className="block team" id="team">
-        <h2>{COPY.teamTitle}</h2>
-        <p className="lead">{COPY.teamLead}</p>
-        <div className="team-grid">
-          <article className="team-card">
-            <img src={GYM.konrad} alt={COPY.konradName} width={420} height={880} />
-            <div>
-              <h3>{COPY.konradName}</h3>
-              <p className="role">{COPY.konradRole}</p>
-              <p>{COPY.konradBio}</p>
-            </div>
-          </article>
-          <article className="team-card team-card-empty">
+      <section className="fighter" id="team">
+        <div className="fighter-shot" data-parallax="-8">
+          <img src={GYM.konrad} alt={COPY.konradName} width={720} height={1520} />
+        </div>
+        <div className="fighter-copy">
+          <p className="fighter-kicker">{COPY.konradRole}</p>
+          <h2>
+            KONRAD
+            <br />
+            DYRSCHKA
+          </h2>
+          <p className="fighter-bio">{COPY.konradBio}</p>
+          <div className="mehmet-strip">
             <div className="team-fallback" aria-hidden="true">
               MC
             </div>
@@ -226,11 +242,11 @@ export function Home() {
               <p className="role">{COPY.mehmetRole}</p>
               <p>{COPY.mehmetBio}</p>
             </div>
-          </article>
+          </div>
         </div>
       </section>
 
-      <section className="block schedule" id="plan">
+      <section className="block schedule" id="plan" data-reveal>
         <h2>{COPY.planTitle}</h2>
         <p className="lead">{COPY.planNote}</p>
         <div className="schedule-frame">
@@ -260,7 +276,7 @@ export function Home() {
         </div>
       </section>
 
-      <section className="block pricing" id="preise">
+      <section className="block pricing" id="preise" data-reveal>
         <h2>{COPY.priceTitle}</h2>
         <p className="lead">{COPY.priceLead}</p>
         <div className="price-grid">
@@ -271,7 +287,7 @@ export function Home() {
         <p className="price-foot">{COPY.priceFoot}</p>
       </section>
 
-      <section className="block trial" id="probetraining">
+      <section className="block trial" id="probetraining" data-reveal>
         <h2>{COPY.trialTitle}</h2>
         <p className="lead">{COPY.trialLead}</p>
         <TrialForm />
