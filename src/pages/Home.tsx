@@ -268,6 +268,14 @@ export function Home() {
               <br />
               DYRSCHKA
             </h2>
+            <ul className="fighter-facts">
+              {COPY.konradFacts.map(([value, label]) => (
+                <li key={label}>
+                  <strong>{value}</strong>
+                  <span>{label}</span>
+                </li>
+              ))}
+            </ul>
             <p>{COPY.konradBio}</p>
           </div>
         </article>

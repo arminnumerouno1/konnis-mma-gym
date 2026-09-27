@@ -639,7 +639,35 @@ p,
 }
 
 .duo-copy p {
-  max-width: 28ch;
+  max-width: 32ch;
+}
+
+.fighter-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 18px;
+  list-style: none;
+  padding: 0;
+  margin: 18px 0 16px;
+}
+
+.fighter-facts li {
+  display: grid;
+  gap: 2px;
+}
+
+.fighter-facts strong {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+
+.fighter-facts span {
+  color: var(--muted);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 @keyframes heroFlash {
