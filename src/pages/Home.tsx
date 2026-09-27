@@ -276,7 +276,7 @@ export function Home() {
                 </li>
               ))}
             </ul>
-            <p>{COPY.konradBio}</p>
+            <p className="fighter-bio">{COPY.konradBio}</p>
           </div>
         </article>
         <article className="duo-card">

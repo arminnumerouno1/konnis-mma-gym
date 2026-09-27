@@ -632,6 +632,7 @@ p,
   color: var(--red);
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .duo-copy h2 {
@@ -668,6 +669,11 @@ p,
   font-size: 13px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+}
+
+.fighter-bio {
+  max-width: 42ch;
+  color: #c8c8c8;
 }
 
 @keyframes heroFlash {
