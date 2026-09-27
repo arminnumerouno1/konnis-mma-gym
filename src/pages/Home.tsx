@@ -256,6 +256,28 @@ export function Home() {
         </article>
       </section>
 
+      <section className="who" id="wer" data-reveal>
+        <p className="who-kicker">{COPY.whoKicker}</p>
+        <h2>{COPY.whoTitle}</h2>
+        <p className="who-lead">{COPY.whoLead}</p>
+        <ul className="who-grid">
+          {COPY.whoPeople.map(([name, text]) => (
+            <li key={name}>
+              <h3>{name}</h3>
+              <p>{text}</p>
+            </li>
+          ))}
+        </ul>
+        <div className="who-actions">
+          <Link className="btn btn-solid" href="/#probetraining">
+            {COPY.ctaTrial}
+          </Link>
+          <Link className="btn btn-ghost" href={href('join')}>
+            {COPY.ctaJoin}
+          </Link>
+        </div>
+      </section>
+
       <section className="duo" id="team">
         <article className="duo-card">
           <div className="duo-shot">

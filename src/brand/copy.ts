@@ -42,6 +42,16 @@ export const COPY = {
   grapplingText: 'Wer kontrolliert, entscheidet. Ringen, Guard, Finish.',
   striking: 'STRIKING',
   strikingText: 'Hände, Beine, Distanz. Sauber. Dann hart.',
+  whoKicker: 'Für wen',
+  whoTitle: 'Jeder.',
+  whoLead:
+    'Egal ob Anfänger, Profi, Student oder die Mama von nebenan. Wer trainieren will, ist hier willkommen.',
+  whoPeople: [
+    ['Anfänger', 'Noch nie auf der Matte? Genau richtig. Wir fangen bei null an.'],
+    ['Profi', 'Du kämpfst schon. Hier trainierst du trotzdem mit — Takt, Partner, Druck.'],
+    ['Student', 'Nach der Uni auf die Matte. Kein Elite-Club, kein Filter.'],
+    ['Mama von nebenan', 'Kraft, Halt, klare Regeln. Du gehörst dazu.'],
+  ],
   teamTitle: 'Wer hier steht.',
   teamLead: 'Zwei Gesellschafter. Einer kommt aus dem Käfig.',
   konradName: 'Konrad Dyrschka',

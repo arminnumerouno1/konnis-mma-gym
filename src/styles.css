@@ -601,6 +601,76 @@ p,
   font-size: 20px;
 }
 
+.who {
+  padding: 64px 6vw 80px;
+  background:
+    linear-gradient(180deg, rgba(8, 8, 8, 0.92), rgba(8, 8, 8, 0.96)),
+    url('/brand/halle/depth.jpg') center / cover no-repeat;
+}
+
+.who-kicker {
+  margin: 0 0 8px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.who h2 {
+  margin: 0 0 16px;
+  font-size: clamp(72px, 16vw, 160px);
+  line-height: 0.82;
+}
+
+.who-lead {
+  margin: 0;
+  max-width: 36rem;
+  font-size: 22px;
+  line-height: 1.4;
+  color: #d8d2c8;
+}
+
+.who-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  list-style: none;
+  padding: 0;
+  margin: 40px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.who-grid li {
+  padding: 28px 28px 32px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.who-grid li:nth-child(odd) {
+  padding-right: 36px;
+  border-right: 1px solid var(--line);
+}
+
+.who-grid li:nth-child(even) {
+  padding-left: 36px;
+}
+
+.who-grid h3 {
+  margin: 0 0 10px;
+  font-size: clamp(36px, 5vw, 64px);
+}
+
+.who-grid p {
+  margin: 0;
+  max-width: 30ch;
+  color: var(--muted);
+  font-size: 18px;
+}
+
+.who-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 36px;
+}
+
 .duo {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1461,6 +1531,16 @@ p,
 
   .fighter-kicker {
     white-space: normal;
+  }
+
+  .who-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .who-grid li:nth-child(odd),
+  .who-grid li:nth-child(even) {
+    padding: 24px 0;
+    border-right: 0;
   }
 
   .halle {
