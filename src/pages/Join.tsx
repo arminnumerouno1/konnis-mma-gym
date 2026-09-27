@@ -178,6 +178,7 @@ export function Join({ plan }: JoinProps) {
     }
     setRemaining(result.remainingFirst50)
     setDone({ id: result.id, at: new Date().toISOString() })
+    window.scrollTo(0, 0)
   }
 
   if (done && summary) {
@@ -310,7 +311,13 @@ export function Join({ plan }: JoinProps) {
             </label>
             <label>
               {COPY.birth}
-              <input type="date" value={birthDate} onChange={(e) => setBirthDate(e.target.value)} required />
+              <input
+                type="date"
+                name="birthDate"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                required
+              />
             </label>
             <label className="wide">
               {COPY.street}

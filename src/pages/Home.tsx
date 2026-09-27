@@ -70,8 +70,8 @@ export function Home() {
         <div className="hero-copy">
           <p className="kicker">{COPY.kicker}</p>
           <h1>
-            <span>{COPY.heroLead}</span>
-            <span className="hero-red">{COPY.heroPunch}</span>
+            <span>NO&nbsp;&nbsp;EGOS.</span>
+            <span className="hero-red">JUST&nbsp;&nbsp;WORK.</span>
           </h1>
           <p className="hero-sub">{COPY.heroSub}</p>
           <div className="hero-actions">
