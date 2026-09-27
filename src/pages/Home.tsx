@@ -165,7 +165,9 @@ export function Home() {
           <p className="hero-stamp">{COPY.heroStamp}</p>
           <h1>
             <span className="hero-name">{COPY.heroName}</span>
-            <span className="hero-mma">{COPY.heroMma}</span>
+            <span className="hero-mma">
+              {COPY.heroMma} <span className="hero-city">{COPY.heroCity}</span>
+            </span>
           </h1>
         </div>
         <p className="hero-hit">{COPY.heroHit}</p>

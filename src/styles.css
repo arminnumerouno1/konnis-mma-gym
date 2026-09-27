@@ -402,6 +402,13 @@ p,
   font-size: clamp(52px, 12vw, 120px);
   line-height: 0.72;
   letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.hero-city {
+  font-size: 0.32em;
+  letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 
 .hero-hit {
