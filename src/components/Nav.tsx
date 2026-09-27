@@ -13,23 +13,24 @@ export function Nav({ route }: NavProps) {
   const [open, setOpen] = useState(false)
 
   useEffect(() => {
-    const onScroll = () => setSolid(window.scrollY > 24)
+    const onScroll = () => setSolid(window.scrollY > 16)
     onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
   const links = [
-    { href: '/#studio', label: COPY.navStudio },
     { href: '/#training', label: COPY.navTraining },
-    { href: '/#konrad', label: COPY.navKonrad },
+    { href: '/#team', label: COPY.navTeam },
     { href: '/#preise', label: COPY.navPlans },
+    { href: '/#probetraining', label: COPY.navTrial },
+    { href: '/#kontakt', label: COPY.navContact },
   ]
 
   return (
     <header className={`nav ${solid || route.name !== 'home' ? 'is-solid' : ''} ${open ? 'is-open' : ''}`}>
       <Link href="/" className="nav-brand" onClick={() => setOpen(false)}>
-        <img src={GYM.logo} alt={GYM.name} width={72} height={76} />
+        <img src={GYM.logo} alt={GYM.name} width={56} height={60} />
         <span>
           KONNI MMA
           <small>Leipzig</small>

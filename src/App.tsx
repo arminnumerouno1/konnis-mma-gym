@@ -1,6 +1,5 @@
 import { Footer } from './components/Footer'
 import { Nav } from './components/Nav'
-import { ScrollProgress } from './components/ScrollProgress'
 import { useRoute } from './lib/useRoute'
 import { Home } from './pages/Home'
 import { Join } from './pages/Join'
@@ -13,8 +12,6 @@ export default function App() {
 
   return (
     <div className={`shell route-${route.name}`}>
-      <div className="grain" />
-      <ScrollProgress />
       <Nav route={route} />
       {route.name === 'home' ? <Home /> : null}
       {route.name === 'join' ? <Join plan={route.plan} /> : null}

@@ -12,7 +12,9 @@ export const IMPRESSUM = {
     { label: 'Diensteanbieter', value: GYM.legalName },
     { label: 'Vertreten durch', value: GYM.partners.join(' und ') },
     { label: 'Anschrift', value: GYM_ADDRESS },
-    { label: 'E-Mail', value: GYM.email },
+    { label: 'Kontakt', value: GYM.email },
+    { label: 'Telefon', value: GYM.phone },
+    { label: 'E-Mail (Verträge)', value: GYM.legalEmail },
     { label: 'Inhaltlich verantw.', value: `${GYM.partners.join(', ')} (Anschrift wie oben)` },
   ],
   notes: [
@@ -25,7 +27,7 @@ export const PRIVACY: LegalBlock[] = [
   {
     title: '1. Verantwortlicher',
     paragraphs: [
-      `Verantwortlich für die Datenverarbeitung ist die ${GYM.legalName}, vertreten durch ${GYM.partners.join(' und ')}, ${GYM_ADDRESS}, E-Mail: ${GYM.email}.`,
+      `Verantwortlich für die Datenverarbeitung ist die ${GYM.legalName}, vertreten durch ${GYM.partners.join(' und ')}, ${GYM_ADDRESS}, E-Mail: ${GYM.email} / ${GYM.legalEmail}.`,
     ],
   },
   {
@@ -45,7 +47,7 @@ export const PRIVACY: LegalBlock[] = [
     paragraphs: [
       'Wenn du das Anmeldeformular absendest, verarbeiten wir die angegebenen Vertragsdaten: Name, Geburtsdatum, Anschrift, E-Mail, Telefon, gewählter Tarif, Bestätigungen, digitale Unterschrift, bei Minderjährigen die Daten der gesetzlichen Vertretung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertrag) sowie Art. 6 Abs. 1 lit. c DSGVO, soweit Aufbewahrungspflichten gelten.',
       'Ohne diese Daten kommt kein Online-Vertrag zustande. Die Daten bleiben für die Vertragsdauer und danach so lange, wie handels- und steuerrechtliche Pflichten das verlangen — in der Regel bis zu zehn Jahre nach Vertragsende.',
-      `Du kannst Änderungen von Anschrift, E-Mail und Zahlweg zeitnah an ${GYM.email} schicken.`,
+      `Du kannst Änderungen von Anschrift, E-Mail und Zahlweg zeitnah an ${GYM.legalEmail} oder ${GYM.email} schicken.`,
     ],
   },
   {
@@ -73,7 +75,7 @@ export const AGB: LegalBlock[] = [
   {
     title: 'Kopf',
     paragraphs: [
-      `Allgemeine Geschäftsbedingungen der ${GYM.legalName}, vertreten durch die Gesellschafter ${GYM.partners.join(' und ')}, ${GYM_ADDRESS}, E-Mail: ${GYM.email}. Nachfolgend „KONNIMMAGYM“ oder „Gym“. Stand: ${GYM.agbStand}.`,
+      `Allgemeine Geschäftsbedingungen der ${GYM.legalName}, vertreten durch die Gesellschafter ${GYM.partners.join(' und ')}, ${GYM_ADDRESS}, E-Mail: ${GYM.legalEmail}. Nachfolgend „KONNIMMAGYM“ oder „Gym“. Stand: ${GYM.agbStand}.`,
     ],
   },
   {
@@ -127,7 +129,7 @@ export const AGB: LegalBlock[] = [
       'Mindestlaufzeit steht im Vertrag: 12 oder 24 Monate.',
       'Kündigung mit einem Monat Frist zum Ende der Mindestlaufzeit.',
       'Ohne fristgerechte Kündigung läuft der Vertrag auf unbestimmte Zeit weiter und ist dann jederzeit mit einem Monat Frist kündbar.',
-      `Kündigung in Textform, insbesondere per E-Mail an ${GYM.email}. Maßgeblich ist der Zugang.`,
+      `Kündigung in Textform, insbesondere per E-Mail an ${GYM.legalEmail}. Maßgeblich ist der Zugang.`,
     ],
   },
   {
@@ -270,7 +272,7 @@ export const WITHDRAWAL = {
   right: [
     'Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen.',
     'Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.',
-    `Um Ihr Widerrufsrecht auszuüben, müssen Sie uns ${GYM.legalName}, vertreten durch ${GYM.partners.join(' und ')}, ${GYM_ADDRESS}, E-Mail: ${GYM.email}, mittels einer eindeutigen Erklärung (Brief oder E-Mail) über Ihren Entschluss informieren.`,
+    `Um Ihr Widerrufsrecht auszuüben, müssen Sie uns ${GYM.legalName}, vertreten durch ${GYM.partners.join(' und ')}, ${GYM_ADDRESS}, E-Mail: ${GYM.legalEmail}, mittels einer eindeutigen Erklärung (Brief oder E-Mail) über Ihren Entschluss informieren.`,
     'Sie können das Muster-Widerrufsformular verwenden. Pflicht ist das nicht.',
     'Zur Fristwahrung reicht das Absenden vor Ablauf der Frist.',
   ],
@@ -288,7 +290,7 @@ export const WITHDRAWAL = {
     'Mir ist bekannt, dass ich bei Widerruf für schon erbrachte Leistungen Wertersatz zahle und den schon gezahlten Betrag nicht unbedingt vollständig zurückbekomme.',
   ],
   form: [
-    `An: ${GYM.legalName}, vertreten durch ${GYM.partners.join(' und ')}, ${GYM_ADDRESS}, E-Mail: ${GYM.email}`,
+    `An: ${GYM.legalName}, vertreten durch ${GYM.partners.join(' und ')}, ${GYM_ADDRESS}, E-Mail: ${GYM.legalEmail}`,
     'Hiermit widerrufe(n) ich/wir den von mir/uns abgeschlossenen Vertrag über folgende Dienstleistung: Mitgliedschaft bei KONNIMMAGYM.',
     'Bitte angeben: Vertragsschluss-Datum, Name, Anschrift, E-Mail, Datum. Unterschrift nur bei Papier.',
   ],

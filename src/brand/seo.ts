@@ -47,6 +47,7 @@ export function buildSeoHead(siteUrl = ''): string {
       image,
       ...(pageUrl ? { url: pageUrl } : {}),
       email: GYM.email,
+      telephone: GYM.phone,
       address: {
         '@type': 'PostalAddress',
         streetAddress: GYM.street,

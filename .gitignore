@@ -25,6 +25,7 @@ credentials.json
 secrets.json
 data/waitlist.json
 data/memberships.json
+data/contacts.json
 
 # Editor directories and files
 .vscode/*

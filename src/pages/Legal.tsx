@@ -72,7 +72,13 @@ function Impressum() {
           <div key={row.label}>
             <dt>{row.label}</dt>
             <dd>
-              {row.label === 'E-Mail' ? <a href={`mailto:${row.value}`}>{row.value}</a> : row.value}
+              {row.label === 'Kontakt' || row.label === 'E-Mail (Verträge)' ? (
+                <a href={`mailto:${row.value}`}>{row.value}</a>
+              ) : row.label === 'Telefon' ? (
+                <a href={GYM.phoneHref}>{row.value}</a>
+              ) : (
+                row.value
+              )}
             </dd>
           </div>
         ))}
@@ -127,7 +133,7 @@ function Contract({ months }: { months: 12 | 24 }) {
       <h2>1. Vertragsparteien</h2>
       <p>
         Anbieter: {GYM.legalName}, vertreten durch {GYM.partners.join(' und ')}, {GYM.street}, {GYM.zip} {GYM.city}.
-        E-Mail für Kündigungen: {GYM.email}.
+        E-Mail für Kündigungen: {GYM.legalEmail}.
       </p>
       <p>Mitglied: Vor- und Nachname, Geburtsdatum, Anschrift, E-Mail / Telefon — im Online-Formular.</p>
       <h2>2. Leistungen, Beginn und Preis</h2>
@@ -151,7 +157,7 @@ function Contract({ months }: { months: 12 | 24 }) {
         Anfängliche Vertragsdauer: {months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das
         vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum
         Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit
-        einem Monat kündbar. Kündigung in Textform an {GYM.email}. Außerordentliche Kündigung bleibt.
+        einem Monat kündbar. Kündigung in Textform an {GYM.legalEmail}. Außerordentliche Kündigung bleibt.
       </p>
       <h2>4.–6. Training, Gesundheit, Minderjährige</h2>
       <p>

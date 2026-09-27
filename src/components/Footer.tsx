@@ -7,7 +7,7 @@ export function Footer() {
   return (
     <footer className="footer">
       <div className="footer-top">
-        <img src={GYM.logo} alt="" width={88} height={94} />
+        <img src={GYM.logo} alt="" width={72} height={76} />
         <p className="footer-tag">{COPY.footerTag}</p>
       </div>
       <div className="footer-grid">
@@ -19,6 +19,12 @@ export function Footer() {
             {GYM_ADDRESS}
             <br />
             <a href={`mailto:${GYM.email}`}>{GYM.email}</a>
+            <br />
+            <a href={GYM.phoneHref}>{GYM.phone}</a>
+            <br />
+            <a href={GYM.instagram} target="_blank" rel="noreferrer">
+              {GYM.instagramHandle}
+            </a>
           </p>
         </div>
         <div>
@@ -48,19 +54,19 @@ export function Footer() {
           </ul>
         </div>
         <div>
-          <p className="footer-kicker">Verträge</p>
+          <p className="footer-kicker">PDFs</p>
           <ul>
             <li>
-              <a href="/legal/agb.pdf">AGB PDF</a>
+              <a href="/legal/agb.pdf">AGB</a>
             </li>
             <li>
-              <a href="/legal/widerrufsbelehrung.pdf">Widerruf PDF</a>
+              <a href="/legal/widerrufsbelehrung.pdf">Widerruf</a>
             </li>
             <li>
-              <a href="/legal/mitgliedsvertrag-12-monate.pdf">Vertrag 12 Monate PDF</a>
+              <a href="/legal/mitgliedsvertrag-12-monate.pdf">Vertrag 12 Monate</a>
             </li>
             <li>
-              <a href="/legal/mitgliedsvertrag-24-monate.pdf">Vertrag 24 Monate PDF</a>
+              <a href="/legal/mitgliedsvertrag-24-monate.pdf">Vertrag 24 Monate</a>
             </li>
           </ul>
         </div>
