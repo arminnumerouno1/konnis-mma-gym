@@ -24,7 +24,7 @@ export const COPY = {
   aboutTitleEnd: 'in Leipzig! 🥊',
   aboutParas: [
     'Nach vielen Wochen Arbeit ist es endlich so weit. Am 2. November eröffnen Konrad Dyrschka und Mehmet-Deniz Celik das KONNI MMA GYM in der Wittenberger Straße 15 in Leipzig.',
-    'Konrad ist selbst aktiver MMA-Kämpfer und bringt seine Erfahrung aus dem eigenen Training und aus dem Käfig direkt ins Gym ein. Gemeinsam mit Mehmet hat er in den vergangenen Wochen ein komplett neues Kampfsportstudio aufgebaut, in dem künftig MMA, Grappling und Striking trainiert werden.',
+    'Konrad ist selbst aktiver MMA-Profi-Kämpfer und bringt seine Erfahrung aus dem eigenen Training und aus dem Käfig direkt ins Gym ein. Gemeinsam mit Mehmet hat er in den vergangenen Wochen ein komplett neues Kampfsportstudio aufgebaut, in dem künftig MMA, Grappling und Striking trainiert werden.',
     'Am 2. November öffnen wir die Türen und jeder, der neugierig ist, kann vorbeikommen.',
     'Ihr könnt euch das komplette Studio anschauen, den Trainingsbereich und den Käfig ansehen und Konrad, Mehmet und das Team persönlich kennenlernen. Natürlich könnt ihr euch vor Ort auch über das Training, die einzelnen Kurse und den Ablauf im Gym informieren.',
     'Für den Eröffnungstag sind außerdem einige Gäste geplant. Wen wir an diesem Tag bei uns begrüßen dürfen, geben wir noch bekannt.',
