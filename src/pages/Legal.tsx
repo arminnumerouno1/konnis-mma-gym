@@ -1,6 +1,7 @@
 import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
-import { AGB, CONTRACT_INTRO, HOUSE_RULES, IMPRESSUM, ODR_URL, PRIVACY, WITHDRAWAL } from '../brand/legal'
+import { AGB, CONTRACT_INTRO, COOKIE_TABLE, HOUSE_RULES, IMPRESSUM, ODR_URL, PRIVACY, WITHDRAWAL } from '../brand/legal'
+import { CookieStatus } from '../components/CookieBanner'
 import { Link } from '../lib/Link'
 import { href, type RouteName } from '../lib/router'
 
@@ -17,8 +18,38 @@ function Blocks({ blocks }: { blocks: { title: string; paragraphs: string[] }[] 
           {block.paragraphs.map((p) => (
             <p key={p}>{p}</p>
           ))}
+          {block.title.startsWith('3. Cookies') ? <CookieTable /> : null}
         </section>
       ))}
+    </div>
+  )
+}
+
+function CookieTable() {
+  return (
+    <div className="cookie-table-wrap">
+      <table className="cookie-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Art</th>
+            <th>Speicher</th>
+            <th>Laufzeit</th>
+            <th>Zweck</th>
+          </tr>
+        </thead>
+        <tbody>
+          {COOKIE_TABLE.map((row) => (
+            <tr key={row.name}>
+              <td>{row.name}</td>
+              <td>{row.kind}</td>
+              <td>{row.place}</td>
+              <td>{row.time}</td>
+              <td>{row.why}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   )
 }
@@ -32,6 +63,7 @@ export function Legal({ name }: LegalProps) {
         <>
           <h1>{COPY.privacy}</h1>
           <p>Stand: {GYM.agbStand}</p>
+          <CookieStatus />
           <Blocks blocks={PRIVACY} />
         </>
       ) : null}

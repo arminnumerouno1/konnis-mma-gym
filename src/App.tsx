@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { CookieBanner } from './components/CookieBanner'
 import { Footer } from './components/Footer'
 import { Nav } from './components/Nav'
 import { useRoute } from './lib/useRoute'
@@ -40,6 +41,7 @@ export default function App() {
         </main>
       ) : null}
       <Footer />
+      <CookieBanner />
     </div>
   )
 }

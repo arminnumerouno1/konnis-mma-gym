@@ -18,6 +18,8 @@ export const GYM = {
   agbDate: '27.09.2026',
   mapsUrl:
     'https://www.openstreetmap.org/search?query=Wittenberger%20Stra%C3%9Fe%2015%2C%2004129%20Leipzig',
+  mapsEmbed:
+    'https://www.openstreetmap.org/export/embed.html?bbox=12.3846%2C51.3564%2C12.3886%2C51.3585&layer=mapnik&marker=51.3574773%2C12.3866214',
   logo: '/brand/konni-logo-ui.webp',
   konrad: '/brand/konrad.png',
   mehmet: '/brand/mehmet.png',

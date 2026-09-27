@@ -1,5 +1,6 @@
 import { COPY } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
+import { openConsentSettings } from '../lib/consent'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
 
@@ -47,6 +48,11 @@ export function Footer() {
             </li>
             <li>
               <Link href={href('datenschutz')}>{COPY.privacy}</Link>
+            </li>
+            <li>
+              <button className="footer-text-btn" type="button" onClick={() => openConsentSettings()}>
+                {COPY.footerCookies}
+              </button>
             </li>
             <li>
               <Link href={href('agb')}>{COPY.agb}</Link>

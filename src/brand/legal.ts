@@ -26,6 +26,7 @@ export const IMPRESSUM = {
   ],
   notes: [
     'Dieses Impressum gilt für die Website von KONNI MMA GYM einschließlich der Unterseiten, des Online-Mitgliedschaftsformulars und der verlinkten Gym-Kanäle, soweit wir sie selbst betreiben.',
+    'Hinweise zu Cookies und zur übrigen Datenverarbeitung stehen in der Datenschutzerklärung. Die Cookie-Auswahl kannst du über den Link Cookies im Footer ändern.',
   ],
   blocks: [
     {
@@ -99,11 +100,16 @@ export const PRIVACY: LegalBlock[] = [
     ],
   },
   {
-    title: '3. Cookies, Schriftarten, kein Tracking',
+    title: '3. Cookies und deine Auswahl',
     paragraphs: [
-      'Diese Website setzt keine Analyse-, Werbe- oder Marketing-Cookies und keine Tracking-Pixel Dritter.',
-      'Schriftarten liegen lokal auf unserem Server. Es wird kein Google Fonts vom Google-Server geladen.',
-      'Technische Zustände wie Scrollposition oder Formulareingaben können vorübergehend in deinem Browser bleiben. Das ist für den Betrieb der Seite nötig (Art. 6 Abs. 1 lit. f DSGVO, § 25 Abs. 2 TDDDG).',
+      'Beim ersten Besuch erscheint unten auf der Seite ein Hinweis. Du entscheidest dort, ob nur technisch nötige Cookies gesetzt werden oder auch optionale Dienste.',
+      'Deine Auswahl speichern wir im Cookie konni_consent und zusätzlich im lokalen Speicher deines Browsers. Laufzeit: 180 Tage. Danach fragen wir erneut. Ändern sich die Kategorien wesentlich, fragen wir ebenfalls neu. Ohne diese Speicherung müsste der Hinweis bei jedem Aufruf wieder kommen.',
+      'Technisch nötig ist nur das, was die Website und deine Entscheidung brauchen. Rechtsgrundlage sind § 25 Abs. 2 TDDDG und Art. 6 Abs. 1 lit. f DSGVO. Wenn du dieses Cookie ablehnst oder löschst, erscheint der Hinweis wieder.',
+      'Optionale Dienste setzen wir nur, wenn du „Alle an“ wählst oder die optionale Kategorie einschaltest und speicherst. Aktuell ist das die eingebettete OpenStreetMap-Karte auf der Kontaktseite. Rechtsgrundlage sind dann Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG.',
+      'Die Einwilligung kannst du jederzeit über „Cookies“ im Footer oder über „Auswahl ändern“ auf dieser Seite widerrufen oder anpassen. Der Widerruf gilt ab dem Zeitpunkt der Änderung. Die Rechtmäßigkeit bis dahin bleibt unberührt.',
+      'Ohne optionale Zustimmung setzen wir keine Analyse-, Werbe- oder Marketing-Cookies und keine Tracking-Pixel. Es gibt kein Google Analytics, kein Meta-Pixel und keine eingebetteten Social-Plugins. Schriftarten liegen lokal auf unserem Server.',
+      'Instagram und Google Maps sind auf der Website nur als normale Links. Beim Klick verlässt du unsere Seite; es gelten die Hinweise der jeweiligen Anbieter. Eingebettete Inhalte Dritter laden wir erst, wenn du optionale Dienste erlaubt hast.',
+      'Technische Zustände wie Scrollposition oder Formulareingaben können vorübergehend in deinem Browser bleiben, soweit das für die jeweilige Funktion nötig ist.',
     ],
   },
   {
@@ -139,10 +145,13 @@ export const PRIVACY: LegalBlock[] = [
     ],
   },
   {
-    title: '8. Instagram und andere Links',
+    title: '8. Instagram, OpenStreetMap und andere Links',
     paragraphs: [
       `Wir verlinken unseren Instagram-Account ${GYM.instagramHandle} (${GYM.instagram}). Beim Klick verlässt du unsere Website. Es gelten die Hinweise von Meta Platforms Ireland Limited.`,
-      'Auf unserer Seite ist kein Instagram-Plugin und kein eingebetteter Feed aktiv. Ohne Klick werden keine Daten an Instagram übertragen.',
+      'Auf unserer Seite ist kein Instagram-Plugin und kein eingebetteter Feed aktiv. Ohne Klick und ohne optionale Cookie-Zustimmung werden keine Daten an Instagram übertragen.',
+      'Die Studioadresse verlinken wir auf OpenStreetMap. Der bloße Link überträgt keine Daten an OpenStreetMap.',
+      'Wenn du optionale Dienste erlaubst, laden wir zusätzlich eine Karte von openstreetmap.org. Dabei kann die OpenStreetMap Foundation (St John’s Innovation Centre, Cowley Road, Cambridge CB4 0WS, Vereinigtes Königreich) deine IP-Adresse, technische Browserdaten und eigene Cookies verarbeiten. Hinweise der OSM Foundation: https://wiki.osmfoundation.org/wiki/Privacy_Policy',
+      'Rechtsgrundlage für die eingebettete Karte ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG). Ohne diese Zustimmung bleibt es beim normalen Link. Die Einwilligung kannst du über Cookies im Footer jederzeit ändern. Nach dem Widerruf laden wir die Karte nicht mehr. Cookies, die OpenStreetMap selbst gesetzt hat, kannst du nur in deinem Browser löschen.',
     ],
   },
   {
@@ -185,6 +194,23 @@ export const PRIVACY: LegalBlock[] = [
     ],
   },
 ]
+
+export const COOKIE_TABLE = [
+  {
+    name: 'konni_consent',
+    kind: 'Technisch nötig',
+    place: 'Cookie und lokaler Speicher',
+    time: '180 Tage',
+    why: 'Speichert deine Auswahl (nur nötige oder auch optional) und den Zeitpunkt.',
+  },
+  {
+    name: 'Cookies von openstreetmap.org',
+    kind: 'Optional',
+    place: 'Drittanbieter, nur nach Zustimmung',
+    time: 'nach Anbieter',
+    why: 'Nur wenn die eingebettete Karte geladen wird. Setzt OpenStreetMap, nicht wir.',
+  },
+] as const
 
 export const AGB: LegalBlock[] = [
   {
@@ -413,6 +439,7 @@ export const AGB: LegalBlock[] = [
     paragraphs: [
       '1. Personenbezogene Daten werden nach den geltenden datenschutzrechtlichen Vorschriften verarbeitet.',
       '2. Weitere Informationen ergeben sich aus der gesonderten Datenschutzerklärung. Für eine Videoüberwachung werden ergänzende Datenschutzinformationen bereitgestellt.',
+      '3. Hinweise zu Cookies und zur Änderung der Auswahl stehen in der Datenschutzerklärung und über den Link Cookies im Footer der Website.',
     ],
   },
   {

@@ -3,6 +3,7 @@ import { COPY, FAQ } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
 import { PLANS, type Plan } from '../brand/plans'
 import { submitTrial } from '../contact/api'
+import { hasExtrasConsent, onConsentChange } from '../lib/consent'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
 import { useSiteMotion } from '../lib/useSiteMotion'
@@ -112,6 +113,28 @@ function TrialForm() {
         {pending ? COPY.trialPending : COPY.trialSubmit}
       </button>
     </form>
+  )
+}
+
+function GymMap() {
+  const [extras, setExtras] = useState(() => hasExtrasConsent())
+
+  useEffect(() => onConsentChange((choice) => setExtras(choice.extras)), [])
+
+  return (
+    <div className="gym-map">
+      {extras ? (
+        <iframe
+          title="KONNI MMA GYM, Wittenberger Straße 15, Leipzig"
+          src={GYM.mapsEmbed}
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
+      ) : null}
+      <a className="btn btn-ghost" href={GYM.mapsUrl} target="_blank" rel="noreferrer">
+        Karte
+      </a>
+    </div>
   )
 }
 
@@ -391,9 +414,7 @@ export function Home() {
             <p>
               {COPY.locMail}: <a href={`mailto:${GYM.legalEmail}`}>{GYM.legalEmail}</a>
             </p>
-            <a className="btn btn-ghost" href={GYM.mapsUrl} target="_blank" rel="noreferrer">
-              Karte
-            </a>
+            <GymMap />
           </div>
           <div>
             <h3>{COPY.hoursTitle}</h3>
