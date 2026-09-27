@@ -1,0 +1,66 @@
+export type RouteName =
+  | 'home'
+  | 'join'
+  | 'impressum'
+  | 'datenschutz'
+  | 'agb'
+  | 'widerruf'
+  | 'hausordnung'
+  | 'vertrag12'
+  | 'vertrag24'
+  | 'notfound'
+
+export type Route = {
+  name: RouteName
+  path: string
+  hash: string
+  plan: string | null
+}
+
+export const PATHS: Record<Exclude<RouteName, 'notfound'>, string> = {
+  home: '/',
+  join: '/mitglied',
+  impressum: '/impressum',
+  datenschutz: '/datenschutz',
+  agb: '/agb',
+  widerruf: '/widerruf',
+  hausordnung: '/hausordnung',
+  vertrag12: '/vertrag/12',
+  vertrag24: '/vertrag/24',
+}
+
+function cleanPath(pathname: string) {
+  const trimmed = pathname.replace(/\/+$/, '')
+  return trimmed === '' ? '/' : trimmed
+}
+
+export function parseLocation(url = window.location.href): Route {
+  const parsed = new URL(url, window.location.origin)
+  const path = cleanPath(parsed.pathname)
+  const plan = parsed.searchParams.get('plan')
+  const hash = parsed.hash
+
+  const match = (Object.entries(PATHS) as [Exclude<RouteName, 'notfound'>, string][]).find(
+    ([, value]) => value === path,
+  )
+  if (match) {
+    return { name: match[0], path, hash, plan }
+  }
+  if (path === '/impressum.html') {
+    return { name: 'impressum', path: PATHS.impressum, hash, plan }
+  }
+  return { name: 'notfound', path, hash, plan }
+}
+
+export function href(name: Exclude<RouteName, 'notfound'>, query?: Record<string, string>) {
+  const path = PATHS[name]
+  if (!query) return path
+  const params = new URLSearchParams(query)
+  return `${path}?${params.toString()}`
+}
+
+export function navigate(path: string) {
+  if (path === `${window.location.pathname}${window.location.search}${window.location.hash}`) return
+  window.history.pushState({}, '', path)
+  window.dispatchEvent(new PopStateEvent('popstate'))
+}

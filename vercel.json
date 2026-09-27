@@ -1,5 +1,15 @@
 {
   "framework": "vite",
   "buildCommand": "npm run build",
-  "outputDirectory": "dist"
+  "outputDirectory": "dist",
+  "rewrites": [
+    { "source": "/mitglied", "destination": "/index.html" },
+    { "source": "/impressum", "destination": "/index.html" },
+    { "source": "/datenschutz", "destination": "/index.html" },
+    { "source": "/agb", "destination": "/index.html" },
+    { "source": "/widerruf", "destination": "/index.html" },
+    { "source": "/hausordnung", "destination": "/index.html" },
+    { "source": "/vertrag/12", "destination": "/index.html" },
+    { "source": "/vertrag/24", "destination": "/index.html" }
+  ]
 }

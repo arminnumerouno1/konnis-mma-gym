@@ -24,6 +24,7 @@ id_rsa.pub
 credentials.json
 secrets.json
 data/waitlist.json
+data/memberships.json
 
 # Editor directories and files
 .vscode/*

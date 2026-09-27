@@ -20,5 +20,5 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "server/waitlist-plugin.ts", "server/waitlist.mjs"]
+  "include": ["vite.config.ts", "server/waitlist-plugin.ts", "server/waitlist.mjs", "server/membership-plugin.ts", "server/membership.mjs"]
 }

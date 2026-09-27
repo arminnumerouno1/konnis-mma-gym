@@ -1,68 +1,60 @@
 # KONNI MMA GYM — Leipzig
 
-Immersive 3D scroll experience for KONNI MMA GYM — the MMA gym of MMA professional Konrad Dyrschka in Leipzig. The page is a single camera move through the gym: blackout intro, arrival on the mats, disciplines, the octagon cage, trailer end card.
+Website für KONNI MMA GYM: Studio, Tarife, Online-Mitgliedschaft mit Vertrag, AGB, Widerruf und Hausordnung.
 
-Built with React, Three.js, React Three Fiber, Drei, GSAP ScrollTrigger, and Lenis.
+Gebaut mit React, Vite, GSAP ScrollTrigger und Lenis. Logo und Konrad-Foto bleiben die Original-Assets.
 
-## Run locally
+## Lokal starten
 
 ```bash
 npm install
 npm run dev
 ```
 
-Opens at [http://127.0.0.1:43177](http://127.0.0.1:43177).
+Öffnet [http://127.0.0.1:43177](http://127.0.0.1:43177).
 
 ```bash
 npm run build
 npm run preview
+npm test
 ```
 
-## Share preview and SEO
+## Mitgliedschaft
 
-Tab title, Google snippet, and Open-Graph/Twitter cards are defined in `src/brand/seo.ts`. The share image is `public/og-image.jpg` (1200×630). Rebuild it with `python3 scripts/make-og-image.py`.
+Das Formular unter `/mitglied` schreibt nach `/api/mitglied`. Pflichtfelder kommen aus den Verträgen (12/24 Monate), plus Day Pass.
 
-For a live domain, set the public URL (no trailing slash) so Canonical, `og:url`, and `sitemap.xml` become absolute:
+Ohne Mail-Zugang liegen Anträge in `data/memberships.json` (gitignored). Liste:
+
+```bash
+npm run mitglied:list
+```
+
+Tarife:
+
+- First 50 — 89,99 € / Monat, 24 Monate, max. 50 Plätze
+- Standard — 99,99 € / Monat, 24 Monate
+- Flex — 109,99 € / Monat, 12 Monate
+- Day Pass — 19,99 € / Tag
+
+Zahlung laut Vertrag per eigener Überweisung bis zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung. Konto teilt das Gym vor dem Start mit.
+
+Live auf Vercel braucht `api/mitglied.js`. Optional dieselben Brevo-Variablen wie die alte Warteliste.
+
+## Rechtstexte
+
+Originale liegen in `public/legal/`:
+
+- `agb.pdf` — Stand September 2026
+- `widerrufsbelehrung.pdf`
+- `mitgliedsvertrag-12-monate.pdf`
+- `mitgliedsvertrag-24-monate.pdf`
+
+Anbieter: KONNIMMAGYM GbR, Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig, konni.mmagym@gmail.com.
+
+## SEO
+
+Titel, Snippet und Open Graph stehen in `src/brand/seo.ts`. Share-Bild: `public/og-image.jpg`.
 
 ```bash
 VITE_SITE_URL=https://www.example.com npm run build
 ```
-
-Copy `.env.example` to `.env` if you want that URL during local `npm run dev`. After launch, add the sitemap line in `public/robots.txt`.
-
-## Waitlist
-
-The finale has a waitlist form for opening and location updates. It posts to `/api/waitlist`. In `npm run dev` and `npm run preview` Vite serves that route. After `npm run build`, `npm start` serves `dist/` plus the same API.
-
-Without mail credentials, signups are stored in `data/waitlist.json` (gitignored). List them with:
-
-```bash
-npm run waitlist:list
-```
-
-Do **not** send the newsletters from a private Gmail account. For Germany, use double opt-in and a proper sender. The intended setup is [Brevo](https://www.brevo.com) (EU, GDPR, German UI).
-
-1. Create a free account: [app.brevo.com/account/register](https://app.brevo.com/account/register) (use `info@mma-in-leipzig.de` and confirm the mail).
-2. Create an API key: [app.brevo.com/settings/keys/api](https://app.brevo.com/settings/keys/api). Put it in `.env` as `BREVO_API_KEY` (never `VITE_`).
-3. Run `npm run waitlist:brevo`. That checks the account, creates the list **KONNI MMA GYM Warteliste**, and writes `BREVO_LIST_ID`.
-4. Confirm the sender `info@mma-in-leipzig.de` in Brevo if you want real outbound mail.
-5. Optional: a double-opt-in template id as `BREVO_DOI_TEMPLATE_ID`.
-6. When the location or opening date is ready, send a **campaign** to that list from Brevo. That is how everyone on the list gets the same update, including unsubscribe.
-
-The live site is on Vercel. The form needs the serverless route in `api/waitlist.js` **and** these project environment variables (Production + Preview):
-
-- `BREVO_API_KEY`
-- `BREVO_LIST_ID` (`3` for the current KONNI list)
-- `VITE_SITE_URL=https://mma-in-leipzig.de` (build-time, for canonical/OG URLs)
-
-Without those keys the live form cannot reach Brevo. Set them in Vercel → Project → Settings → Environment Variables, then redeploy.
-
-The live host must be able to run the Node API. A static-only upload of `dist/` will make the form fail. `npm start` is the production shape on a VPS: static files plus `/api/waitlist`.
-
-## How it works
-
-Scroll drives camera position, look-target, FOV, lights, and fog. There is no autoplay against the user. Desktop uses a full lighting and post-process pass. Mobile and weaker GPUs drop particles, lights, and effects automatically. On narrow screens and in the Handy-Ansicht, slogans switch from 3D type to large HTML captions sized to the stage, not the desktop window. `prefers-reduced-motion` freezes the camera and shows the same copy as a readable page.
-
-## Brand
-
-The KONNI MMA GYM emblem is a 2D image in the intro and finale — the browser draws the edges, not the 3D camera. The file is still a raster from the designer PDF (1254×1254 Photoshop JPEG, not a vector). Infinitely sharp corners would need an AI, EPS, or SVG. The first gym beat is arrival on the mats — BALD GEHT'S LOS. — then the camera walks a chain-link aisle toward the doorway. The Leipzig beat is the octagon cage in a hall.
