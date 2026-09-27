@@ -198,10 +198,12 @@ export function Home() {
         <span>KONRAD DYRSCHKA · MMA PRO · LEIPZIG · CAGE · MATS · NO MERCY · </span>
       </p>
 
-      <section className="block about punch" id="studio" data-reveal>
+      <section className="opening" id="studio" data-reveal>
+        <p className="opening-kicker">{COPY.aboutKicker}</p>
+        <p className="opening-date">{COPY.aboutDate}</p>
         <h2>{COPY.aboutTitle}</h2>
         <p className="lead">{COPY.aboutBody}</p>
-        <p>{COPY.aboutNote}</p>
+        <p className="opening-note">{COPY.aboutNote}</p>
       </section>
 
       <section className="impact" id="training">

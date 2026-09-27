@@ -451,19 +451,45 @@ p,
   animation: tape 18s linear infinite;
 }
 
-.punch {
-  text-align: left;
+.opening {
+  padding: 72px 6vw 80px;
+  background:
+    linear-gradient(90deg, #c4121a 8px, transparent 8px),
+    #0a0a0a;
 }
 
-.punch h2 {
-  font-size: clamp(42px, 9vw, 92px);
+.opening-kicker {
+  margin: 0 0 8px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  font-size: 16px;
+  color: #f3c63a;
+}
+
+.opening-date {
+  margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(72px, 16vw, 168px);
+  line-height: 0.82;
+  letter-spacing: 0.02em;
+}
+
+.opening h2 {
+  margin: 8px 0 16px;
+  font-size: clamp(36px, 7vw, 72px);
   max-width: 16ch;
 }
 
-.punch .lead {
-  font-size: clamp(22px, 3vw, 32px);
-  max-width: 28ch;
+.opening .lead {
+  font-size: clamp(20px, 2.6vw, 30px);
+  max-width: 34ch;
   color: #fff;
+}
+
+.opening-note {
+  margin: 18px 0 0;
+  color: var(--muted);
+  max-width: 40ch;
 }
 
 .impact {
