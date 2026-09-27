@@ -6,7 +6,6 @@ import { submitTrial } from '../contact/api'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
 import { useSiteMotion } from '../lib/useSiteMotion'
-import { fetchFirst50 } from '../membership/api'
 
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
 const SLOTS = [
@@ -15,10 +14,9 @@ const SLOTS = [
   ['19:00 Striking', '19:00 Advanced', '19:00 MMA', '19:00 Grappling', '19:00 Sparring', '—'],
 ]
 
-function PlanCard({ plan, remaining }: { plan: Plan; remaining: number }) {
-  const soldOut = plan.id === 'first50' && remaining <= 0
+function PlanCard({ plan }: { plan: Plan }) {
   return (
-    <article className={`price-card accent-${plan.accent} ${soldOut ? 'is-sold' : ''}`}>
+    <article className={`price-card accent-${plan.accent}`}>
       <p className="price-tag">{plan.tag}</p>
       <h3>{plan.name}</h3>
       <p className="price-sum">
@@ -26,21 +24,14 @@ function PlanCard({ plan, remaining }: { plan: Plan; remaining: number }) {
         <span>{plan.unit}</span>
       </p>
       <p className="price-term">{plan.term}</p>
-      {plan.limited ? (
-        <p className="price-limit">{soldOut ? 'First 50 ist voll' : `${remaining} ${COPY.slotsLeft}`}</p>
-      ) : null}
       <ul>
         {plan.bullets.map((item) => (
           <li key={item}>{item}</li>
         ))}
       </ul>
-      {soldOut ? (
-        <span className="btn btn-ghost">Nicht mehr frei</span>
-      ) : (
-        <Link className="btn btn-solid" href={href('join', { plan: plan.id })}>
-          {plan.id === 'daypass' ? 'Day Pass' : COPY.ctaJoin}
-        </Link>
-      )}
+      <Link className="btn btn-solid" href={href('join', { plan: plan.id })}>
+        {plan.id === 'daypass' ? 'Day Pass' : COPY.ctaJoin}
+      </Link>
     </article>
   )
 }
@@ -144,12 +135,7 @@ function FaqList() {
 }
 
 export function Home() {
-  const [remaining, setRemaining] = useState(50)
   useSiteMotion(true)
-
-  useEffect(() => {
-    void fetchFirst50().then((data) => setRemaining(data.remainingFirst50))
-  }, [])
 
   useEffect(() => {
     const scrollToHash = () => {
@@ -254,29 +240,35 @@ export function Home() {
         </article>
       </section>
 
-      <section className="fighter" id="team">
-        <div className="fighter-shot" data-parallax="-8">
-          <img src={GYM.konrad} alt={COPY.konradName} width={720} height={1520} />
-        </div>
-        <div className="fighter-copy">
-          <p className="fighter-kicker">{COPY.konradRole}</p>
-          <h2>
-            KONRAD
-            <br />
-            DYRSCHKA
-          </h2>
-          <p className="fighter-bio">{COPY.konradBio}</p>
-          <div className="mehmet-strip">
-            <div className="team-fallback" aria-hidden="true">
-              MC
-            </div>
-            <div>
-              <h3>{COPY.mehmetName}</h3>
-              <p className="role">{COPY.mehmetRole}</p>
-              <p>{COPY.mehmetBio}</p>
-            </div>
+      <section className="duo" id="team">
+        <article className="duo-card">
+          <div className="duo-shot">
+            <img src={GYM.konrad} alt={COPY.konradName} width={720} height={1520} />
           </div>
-        </div>
+          <div className="duo-copy">
+            <p className="fighter-kicker">{COPY.konradRole}</p>
+            <h2>
+              KONRAD
+              <br />
+              DYRSCHKA
+            </h2>
+            <p>{COPY.konradBio}</p>
+          </div>
+        </article>
+        <article className="duo-card">
+          <div className="duo-shot">
+            <img src={GYM.mehmet} alt={COPY.mehmetName} width={1374} height={1206} />
+          </div>
+          <div className="duo-copy">
+            <p className="fighter-kicker">{COPY.mehmetRole}</p>
+            <h2>
+              MEHMET
+              <br />
+              CELIK
+            </h2>
+            <p>{COPY.mehmetBio}</p>
+          </div>
+        </article>
       </section>
 
       <section className="block schedule" id="plan" data-reveal>
@@ -314,7 +306,7 @@ export function Home() {
         <p className="lead">{COPY.priceLead}</p>
         <div className="price-grid">
           {PLANS.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} remaining={remaining} />
+            <PlanCard key={plan.id} plan={plan} />
           ))}
         </div>
         <p className="price-foot">{COPY.priceFoot}</p>

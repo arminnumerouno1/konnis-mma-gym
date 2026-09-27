@@ -4,7 +4,7 @@ export const SEO = {
   title: 'KONNI MMA GYM Leipzig | Mitglied werden',
   shortTitle: 'KONNI MMA GYM Leipzig',
   description:
-    'KONNI MMA GYM in Leipzig – MMA, Grappling und Striking. Unlimited Training. First 50, Standard, Flex und Day Pass. Online-Mitgliedschaft mit Vertrag, AGB und Widerruf.',
+    'KONNI MMA GYM in Leipzig – MMA, Grappling und Striking. Unlimited Training. Standard, Flex und Day Pass. Online-Mitgliedschaft mit Vertrag, AGB und Widerruf.',
   ogImagePath: '/og-image.jpg',
   ogImageAlt: 'KONNI MMA GYM Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka.',
   locale: 'de_DE',

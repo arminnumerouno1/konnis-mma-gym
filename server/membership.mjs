@@ -9,11 +9,9 @@ const ZIP_RE = /^\d{5}$/
 const MAX_BODY = 24_576
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 6
-const FIRST50_LIMIT = 50
-const PLAN_IDS = ['first50', 'standard', 'flex', 'daypass']
+const PLAN_IDS = ['standard', 'flex', 'daypass']
 
 const PLAN_META = {
-  first50: { name: 'First 50', price: 89.99, months: 24, fee: 0 },
   standard: { name: 'Standard', price: 99.99, months: 24, fee: 0 },
   flex: { name: 'Flex', price: 109.99, months: 12, fee: 0 },
   daypass: { name: 'Day Pass', price: 19.99, months: null, fee: 0 },
@@ -144,14 +142,13 @@ function truthy(value) {
   return value === true
 }
 
-export function validateMembership(body, takenFirst50) {
+export function validateMembership(body, _takenFirst50) {
   if (typeof body.company === 'string' && body.company.trim()) {
     return { ok: true, honey: true }
   }
 
   const plan = String(body.plan ?? '')
   if (!PLAN_IDS.includes(plan)) return { ok: false, error: 'plan' }
-  if (plan === 'first50' && takenFirst50 >= FIRST50_LIMIT) return { ok: false, error: 'first50' }
 
   const firstName = String(body.firstName ?? '').trim()
   const lastName = String(body.lastName ?? '').trim()
@@ -320,11 +317,10 @@ export function createMembershipHandler({ dataDir, env }) {
 
     if (req.method === 'GET') {
       const memberships = await loadMemberships(file)
-      const taken = first50Taken(memberships)
       json(res, 200, {
         ok: true,
-        first50Taken: taken,
-        remainingFirst50: Math.max(0, FIRST50_LIMIT - taken),
+        first50Taken: first50Taken(memberships),
+        remainingFirst50: 0,
       })
       return
     }
@@ -352,10 +348,9 @@ export function createMembershipHandler({ dataDir, env }) {
     }
 
     const memberships = await loadMemberships(file)
-    const taken = first50Taken(memberships)
-    const checked = validateMembership(body, taken)
+    const checked = validateMembership(body, 0)
     if (checked.ok && checked.honey) {
-      json(res, 200, { ok: true, confirmation: 'saved', remainingFirst50: Math.max(0, FIRST50_LIMIT - taken) })
+      json(res, 200, { ok: true, confirmation: 'saved', remainingFirst50: 0 })
       return
     }
     if (!checked.ok) {
@@ -391,7 +386,7 @@ export function createMembershipHandler({ dataDir, env }) {
       ok: true,
       confirmation,
       id: record.id,
-      remainingFirst50: Math.max(0, FIRST50_LIMIT - first50Taken(memberships)),
+      remainingFirst50: 0,
     })
   }
 }

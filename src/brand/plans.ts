@@ -1,4 +1,4 @@
-export const PLAN_IDS = ['first50', 'standard', 'flex', 'daypass'] as const
+export const PLAN_IDS = ['standard', 'flex', 'daypass'] as const
 
 export type PlanId = (typeof PLAN_IDS)[number]
 
@@ -19,26 +19,6 @@ export type Plan = {
 }
 
 export const PLANS: Plan[] = [
-  {
-    id: 'first50',
-    name: 'First 50',
-    tag: 'Special Offer',
-    price: '89,99',
-    priceValue: 89.99,
-    unit: '/ Monat',
-    term: '24 Monate Laufzeit',
-    termMonths: 24,
-    accent: 'red',
-    limited: true,
-    limit: 50,
-    bullets: [
-      'Unlimited Training',
-      'Nur für die ersten 50 Mitglieder',
-      'Zahlung erst ab echter Eröffnung',
-      'Kündigung 1 Monat zum Laufzeitende',
-    ],
-    contract: '24',
-  },
   {
     id: 'standard',
     name: 'Standard',
@@ -95,7 +75,6 @@ export const PLANS: Plan[] = [
   },
 ]
 
-export const FIRST50_LIMIT = 50
 export const SIGNUP_FEE = 0
 export const PAYMENT_NOTE =
   'Du überweist den Beitrag selbst so, dass er spätestens am 1. des Monats da ist. Die Kontoverbindung schicken wir dir vor der Eröffnung.'

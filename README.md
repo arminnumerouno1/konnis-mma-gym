@@ -31,7 +31,6 @@ npm run mitglied:list
 
 Tarife:
 
-- First 50 — 89,99 € / Monat, 24 Monate, max. 50 Plätze
 - Standard — 99,99 € / Monat, 24 Monate
 - Flex — 109,99 € / Monat, 12 Monate
 - Day Pass — 19,99 € / Tag
@@ -49,7 +48,7 @@ Originale liegen in `public/legal/`:
 - `mitgliedsvertrag-12-monate.pdf`
 - `mitgliedsvertrag-24-monate.pdf`
 
-Anbieter: KONNIMMAGYM GbR, Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig, konni.mmagym@gmail.com.
+Anbieter: KONNIMMAGYM GbR, Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig, info@mma-in-leipzig.de.
 
 ## SEO
 

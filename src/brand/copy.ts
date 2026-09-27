@@ -48,15 +48,14 @@ export const COPY = {
   konradBio: 'Nicht der Typ auf dem Flyer. Der Typ auf der Matte.',
   mehmetName: 'Mehmet-Deniz Celik',
   mehmetRole: 'Mitgründer · Coach',
-  mehmetBio: 'Führt die GbR mit Konrad. Foto kommt aus der Halle, nicht aus der KI.',
+  mehmetBio: 'Mitgründer. Coach. Mit Konrad hat er das Gym aufgebaut.',
   planTitle: 'Stundenplan. Noch zu.',
   planSoon: 'Wird bald bekannt gegeben',
   planNote: 'Der konkrete Plan kommt mit dem Start. Hier siehst du nur die Form — die Zeiten sind noch nicht öffentlich.',
-  priceTitle: 'First 50. Dann Standard.',
-  priceLead: 'Unlimited in jedem Monatstarif. Wer zu spät kommt, zahlt mehr.',
+  priceTitle: 'Tarife.',
+  priceLead: 'Unlimited Training in jedem Monatstarif. Standard, Flex oder Day Pass.',
   priceFoot:
     'Überweisung bis zum 1. des Monats. Aufnahmegebühr 0 €. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
-  slotsLeft: 'First-50-Plätze frei',
   trialTitle: 'Komm vorbei.',
   trialLead: 'Eine Einheit. Kein Vertrag. Wenn du bleibst, bleibst du.',
   trialName: 'Name',
@@ -113,7 +112,6 @@ export const COPY = {
   invalid: 'Bitte alle Pflichtfelder sauber ausfüllen.',
   error: 'Das hat nicht geklappt. Versuch es gleich noch einmal.',
   rate: 'Zu viele Versuche. Warte kurz und versuch es erneut.',
-  first50gone: 'First 50 ist voll. Wähl Standard, Flex oder den Day Pass.',
   consentAgb: 'Ich habe die AGB (Stand September 2026) gelesen und akzeptiere sie.',
   consentHouse: 'Ich habe die Hausordnung gelesen. Sie ist Teil des Vertrags.',
   consentWithdraw: 'Ich habe die Widerrufsbelehrung gelesen, inklusive Muster-Formular.',
@@ -152,15 +150,11 @@ export const FAQ = [
     a: 'Du überweist selbst, so dass der Beitrag am 1. da ist. Die Kontodaten schicken wir vor der Eröffnung. Keine Lastschrift.',
   },
   {
-    q: 'Was ist First 50?',
-    a: '89,99 € im Monat, 24 Monate, nur die ersten 50 Mitglieder. Danach Standard, Flex oder Day Pass.',
-  },
-  {
     q: 'Kann ich unter 18 trainieren?',
     a: 'Ja, mit Zustimmung der gesetzlichen Vertretung. Im Online-Vertrag sind die Felder dafür drin.',
   },
   {
     q: 'Wie kündige ich?',
-    a: 'Per Mail an konni.mmagym@gmail.com. Ein Monat zum Ende der Erstlaufzeit (12 oder 24 Monate). Danach jederzeit mit einem Monat Frist.',
+    a: 'Per Mail an info@mma-in-leipzig.de. Ein Monat zum Ende der Erstlaufzeit (12 oder 24 Monate). Danach jederzeit mit einem Monat Frist.',
   },
 ] as const

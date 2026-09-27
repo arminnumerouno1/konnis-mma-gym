@@ -39,8 +39,8 @@ assert(honey.ok && honey.honey, 'honeypot')
 const badSign = validateMembership({ ...base, signature: 'Anna M' }, 0)
 assert(!badSign.ok && badSign.error === 'signature', 'signature must match')
 
-const first50full = validateMembership({ ...base, plan: 'first50' }, 50)
-assert(!first50full.ok && first50full.error === 'first50', 'first50 cap')
+const gone = validateMembership({ ...base, plan: 'first50' }, 0)
+assert(!gone.ok && gone.error === 'plan', 'first50 removed')
 
 const kid = validateMembership(
   {

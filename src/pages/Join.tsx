@@ -1,15 +1,15 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useMemo, useState, type FormEvent } from 'react'
 import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
 import { PAYMENT_NOTE, PLANS, isPlanId, planById, type PlanId } from '../brand/plans'
 import { Link } from '../lib/Link'
 import { ageFromIso } from '../lib/motion'
 import { href } from '../lib/router'
-import { fetchFirst50, submitMembership, type MembershipConsents, type MembershipError } from '../membership/api'
+import { submitMembership, type MembershipConsents, type MembershipError } from '../membership/api'
 
 const ERRORS: Record<MembershipError, string> = {
   plan: 'Bitte einen Tarif wählen.',
-  first50: COPY.first50gone,
+  first50: 'Dieser Tarif ist nicht mehr verfügbar.',
   name: COPY.invalid,
   birth: 'Bitte ein gültiges Geburtsdatum eintragen.',
   address: 'Bitte Straße, PLZ und Ort prüfen.',
@@ -43,9 +43,8 @@ const emptyConsents = (): MembershipConsents => ({
 })
 
 export function Join({ plan }: JoinProps) {
-  const initial = plan && isPlanId(plan) ? plan : 'first50'
+  const initial = plan && isPlanId(plan) ? plan : 'standard'
   const [step, setStep] = useState(0)
-  const [remaining, setRemaining] = useState(50)
   const [chosen, setChosen] = useState<PlanId>(initial)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -67,15 +66,6 @@ export function Join({ plan }: JoinProps) {
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<{ id?: string; at: string } | null>(null)
 
-  useEffect(() => {
-    void fetchFirst50().then((data) => {
-      setRemaining(data.remainingFirst50)
-      if (data.remainingFirst50 <= 0) {
-        setChosen((current) => (current === 'first50' ? 'standard' : current))
-      }
-    })
-  }, [])
-
   const selected = planById(chosen)
   const age = ageFromIso(birthDate)
   const minor = age != null && age < 18
@@ -96,10 +86,6 @@ export function Join({ plan }: JoinProps) {
   function goNext() {
     setError(null)
     if (step === 0) {
-      if (chosen === 'first50' && remaining <= 0) {
-        setError(COPY.first50gone)
-        return
-      }
       setStep(1)
       return
     }
@@ -169,14 +155,8 @@ export function Join({ plan }: JoinProps) {
     setPending(false)
     if (!result.ok) {
       setError(ERRORS[result.error])
-      if (result.error === 'first50') {
-        setRemaining(0)
-        setChosen('standard')
-        setStep(0)
-      }
       return
     }
-    setRemaining(result.remainingFirst50)
     setDone({ id: result.id, at: new Date().toISOString() })
     window.scrollTo(0, 0)
   }
@@ -274,28 +254,24 @@ export function Join({ plan }: JoinProps) {
         {step === 0 ? (
           <fieldset className="plan-pick">
             <legend className="sr-only">{COPY.stepPlan}</legend>
-            {PLANS.map((item) => {
-              const blocked = item.id === 'first50' && remaining <= 0
-              return (
-                <label key={item.id} className={`plan-option accent-${item.accent} ${blocked ? 'is-sold' : ''}`}>
-                  <input
-                    type="radio"
-                    name="plan"
-                    value={item.id}
-                    checked={chosen === item.id}
-                    disabled={blocked}
-                    onChange={() => setChosen(item.id)}
-                  />
-                  <span>
-                    <strong>{item.name}</strong>
-                    <em>
-                      {item.price}€ {item.unit}
-                    </em>
-                    <small>{blocked ? 'First 50 ist voll' : item.term}</small>
-                  </span>
-                </label>
-              )
-            })}
+            {PLANS.map((item) => (
+              <label key={item.id} className={`plan-option accent-${item.accent}`}>
+                <input
+                  type="radio"
+                  name="plan"
+                  value={item.id}
+                  checked={chosen === item.id}
+                  onChange={() => setChosen(item.id)}
+                />
+                <span>
+                  <strong>{item.name}</strong>
+                  <em>
+                    {item.price}€ {item.unit}
+                  </em>
+                  <small>{item.term}</small>
+                </span>
+              </label>
+            ))}
           </fieldset>
         ) : null}
 
