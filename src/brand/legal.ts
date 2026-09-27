@@ -16,6 +16,7 @@ export const IMPRESSUM = {
     { label: 'Vertreten durch', value: `die Gesellschafter ${GYM.partners.join(' und ')}` },
     { label: 'Anschrift', value: `${GYM_ADDRESS}, ${GYM.country}` },
     { label: 'Telefon', value: GYM.phone },
+    { label: 'WhatsApp', value: GYM.phone },
     { label: 'E-Mail', value: GYM.email },
     { label: 'E-Mail (Verträge)', value: GYM.legalEmail },
     {
@@ -24,18 +25,60 @@ export const IMPRESSUM = {
     },
   ],
   notes: [
-    'Dieses Impressum gilt für die Website von KONNI MMA GYM einschließlich der Unterseiten und des Online-Mitgliedschaftsformulars.',
-    'Eine Umsatzsteuer-Identifikationsnummer nach § 27a UStG und eine Handelsregistereintragung werden hier nur angegeben, soweit sie vorhanden sind. Beides liegt derzeit nicht vor.',
+    'Dieses Impressum gilt für die Website von KONNI MMA GYM einschließlich der Unterseiten, des Online-Mitgliedschaftsformulars und der verlinkten Gym-Kanäle, soweit wir sie selbst betreiben.',
   ],
-  odrTitle: 'Online-Streitbeilegung',
-  odr: [
-    'Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit.',
-    `OS-Plattform: ${ODR_URL}`,
-    `Unsere E-Mail-Adresse lautet ${GYM.email}.`,
-  ],
-  vsbgTitle: 'Verbraucherstreitbeilegung',
-  vsbg: [
-    'Wir sind nicht verpflichtet und nicht bereit, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.',
+  blocks: [
+    {
+      title: 'Register und Steuernummern',
+      paragraphs: [
+        'Die KONNI MMA GYM GbR ist nicht ins Handelsregister eingetragen. Eine Handelsregisternummer ist daher nicht anzugeben.',
+        'Eine Umsatzsteuer-Identifikationsnummer nach § 27a UStG liegt derzeit nicht vor. Sobald eine erteilt ist, wird sie hier ergänzt.',
+        'Eine Wirtschaftsidentifikationsnummer nach § 139c AO wird hier angegeben, sobald sie vorliegt.',
+      ],
+    },
+    {
+      title: 'Kontaktaufnahme',
+      paragraphs: [
+        `Eine schnelle elektronische Kontaktaufnahme ist möglich per E-Mail an ${GYM.email}, telefonisch unter ${GYM.phone} oder über WhatsApp. Wir antworten in der Regel an Werktagen.`,
+      ],
+    },
+    {
+      title: 'Haftung für Inhalte',
+      paragraphs: [
+        'Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich.',
+        'Nach §§ 8 bis 10 DDG sind wir nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur Entfernung oder Sperrung der Nutzung von Informationen nach den allgemeinen Gesetzen bleiben unberührt.',
+        'Eine Haftung hierfür ist erst ab dem Zeitpunkt der Kenntnis einer konkreten Rechtsverletzung möglich. Bei Bekanntwerden entsprechender Rechtsverletzungen entfernen wir diese Inhalte umgehend.',
+      ],
+    },
+    {
+      title: 'Haftung für Links',
+      paragraphs: [
+        'Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Für diese fremden Inhalte können wir keine Gewähr übernehmen. Verantwortlich ist stets der jeweilige Anbieter oder Betreiber der verlinkten Seiten.',
+        'Die verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße geprüft. Rechtswidrige Inhalte waren dabei nicht erkennbar. Eine dauerhafte Kontrolle ohne konkreten Hinweis auf eine Rechtsverletzung ist nicht zumutbar. Bei Bekanntwerden von Rechtsverletzungen entfernen wir derartige Links umgehend.',
+      ],
+    },
+    {
+      title: 'Urheberrecht',
+      paragraphs: [
+        'Die von uns erstellten Inhalte und Werke auf diesen Seiten unterliegen dem deutschen Urheberrecht. Vervielfältigung, Bearbeitung, Verbreitung und jede Verwertung außerhalb der gesetzlichen Schranken bedürfen der schriftlichen Zustimmung des jeweiligen Rechteinhabers.',
+        'Downloads und Kopien dieser Seiten sind nur für den privaten, nicht kommerziellen Gebrauch gestattet, soweit nicht etwas anderes vereinbart ist.',
+        'Soweit Inhalte nicht von uns stammen, sind die Urheberrechte Dritter gekennzeichnet. Wenn du eine Rechtsverletzung entdeckst, schreib uns. Bei berechtigtem Hinweis entfernen wir den Inhalt.',
+      ],
+    },
+    {
+      title: 'Online-Streitbeilegung',
+      paragraphs: [
+        'Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit. Verbraucher können diese Plattform für die außergerichtliche Beilegung von Streitigkeiten aus Online-Kaufverträgen oder Online-Dienstleistungsverträgen nutzen.',
+        `OS-Plattform: ${ODR_URL}`,
+        `Unsere E-Mail-Adresse lautet ${GYM.email}.`,
+      ],
+    },
+    {
+      title: 'Verbraucherstreitbeilegung',
+      paragraphs: [
+        'Wir sind nicht verpflichtet und nicht bereit, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.',
+      ],
+    },
   ],
 } as const
 

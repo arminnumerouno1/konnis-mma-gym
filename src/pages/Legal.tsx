@@ -74,6 +74,10 @@ function Impressum() {
                 <a href={`mailto:${row.value}`}>{row.value}</a>
               ) : row.label === 'Telefon' ? (
                 <a href={GYM.phoneHref}>{row.value}</a>
+              ) : row.label === 'WhatsApp' ? (
+                <a href={GYM.whatsapp} target="_blank" rel="noreferrer">
+                  {row.value}
+                </a>
               ) : (
                 row.value
               )}
@@ -84,22 +88,22 @@ function Impressum() {
       {IMPRESSUM.notes.map((note) => (
         <p key={note}>{note}</p>
       ))}
-      <h2>{IMPRESSUM.odrTitle}</h2>
-      {IMPRESSUM.odr.map((note) =>
-        note.startsWith('OS-Plattform') ? (
-          <p key={note}>
-            OS-Plattform:{' '}
-            <a href={ODR_URL} target="_blank" rel="noreferrer">
-              {ODR_URL}
-            </a>
-          </p>
-        ) : (
-          <p key={note}>{note}</p>
-        ),
-      )}
-      <h2>{IMPRESSUM.vsbgTitle}</h2>
-      {IMPRESSUM.vsbg.map((note) => (
-        <p key={note}>{note}</p>
+      {IMPRESSUM.blocks.map((block) => (
+        <section key={block.title}>
+          <h2>{block.title}</h2>
+          {block.paragraphs.map((p) =>
+            p.startsWith('OS-Plattform:') ? (
+              <p key={p}>
+                OS-Plattform:{' '}
+                <a href={ODR_URL} target="_blank" rel="noreferrer">
+                  {ODR_URL}
+                </a>
+              </p>
+            ) : (
+              <p key={p}>{p}</p>
+            ),
+          )}
+        </section>
       ))}
     </>
   )

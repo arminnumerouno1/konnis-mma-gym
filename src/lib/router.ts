@@ -59,8 +59,16 @@ export function href(name: Exclude<RouteName, 'notfound'>, query?: Record<string
   return `${path}?${params.toString()}`
 }
 
+export function scrollPageTop() {
+  window.scrollTo(0, 0)
+  document.documentElement.scrollTop = 0
+  document.body.scrollTop = 0
+}
+
 export function navigate(path: string) {
   if (path === `${window.location.pathname}${window.location.search}${window.location.hash}`) return
   window.history.pushState({}, '', path)
+  const next = new URL(path, window.location.origin)
+  if (!next.hash) scrollPageTop()
   window.dispatchEvent(new PopStateEvent('popstate'))
 }

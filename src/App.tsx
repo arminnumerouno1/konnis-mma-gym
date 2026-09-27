@@ -1,6 +1,8 @@
+import { useEffect } from 'react'
 import { Footer } from './components/Footer'
 import { Nav } from './components/Nav'
 import { useRoute } from './lib/useRoute'
+import { scrollPageTop } from './lib/router'
 import { Home } from './pages/Home'
 import { Join } from './pages/Join'
 import { Legal } from './pages/Legal'
@@ -9,6 +11,17 @@ const LEGAL = new Set(['impressum', 'datenschutz', 'agb', 'widerruf', 'hausordnu
 
 export default function App() {
   const route = useRoute()
+
+  useEffect(() => {
+    window.history.scrollRestoration = 'manual'
+  }, [])
+
+  useEffect(() => {
+    if (route.hash) return
+    scrollPageTop()
+    const frame = window.requestAnimationFrame(() => scrollPageTop())
+    return () => window.cancelAnimationFrame(frame)
+  }, [route.hash, route.name, route.path])
 
   return (
     <div className={`shell route-${route.name}`}>
