@@ -6,6 +6,7 @@ export const COPY = {
   heroMma: 'MMA',
   heroCity: 'in Leipzig',
   heroHit: 'Vom Käfig auf die Matte.',
+  tape: 'Endlich ein MMA Gym in Leipzig · 2. November geht die Tür auf · Wittenberger Straße 15 · Kommt vorbei · ',
   ctaJoin: 'Mitglied werden',
   ctaTrial: 'Probetraining',
   ctaPlans: 'Preise',

@@ -182,8 +182,8 @@ export function Home() {
       </section>
 
       <p className="tape" aria-hidden="true">
-        <span>KONRAD DYRSCHKA · MMA PRO · LEIPZIG · CAGE · MATS · NO MERCY · </span>
-        <span>KONRAD DYRSCHKA · MMA PRO · LEIPZIG · CAGE · MATS · NO MERCY · </span>
+        <span>{COPY.tape}</span>
+        <span>{COPY.tape}</span>
       </p>
 
       <section className="opening" id="studio" data-reveal>
