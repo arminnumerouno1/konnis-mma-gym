@@ -188,9 +188,7 @@ export function Home() {
           </div>
           <p className="hero-stamp">{COPY.heroStamp}</p>
           <h1>
-            <span className="sr-only">
-              {COPY.gymName} Leipzig. {COPY.ctaJoin}.{' '}
-            </span>
+            <span className="sr-only">MMA in Leipzig. {COPY.gymName}. </span>
             <span className="hero-name">{COPY.heroName}</span>
             <span className="hero-mma">
               {COPY.heroMma} <span className="hero-city">{COPY.heroCity}</span>
