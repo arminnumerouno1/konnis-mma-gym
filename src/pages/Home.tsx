@@ -10,9 +10,9 @@ import { useSiteMotion } from '../lib/useSiteMotion'
 
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
 const SLOTS = [
-  ['16:00 MMA', '16:00 Grappling', '16:00 Striking', '16:00 MMA', '16:00 Grappling', '10:00 Open'],
-  ['17:30 Grappling', '17:30 MMA', '17:30 Grappling', '17:30 Striking', '17:30 MMA', '11:30 MMA'],
-  ['19:00 Striking', '19:00 Advanced', '19:00 MMA', '19:00 Grappling', '19:00 Sparring', '—'],
+  ['16:00 MMA', '16:00 Ringen', '16:00 Boxen', '16:00 MMA', '16:00 BJJ', '10:00 Open'],
+  ['17:30 BJJ', '17:30 MMA', '17:30 Ringen', '17:30 Thai-Boxen', '17:30 MMA', '11:30 MMA'],
+  ['19:00 Boxen', '19:00 Advanced', '19:00 MMA', '19:00 Ringen', '19:00 Sparring', '—'],
 ]
 
 function PlanCard({ plan }: { plan: Plan }) {
@@ -90,10 +90,9 @@ function TrialForm() {
       <label>
         {COPY.trialInterest}
         <select value={interest} onChange={(e) => setInterest(e.target.value)}>
-          <option>MMA</option>
-          <option>Grappling</option>
-          <option>Striking</option>
-          <option>Weiß noch nicht</option>
+          {COPY.trialInterests.map((item) => (
+            <option key={item}>{item}</option>
+          ))}
         </select>
       </label>
       <label className="wide">
@@ -262,21 +261,14 @@ export function Home() {
 
       <section className="impact" id="training">
         <p className="impact-kicker">{COPY.trainTitle}</p>
-        <article className="impact-row">
-          <span>1.</span>
-          <h3>{COPY.mma}</h3>
-          <p>{COPY.mmaText}</p>
-        </article>
-        <article className="impact-row">
-          <span>2.</span>
-          <h3>{COPY.grappling}</h3>
-          <p>{COPY.grapplingText}</p>
-        </article>
-        <article className="impact-row">
-          <span>3.</span>
-          <h3>{COPY.striking}</h3>
-          <p>{COPY.strikingText}</p>
-        </article>
+        {COPY.disciplines.map((item, index) => (
+          <article className="impact-row" key={item.name}>
+            <span>{index + 1}.</span>
+            <h3>{item.name}</h3>
+            <p className="impact-tagline">{item.tagline}</p>
+            <p className="impact-text">{item.text}</p>
+          </article>
+        ))}
       </section>
 
       <section className="duo" id="team">

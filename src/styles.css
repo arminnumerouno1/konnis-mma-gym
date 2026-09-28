@@ -591,14 +591,30 @@ p,
 
 .impact-row h3 {
   grid-column: 2;
-  font-size: clamp(56px, 12vw, 120px);
+  font-size: clamp(42px, 8.5vw, 96px);
 }
 
-.impact-row p {
+.impact-row:first-of-type .impact-tagline {
+  color: var(--gold);
+}
+
+.impact-row .impact-tagline {
   grid-column: 2;
-  margin: 0;
-  max-width: 36ch;
+  margin: 2px 0 0;
+  max-width: 28ch;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: clamp(22px, 3.2vw, 32px);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.15;
+}
+
+.impact-row .impact-text {
+  grid-column: 2;
+  margin: 8px 0 0;
+  max-width: 38ch;
   font-size: 20px;
+  color: var(--muted);
 }
 
 .who {

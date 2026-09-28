@@ -25,7 +25,7 @@ export const COPY = {
   aboutTitleEnd: 'in Leipzig! 🥊',
   aboutParas: [
     'Nach vielen Wochen Arbeit ist es endlich so weit. Am 2. November eröffnen Konrad Dyrschka und Mehmet-Deniz Celik das KONNI MMA GYM in der Wittenberger Straße 15 in Leipzig.',
-    'Konrad ist selbst aktiver MMA-Profi-Kämpfer und bringt seine Erfahrung aus dem eigenen Training und aus dem Käfig direkt ins Gym ein. Gemeinsam mit Mehmet hat er in den vergangenen Wochen ein komplett neues Kampfsportstudio aufgebaut, in dem künftig MMA, Grappling und Striking trainiert werden.',
+    'Konrad ist selbst aktiver MMA-Profi-Kämpfer und bringt seine Erfahrung aus dem eigenen Training und aus dem Käfig direkt ins Gym ein. Gemeinsam mit Mehmet hat er in den vergangenen Wochen ein komplett neues Kampfsportstudio aufgebaut, in dem künftig MMA, Ringen, BJJ, Boxen sowie Kick- und Thai-Boxen trainiert werden.',
     'Am 2. November öffnen wir die Türen und jeder, der neugierig ist, kann vorbeikommen.',
     'Ihr könnt euch das komplette Studio anschauen, den Trainingsbereich und den Käfig ansehen und Konrad, Mehmet und das Team persönlich kennenlernen. Natürlich könnt ihr euch vor Ort auch über das Training, die einzelnen Kurse und den Ablauf im Gym informieren.',
     'Für den Eröffnungstag sind außerdem einige Gäste geplant. Wen wir an diesem Tag bei uns begrüßen dürfen, geben wir noch bekannt.',
@@ -36,13 +36,35 @@ export const COPY = {
   aboutWhen: 'Eröffnung am 2.\u00A0November\u00A02026',
   aboutClose: 'Kommt vorbei, schaut euch das neue Gym an und lernt uns kennen. Wir freuen uns auf euch! 🥊',
   ctaJoinNow: 'Jetzt Mitglied werden',
-  trainTitle: 'Drei Waffen.',
-  mma: 'MMA',
-  mmaText: 'Alles zusammen. Stand, Clinch, Boden — eine Sprache.',
-  grappling: 'GRAPPLING',
-  grapplingText: 'Wer kontrolliert, entscheidet. Ringen, Guard, Finish.',
-  striking: 'STRIKING',
-  strikingText: 'Hände, Beine, Distanz. Sauber. Dann hart.',
+  trainTitle: 'Die Disziplinen.',
+  disciplines: [
+    {
+      name: 'MMA',
+      tagline: 'Die Königsdisziplin.',
+      text: 'Schläge, Tritte, Ringen und Bodenkampf – vereint in einer Disziplin.',
+    },
+    {
+      name: 'Ringen',
+      tagline: 'Kontrolle beginnt am Boden.',
+      text: 'Takedowns, Würfe, Clinch und Positionskontrolle – die perfekte Basis für MMA.',
+    },
+    {
+      name: 'BJJ',
+      tagline: 'Technik schlägt Kraft.',
+      text: 'Kontrolle, Hebel und Würgetechniken im modernen Bodenkampf.',
+    },
+    {
+      name: 'Boxen',
+      tagline: 'Präzision. Timing. Bewegung.',
+      text: 'Saubere Technik, schnelle Hände und starke Defensive.',
+    },
+    {
+      name: 'Kick- & Thai-Boxen',
+      tagline: 'Kicks. Knie. Clinch.',
+      text: 'Effektives Stand-up-Training mit Elementen aus Kick- und Muay Thai.',
+    },
+  ],
+  trialInterests: ['MMA', 'Ringen', 'BJJ', 'Boxen', 'Kick- & Thai-Boxen', 'Weiß noch nicht'],
   whoKicker: 'Für wen',
   whoTitle: 'Jeder.',
   whoLead:

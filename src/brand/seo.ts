@@ -4,14 +4,14 @@ export const SEO = {
   title: 'KONNI MMA GYM Leipzig | Mitglied werden',
   shortTitle: 'KONNI MMA GYM Leipzig',
   description:
-    'KONNI MMA GYM in Leipzig – MMA, Grappling und Striking. Unlimited Training. Standard, Flex und Day Pass. Online-Mitgliedschaft mit Vertrag, AGB und Widerruf.',
+    'KONNI MMA GYM in Leipzig – MMA, Ringen, BJJ, Boxen und Kick- & Thai-Boxen. Unlimited Training. Standard, Flex und Day Pass. Online-Mitgliedschaft mit Vertrag, AGB und Widerruf.',
   ogImagePath: '/og-image.jpg',
   ogImageAlt: 'KONNI MMA GYM Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka.',
   locale: 'de_DE',
   siteName: 'KONNI MMA GYM',
   themeColor: '#070707',
   keywords:
-    'MMA Gym Leipzig, MMA Training Leipzig, Grappling Leipzig, Striking Leipzig, Kampfsport Leipzig, KONNI MMA GYM, Konrad Dyrschka, Mitgliedschaft MMA Leipzig',
+    'MMA Gym Leipzig, MMA Training Leipzig, Ringen Leipzig, BJJ Leipzig, Boxen Leipzig, Kickboxen Leipzig, Thai-Boxen Leipzig, Kampfsport Leipzig, KONNI MMA GYM, Konrad Dyrschka, Mitgliedschaft MMA Leipzig',
 } as const
 
 function escapeHtml(value: string): string {
@@ -57,7 +57,7 @@ export function buildSeoHead(siteUrl = ''): string {
         addressCountry: 'DE',
       },
       areaServed: { '@type': 'City', name: 'Leipzig' },
-      sport: ['Mixed Martial Arts', 'MMA', 'Grappling', 'Striking'],
+      sport: ['Mixed Martial Arts', 'MMA', 'Wrestling', 'Brazilian Jiu-Jitsu', 'Boxing', 'Kickboxing', 'Muay Thai'],
       founder: GYM.partners.map((name: string) => ({
         '@type': 'Person',
         name,
