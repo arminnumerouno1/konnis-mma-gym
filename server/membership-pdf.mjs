@@ -1,9 +1,6 @@
-import { readFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { fileURLToPath } from 'node:url'
+import { readFileSync } from 'node:fs'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 
-const HERE = dirname(fileURLToPath(import.meta.url))
 const A4 = [595.28, 841.89]
 const MARGIN = 54
 const BOTTOM = 48
@@ -11,13 +8,6 @@ const INK = rgb(0.07, 0.07, 0.07)
 const MUTED = rgb(0.32, 0.32, 0.32)
 const RULE = rgb(0.55, 0.08, 0.08)
 const LINE = rgb(0.82, 0.82, 0.82)
-
-const WITHDRAWAL_PATHS = [
-  join(HERE, '../public/legal/widerrufsbelehrung.pdf'),
-  join(HERE, 'assets/widerrufsbelehrung.pdf'),
-  join(process.cwd(), 'public/legal/widerrufsbelehrung.pdf'),
-  join(process.cwd(), 'legal/widerrufsbelehrung.pdf'),
-]
 
 function pdfSafe(value) {
   const mapped = String(value ?? '')
@@ -275,7 +265,7 @@ export async function buildContractPdf(record) {
   )
   writer.kv('Mitglied', `${who}, geboren ${formatIsoDate(record.birthDate)}`)
   writer.kv('Anschrift', `${record.street}, ${record.zip} ${record.city}`)
-  writer.kv('Kontakt', `${record.email} · ${record.phone}`)
+  writer.kv('Kontakt', [record.email, record.phone].filter(Boolean).join(' · '))
   if (record.guardian) {
     writer.kv(
       'Gesetzliche Vertretung',
@@ -398,16 +388,12 @@ export async function buildWithdrawalPdf() {
   return writer.bytes()
 }
 
-async function loadOfficialWithdrawal() {
-  for (const path of WITHDRAWAL_PATHS) {
-    try {
-      const bytes = await readFile(path)
-      if (bytes.length > 32 && bytes.subarray(0, 4).toString('latin1') === '%PDF') return bytes
-    } catch {
-      /* try next */
-    }
+function loadOfficialWithdrawal() {
+  try {
+    return readFileSync(new URL('./assets/widerrufsbelehrung.pdf', import.meta.url))
+  } catch {
+    return null
   }
-  return null
 }
 
 export async function loadWithdrawalPdf() {
