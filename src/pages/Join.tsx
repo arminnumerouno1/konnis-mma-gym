@@ -262,11 +262,14 @@ export function Join({ plan, invite }: JoinProps) {
                 {signature}, {place}
               </dd>
             </div>
+            <div>
+              <dt>{COPY.consentEarlyKicker}</dt>
+              <dd>{consents.earlyStart ? COPY.earlyStartYes : COPY.earlyStartNo}</dd>
+            </div>
           </dl>
           <p>{PAYMENT_NOTE}</p>
           <p>
             AGB Stand {GYM.agbStand} und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.
-            {consents.earlyStart ? ' Vorzeitiger Leistungsbeginn wurde verlangt.' : ''}
           </p>
         </article>
         <div className="legal-downloads">
@@ -466,6 +469,8 @@ export function Join({ plan, invite }: JoinProps) {
               <input type="checkbox" checked={consents.widerruf} onChange={() => toggleConsent('widerruf')} />
               <span>
                 {COPY.consentWithdraw} <Link href={href('widerruf')}>{COPY.withdraw}</Link>
+                {' · '}
+                <a href="/legal/widerrufsbelehrung.pdf">{COPY.withdrawPdf}</a>
               </span>
             </label>
             <label className="check">
@@ -478,10 +483,16 @@ export function Join({ plan, invite }: JoinProps) {
               <input type="checkbox" checked={consents.health} onChange={() => toggleConsent('health')} />
               <span>{COPY.consentHealth}</span>
             </label>
-            <label className="check">
-              <input type="checkbox" checked={consents.earlyStart} onChange={() => toggleConsent('earlyStart')} />
-              <span>{COPY.consentEarly}</span>
-            </label>
+            <div className="early-start">
+              <p className="early-start-kicker">{COPY.consentEarlyKicker}</p>
+              <p className="early-start-hint">{COPY.consentEarlyHint}</p>
+              <label className="check">
+                <input type="checkbox" checked={consents.earlyStart} onChange={() => toggleConsent('earlyStart')} />
+                <span>
+                  {COPY.consentEarly} <Link href={href('widerruf')}>{COPY.withdraw}</Link>
+                </span>
+              </label>
+            </div>
             <label className="check">
               <input type="checkbox" checked={consents.photos} onChange={() => toggleConsent('photos')} />
               <span>{COPY.consentPhoto}</span>

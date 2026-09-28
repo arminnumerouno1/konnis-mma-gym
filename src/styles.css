@@ -1492,6 +1492,31 @@ p,
   gap: 14px;
 }
 
+.early-start {
+  border: 1px solid var(--red);
+  padding: 16px 18px;
+  background: rgba(196, 18, 26, 0.12);
+  display: grid;
+  gap: 10px;
+}
+
+.early-start-kicker {
+  margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.06em;
+}
+
+.early-start-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 16px;
+}
+
+.early-start .check {
+  margin: 0;
+}
+
 .form-nav {
   display: flex;
   gap: 12px;

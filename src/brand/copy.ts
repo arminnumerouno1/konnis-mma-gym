@@ -188,8 +188,14 @@ export const COPY = {
   consentPrivacy: 'Ich habe die Datenschutzerklärung gelesen.',
   consentHealth:
     'Ich prüfe selbst, ob ich trainieren kann, und sage den Coaches Bescheid, wenn etwas unsicher ist.',
+  consentEarlyKicker: 'Erklärung zum Leistungsbeginn',
   consentEarly:
-    'Ich will, dass das Gym schon in der 14-Tage-Widerrufsfrist leistet. Mir ist klar: schon genutzte Tage können berechnet werden.',
+    'Ich verlange ausdrücklich, dass KONNI MMA GYM schon vor Ablauf der 14-Tage-Widerrufsfrist mit dem Training beginnt. Widerrufen kann ich trotzdem. Für schon genutzte Tage kann ein Anteil berechnet werden.',
+  consentEarlyHint:
+    'Kein kompletter Widerrufsverzicht. Nur ankreuzen, wenn du in den ersten 14 Tagen schon trainieren willst.',
+  earlyStartYes:
+    'Ausdrücklich verlangt. Das Widerrufsrecht bleibt. Schon genutzte Tage können berechnet werden.',
+  earlyStartNo: 'Nicht verlangt. 14 Tage Widerruf, ohne vorzeitiges Training.',
   consentPhoto: 'Optional: Ihr dürft mich auf Gym-Fotos/Videos für die Gym-Kanäle zeigen.',
   consentNews: 'Optional: Infos zu Start und Kursplan per E-Mail.',
   consentGuardian: 'Ich bin gesetzliche Vertretung und stimme dem Vertrag zu.',
