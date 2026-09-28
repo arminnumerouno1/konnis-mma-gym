@@ -4,6 +4,7 @@ import { stat } from 'node:fs/promises'
 import { extname, join, normalize, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createContactHandler } from './contact.mjs'
+import { createInviteMailHandler } from './invite-mail.mjs'
 import { createMembershipHandler } from './membership.mjs'
 import { createWaitlistHandler } from './waitlist.mjs'
 
@@ -14,6 +15,7 @@ const port = Number(process.env.PORT || 43177)
 const handleWaitlist = createWaitlistHandler({ dataDir, env: process.env })
 const handleMembership = createMembershipHandler({ dataDir, env: process.env })
 const handleContact = createContactHandler({ dataDir, env: process.env })
+const handleInviteMail = createInviteMailHandler({ env: process.env })
 
 const MIME = {
   '.css': 'text/css; charset=utf-8',
@@ -68,6 +70,10 @@ const server = createServer((req, res) => {
   }
   if (path === '/api/kontakt') {
     void handleContact(req, res)
+    return
+  }
+  if (path === '/api/invite-mail') {
+    void handleInviteMail(req, res)
     return
   }
 
