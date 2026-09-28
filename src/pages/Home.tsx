@@ -266,7 +266,9 @@ export function Home() {
         {COPY.disciplines.map((item, index) => (
           <article className="impact-row" key={item.name}>
             <span>{index + 1}.</span>
-            <h3>{item.name}</h3>
+            <h3>
+              {item.name} <span className="impact-place">{COPY.disciplinePlace}</span>
+            </h3>
             <p className="impact-tagline">{item.tagline}</p>
             <p className="impact-text">{item.text}</p>
           </article>

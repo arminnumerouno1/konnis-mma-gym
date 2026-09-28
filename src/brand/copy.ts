@@ -37,6 +37,7 @@ export const COPY = {
   aboutClose: 'Kommt vorbei, schaut euch das neue Gym an und lernt uns kennen. Wir freuen uns auf euch! 🥊',
   ctaJoinNow: 'Jetzt Mitglied werden',
   trainTitle: 'Die Disziplinen.',
+  disciplinePlace: 'in Leipzig',
   disciplines: [
     {
       name: 'MMA',

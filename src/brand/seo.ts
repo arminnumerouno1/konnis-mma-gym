@@ -4,14 +4,14 @@ export const SEO = {
   title: 'KONNI MMA GYM Leipzig | Mitglied werden',
   shortTitle: 'KONNI MMA GYM Leipzig',
   description:
-    'KONNI MMA GYM in Leipzig – MMA, Ringen, BJJ, Boxen und Kick- & Thai-Boxen. Unlimited Training. Standard, Flex und Day Pass. Online-Mitgliedschaft mit Vertrag, AGB und Widerruf.',
+    'KONNI MMA GYM – MMA in Leipzig, Ringen in Leipzig, BJJ in Leipzig, Boxen in Leipzig und Kick- & Thai-Boxen in Leipzig. Unlimited Training. Standard, Flex und Day Pass. Online-Mitgliedschaft mit Vertrag, AGB und Widerruf.',
   ogImagePath: '/og-image.jpg',
   ogImageAlt: 'KONNI MMA GYM Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka.',
   locale: 'de_DE',
   siteName: 'KONNI MMA GYM',
   themeColor: '#070707',
   keywords:
-    'MMA Gym Leipzig, MMA Training Leipzig, Ringen Leipzig, BJJ Leipzig, Boxen Leipzig, Kickboxen Leipzig, Thai-Boxen Leipzig, Kampfsport Leipzig, KONNI MMA GYM, Konrad Dyrschka, Mitgliedschaft MMA Leipzig',
+    'MMA in Leipzig, Ringen in Leipzig, BJJ in Leipzig, Boxen in Leipzig, Kick- & Thai-Boxen in Leipzig, MMA Gym Leipzig, MMA Training Leipzig, Kickboxen Leipzig, Thai-Boxen Leipzig, Kampfsport Leipzig, KONNI MMA GYM, Konrad Dyrschka, Mitgliedschaft MMA Leipzig',
 } as const
 
 function escapeHtml(value: string): string {
