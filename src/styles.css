@@ -1430,6 +1430,37 @@ p,
   grid-column: 1 / -1;
 }
 
+.field-hint {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.minor-block {
+  border: 1px solid var(--gold);
+  padding: 16px 18px;
+  background: rgba(201, 162, 39, 0.08);
+  display: grid;
+  gap: 12px;
+}
+
+.minor-kicker {
+  margin: 0;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.minor-lead {
+  margin: 0;
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 16px;
+  color: var(--ink);
+}
+
 .join-form label,
 .legal-step label {
   display: grid;

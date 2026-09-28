@@ -160,6 +160,7 @@ export const COPY = {
   firstName: 'Vorname',
   lastName: 'Nachname',
   birth: 'Geburtsdatum',
+  birthHint: 'Unter 18 erscheint automatisch die gesetzliche Vertretung. Kein extra Häkchen.',
   street: 'Straße und Hausnummer',
   zip: 'PLZ',
   cityLabel: 'Ort',
@@ -167,7 +168,10 @@ export const COPY = {
   phone: 'Telefon',
   place: 'Ort der Unterschrift',
   signature: 'Digitale Unterschrift (Vor- und Nachname)',
-  minor: 'Ich bin unter 18',
+  minorTitle: 'Unter 18',
+  minorLead:
+    'Vertrag nur mit Mutter, Vater oder Vormund. Die tragen hier Name, Mail und Telefon ein und stimmen zu.',
+  minorLegalNote: 'Mitglied unter 18. Die gesetzliche Vertretung hat auf der vorigen Seite zugestimmt.',
   guardianName: 'Name der gesetzlichen Vertretung',
   guardianEmail: 'E-Mail der Vertretung',
   guardianPhone: 'Telefon der Vertretung',
@@ -227,7 +231,7 @@ export const FAQ = [
   },
   {
     q: 'Kann ich unter 18 trainieren?',
-    a: 'Ja, mit Zustimmung der gesetzlichen Vertretung. Im Online-Vertrag sind die Felder dafür drin.',
+    a: 'Ja. Das Geburtsdatum zählt, kein extra Häkchen. Unter 18 müssen Mutter, Vater oder Vormund Name, Mail, Telefon und Zustimmung eintragen.',
   },
   {
     q: 'Ich war auf der Voranmeldung. Wo ist der First-50-Preis?',

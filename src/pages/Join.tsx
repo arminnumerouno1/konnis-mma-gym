@@ -154,7 +154,10 @@ export function Join({ plan, invite }: JoinProps) {
         setError(ERRORS.visit)
         return
       }
-      if (minor && (!guardianName.trim() || !guardianEmail.includes('@') || !guardianConsent)) {
+      if (
+        minor &&
+        (!guardianName.trim() || !guardianEmail.includes('@') || guardianPhone.trim().length < 6 || !guardianConsent)
+      ) {
         setError(ERRORS.guardian)
         return
       }
@@ -254,6 +257,14 @@ export function Join({ plan, invite }: JoinProps) {
               <div>
                 <dt>Day Pass</dt>
                 <dd>{visitDay}</dd>
+              </div>
+            ) : null}
+            {minor ? (
+              <div>
+                <dt>Gesetzliche Vertretung</dt>
+                <dd>
+                  {guardianName} · {guardianEmail} · {guardianPhone}
+                </dd>
               </div>
             ) : null}
             <div>
@@ -385,6 +396,7 @@ export function Join({ plan, invite }: JoinProps) {
                 onChange={(e) => setBirthDate(e.target.value)}
                 required
               />
+              <span className="field-hint">{COPY.birthHint}</span>
             </label>
             <label className="wide">
               {COPY.street}
@@ -422,29 +434,33 @@ export function Join({ plan, invite }: JoinProps) {
                 <input type="date" value={visitDay} onChange={(e) => setVisitDay(e.target.value)} required />
               </label>
             ) : null}
-            <label className="check wide">
-              <input type="checkbox" checked={minor} readOnly />
-              <span>{COPY.minor}</span>
-            </label>
             {minor ? (
-              <>
-                <label>
-                  {COPY.guardianName}
-                  <input value={guardianName} onChange={(e) => setGuardianName(e.target.value)} required />
-                </label>
-                <label>
-                  {COPY.guardianEmail}
-                  <input type="email" value={guardianEmail} onChange={(e) => setGuardianEmail(e.target.value)} required />
-                </label>
-                <label>
-                  {COPY.guardianPhone}
-                  <input type="tel" value={guardianPhone} onChange={(e) => setGuardianPhone(e.target.value)} required />
-                </label>
-                <label className="check wide">
-                  <input type="checkbox" checked={guardianConsent} onChange={(e) => setGuardianConsent(e.target.checked)} />
-                  <span>{COPY.consentGuardian}</span>
-                </label>
-              </>
+              <div className="minor-block wide">
+                <p className="minor-kicker">{COPY.minorTitle}</p>
+                <p className="minor-lead">{COPY.minorLead}</p>
+                <div className="form-grid">
+                  <label>
+                    {COPY.guardianName}
+                    <input value={guardianName} onChange={(e) => setGuardianName(e.target.value)} required />
+                  </label>
+                  <label>
+                    {COPY.guardianEmail}
+                    <input type="email" value={guardianEmail} onChange={(e) => setGuardianEmail(e.target.value)} required />
+                  </label>
+                  <label>
+                    {COPY.guardianPhone}
+                    <input type="tel" value={guardianPhone} onChange={(e) => setGuardianPhone(e.target.value)} required />
+                  </label>
+                  <label className="check wide">
+                    <input
+                      type="checkbox"
+                      checked={guardianConsent}
+                      onChange={(e) => setGuardianConsent(e.target.checked)}
+                    />
+                    <span>{COPY.consentGuardian}</span>
+                  </label>
+                </div>
+              </div>
             ) : null}
           </div>
         ) : null}
@@ -452,6 +468,7 @@ export function Join({ plan, invite }: JoinProps) {
         {step === 2 ? (
           <div className="legal-step">
             <p>{selected ? `${selected.name} · ${selected.price}€ ${selected.unit} · ${selected.term}` : ''}</p>
+            {minor ? <p>{COPY.minorLegalNote}</p> : null}
             <p>{PAYMENT_NOTE}</p>
             <label className="check">
               <input type="checkbox" checked={consents.agb} onChange={() => toggleConsent('agb')} />
