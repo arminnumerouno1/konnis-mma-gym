@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
 import { FIRST50, PAYMENT_NOTE, PLANS, isPublicPlanId, planById, type PlanId } from '../brand/plans'
@@ -45,6 +45,17 @@ const emptyConsents = (): MembershipConsents => ({
   newsletter: false,
 })
 
+function scrollJoinStepIntoView(target: HTMLElement | null) {
+  if (!target) return
+  const focused = document.activeElement
+  if (focused instanceof HTMLElement) focused.blur()
+  target.scrollIntoView({ behavior: 'auto', block: 'start' })
+  if (typeof target.focus === 'function') target.focus({ preventScroll: true })
+  window.requestAnimationFrame(() => {
+    target.scrollIntoView({ behavior: 'auto', block: 'start' })
+  })
+}
+
 function splitInviteName(full: string) {
   const parts = full.trim().split(/\s+/).filter(Boolean)
   if (parts.length <= 1) return { firstName: parts[0] ?? '', lastName: '' }
@@ -77,6 +88,9 @@ export function Join({ plan, invite }: JoinProps) {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [done, setDone] = useState<{ id?: string; at: string } | null>(null)
+  const pageRef = useRef<HTMLElement>(null)
+  const stepAnchorRef = useRef<HTMLOListElement>(null)
+  const skipStepScroll = useRef(true)
 
   const selected = planById(chosen)
   const age = ageFromIso(birthDate)
@@ -107,6 +121,15 @@ export function Join({ plan, invite }: JoinProps) {
       alive = false
     }
   }, [invite])
+
+  useLayoutEffect(() => {
+    if (done || !inviteReady) return
+    if (skipStepScroll.current) {
+      skipStepScroll.current = false
+      return
+    }
+    scrollJoinStepIntoView(stepAnchorRef.current ?? pageRef.current)
+  }, [step, inviteReady, done])
 
   const summary = useMemo(() => {
     if (!selected || !done) return null
@@ -304,7 +327,7 @@ export function Join({ plan, invite }: JoinProps) {
   }
 
   return (
-    <main className="page join-page">
+    <main className="page join-page" ref={pageRef}>
       <p className="kicker">{COPY.joinPageKicker}</p>
       <h1>{COPY.joinPageTitle}</h1>
       <p className="lead">{inviteLocked ? COPY.inviteLead : COPY.joinPageLead}</p>
@@ -325,7 +348,7 @@ export function Join({ plan, invite }: JoinProps) {
         </div>
       ) : null}
 
-      <ol className="steps">
+      <ol className="steps" ref={stepAnchorRef} tabIndex={-1}>
         <li className={step === 0 ? 'is-on' : ''}>{COPY.stepPlan}</li>
         <li className={step === 1 ? 'is-on' : ''}>{COPY.stepPerson}</li>
         <li className={step === 2 ? 'is-on' : ''}>{COPY.stepLegal}</li>

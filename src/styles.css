@@ -887,8 +887,18 @@ p,
 }
 
 .block,
-.page {
+.page,
+.steps {
   scroll-margin-top: calc(var(--nav) + 8px);
+}
+
+.join-page,
+.join-form {
+  overflow-anchor: none;
+}
+
+.steps:focus {
+  outline: none;
 }
 
 .block {
