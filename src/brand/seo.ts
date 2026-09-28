@@ -5,10 +5,10 @@ import { PLANS } from './plans.ts'
 export const CANONICAL_ORIGIN = 'https://www.mma-in-leipzig.de'
 
 export const SEO = {
-  title: 'MMA in Leipzig | KONNI MMA GYM',
-  shortTitle: 'MMA in Leipzig',
+  title: 'MMA Gym in Leipzig | KONNI MMA GYM | BJJ & Boxen',
+  shortTitle: 'MMA Leipzig',
   description:
-    'KONNI MMA GYM Leipzig: MMA, Ringen, BJJ, Boxen und Thai-Boxen. Wittenberger Straße 15. Jetzt Mitglied werden.',
+    'MMA Gym in Leipzig: MMA, Ringen, BJJ, Boxen und Kick- & Thai-Boxen im KONNI MMA GYM. Wittenberger Straße 15. Jetzt Mitglied werden.',
   ogImagePath: '/og-image.jpg',
   ogImageAlt: 'KONNI MMA GYM Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka.',
   locale: 'de_DE',
@@ -166,8 +166,8 @@ export function buildSeoBody(): string {
       <a href="/widerruf">${escapeHtml(COPY.withdraw)}</a>
       <a href="/hausordnung">${escapeHtml(COPY.house)}</a>
     </nav>
-    <h1>MMA in Leipzig | ${escapeHtml(COPY.gymName)}</h1>
-    <p>${escapeHtml(COPY.gymName)} Leipzig ist das MMA Gym von ${escapeHtml(GYM.partners[0])} und ${escapeHtml(GYM.partners[1])} an der ${escapeHtml(GYM_ADDRESS)}. MMA in Leipzig, Ringen in Leipzig, BJJ in Leipzig, Boxen in Leipzig und Kick- &amp; Thai-Boxen in Leipzig. ${escapeHtml(COPY.heroHit)} ${escapeHtml(COPY.ctaJoinNow)} oder zuerst zum ${escapeHtml(COPY.ctaTrial)} kommen.</p>
+    <h1>MMA Gym in Leipzig | ${escapeHtml(COPY.gymName)}</h1>
+    <p>MMA Gym in Leipzig: ${escapeHtml(COPY.gymName)} von ${escapeHtml(GYM.partners[0])} und ${escapeHtml(GYM.partners[1])} an der ${escapeHtml(GYM_ADDRESS)}. MMA in Leipzig, Ringen in Leipzig, BJJ in Leipzig, Boxen in Leipzig und Kick- &amp; Thai-Boxen in Leipzig. ${escapeHtml(COPY.heroHit)} ${escapeHtml(COPY.ctaJoinNow)} oder zuerst zum ${escapeHtml(COPY.ctaTrial)} kommen.</p>
 ${about}
     <p>${escapeHtml(COPY.aboutClose.replace('🥊', '').trim())} ${escapeHtml(COPY.aboutStreet)}, ${escapeHtml(COPY.aboutZip)}. ${escapeHtml(COPY.aboutWhen)}.</p>
     <h2>${escapeHtml(COPY.trainTitle)} MMA Training Leipzig</h2>
