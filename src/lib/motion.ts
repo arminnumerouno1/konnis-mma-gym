@@ -7,6 +7,9 @@ export function prefersReducedMotion() {
 export function wantsSmoothScroll() {
   if (typeof window === 'undefined') return false
   if (prefersReducedMotion()) return false
+  if (window.matchMedia('(max-width: 900px)').matches) return false
+  if (window.matchMedia('(pointer: coarse)').matches) return false
+  if (window.matchMedia('(hover: none)').matches) return false
   return window.matchMedia('(hover: hover) and (pointer: fine)').matches
 }
 
