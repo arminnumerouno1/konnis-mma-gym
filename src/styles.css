@@ -52,10 +52,13 @@ body,
 html {
   scroll-behavior: auto;
   scroll-padding-top: calc(var(--nav) + 12px);
+  overflow-x: clip;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
-  overflow-x: hidden;
+  overflow-x: clip;
+  overscroll-behavior-y: auto;
   font-family: 'Barlow Condensed', 'Helvetica Neue', Arial, sans-serif;
   font-size: 18px;
   line-height: 1.5;
@@ -580,7 +583,12 @@ p,
 
 .impact-row:hover {
   background: #1a0a0a;
-  transform: translateX(8px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .impact-row:hover {
+    transform: translateX(8px);
+  }
 }
 
 .impact-row span {
@@ -1772,10 +1780,17 @@ p,
   }
 
   .halle {
-    grid-template-columns: none;
-    grid-auto-flow: column;
-    grid-auto-columns: 72vw;
-    overflow-x: auto;
+    grid-template-columns: 1fr 1fr;
+    height: auto;
+    overflow: hidden;
+  }
+
+  .halle img {
+    height: 132px;
+  }
+
+  .halle img:last-child {
+    grid-column: 1 / -1;
   }
 
   .hero-logo-wrap {
@@ -1826,6 +1841,22 @@ p,
 
   .hero-mma {
     font-size: clamp(44px, 10vw, 88px);
+  }
+}
+
+@media (pointer: coarse) {
+  .nav.is-solid,
+  .route-join .nav,
+  .route-impressum .nav,
+  .route-datenschutz .nav,
+  .route-agb .nav,
+  .route-widerruf .nav,
+  .route-hausordnung .nav,
+  .route-vertrag12 .nav,
+  .route-vertrag24 .nav,
+  .route-notfound .nav {
+    backdrop-filter: none;
+    background: rgba(7, 7, 7, 0.94);
   }
 }
 

@@ -6,6 +6,7 @@ import { submitTrial } from '../contact/api'
 import { hasExtrasConsent, onConsentChange } from '../lib/consent'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
+import { wantsSmoothScroll } from '../lib/motion'
 import { useSiteMotion } from '../lib/useSiteMotion'
 
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
@@ -163,7 +164,8 @@ export function Home() {
     const scrollToHash = () => {
       const hash = window.location.hash.slice(1)
       if (!hash) return
-      document.getElementById(hash)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      const behavior = wantsSmoothScroll() ? 'smooth' : 'auto'
+      document.getElementById(hash)?.scrollIntoView({ behavior, block: 'start' })
     }
     const timer = window.setTimeout(scrollToHash, 60)
     window.addEventListener('popstate', scrollToHash)

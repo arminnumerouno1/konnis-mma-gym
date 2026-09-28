@@ -3,6 +3,13 @@ export function prefersReducedMotion() {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches
 }
 
+/** Smooth scroll only on mouse desktops. Phones keep native touch scrolling. */
+export function wantsSmoothScroll() {
+  if (typeof window === 'undefined') return false
+  if (prefersReducedMotion()) return false
+  return window.matchMedia('(hover: hover) and (pointer: fine)').matches
+}
+
 export function ageFromIso(value: string) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
   if (!match) return null

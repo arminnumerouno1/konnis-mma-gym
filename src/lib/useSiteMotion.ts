@@ -2,17 +2,21 @@ import { useEffect } from 'react'
 import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import Lenis from 'lenis'
-import { prefersReducedMotion } from './motion'
+import { wantsSmoothScroll } from './motion'
 
 export function useSiteMotion(enabled: boolean) {
   useEffect(() => {
-    if (!enabled || prefersReducedMotion()) return
+    if (!enabled || !wantsSmoothScroll()) return
 
     gsap.registerPlugin(ScrollTrigger)
+    ScrollTrigger.config({ ignoreMobileResize: true })
+
     const lenis = new Lenis({
       autoRaf: false,
       lerp: 0.092,
       wheelMultiplier: 0.92,
+      syncTouch: false,
+      allowNestedScroll: true,
     })
 
     const onTicker = (time: number) => {
@@ -32,7 +36,7 @@ export function useSiteMotion(enabled: boolean) {
             opacity: 1,
             duration: 1.05,
             ease: 'power3.out',
-            scrollTrigger: { trigger: el, start: 'top 88%' },
+            scrollTrigger: { trigger: el, start: 'top 88%', once: true },
           },
         )
       })
@@ -65,7 +69,7 @@ export function useSiteMotion(enabled: boolean) {
           n: end,
           duration: 1.4,
           ease: 'power2.out',
-          scrollTrigger: { trigger: el, start: 'top 85%' },
+          scrollTrigger: { trigger: el, start: 'top 85%', once: true },
           onUpdate: () => {
             el.textContent = String(Math.round(obj.n))
           },
@@ -73,13 +77,19 @@ export function useSiteMotion(enabled: boolean) {
       })
     })
 
-    const onResize = () => ScrollTrigger.refresh()
+    let resizeTimer = 0
+    const onResize = () => {
+      window.clearTimeout(resizeTimer)
+      resizeTimer = window.setTimeout(() => ScrollTrigger.refresh(), 180)
+    }
     window.addEventListener('resize', onResize)
 
     return () => {
+      window.clearTimeout(resizeTimer)
       window.removeEventListener('resize', onResize)
       ctx.revert()
       gsap.ticker.remove(onTicker)
+      gsap.ticker.lagSmoothing(500, 33)
       lenis.destroy()
       ScrollTrigger.getAll().forEach((t) => t.kill())
     }
