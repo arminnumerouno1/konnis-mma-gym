@@ -2,6 +2,14 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/mitglied.js": {
+      "includeFiles": "public/legal/widerrufsbelehrung.pdf"
+    },
+    "api/invite-mail.js": {
+      "includeFiles": "public/legal/widerrufsbelehrung.pdf"
+    }
+  },
   "redirects": [
     { "source": "/legal/agb.pdf", "destination": "/agb", "permanent": true },
     { "source": "/legal/mitgliedsvertrag-12-monate.pdf", "destination": "/vertrag/12", "permanent": true },

@@ -39,6 +39,8 @@ Zahlung laut 12- und 24-Monats-Vertrag per SEPA-Lastschrift, in der Regel zum 1.
 
 Live auf Vercel braucht `api/mitglied.js`. Optional dieselben Brevo-Variablen wie die alte Warteliste.
 
+Nach der Anmeldung gehen zwei Mails raus: an das Mitglied und an `info@mma-in-leipzig.de`. Anhang jeweils `Mitgliedsvertrag.pdf` (ausgefüllt) und `Widerrufsbelehrung.pdf`.
+
 ## Rechtstexte
 
 AGB, Impressum und Datenschutz stehen als Seiten. Als PDF liegt nur die Widerrufsbelehrung:
