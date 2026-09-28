@@ -1,23 +1,18 @@
 import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
-import { buildSeoHead, buildSitemap } from './src/brand/seo.ts'
+import { buildSeoBody, buildSeoHead, buildSitemap, canonicalOrigin } from './src/brand/seo.ts'
 import { contactPlugin } from './server/contact-plugin.ts'
 import { membershipDataDir, membershipPlugin } from './server/membership-plugin.ts'
 import { waitlistDataDir, waitlistPlugin } from './server/waitlist-plugin.ts'
 
-function siteUrl(envUrl = ''): string {
-  return (envUrl || process.env.VITE_SITE_URL || '').replace(/\/$/, '')
-}
-
 function seoPlugin(envUrl = ''): Plugin {
+  const origin = canonicalOrigin(envUrl || process.env.VITE_SITE_URL || '')
   return {
     name: 'konnis-seo',
     transformIndexHtml(html) {
-      return html.replace('<!--seo-head-->', buildSeoHead(siteUrl(envUrl)))
+      return html.replace('<!--seo-head-->', buildSeoHead(origin)).replace('<!--seo-body-->', buildSeoBody())
     },
     generateBundle() {
-      const origin = siteUrl(envUrl)
-      if (!origin) return
       this.emitFile({
         type: 'asset',
         fileName: 'sitemap.xml',
