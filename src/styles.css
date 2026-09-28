@@ -650,6 +650,7 @@ p,
 
 .who h2 {
   margin: 0 0 16px;
+  padding-top: 0.2em;
   font-size: clamp(72px, 16vw, 160px);
   line-height: 0.82;
 }
