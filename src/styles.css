@@ -1260,6 +1260,28 @@ p,
   color: var(--muted);
 }
 
+.price-fee {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--ink);
+}
+
+.price-fee strong {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+.price-fee span {
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
 .price-card ul {
   padding-left: 18px;
   margin: 8px 0 18px;
@@ -1282,13 +1304,19 @@ p,
 .accent-pink {
   box-shadow: inset 0 3px 0 var(--pink);
 }
-.accent-gold .price-sum strong {
+.accent-gold .price-sum strong,
+.accent-gold .price-fee strong,
+.accent-gold .price-fee span {
   color: var(--gold);
 }
-.accent-pink .price-sum strong {
+.accent-pink .price-sum strong,
+.accent-pink .price-fee strong,
+.accent-pink .price-fee span {
   color: var(--pink);
 }
-.accent-red .price-sum strong {
+.accent-red .price-sum strong,
+.accent-red .price-fee strong,
+.accent-red .price-fee span {
   color: #fff;
 }
 
@@ -1419,6 +1447,16 @@ p,
 .plan-option em {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 28px;
+}
+
+.plan-option .price-fee {
+  display: flex;
+  margin-top: 6px;
+}
+
+.plan-option .price-fee strong {
+  display: inline;
+  font-size: 22px;
 }
 
 .form-grid {

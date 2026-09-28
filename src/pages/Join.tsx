@@ -353,6 +353,10 @@ export function Join({ plan, invite }: JoinProps) {
                     {item.price}€ {item.unit}
                   </em>
                   <small>{item.term}</small>
+                  <small className="price-fee">
+                    <strong>{COPY.signupFeePrice}</strong>
+                    <span>{COPY.signupFeeLabel}</span>
+                  </small>
                 </span>
               </label>
             ))}

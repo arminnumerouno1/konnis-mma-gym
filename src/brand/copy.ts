@@ -98,6 +98,8 @@ export const COPY = {
   planNote: 'Der konkrete Plan kommt mit dem Start. Hier siehst du nur die Form — die Zeiten sind noch nicht öffentlich.',
   priceTitle: 'Tarife.',
   priceLead: 'Unlimited Training in jedem Monatstarif. Standard, Flex oder Day Pass.',
+  signupFeePrice: '0€',
+  signupFeeLabel: 'Anmeldegebühr',
   priceFoot:
     'SEPA-Lastschrift zum 1. des Monats. Aufnahmegebühr 0 €. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
   trialTitle: 'Komm vorbei.',

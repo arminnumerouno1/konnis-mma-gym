@@ -26,6 +26,10 @@ function PlanCard({ plan }: { plan: Plan }) {
         <span>{plan.unit}</span>
       </p>
       <p className="price-term">{plan.term}</p>
+      <p className="price-fee">
+        <strong>{COPY.signupFeePrice}</strong>
+        <span>{COPY.signupFeeLabel}</span>
+      </p>
       <ul>
         {plan.bullets.map((item) => (
           <li key={item}>{item}</li>
