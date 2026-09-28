@@ -3,6 +3,8 @@ import type { PlanId } from '../brand/plans'
 export type MembershipError =
   | 'plan'
   | 'first50'
+  | 'invite'
+  | 'expired'
   | 'name'
   | 'birth'
   | 'address'
@@ -48,6 +50,7 @@ export type MembershipInput = {
   guardianPhone?: string
   guardianConsent?: boolean
   consents: MembershipConsents
+  invite?: string
   company?: string
 }
 
@@ -60,16 +63,21 @@ export type MembershipOk = {
 
 export type MembershipFail = { ok: false; error: MembershipError }
 
-export async function fetchFirst50(): Promise<{ remainingFirst50: number; first50Taken: number }> {
+export type InviteLookup =
+  | { ok: true; invite: { email: string; name: string; slot: number; plan: 'first50'; price: number } }
+  | { ok: false; error: MembershipError }
+
+export async function lookupInvite(token: string): Promise<InviteLookup> {
   try {
-    const response = await fetch('/api/mitglied', { headers: { accept: 'application/json' } })
-    const data = (await response.json()) as { remainingFirst50?: number; first50Taken?: number }
-    return {
-      remainingFirst50: Number(data.remainingFirst50 ?? 50),
-      first50Taken: Number(data.first50Taken ?? 0),
-    }
+    const response = await fetch(`/api/mitglied?invite=${encodeURIComponent(token)}`, {
+      headers: { accept: 'application/json' },
+    })
+    const data = (await response.json()) as InviteLookup
+    if (data && data.ok === false) return data
+    if (data && data.ok) return data
+    return { ok: false, error: 'invite' }
   } catch {
-    return { remainingFirst50: 50, first50Taken: 0 }
+    return { ok: false, error: 'network' }
   }
 }
 

@@ -28,7 +28,7 @@ export default function App() {
     <div className={`shell route-${route.name}`}>
       <Nav route={route} />
       {route.name === 'home' ? <Home /> : null}
-      {route.name === 'join' ? <Join plan={route.plan} /> : null}
+      {route.name === 'join' ? <Join plan={route.plan} invite={route.invite} /> : null}
       {LEGAL.has(route.name) ? (
         <Legal
           name={route.name as 'impressum' | 'datenschutz' | 'agb' | 'widerruf' | 'hausordnung' | 'vertrag12' | 'vertrag24'}

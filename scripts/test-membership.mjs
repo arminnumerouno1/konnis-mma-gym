@@ -30,17 +30,17 @@ const base = {
   },
 }
 
-const ok = validateMembership(base, 0)
+const ok = validateMembership(base, {})
 assert(ok.ok && ok.record?.plan === 'standard', 'valid standard')
 
-const honey = validateMembership({ ...base, company: 'bot' }, 0)
+const honey = validateMembership({ ...base, company: 'bot' }, {})
 assert(honey.ok && honey.honey, 'honeypot')
 
-const badSign = validateMembership({ ...base, signature: 'Anna M' }, 0)
+const badSign = validateMembership({ ...base, signature: 'Anna M' }, {})
 assert(!badSign.ok && badSign.error === 'signature', 'signature must match')
 
-const gone = validateMembership({ ...base, plan: 'first50' }, 0)
-assert(!gone.ok && gone.error === 'plan', 'first50 removed')
+const gone = validateMembership({ ...base, plan: 'first50' }, {})
+assert(!gone.ok && gone.error === 'invite', 'first50 needs invite')
 
 const kid = validateMembership(
   {
@@ -51,14 +51,14 @@ const kid = validateMembership(
     guardianPhone: '03411234567',
     guardianConsent: true,
   },
-  0,
+  {},
 )
 assert(kid.ok && kid.record?.minor, 'minor with guardian')
 
-const kidNoGuard = validateMembership({ ...base, birthDate: '2014-01-01' }, 0)
+const kidNoGuard = validateMembership({ ...base, birthDate: '2014-01-01' }, {})
 assert(!kidNoGuard.ok && kidNoGuard.error === 'guardian', 'minor needs guardian')
 
-const day = validateMembership({ ...base, plan: 'daypass', visitDay: '2026-10-02' }, 0)
+const day = validateMembership({ ...base, plan: 'daypass', visitDay: '2026-10-02' }, {})
 assert(day.ok && day.record?.visitDay === '2026-10-02', 'day pass date')
 
 assert(first50Taken([{ plan: 'first50' }, { plan: 'standard' }, { plan: 'first50', status: 'cancelled' }]) === 1, 'count')

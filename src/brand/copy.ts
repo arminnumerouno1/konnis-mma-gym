@@ -148,6 +148,12 @@ export const COPY = {
   joinPageTitle: 'Vertrag online abschließen',
   joinPageLead:
     'Gleicher Inhalt wie die Papierverträge. Du füllst aus, bestätigst AGB, Hausordnung und Widerruf und unterschreibst digital.',
+  inviteLead:
+    'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 24 Monate. Der Link gilt nur für deine E-Mail. Nicht weiterleiten.',
+  inviteBad: 'Dieser Einladungslink ist ungültig oder schon benutzt.',
+  inviteExpired: 'Der Link ist abgelaufen. Schreib uns an info@mma-in-leipzig.de.',
+  inviteChecking: 'Link wird geprüft…',
+  inviteLockedNote: 'Name und E-Mail kommen aus der Voranmeldung. Der Sonderpreis gilt nur für dich.',
   stepPlan: 'Tarif',
   stepPerson: 'Daten',
   stepLegal: 'Recht & Unterschrift',
@@ -216,6 +222,10 @@ export const FAQ = [
   {
     q: 'Kann ich unter 18 trainieren?',
     a: 'Ja, mit Zustimmung der gesetzlichen Vertretung. Im Online-Vertrag sind die Felder dafür drin.',
+  },
+  {
+    q: 'Ich war auf der Voranmeldung. Wo ist der First-50-Preis?',
+    a: 'Die ersten 50 bekommen einen persönlichen Link per Mail. 89,99€ statt 99,99€, 24 Monate. Der Link gilt nur für die Mail aus dem Formular. Weiterleiten bringt nichts: der Vertrag prüft Name und E-Mail.',
   },
   {
     q: 'Wie kündige ich?',

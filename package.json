@@ -10,7 +10,8 @@
     "waitlist:list": "node server/list-waitlist.mjs",
     "mitglied:list": "node server/list-memberships.mjs",
     "waitlist:brevo": "node server/brevo-setup.mjs",
-    "test": "node scripts/test-membership.mjs",
+    "invite:first50": "node scripts/import-voranmeldung.mjs",
+    "test": "node scripts/test-membership.mjs && node scripts/test-invite.mjs",
     "lint": "oxlint",
     "preview": "vite preview --host 127.0.0.1 --port 43177"
   },

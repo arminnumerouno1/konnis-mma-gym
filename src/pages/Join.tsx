@@ -1,15 +1,17 @@
-import { useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
-import { PAYMENT_NOTE, PLANS, isPlanId, planById, type PlanId } from '../brand/plans'
+import { FIRST50, PAYMENT_NOTE, PLANS, isPublicPlanId, planById, type PlanId } from '../brand/plans'
 import { Link } from '../lib/Link'
 import { ageFromIso } from '../lib/motion'
 import { href } from '../lib/router'
-import { submitMembership, type MembershipConsents, type MembershipError } from '../membership/api'
+import { lookupInvite, submitMembership, type MembershipConsents, type MembershipError } from '../membership/api'
 
 const ERRORS: Record<MembershipError, string> = {
   plan: 'Bitte einen Tarif wählen.',
-  first50: 'Dieser Tarif ist nicht mehr verfügbar.',
+  first50: 'Dieser Tarif ist nur mit persönlichem Link buchbar.',
+  invite: COPY.inviteBad,
+  expired: COPY.inviteExpired,
   name: COPY.invalid,
   birth: 'Bitte ein gültiges Geburtsdatum eintragen.',
   address: 'Bitte Straße, PLZ und Ort prüfen.',
@@ -28,6 +30,7 @@ const ERRORS: Record<MembershipError, string> = {
 
 type JoinProps = {
   plan: string | null
+  invite: string | null
 }
 
 const emptyConsents = (): MembershipConsents => ({
@@ -42,10 +45,19 @@ const emptyConsents = (): MembershipConsents => ({
   newsletter: false,
 })
 
-export function Join({ plan }: JoinProps) {
-  const initial = plan && isPlanId(plan) ? plan : 'standard'
+function splitInviteName(full: string) {
+  const parts = full.trim().split(/\s+/).filter(Boolean)
+  if (parts.length <= 1) return { firstName: parts[0] ?? '', lastName: '' }
+  return { firstName: parts.slice(0, -1).join(' '), lastName: parts.at(-1) ?? '' }
+}
+
+export function Join({ plan, invite }: JoinProps) {
+  const initial = plan && isPublicPlanId(plan) ? plan : 'standard'
   const [step, setStep] = useState(0)
   const [chosen, setChosen] = useState<PlanId>(initial)
+  const [inviteReady, setInviteReady] = useState(!invite)
+  const [inviteError, setInviteError] = useState<string | null>(null)
+  const [inviteSlot, setInviteSlot] = useState<number | null>(null)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthDate, setBirthDate] = useState('')
@@ -69,6 +81,32 @@ export function Join({ plan }: JoinProps) {
   const selected = planById(chosen)
   const age = ageFromIso(birthDate)
   const minor = age != null && age < 18
+  const inviteLocked = Boolean(invite) && chosen === 'first50'
+  const visiblePlans = inviteLocked ? [FIRST50] : PLANS
+
+  useEffect(() => {
+    if (!invite) return
+    let alive = true
+    void lookupInvite(invite).then((result) => {
+      if (!alive) return
+      if (!result.ok) {
+        setInviteError(ERRORS[result.error] ?? COPY.inviteBad)
+        setInviteReady(true)
+        return
+      }
+      const names = splitInviteName(result.invite.name)
+      setChosen('first50')
+      setInviteSlot(result.invite.slot)
+      setEmail(result.invite.email)
+      setFirstName(names.firstName)
+      setLastName(names.lastName)
+      setStep(1)
+      setInviteReady(true)
+    })
+    return () => {
+      alive = false
+    }
+  }, [invite])
 
   const summary = useMemo(() => {
     if (!selected || !done) return null
@@ -81,6 +119,12 @@ export function Join({ plan }: JoinProps) {
 
   function toggleConsent(key: keyof MembershipConsents) {
     setConsents((current) => ({ ...current, [key]: !current[key] }))
+  }
+
+  function goBack() {
+    setError(null)
+    if (inviteLocked && step <= 1) return
+    setStep((n) => n - 1)
   }
 
   function goNext() {
@@ -150,6 +194,7 @@ export function Join({ plan }: JoinProps) {
       guardianPhone: minor ? guardianPhone : undefined,
       guardianConsent: minor ? guardianConsent : undefined,
       consents,
+      invite: invite || undefined,
       company: honey,
     })
     setPending(false)
@@ -234,11 +279,37 @@ export function Join({ plan }: JoinProps) {
     )
   }
 
+  if (!inviteReady) {
+    return (
+      <main className="page join-page">
+        <p className="kicker">{COPY.joinPageKicker}</p>
+        <h1>{COPY.joinPageTitle}</h1>
+        <p className="lead">{COPY.inviteChecking}</p>
+      </main>
+    )
+  }
+
   return (
     <main className="page join-page">
       <p className="kicker">{COPY.joinPageKicker}</p>
       <h1>{COPY.joinPageTitle}</h1>
-      <p className="lead">{COPY.joinPageLead}</p>
+      <p className="lead">{inviteLocked ? COPY.inviteLead : COPY.joinPageLead}</p>
+
+      {inviteError ? (
+        <p className="form-error" role="alert">
+          {inviteError}
+        </p>
+      ) : null}
+
+      {inviteLocked ? (
+        <div className="invite-banner">
+          <strong>
+            First 50
+            {inviteSlot != null ? ` · Platz ${inviteSlot} von 50` : ''} · 89,99€
+          </strong>
+          <p>{COPY.inviteLockedNote}</p>
+        </div>
+      ) : null}
 
       <ol className="steps">
         <li className={step === 0 ? 'is-on' : ''}>{COPY.stepPlan}</li>
@@ -250,14 +321,17 @@ export function Join({ plan }: JoinProps) {
         {step === 0 ? (
           <fieldset className="plan-pick">
             <legend className="sr-only">{COPY.stepPlan}</legend>
-            {PLANS.map((item) => (
+            {visiblePlans.map((item) => (
               <label key={item.id} className={`plan-option accent-${item.accent}`}>
                 <input
                   type="radio"
                   name="plan"
                   value={item.id}
                   checked={chosen === item.id}
-                  onChange={() => setChosen(item.id)}
+                  disabled={inviteLocked}
+                  onChange={() => {
+                    if (!inviteLocked) setChosen(item.id)
+                  }}
                 />
                 <span>
                   <strong>{item.name}</strong>
@@ -275,11 +349,29 @@ export function Join({ plan }: JoinProps) {
           <div className="form-grid">
             <label>
               {COPY.firstName}
-              <input value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" required />
+              <input
+                value={firstName}
+                onChange={(e) => {
+                  if (!inviteLocked) setFirstName(e.target.value)
+                }}
+                autoComplete="given-name"
+                readOnly={inviteLocked}
+                className={inviteLocked ? 'is-locked' : undefined}
+                required
+              />
             </label>
             <label>
               {COPY.lastName}
-              <input value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" required />
+              <input
+                value={lastName}
+                onChange={(e) => {
+                  if (!inviteLocked) setLastName(e.target.value)
+                }}
+                autoComplete="family-name"
+                readOnly={inviteLocked}
+                className={inviteLocked ? 'is-locked' : undefined}
+                required
+              />
             </label>
             <label>
               {COPY.birth}
@@ -305,7 +397,17 @@ export function Join({ plan }: JoinProps) {
             </label>
             <label>
               {COPY.email}
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  if (!inviteLocked) setEmail(e.target.value)
+                }}
+                autoComplete="email"
+                readOnly={inviteLocked}
+                className={inviteLocked ? 'is-locked' : undefined}
+                required
+              />
             </label>
             <label>
               {COPY.phone}
@@ -415,8 +517,8 @@ export function Join({ plan }: JoinProps) {
         ) : null}
 
         <div className="form-nav">
-          {step > 0 ? (
-            <button type="button" className="btn btn-ghost" onClick={() => setStep((n) => n - 1)}>
+          {step > 0 && !(inviteLocked && step === 1) ? (
+            <button type="button" className="btn btn-ghost" onClick={goBack}>
               {COPY.back}
             </button>
           ) : null}

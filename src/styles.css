@@ -1453,6 +1453,31 @@ p,
   letter-spacing: 0;
 }
 
+.join-form input.is-locked {
+  color: var(--muted);
+  cursor: not-allowed;
+}
+
+.invite-banner {
+  border: 1px solid var(--red);
+  padding: 16px 18px;
+  background: rgba(196, 18, 26, 0.18);
+  margin: 0 0 20px;
+}
+
+.invite-banner strong {
+  display: block;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
+
+.invite-banner p {
+  margin: 0;
+  color: var(--ink);
+}
+
 .check {
   grid-template-columns: 22px 1fr;
   align-items: start;

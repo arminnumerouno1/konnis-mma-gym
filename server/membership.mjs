@@ -1,6 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
+import { inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
@@ -9,12 +10,13 @@ const ZIP_RE = /^\d{5}$/
 const MAX_BODY = 24_576
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 6
-const PLAN_IDS = ['standard', 'flex', 'daypass']
+const PLAN_IDS = ['standard', 'flex', 'daypass', 'first50']
 
 const PLAN_META = {
   standard: { name: 'Standard', price: 99.99, months: 24, fee: 0 },
   flex: { name: 'Flex', price: 109.99, months: 12, fee: 0 },
   daypass: { name: 'Day Pass', price: 19.99, months: null, fee: 0 },
+  first50: { name: 'First 50', price: 89.99, months: 24, fee: 0 },
 }
 
 /** @type {Map<string, number[]>} */
@@ -142,13 +144,23 @@ function truthy(value) {
   return value === true
 }
 
-export function validateMembership(body, _takenFirst50) {
+export function validateMembership(body, ctx = {}) {
   if (typeof body.company === 'string' && body.company.trim()) {
     return { ok: true, honey: true }
   }
 
   const plan = String(body.plan ?? '')
   if (!PLAN_IDS.includes(plan)) return { ok: false, error: 'plan' }
+
+  let invite = null
+  if (plan === 'first50') {
+    const checked = verifyInvite(ctx.inviteSecret, body.invite)
+    if (!checked.ok) return { ok: false, error: checked.error === 'expired' ? 'expired' : 'invite' }
+    if (inviteUsed(ctx.memberships ?? [], checked.payload.email)) {
+      return { ok: false, error: 'invite' }
+    }
+    invite = checked.payload
+  }
 
   const firstName = String(body.firstName ?? '').trim()
   const lastName = String(body.lastName ?? '').trim()
@@ -168,6 +180,12 @@ export function validateMembership(body, _takenFirst50) {
   const phone = String(body.phone ?? '').trim()
   if (!isValidEmail(email)) return { ok: false, error: 'email' }
   if (!isValidPhone(phone)) return { ok: false, error: 'phone' }
+
+  if (invite) {
+    if (normalizeInviteEmail(email) !== invite.email) return { ok: false, error: 'invite' }
+    const submittedName = normalizePersonName(`${firstName} ${lastName}`)
+    if (!namesMatch(submittedName, invite.name)) return { ok: false, error: 'invite' }
+  }
 
   const minor = age < 18
   const guardian = {
@@ -227,6 +245,7 @@ export function validateMembership(body, _takenFirst50) {
       city,
       email,
       phone,
+      inviteSlot: invite ? invite.slot : null,
       guardian: minor ? guardian : null,
       visitDay: visitDay || null,
       place,
@@ -247,6 +266,25 @@ export function validateMembership(body, _takenFirst50) {
   }
 }
 
+async function inviteUsedRemote(env, email) {
+  const apiKey = env.BREVO_API_KEY?.trim()
+  if (!apiKey) return false
+  try {
+    const response = await fetch(`https://api.brevo.com/v3/contacts/${encodeURIComponent(email)}`, {
+      headers: { 'api-key': apiKey, accept: 'application/json' },
+    })
+    if (response.status === 404) return false
+    if (!response.ok) return false
+    const data = await response.json()
+    const tarif = String(data?.attributes?.TARIF ?? '')
+    const source = String(data?.attributes?.SOURCE ?? '')
+    return /first\s*50/i.test(tarif) || source === 'mitglied-first50'
+  } catch (error) {
+    console.error('[mitglied] invite lookup failed', error)
+    return false
+  }
+}
+
 async function pushBrevo(env, record) {
   const apiKey = env.BREVO_API_KEY?.trim()
   const listId = Number(env.BREVO_LIST_ID)
@@ -255,7 +293,7 @@ async function pushBrevo(env, record) {
   const attributes = {
     VORNAME: record.firstName,
     NACHNAME: record.lastName,
-    SOURCE: 'mitgliedschaft',
+    SOURCE: record.plan === 'first50' ? 'mitglied-first50' : 'mitgliedschaft',
     TARIF: record.planName,
     TELEFON: record.phone,
   }
@@ -316,6 +354,31 @@ export function createMembershipHandler({ dataDir, env }) {
     }
 
     if (req.method === 'GET') {
+      const url = new URL(req.url || '/', 'http://localhost')
+      const token = url.searchParams.get('invite')
+      if (token) {
+        const checked = verifyInvite(env.INVITE_SECRET, token)
+        if (!checked.ok) {
+          json(res, 400, { ok: false, error: checked.error === 'expired' ? 'expired' : 'invite' })
+          return
+        }
+        const memberships = await loadMemberships(file)
+        if (inviteUsed(memberships, checked.payload.email) || (await inviteUsedRemote(env, checked.payload.email))) {
+          json(res, 400, { ok: false, error: 'invite' })
+          return
+        }
+        json(res, 200, {
+          ok: true,
+          invite: {
+            email: checked.payload.email,
+            name: checked.payload.name,
+            slot: checked.payload.slot,
+            plan: 'first50',
+            price: 89.99,
+          },
+        })
+        return
+      }
       const memberships = await loadMemberships(file)
       json(res, 200, {
         ok: true,
@@ -348,13 +411,21 @@ export function createMembershipHandler({ dataDir, env }) {
     }
 
     const memberships = await loadMemberships(file)
-    const checked = validateMembership(body, 0)
+    const checked = validateMembership(body, { inviteSecret: env.INVITE_SECRET, memberships })
     if (checked.ok && checked.honey) {
       json(res, 200, { ok: true, confirmation: 'saved', remainingFirst50: 0 })
       return
     }
     if (!checked.ok) {
       json(res, 400, { ok: false, error: checked.error })
+      return
+    }
+
+    if (
+      checked.record.plan === 'first50' &&
+      (await inviteUsedRemote(env, checked.record.email))
+    ) {
+      json(res, 400, { ok: false, error: 'invite' })
       return
     }
 
