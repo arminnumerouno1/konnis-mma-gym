@@ -67,9 +67,9 @@ export const COPY = {
   ],
   trialInterests: ['MMA', 'Ringen', 'BJJ', 'Boxen', 'Kick- & Thai-Boxen', 'Weiß noch nicht'],
   whoKicker: 'Für wen',
-  whoTitle: 'Jeder.',
+  whoTitle: 'Für alle.',
   whoLead:
-    'Das Gym ist für alle da, die Lust auf Training haben. Ob du Anfänger bist, schon kämpfst, studierst oder die Mama von nebenan bist.',
+    'Das Gym ist für alle da, die Lust auf Training haben. Egal, ob du gerade anfängst, schon Erfahrung im Kampfsport hast, studierst oder die Mama von nebenan bist.',
   whoPeople: [
     ['Anfänger', 'Du musst nichts können. Sag uns vorher Bescheid, dann passen wir die Stunde an.'],
     ['Profi', 'Wenn du schon kämpfst, findest du hier Leute, mit denen du ernsthaft arbeiten kannst.'],
