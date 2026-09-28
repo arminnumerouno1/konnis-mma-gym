@@ -3,6 +3,35 @@ import { isValidEmail, normalizeEmail } from './membership.mjs'
 import { makeInvitePayload, normalizePersonName, signInvite } from './invite.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 
+function escapeMail(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+}
+
+export function first50InviteSubject({ test = false } = {}) {
+  const subject = 'Du gehörst zu den ersten 50 · KONNI MMA GYM'
+  return test ? `Test: ${subject}` : subject
+}
+
+export function first50InviteHtml({ first, name, email, url }) {
+  const who = escapeMail(first)
+  const full = escapeMail(name)
+  const mail = escapeMail(email)
+  const href = escapeMail(url)
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
+<p>Hi ${who},</p>
+<p><strong>Du gehörst zu den ersten 50.</strong> Deshalb bekommst du den Preis, den wir dafür gemacht haben: <strong>89,99€ statt 99,99€</strong>, 24 Monate.</p>
+<p>Wir freuen uns, wenn du von Anfang an dabei bist. Am 2. November geht die Tür auf. Über den Link schließt du den Vertrag ab – Name und Mail sind fest, der Link gilt nur für dich.</p>
+<p>${full} · ${mail}</p>
+<p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
+<p>Weiterleiten bringt den Sonderpreis niemandem sonst. Zahlung erst, wenn das Gym wirklich öffnet.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+</div>`
+}
+
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 8
 const hits = new Map()
@@ -131,6 +160,7 @@ export function createInviteMailHandler({ env }) {
       const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
       const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
       const first = name.split(' ')[0] || name
+      const test = body.test === true
 
       const response = await fetch('https://api.brevo.com/v3/smtp/email', {
         method: 'POST',
@@ -139,13 +169,8 @@ export function createInviteMailHandler({ env }) {
           sender: { name: 'KONNI MMA GYM', email: sender },
           to: [{ email, name }],
           replyTo: { email: sender, name: 'KONNI MMA GYM' },
-          subject: 'Test: dein First-50-Link KONNI MMA GYM',
-          htmlContent: `<p>Hi ${first},</p>
-<p>das ist ein Testlink für den First-50-Preis: <strong>89,99€ statt 99,99€</strong>, 24 Monate.</p>
-<p>Name und Mail sind fest: ${name} · ${email}.</p>
-<p><a href="${url}">Hier Vertrag testen</a></p>
-<p>Der Link gilt nur für diese Mail. Weiterleiten bringt den Sonderpreis niemandem sonst.</p>
-<p>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>`,
+          subject: first50InviteSubject({ test }),
+          htmlContent: first50InviteHtml({ first, name, email, url }),
         }),
       })
       const detail = await response.text()

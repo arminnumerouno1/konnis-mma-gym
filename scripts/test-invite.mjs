@@ -6,6 +6,7 @@ import {
   splitPersonName,
   verifyInvite,
 } from '../server/invite.mjs'
+import { first50InviteHtml, first50InviteSubject } from '../server/invite-mail.mjs'
 import { validateMembership } from '../server/membership.mjs'
 
 function assert(cond, message) {
@@ -95,5 +96,17 @@ assert(!reused.ok && reused.error === 'invite', 'one first50 per email')
 
 const missing = validateMembership({ ...base, invite: undefined }, ctx)
 assert(!missing.ok && missing.error === 'invite', 'token required')
+
+assert(first50InviteSubject().includes('ersten 50'), 'invite subject')
+assert(first50InviteSubject({ test: true }).startsWith('Test:'), 'test prefix')
+const inviteHtml = first50InviteHtml({
+  first: 'Anna',
+  name: 'Anna Müller',
+  email: 'anna@example.com',
+  url: 'https://www.mma-in-leipzig.de/mitglied?invite=abc',
+})
+assert(inviteHtml.includes('ersten 50') && inviteHtml.includes('freuen') && inviteHtml.includes('89,99'), 'invite welcome')
+assert(inviteHtml.includes('Jetzt Vertrag abschließen') && inviteHtml.includes('anna@example.com'), 'invite link')
+assert(!inviteHtml.includes('<script'), 'invite escaped')
 
 console.log('invite tests ok')

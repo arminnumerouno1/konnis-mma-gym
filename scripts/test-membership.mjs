@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { PDFDocument } from 'pdf-lib'
 import { ageOn, first50Taken, validateMembership } from '../server/membership.mjs'
-import { membershipCopyHtml } from '../server/membership-mail.mjs'
+import { membershipCopyHtml, membershipMailSubject } from '../server/membership-mail.mjs'
 import { membershipPdfAttachments } from '../server/membership-pdf.mjs'
 
 function assert(cond, message) {
@@ -67,7 +67,7 @@ assert(day.ok && day.record?.visitDay === '2026-10-02', 'day pass date')
 
 assert(first50Taken([{ plan: 'first50' }, { plan: 'standard' }, { plan: 'first50', status: 'cancelled' }]) === 1, 'count')
 
-const mail = membershipCopyHtml({
+const mailRecord = {
   firstName: 'Anna',
   lastName: 'Müller',
   birthDate: '1994-04-12',
@@ -84,9 +84,13 @@ const mail = membershipCopyHtml({
   signature: 'Anna Müller',
   createdAt: '2026-09-28T19:00:00.000Z',
   consents: { earlyStart: true },
-})
+}
+const mail = membershipCopyHtml(mailRecord)
 assert(mail.includes('First 50') && mail.includes('89,99') && mail.includes('Anna Müller'), 'mail copy')
+assert(mail.includes('einer der Ersten') && mail.includes('freuen') && mail.includes('Konrad und Mehmet'), 'first50 welcome')
 assert(!mail.includes('<script') && mail.includes('Wittenberger'), 'mail escaped')
+assert(membershipMailSubject(mailRecord).includes('Ersten'), 'first50 subject')
+assert(!membershipMailSubject({ ...mailRecord, plan: 'standard', planName: 'Standard' }).includes('Ersten'), 'standard subject')
 
 const attachedMail = membershipCopyHtml(
   {
@@ -100,6 +104,10 @@ const attachedMail = membershipCopyHtml(
   { attached: true },
 )
 assert(attachedMail.includes('Mitgliedsvertrag.pdf') && attachedMail.includes('Widerrufsbelehrung.pdf'), 'mail names pdfs')
+assert(attachedMail.includes('einer der Ersten') && attachedMail.includes('PDF bei'), 'first50 attached welcome')
+
+const standardMail = membershipCopyHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', price: 99.99 })
+assert(standardMail.includes('Willkommen') && !standardMail.includes('einer der Ersten'), 'standard welcome')
 
 const sample = {
   firstName: 'Anna',
