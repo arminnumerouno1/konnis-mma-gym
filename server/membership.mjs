@@ -2,6 +2,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
+import { sendMembershipEmails } from './membership-mail.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
@@ -451,6 +452,12 @@ export function createMembershipHandler({ dataDir, env }) {
       if (brevo === 'listed') confirmation = 'listed'
     } catch (error) {
       console.error('[mitglied] brevo failed', error)
+    }
+
+    try {
+      await sendMembershipEmails(env, record)
+    } catch (error) {
+      console.error('[mitglied] mail failed', error)
     }
 
     json(res, 200, {

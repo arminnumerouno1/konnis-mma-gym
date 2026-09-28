@@ -1,4 +1,5 @@
 import { ageOn, first50Taken, validateMembership } from '../server/membership.mjs'
+import { membershipCopyHtml } from '../server/membership-mail.mjs'
 
 function assert(cond, message) {
   if (!cond) throw new Error(message)
@@ -62,5 +63,26 @@ const day = validateMembership({ ...base, plan: 'daypass', visitDay: '2026-10-02
 assert(day.ok && day.record?.visitDay === '2026-10-02', 'day pass date')
 
 assert(first50Taken([{ plan: 'first50' }, { plan: 'standard' }, { plan: 'first50', status: 'cancelled' }]) === 1, 'count')
+
+const mail = membershipCopyHtml({
+  firstName: 'Anna',
+  lastName: 'Müller',
+  birthDate: '1994-04-12',
+  street: 'Wittenberger Straße 15',
+  zip: '04129',
+  city: 'Leipzig',
+  email: 'anna@example.com',
+  phone: '+49 171 1234567',
+  plan: 'first50',
+  planName: 'First 50',
+  price: 89.99,
+  termMonths: 24,
+  place: 'Leipzig',
+  signature: 'Anna Müller',
+  createdAt: '2026-09-28T19:00:00.000Z',
+  consents: { earlyStart: true },
+})
+assert(mail.includes('First 50') && mail.includes('89,99') && mail.includes('Anna Müller'), 'mail copy')
+assert(!mail.includes('<script') && mail.includes('Wittenberger'), 'mail escaped')
 
 console.log('membership tests ok')

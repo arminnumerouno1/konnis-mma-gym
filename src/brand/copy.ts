@@ -182,7 +182,7 @@ export const COPY = {
   next: 'Weiter',
   successTitle: 'Anmeldung ist raus.',
   successLead:
-    'Wir haben deinen Vertrag. Unten die Zusammenfassung. Die Widerrufsbelehrung kannst du als PDF mitnehmen. Widerruf: 14 Tage.',
+    'Wir haben deinen Vertrag. Eine Kopie geht an deine Mail, eine Nachricht an das Gym. Unten die Zusammenfassung. Widerruf: 14 Tage.',
   invalid: 'Bitte alle Pflichtfelder sauber ausfüllen.',
   error: 'Das hat nicht geklappt. Versuch es gleich noch einmal.',
   rate: 'Zu viele Versuche. Warte kurz und versuch es erneut.',

@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
 import { makeInvitePayload, normalizePersonName, signInvite } from './invite.mjs'
+import { sendMembershipEmails } from './membership-mail.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 8
@@ -100,6 +101,19 @@ export function createInviteMailHandler({ env }) {
       const apiKey = env.BREVO_API_KEY?.trim()
       if (!secretsMatch(body.secret, secret) || !apiKey) {
         json(res, 403, { ok: false, error: 'invite' })
+        return
+      }
+
+      if (body.copyRecord && typeof body.copyRecord === 'object') {
+        const record = body.copyRecord
+        const email = normalizeEmail(record.email)
+        const name = normalizePersonName(`${record.firstName ?? ''} ${record.lastName ?? ''}`)
+        if (!isValidEmail(email) || name.length < 3) {
+          json(res, 400, { ok: false, error: 'invalid' })
+          return
+        }
+        await sendMembershipEmails(env, { ...record, email, firstName: record.firstName, lastName: record.lastName })
+        json(res, 200, { ok: true, copied: email })
         return
       }
 
