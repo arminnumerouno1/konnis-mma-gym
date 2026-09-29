@@ -15,6 +15,7 @@ import {
 import { createMemberStore, ingestSignup } from '../server/member-store.mjs'
 import { createAdminHandler } from '../server/admin.mjs'
 import { createStripeHandler } from '../server/stripe.mjs'
+import { toSuggestions } from '../server/address.mjs'
 
 function assert(cond, message) {
   if (!cond) throw new Error(message)
@@ -332,5 +333,14 @@ assert(late.data.status === 'paid', 'late finalized does not reopen paid month')
 
 const nobody = await stripeCall(invoice('invoice.paid', { customer: 'cus_NOBODY0000', customer_email: 'x@example.com' }))
 assert(nobody.status === 200 && nobody.data.reason === 'unmatched', 'unmatched invoice acknowledged')
+
+const suggestions = toSuggestions([
+  { properties: { type: 'house', street: 'Wittenberger Straße', housenumber: '15', postcode: '04129', city: 'Leipzig', countrycode: 'DE' } },
+  { properties: { type: 'house', street: 'Wittenberger Straße', housenumber: '15', postcode: '04129', city: 'Leipzig', countrycode: 'DE' } },
+  { properties: { type: 'street', name: 'Karl-Liebknecht-Straße', postcode: '04107', city: 'Leipzig', countrycode: 'DE' } },
+  { properties: { type: 'street', name: 'Wiener Straße', postcode: '1010', city: 'Wien', countrycode: 'AT' } },
+])
+assert(suggestions.length === 2, 'address dedupe and DE only')
+assert(suggestions[1].street === 'Karl-Liebknecht-Straße' && suggestions[1].housenumber === '', 'street suggestion')
 
 console.log('admin tests ok')

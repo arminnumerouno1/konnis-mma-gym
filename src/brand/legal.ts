@@ -98,6 +98,7 @@ export const PRIVACY: LegalBlock[] = [
       'Die Website wird über einen Hosting-Dienstleister bereitgestellt. Derzeit ist das Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, USA. Der Hoster verarbeitet in unserem Auftrag technisch notwendige Daten zur Auslieferung der Seiten (Art. 28 DSGVO).',
       'Beim Aufruf entstehen Server-Logfiles, insbesondere IP-Adresse, Zeitpunkt, aufgerufene Datei, übertragene Datenmenge, Browsertyp und gegebenenfalls die zuvor besuchte Seite. Zweck sind Bereitstellung, Stabilität, Sicherheit und Missbrauchsabwehr (Art. 6 Abs. 1 lit. f DSGVO). Die Speicherdauer richtet sich nach den technischen Vorgaben des Hosters und ist auf das Erforderliche begrenzt.',
       'Soweit dabei Daten in die USA übermittelt werden, stützt sich das auf den EU-US Data Privacy Framework und/oder geeignete Garantien nach Art. 46 DSGVO.',
+      'Adressvorschläge im Anmeldeformular: Wenn du eine Straße eintippst, fragt unser Server den Geocoding-Dienst Photon der komoot GmbH (Potsdam) auf Basis von OpenStreetMap nach passenden Adressen. Übermittelt wird nur der eingetippte Text, nicht deine IP-Adresse und keine weiteren Formulardaten. Zweck ist eine schnelle, fehlerfreie Eingabe (Art. 6 Abs. 1 lit. b und f DSGVO).',
     ],
   },
   {

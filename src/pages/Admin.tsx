@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { StreetInput } from '../components/StreetInput'
 
 type PayStatus = 'paid' | 'open' | 'failed' | 'waived' | 'upcoming' | 'na'
 type MemberStatus = 'received' | 'active' | 'paused' | 'cancelled' | 'expired'
@@ -975,7 +976,15 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
         </label>
         <label>
           Straße
-          <input value={street} onChange={(event) => setStreet(event.target.value)} />
+          <StreetInput
+            value={street}
+            onChange={setStreet}
+            onPick={(pick) => {
+              setStreet(pick.street)
+              setZip(pick.zip)
+              setCity(pick.city)
+            }}
+          />
         </label>
         <label>
           PLZ

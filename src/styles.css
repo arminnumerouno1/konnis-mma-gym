@@ -1489,6 +1489,52 @@ p,
   grid-column: 1 / -1;
 }
 
+.street-input {
+  position: relative;
+  display: grid;
+}
+
+.street-suggest {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: #101010;
+  border: 1px solid var(--red);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.55);
+  text-transform: none;
+  letter-spacing: 0;
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.street-suggest li {
+  display: grid;
+  gap: 2px;
+  padding: 9px 12px;
+  cursor: pointer;
+}
+
+.street-suggest li.is-active,
+.street-suggest li:hover {
+  background: rgba(196, 18, 26, 0.22);
+}
+
+.street-suggest strong {
+  font-weight: 600;
+  color: var(--ink);
+  font-size: 15px;
+}
+
+.street-suggest small {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .field-hint {
   text-transform: none;
   letter-spacing: 0;

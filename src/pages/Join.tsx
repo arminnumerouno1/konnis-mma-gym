@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { COPY } from '../brand/copy'
+import { StreetInput } from '../components/StreetInput'
 import { GYM } from '../brand/gym'
 import { FIRST50, PAYMENT_NOTE, PLANS, SIGNUP_OPEN, isPublicPlanId, planById, type PlanId } from '../brand/plans'
 import { Link } from '../lib/Link'
@@ -452,7 +453,16 @@ function JoinForm({ plan, invite }: JoinProps) {
             </label>
             <label className="wide">
               {COPY.street}
-              <input value={street} onChange={(e) => setStreet(e.target.value)} autoComplete="street-address" required />
+              <StreetInput
+                value={street}
+                onChange={setStreet}
+                onPick={(pick) => {
+                  setStreet(pick.street)
+                  setZip(pick.zip)
+                  setCity(pick.city)
+                }}
+                required
+              />
             </label>
             <label>
               {COPY.zip}
