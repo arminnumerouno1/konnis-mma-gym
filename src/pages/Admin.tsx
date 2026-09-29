@@ -20,6 +20,7 @@ type Payment = {
   status: PayStatus
   paidAt: string | null
   note?: string
+  source?: string
 }
 
 type MemberList = {
@@ -36,6 +37,9 @@ type MemberList = {
   visitDay: string | null
   minor: boolean
   hasPhoto: boolean
+  bankMissing: boolean
+  guardianMissing: boolean
+  stripeLinked: boolean
   payThisMonth: PayStatus
   cancel: CancelInfo
   createdAt: string
@@ -55,8 +59,185 @@ type MemberDetail = MemberList & {
   fee?: number
   source?: string
   consents?: { photos?: boolean }
-  guardian?: { name: string; email: string; phone: string } | null
+  guardian?: Guardian | null
+  bank?: Bank | null
+  stripe?: { customerId?: string } | null
   inviteSlot?: number | null
+}
+
+type Guardian = {
+  name: string
+  relation?: string
+  email: string
+  phone: string
+  idChecked?: boolean
+  signedAt?: string | null
+  signedVia?: string | null
+}
+
+type Bank = {
+  holder: string
+  iban: string
+  bic: string
+  mandateRef: string
+  mandateSignedAt: string | null
+}
+
+type BankForm = { holder: string; iban: string; bic: string; mandateSigned: boolean }
+type GuardianForm = {
+  name: string
+  relation: string
+  email: string
+  phone: string
+  idChecked: boolean
+  signed: boolean
+}
+
+const EMPTY_BANK: BankForm = { holder: '', iban: '', bic: '', mandateSigned: false }
+const EMPTY_GUARDIAN: GuardianForm = {
+  name: '',
+  relation: 'Mutter',
+  email: '',
+  phone: '',
+  idChecked: false,
+  signed: false,
+}
+
+const ERROR_TEXT: Record<string, string> = {
+  iban: 'IBAN stimmt nicht. Bitte nochmal abtippen.',
+  bic: 'BIC stimmt nicht. Bei deutscher IBAN einfach leer lassen.',
+  holder: 'Kontoinhaber fehlt.',
+  guardian: 'Unter 18: Name und Telefon der Erziehungsberechtigten fehlen.',
+  photo: 'Foto ist zu groß oder kein Bild.',
+  birth: 'Geburtstag prüfen.',
+  name: 'Vor- und Nachname prüfen.',
+  email: 'E-Mail prüfen.',
+  phone: 'Telefon prüfen.',
+  visit: 'Trainingstag fehlt.',
+  stripe: 'Stripe-Kunden-ID beginnt mit cus_.',
+}
+
+function errorText(code?: string) {
+  return (code && ERROR_TEXT[code]) || 'Bitte Angaben prüfen.'
+}
+
+function ageFrom(birthDate: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(birthDate)
+  if (!match) return null
+  const now = new Date()
+  let age = now.getFullYear() - Number(match[1])
+  const month = now.getMonth() + 1
+  if (month < Number(match[2]) || (month === Number(match[2]) && now.getDate() < Number(match[3]))) age -= 1
+  return age
+}
+
+function spacedIban(iban: string) {
+  return iban.replace(/\s/g, '').replace(/(.{4})/g, '$1 ').trim()
+}
+
+function bankForm(bank?: Bank | null): BankForm {
+  if (!bank) return EMPTY_BANK
+  return { holder: bank.holder, iban: spacedIban(bank.iban), bic: bank.bic, mandateSigned: Boolean(bank.mandateSignedAt) }
+}
+
+function guardianForm(guardian?: Guardian | null): GuardianForm {
+  if (!guardian) return EMPTY_GUARDIAN
+  return {
+    name: guardian.name,
+    relation: guardian.relation ?? '',
+    email: guardian.email ?? '',
+    phone: guardian.phone ?? '',
+    idChecked: Boolean(guardian.idChecked),
+    signed: Boolean(guardian.signedAt),
+  }
+}
+
+function BankFields({ value, onChange, holderHint }: { value: BankForm; onChange: (next: BankForm) => void; holderHint: string }) {
+  return (
+    <div className="admin-grid">
+      <label>
+        Kontoinhaber/in
+        <input
+          value={value.holder}
+          placeholder={holderHint}
+          onChange={(event) => onChange({ ...value, holder: event.target.value })}
+        />
+      </label>
+      <label>
+        IBAN
+        <input
+          value={value.iban}
+          inputMode="text"
+          autoComplete="off"
+          spellCheck={false}
+          placeholder="DE00 0000 0000 0000 0000 00"
+          onChange={(event) => onChange({ ...value, iban: event.target.value.toUpperCase() })}
+        />
+      </label>
+      <label>
+        BIC (optional)
+        <input
+          value={value.bic}
+          autoComplete="off"
+          spellCheck={false}
+          onChange={(event) => onChange({ ...value, bic: event.target.value.toUpperCase() })}
+        />
+      </label>
+      <label className="admin-check">
+        <input
+          type="checkbox"
+          checked={value.mandateSigned}
+          onChange={(event) => onChange({ ...value, mandateSigned: event.target.checked })}
+        />
+        SEPA-Mandat auf Papier unterschrieben
+      </label>
+    </div>
+  )
+}
+
+function GuardianFields({ value, onChange }: { value: GuardianForm; onChange: (next: GuardianForm) => void }) {
+  return (
+    <div className="admin-grid">
+      <label>
+        Name Erziehungsberechtigte/r
+        <input value={value.name} onChange={(event) => onChange({ ...value, name: event.target.value })} required />
+      </label>
+      <label>
+        Beziehung
+        <select value={value.relation} onChange={(event) => onChange({ ...value, relation: event.target.value })}>
+          <option>Mutter</option>
+          <option>Vater</option>
+          <option>Beide Eltern</option>
+          <option>Vormund</option>
+          <option>Andere</option>
+        </select>
+      </label>
+      <label>
+        Telefon
+        <input value={value.phone} onChange={(event) => onChange({ ...value, phone: event.target.value })} required />
+      </label>
+      <label>
+        E-Mail
+        <input type="email" value={value.email} onChange={(event) => onChange({ ...value, email: event.target.value })} />
+      </label>
+      <label className="admin-check">
+        <input
+          type="checkbox"
+          checked={value.idChecked}
+          onChange={(event) => onChange({ ...value, idChecked: event.target.checked })}
+        />
+        Ausweis der Person vor Ort gesehen
+      </label>
+      <label className="admin-check">
+        <input
+          type="checkbox"
+          checked={value.signed}
+          onChange={(event) => onChange({ ...value, signed: event.target.checked })}
+        />
+        Vertrag von Erziehungsberechtigten unterschrieben
+      </label>
+    </div>
+  )
 }
 
 type Stats = {
@@ -65,6 +246,7 @@ type Stats = {
   openPay: number
   canCancel: number
   daypass: number
+  todo: number
 }
 
 const STATUS_LABEL: Record<MemberStatus, string> = {
@@ -250,10 +432,10 @@ export function Admin() {
       body: JSON.stringify({ action: 'update', id, ...payload }),
     })
     setBusy(false)
-    if (data.ok) {
-      setDetail(data.member)
-      await refreshList()
-    }
+    if (!data.ok) return String(data.error ?? 'invalid')
+    setDetail(data.member)
+    await refreshList()
+    return null
   }
 
   async function markPay(id: string, payment: Payment, next: PayStatus) {
@@ -355,6 +537,10 @@ export function Admin() {
             <strong>{stats.daypass}</strong>
             <span>Tageskarten</span>
           </article>
+          <article className={stats.todo ? 'is-alert' : ''}>
+            <strong>{stats.todo}</strong>
+            <span>Konto / Eltern fehlt</span>
+          </article>
         </section>
       ) : null}
 
@@ -405,6 +591,12 @@ export function Admin() {
                   {row.firstName} {row.lastName}
                   {row.minor ? <em> U18</em> : null}
                 </strong>
+                {row.guardianMissing || row.bankMissing ? (
+                  <span className="admin-flags">
+                    {row.guardianMissing ? <span className="admin-flag">Eltern-Unterschrift fehlt</span> : null}
+                    {row.bankMissing ? <span className="admin-flag">Kontodaten fehlen</span> : null}
+                  </span>
+                ) : null}
                 <small>
                   {STATUS_LABEL[row.status]} · {row.planName} · {euro(row.price)} · Start {deDate(row.startDate)}
                 </small>
@@ -419,6 +611,7 @@ export function Admin() {
 
         {detail ? (
           <MemberPane
+            key={`${detail.id}-${detail.updatedAt}`}
             member={detail}
             busy={busy}
             onClose={() => setOpenId(null)}
@@ -443,11 +636,22 @@ function MemberPane({
   member: MemberDetail
   busy: boolean
   onClose: () => void
-  onPatch: (payload: Record<string, unknown>) => Promise<void>
+  onPatch: (payload: Record<string, unknown>) => Promise<string | null>
   onPay: (payment: Payment, next: PayStatus) => Promise<void>
 }) {
   const [notes, setNotes] = useState(member.notes ?? '')
-  useEffect(() => setNotes(member.notes ?? ''), [member.id, member.notes])
+  const [bank, setBank] = useState<BankForm>(bankForm(member.bank))
+  const [guardian, setGuardian] = useState<GuardianForm>(guardianForm(member.guardian))
+  const [stripeId, setStripeId] = useState(member.stripe?.customerId ?? '')
+  const [paneError, setPaneError] = useState<string | null>(null)
+
+  async function save(payload: Record<string, unknown>) {
+    setPaneError(null)
+    const error = await onPatch(payload)
+    if (error) setPaneError(errorText(error))
+  }
+
+  const holderHint = member.minor && member.guardian?.name ? member.guardian.name : `${member.firstName} ${member.lastName}`
 
   async function onPhoto(file: File | undefined) {
     if (!file) return
@@ -537,23 +741,66 @@ function MemberPane({
             <small>{member.cancel?.hint}</small>
           </dd>
         </div>
-        {member.guardian ? (
-          <div>
-            <dt>Gesetzliche Vertretung</dt>
-            <dd>
-              {member.guardian.name}
-              <br />
-              {member.guardian.email} · {member.guardian.phone}
-            </dd>
-          </div>
-        ) : null}
         {member.inviteSlot ? (
           <div>
             <dt>First 50</dt>
             <dd>Platz {member.inviteSlot}</dd>
           </div>
         ) : null}
+        {member.plan !== 'daypass' ? (
+          <div>
+            <dt>Konto / SEPA</dt>
+            <dd>
+              {member.bank ? (
+                <>
+                  {member.bank.holder} · {spacedIban(member.bank.iban)}
+                  <br />
+                  Mandat {member.bank.mandateRef} ·{' '}
+                  {member.bank.mandateSignedAt ? `unterschrieben ${deDate(member.bank.mandateSignedAt)}` : 'Unterschrift fehlt'}
+                </>
+              ) : (
+                'Noch keine Kontodaten'
+              )}
+            </dd>
+          </div>
+        ) : null}
       </dl>
+
+      <a
+        className="btn btn-ghost admin-print"
+        href={`/api/admin?id=${encodeURIComponent(member.id)}&pdf=contract`}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Vertrag{member.plan !== 'daypass' ? ' + SEPA-Mandat' : ''} zum Unterschreiben drucken
+      </a>
+
+      {paneError ? <p className="admin-error">{paneError}</p> : null}
+
+      {member.minor ? (
+        <section className={`admin-block ${member.guardian?.signedAt ? '' : 'is-alert'}`}>
+          <h3>Unter 18 · Erziehungsberechtigte</h3>
+          <p className="admin-muted">
+            {member.guardian?.signedAt
+              ? `Zustimmung liegt vor (${member.guardian.signedVia === 'online' ? 'online bestätigt' : 'Papier'}, ${deDate(member.guardian.signedAt)}).`
+              : 'Ohne Unterschrift der Eltern kein Training. Status bleibt „Angemeldet“, bis hier abgehakt ist.'}
+          </p>
+          <GuardianFields value={guardian} onChange={setGuardian} />
+          <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void save({ guardian })}>
+            Erziehungsberechtigte speichern
+          </button>
+        </section>
+      ) : null}
+
+      {member.plan !== 'daypass' ? (
+        <section className={`admin-block ${member.bank?.iban && member.bank.mandateSignedAt ? '' : 'is-alert'}`}>
+          <h3>Kontodaten für Lastschrift</h3>
+          <BankFields value={bank} onChange={setBank} holderHint={holderHint} />
+          <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void save({ bank })}>
+            Kontodaten speichern
+          </button>
+        </section>
+      ) : null}
 
       <h3>Zahlungen</h3>
       <p className="admin-muted">Grün = abgebucht / da. Rot = offen oder nicht erhalten. Klick setzt den Status.</p>
@@ -573,16 +820,50 @@ function MemberPane({
           >
             <strong>{row.kind === 'day' ? deDate(row.period) : row.period}</strong>
             <span>{PAY_LABEL[row.status]}</span>
-            <small>{euro(row.amount)}</small>
+            <small>
+              {euro(row.amount)}
+              {row.source === 'stripe' ? ' · Stripe' : ''}
+            </small>
           </button>
         ))}
       </div>
+
+      {member.plan !== 'daypass' ? (
+        <section className="admin-block">
+          <h3>Stripe</h3>
+          <p className="admin-muted">
+            Sobald Stripe läuft, färben sich die Monate von selbst grün oder rot. Die Kunden-ID verknüpft das Mitglied, falls
+            die Mail bei Stripe anders ist.
+          </p>
+          <div className="admin-inline">
+            <input value={stripeId} placeholder="cus_…" onChange={(event) => setStripeId(event.target.value.trim())} />
+            <button
+              className="btn btn-ghost"
+              type="button"
+              disabled={busy}
+              onClick={() => void save({ stripeCustomerId: stripeId })}
+            >
+              Verknüpfen
+            </button>
+            {member.stripe?.customerId ? (
+              <a
+                className="btn btn-ghost"
+                href={`https://dashboard.stripe.com/customers/${member.stripe.customerId}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                In Stripe öffnen
+              </a>
+            ) : null}
+          </div>
+        </section>
+      ) : null}
 
       <label className="admin-notes">
         Notizen
         <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={4} />
       </label>
-      <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void onPatch({ notes })}>
+      <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void save({ notes })}>
         Notiz speichern
       </button>
     </section>
@@ -601,8 +882,23 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
   const [city, setCity] = useState('Leipzig')
   const [visitDay, setVisitDay] = useState('')
   const [startDate, setStartDate] = useState('2026-11-02')
+  const [photoData, setPhotoData] = useState<string | null>(null)
+  const [bank, setBank] = useState<BankForm>(EMPTY_BANK)
+  const [guardian, setGuardian] = useState<GuardianForm>(EMPTY_GUARDIAN)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const age = ageFrom(birthDate)
+  const minor = age != null && age < 18
+  const holderHint = minor && guardian.name ? guardian.name : `${firstName} ${lastName}`.trim() || 'Name wie auf der Karte'
+
+  async function onPhoto(file: File | undefined) {
+    if (!file) return
+    try {
+      setPhotoData(await compressPhoto(file))
+    } catch {
+      setError(errorText('photo'))
+    }
+  }
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -623,11 +919,14 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
         city,
         visitDay,
         startDate,
+        photoData,
+        bank: plan === 'daypass' ? undefined : bank,
+        guardian: minor ? guardian : undefined,
       }),
     })
     setBusy(false)
     if (!data.ok) {
-      setError('Bitte Angaben prüfen.')
+      setError(errorText(data.error))
       return
     }
     await onDone(data.member.id)
@@ -636,6 +935,10 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
   return (
     <form className="admin-card admin-create" onSubmit={(event) => void onSubmit(event)}>
       <h2>Neues Mitglied</h2>
+      <label className="admin-photo admin-photo-create">
+        {photoData ? <img src={photoData} alt="" /> : <span>Foto aufnehmen</span>}
+        <input type="file" accept="image/*" capture="user" onChange={(event) => void onPhoto(event.target.files?.[0])} />
+      </label>
       <div className="admin-grid">
         <label>
           Tarif
@@ -689,6 +992,31 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
           </label>
         ) : null}
       </div>
+
+      {minor ? (
+        <section className="admin-block is-alert">
+          <h3>Unter 18 ({age} Jahre)</h3>
+          <p className="admin-muted">
+            Eine erziehungsberechtigte Person muss zustimmen. Am besten ist sie direkt dabei, zeigt den Ausweis und
+            unterschreibt den gedruckten Vertrag. Ist niemand da: trotzdem anlegen, Vertrag mitgeben. Das Mitglied bleibt
+            „Angemeldet“ und trainiert erst, wenn die Unterschrift da ist und hier abgehakt wurde.
+          </p>
+          <GuardianFields value={guardian} onChange={setGuardian} />
+        </section>
+      ) : null}
+
+      {plan !== 'daypass' ? (
+        <section className="admin-block">
+          <h3>Kontodaten für Lastschrift</h3>
+          <p className="admin-muted">
+            {minor ? 'Bei unter 18 zahlt meist ein Elternteil: dann dessen Namen als Kontoinhaber. ' : ''}
+            Kann auch später nachgetragen werden. Nach dem Anlegen den Vertrag mit SEPA-Mandat drucken und unterschreiben
+            lassen.
+          </p>
+          <BankFields value={bank} onChange={setBank} holderHint={holderHint} />
+        </section>
+      ) : null}
+
       {error ? <p className="admin-error">{error}</p> : null}
       <button className="btn btn-solid" type="submit" disabled={busy}>
         Anlegen

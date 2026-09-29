@@ -12,8 +12,13 @@ import {
   termEndDate,
   cancelDeadlineDate,
   memberStartDate,
+  isValidBic,
+  isValidIban,
+  mandateRefFor,
+  normalizeIban,
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
+import { buildContractPdf } from './membership-pdf.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 12
@@ -149,14 +154,16 @@ function statsOf(members, today) {
   let openPay = 0
   let canCancel = 0
   let daypass = 0
+  let todo = 0
   for (const row of members) {
     const view = listMember(row, today)
+    if (view.bankMissing || view.guardianMissing) todo += 1
     if (row.status === 'active' || row.status === 'received') active += 1
     if (view.payThisMonth === 'open' || view.payThisMonth === 'failed') openPay += 1
     if (view.cancel?.canCancelNow) canCancel += 1
     if (row.plan === 'daypass') daypass += 1
   }
-  return { total: members.length, active, openPay, canCancel, daypass }
+  return { total: members.length, active, openPay, canCancel, daypass, todo }
 }
 
 function matches(member, { q, plan, status, pay }, today) {
@@ -167,6 +174,66 @@ function matches(member, { q, plan, status, pay }, today) {
   if (!q) return true
   const hay = `${member.firstName} ${member.lastName} ${member.email} ${member.phone} ${member.planName}`.toLowerCase()
   return hay.includes(q)
+}
+
+function readPhoto(value) {
+  if (value == null || value === '') return { ok: true, photoData: null }
+  if (typeof value !== 'string' || value.length > PHOTO_MAX || !value.startsWith('data:image/')) {
+    return { ok: false, error: 'photo' }
+  }
+  return { ok: true, photoData: value }
+}
+
+function readBank(input, current, id, fallbackHolder) {
+  if (input == null) return { ok: true, bank: current ?? null }
+  const iban = normalizeIban(input.iban)
+  if (!iban) {
+    if (current?.iban && input.iban === undefined) return { ok: true, bank: current }
+    return { ok: true, bank: null }
+  }
+  if (!isValidIban(iban)) return { ok: false, error: 'iban' }
+  const bic = String(input.bic ?? '')
+    .replace(/\s/g, '')
+    .toUpperCase()
+  if (bic && !isValidBic(bic)) return { ok: false, error: 'bic' }
+  const holder = String(input.holder ?? '').trim() || fallbackHolder
+  if (holder.length < 3 || holder.length > 120) return { ok: false, error: 'holder' }
+  const signed = Boolean(input.mandateSigned)
+  const sameAccount = current?.iban === iban
+  return {
+    ok: true,
+    bank: {
+      holder,
+      iban,
+      bic,
+      mandateRef: current?.mandateRef || mandateRefFor(id),
+      mandateSignedAt: signed ? (sameAccount && current?.mandateSignedAt) || new Date().toISOString() : null,
+      updatedAt: new Date().toISOString(),
+    },
+  }
+}
+
+function readGuardian(input, current, minor) {
+  if (!minor) return { ok: true, guardian: current ?? null }
+  if (input == null) return { ok: true, guardian: current ?? null }
+  const guardian = {
+    name: String(input.name ?? '').trim(),
+    relation: String(input.relation ?? '').trim().slice(0, 40),
+    email: normalizeEmail(input.email),
+    phone: String(input.phone ?? '').trim(),
+  }
+  if (!isValidName(guardian.name) || !isValidPhone(guardian.phone)) return { ok: false, error: 'guardian' }
+  if (guardian.email && !isValidEmail(guardian.email)) return { ok: false, error: 'guardian' }
+  const signed = Boolean(input.signed)
+  return {
+    ok: true,
+    guardian: {
+      ...guardian,
+      idChecked: Boolean(input.idChecked),
+      signedAt: signed ? current?.signedAt || new Date().toISOString() : null,
+      signedVia: signed ? current?.signedVia || 'paper' : null,
+    },
+  }
 }
 
 function createDeskMember(body, today) {
@@ -187,9 +254,19 @@ function createDeskMember(body, today) {
     visitDay = String(body.visitDay ?? '').trim()
     if (!/^\d{4}-\d{2}-\d{2}$/.test(visitDay)) return { ok: false, error: 'visit' }
   }
+  const id = randomUUID()
+  const minor = age < 18
+  if (minor && !body.guardian) return { ok: false, error: 'guardian' }
+  const guardianRead = readGuardian(body.guardian, null, minor)
+  if (!guardianRead.ok) return guardianRead
+  const holderFallback = minor ? guardianRead.guardian.name : `${firstName} ${lastName}`
+  const bankRead = plan === 'daypass' ? { ok: true, bank: null } : readBank(body.bank, null, id, holderFallback)
+  if (!bankRead.ok) return bankRead
+  const photo = readPhoto(body.photoData)
+  if (!photo.ok) return photo
   const record = {
-    id: randomUUID(),
-    status: 'active',
+    id,
+    status: minor && !guardianRead.guardian.signedAt ? 'received' : 'active',
     plan,
     planName: meta.name,
     price: meta.price,
@@ -199,14 +276,16 @@ function createDeskMember(body, today) {
     lastName,
     birthDate: String(body.birthDate),
     age,
-    minor: age < 18,
+    minor,
     street: String(body.street ?? '').trim(),
     zip: String(body.zip ?? '').trim(),
     city: String(body.city ?? '').trim() || 'Leipzig',
     email,
     phone,
     inviteSlot: null,
-    guardian: null,
+    guardian: guardianRead.guardian,
+    bank: bankRead.bank,
+    photoData: photo.photoData,
     visitDay: visitDay || null,
     place: String(body.place ?? 'Leipzig').trim() || 'Leipzig',
     signature: `${firstName} ${lastName}`,
@@ -216,7 +295,7 @@ function createDeskMember(body, today) {
     source: 'admin',
   }
   record.startDate = String(body.startDate ?? '').trim() || memberStartDate(record, today)
-  return { ok: true, member: memberFromSignup(record, today) }
+  return { ok: true, member: { ...memberFromSignup(record, today), status: record.status } }
 }
 
 function patchMember(current, patch, today) {
@@ -245,12 +324,27 @@ function patchMember(current, patch, today) {
     next.endDate = termEndDate(next.startDate, next.termMonths)
     next.cancelDeadline = cancelDeadlineDate(next.startDate, next.termMonths)
   }
-  if (patch.photoData === null) next.photoData = null
-  if (typeof patch.photoData === 'string') {
-    if (patch.photoData && (patch.photoData.length > PHOTO_MAX || !patch.photoData.startsWith('data:image/'))) {
-      return { ok: false, error: 'photo' }
-    }
-    next.photoData = patch.photoData || null
+  if (patch.photoData === null || typeof patch.photoData === 'string') {
+    const photo = readPhoto(patch.photoData)
+    if (!photo.ok) return photo
+    next.photoData = photo.photoData
+  }
+  if (patch.bank !== undefined && next.plan !== 'daypass') {
+    const holderFallback = next.minor && next.guardian?.name ? next.guardian.name : `${next.firstName} ${next.lastName}`
+    const bankRead = patch.bank === null ? { ok: true, bank: null } : readBank(patch.bank, next.bank, next.id, holderFallback)
+    if (!bankRead.ok) return bankRead
+    next.bank = bankRead.bank
+  }
+  if (patch.guardian !== undefined && next.minor) {
+    const guardianRead = readGuardian(patch.guardian, next.guardian, true)
+    if (!guardianRead.ok) return guardianRead
+    next.guardian = guardianRead.guardian
+    if (next.guardian?.signedAt && next.status === 'received' && !patch.status) next.status = 'active'
+  }
+  if (typeof patch.stripeCustomerId === 'string') {
+    const customerId = patch.stripeCustomerId.trim()
+    if (customerId && !/^cus_[A-Za-z0-9]{6,40}$/.test(customerId)) return { ok: false, error: 'stripe' }
+    next.stripe = customerId ? { ...(next.stripe ?? {}), customerId } : null
   }
   next.updatedAt = new Date().toISOString()
   return { ok: true, member: ensurePayments(next, today) }
@@ -424,6 +518,19 @@ export function createAdminHandler({ dataDir, env }) {
       const row = db.members.find((item) => item.id === id)
       if (!row) {
         json(res, 404, { ok: false, error: 'missing' })
+        return
+      }
+      if (url.searchParams.get('pdf') === 'contract') {
+        const bytes = await buildContractPdf(publicMember(row, today), {
+          paper: true,
+          creditorId: env.SEPA_CREDITOR_ID?.trim() || '',
+        })
+        const name = `Vertrag-${row.lastName}-${row.firstName}`.replace(/[^A-Za-z0-9-]+/g, '_')
+        res.statusCode = 200
+        res.setHeader('content-type', 'application/pdf')
+        res.setHeader('cache-control', 'no-store')
+        res.setHeader('content-disposition', `inline; filename="${name}.pdf"`)
+        res.end(Buffer.from(bytes))
         return
       }
       json(res, 200, { ok: true, member: publicMember(row, today, true), store: storeKind(env) })

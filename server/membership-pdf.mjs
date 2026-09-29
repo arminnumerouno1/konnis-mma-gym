@@ -243,7 +243,25 @@ function contractParagraphs(record) {
   ]
 }
 
-export async function buildContractPdf(record) {
+function signLine(writer, label) {
+  writer.gap(26)
+  writer.ensure(30)
+  writer.page.drawLine({
+    start: { x: MARGIN, y: writer.y + 2 },
+    end: { x: MARGIN + 260, y: writer.y + 2 },
+    thickness: 0.7,
+    color: INK,
+  })
+  writer.gap(6)
+  writer.text(label, { size: 8, color: MUTED, leading: 11 })
+}
+
+function spacedIban(iban) {
+  return String(iban ?? '').replace(/(.{4})/g, '$1 ').trim()
+}
+
+export async function buildContractPdf(record, { paper = false, creditorId = '' } = {}) {
+  if (paper) return buildPaperContractPdf(record, creditorId)
   const who = whoOf(record)
   const { formatted, unit, term } = moneyOf(record)
   const writer = new PdfWriter(`Mitgliedsvertrag ${who}`.trim(), 'Mitgliedsvertrag KONNI MMA GYM')
@@ -323,6 +341,83 @@ export async function buildContractPdf(record) {
   writer.para(
     'Diese PDF-Kopie geht an das Mitglied und an KONNI MMA GYM. Die Widerrufsbelehrung liegt als weitere PDF bei. Widerruf: 14 Tage ab Vertragsschluss, formlos per E-Mail an info@mma-in-leipzig.de.',
   )
+
+  return writer.bytes()
+}
+
+async function buildPaperContractPdf(record, creditorId) {
+  const who = whoOf(record)
+  const { formatted, unit, term } = moneyOf(record)
+  const writer = new PdfWriter(`Mitgliedsvertrag ${who}`.trim(), 'Mitgliedsvertrag KONNI MMA GYM')
+  await writer.init()
+  writer.doc.setSubject(`${record.planName || record.plan} · ${who}`)
+  const blank = '______________________________'
+  const bank = record.bank ?? {}
+
+  writer.text('KONNI MMA GYM', { font: writer.bold, size: 16, leading: 20, color: RULE })
+  writer.text('Mitgliedsvertrag', { font: writer.bold, size: 18, leading: 22 })
+  writer.text(`${record.planName || record.plan} · Abschluss vor Ort · Stand 27. September 2026`, {
+    size: 10,
+    color: MUTED,
+    leading: 14,
+  })
+  writer.gap(10)
+
+  writer.heading('1. Vertragsparteien')
+  writer.para(
+    'Anbieter: KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig. E-Mail: info@mma-in-leipzig.de. Telefon: +49 1522 1872354.',
+  )
+  writer.kv('Mitglied', `${who}, geboren ${formatIsoDate(record.birthDate)}`)
+  writer.kv('Anschrift', [record.street, [record.zip, record.city].filter(Boolean).join(' ')].filter(Boolean).join(', ') || blank)
+  writer.kv('Kontakt', [record.email, record.phone].filter(Boolean).join(' · '))
+  if (record.guardian) {
+    writer.kv(
+      'Gesetzliche Vertretung',
+      [record.guardian.name, record.guardian.relation, record.guardian.email, record.guardian.phone]
+        .filter(Boolean)
+        .join(' · '),
+    )
+  }
+
+  writer.heading('2. Tarif, Beginn und Preis')
+  writer.kv('Tarif', `${record.planName || record.plan}${term ? ` · ${term}` : ''}`)
+  writer.kv('Beitrag', `${formatted}${unit ? ` ${unit}` : ''}`)
+  writer.kv('Aufnahmegebühr', '0,00 EUR')
+  writer.kv('Beginn', formatIsoDate(record.startDate))
+  if (record.inviteSlot) writer.kv('First 50', `Persönlicher Platz ${record.inviteSlot} von 50`)
+  for (const block of contractParagraphs(record)) writer.para(block)
+
+  writer.heading('3. Erklärungen')
+  writer.para('AGB Stand 27. September 2026, Hausordnung und Datenschutzerklärung habe ich erhalten und gelesen.')
+  writer.para('[  ] Freiwillig: Ich willige in Foto- und Videoaufnahmen für die Kanäle des Gyms ein. Widerruf jederzeit mit Wirkung für die Zukunft.')
+
+  writer.heading('4. Unterschrift')
+  writer.para(`Ort, Datum: ${record.place || 'Leipzig'}, ${blank}`)
+  signLine(writer, `Unterschrift Mitglied (${who})`)
+  if (record.minor) {
+    writer.gap(4)
+    writer.para(
+      'Das Mitglied ist unter 18. Mit der Unterschrift stimmen die gesetzlichen Vertreter dem Vertrag zu und bestätigen, dass sie zur Vertretung berechtigt sind. Bei gemeinsamem Sorgerecht unterschreiben beide oder die unterschreibende Person bestätigt die Zustimmung der anderen.',
+    )
+    signLine(writer, `Unterschrift gesetzliche Vertretung${record.guardian?.name ? ` (${record.guardian.name})` : ''}`)
+    signLine(writer, 'Unterschrift zweite sorgeberechtigte Person (falls gemeinsames Sorgerecht)')
+  }
+  signLine(writer, 'Für KONNI MMA GYM GbR')
+
+  if (record.plan !== 'daypass') {
+    writer.heading('5. SEPA-Lastschriftmandat')
+    writer.kv('Zahlungsempfänger', 'KONNI MMA GYM GbR, Wittenberger Straße 15, 04129 Leipzig')
+    writer.kv('Gläubiger-Identifikationsnummer', creditorId || 'wird vor dem ersten Einzug mitgeteilt')
+    writer.kv('Mandatsreferenz', bank.mandateRef || blank)
+    writer.kv('Kontoinhaber/in', bank.holder || blank)
+    writer.kv('IBAN', bank.iban ? spacedIban(bank.iban) : blank)
+    writer.kv('BIC', bank.bic || (bank.iban ? 'nicht nötig bei deutscher IBAN' : blank))
+    writer.para(
+      'Ich ermächtige die KONNI MMA GYM GbR, Zahlungen von meinem Konto mittels Lastschrift einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von der KONNI MMA GYM GbR auf mein Konto gezogenen Lastschriften einzulösen. Hinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem Kreditinstitut vereinbarten Bedingungen.',
+    )
+    writer.para(`Ort, Datum: ${record.place || 'Leipzig'}, ${blank}`)
+    signLine(writer, `Unterschrift Kontoinhaber/in${bank.holder ? ` (${bank.holder})` : ''}`)
+  }
 
   return writer.bytes()
 }

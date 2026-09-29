@@ -21,6 +21,51 @@ export const PAY_LABELS = {
   upcoming: 'Noch nicht fällig',
 }
 
+export function normalizeIban(value) {
+  return String(value ?? '')
+    .replace(/[\s-]/g, '')
+    .toUpperCase()
+}
+
+export function isValidIban(value) {
+  const iban = normalizeIban(value)
+  if (!/^[A-Z]{2}\d{2}[A-Z0-9]{11,30}$/.test(iban)) return false
+  if (iban.startsWith('DE') && iban.length !== 22) return false
+  const moved = `${iban.slice(4)}${iban.slice(0, 4)}`
+  let rest = 0
+  for (const ch of moved) {
+    const digits = /\d/.test(ch) ? ch : String(ch.charCodeAt(0) - 55)
+    for (const d of digits) rest = (rest * 10 + Number(d)) % 97
+  }
+  return rest === 1
+}
+
+export function isValidBic(value) {
+  return /^[A-Z]{4}[A-Z]{2}[A-Z0-9]{2}([A-Z0-9]{3})?$/.test(String(value ?? '').trim().toUpperCase())
+}
+
+export function maskIban(value) {
+  const iban = normalizeIban(value)
+  if (iban.length < 8) return iban
+  return `${iban.slice(0, 4)} •••• ${iban.slice(-4)}`
+}
+
+export function mandateRefFor(id) {
+  return `KONNI-${String(id ?? '').replace(/-/g, '').slice(0, 10).toUpperCase()}`
+}
+
+export function needsBank(member) {
+  return member.plan !== 'daypass' && member.status !== 'cancelled' && member.status !== 'expired'
+}
+
+export function bankMissing(member) {
+  return needsBank(member) && !(member.bank?.iban && member.bank?.mandateSignedAt)
+}
+
+export function guardianMissing(member) {
+  return Boolean(member.minor) && !member.guardian?.signedAt
+}
+
 export function isoDate(at = new Date()) {
   return new Date(at).toISOString().slice(0, 10)
 }
@@ -234,6 +279,9 @@ export function listMember(member, today = isoDate()) {
     visitDay: view.visitDay ?? null,
     minor: Boolean(view.minor),
     hasPhoto: view.hasPhoto,
+    bankMissing: bankMissing(view),
+    guardianMissing: guardianMissing(view),
+    stripeLinked: Boolean(view.stripe?.customerId),
     payThisMonth: view.payThisMonth,
     cancel: view.cancel,
     createdAt: view.createdAt,
@@ -249,6 +297,11 @@ export function memberFromSignup(record, today = isoDate()) {
     startDate,
     endDate: termEndDate(startDate, record.termMonths),
     cancelDeadline: cancelDeadlineDate(startDate, record.termMonths),
+    guardian:
+      record.guardian && !record.guardian.signedAt && record.source !== 'admin'
+        ? { ...record.guardian, signedAt: record.createdAt ?? null, signedVia: 'online' }
+        : (record.guardian ?? null),
+    bank: record.bank ?? null,
     notes: record.notes ?? '',
     photoData: record.photoData ?? null,
     payments: Array.isArray(record.payments) ? record.payments : [],
@@ -261,12 +314,18 @@ export function memberFromSignup(record, today = isoDate()) {
   return ensurePayments(base, today)
 }
 
-export function setPayment(member, { period, kind = 'month', status, note = '' }, today = isoDate()) {
+export function setPayment(
+  member,
+  { period, kind = 'month', status, note = '', source = 'manual', ref = null, amount = null },
+  today = isoDate(),
+) {
   const ready = ensurePayments(member, today)
+  const extra = { source, ref, ...(typeof amount === 'number' ? { amount } : {}) }
   const rows = ready.payments.map((row) => {
     if (row.period !== period || row.kind !== kind) return row
     return {
       ...row,
+      ...extra,
       status,
       note,
       paidAt: status === 'paid' ? new Date().toISOString() : null,
@@ -278,6 +337,7 @@ export function setPayment(member, { period, kind = 'month', status, note = '' }
       kind,
       period,
       amount: member.price,
+      ...extra,
       status,
       note,
       paidAt: status === 'paid' ? new Date().toISOString() : null,
