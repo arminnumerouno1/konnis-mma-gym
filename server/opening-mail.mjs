@@ -27,8 +27,8 @@ export function openingMailHtml({ first = '' } = {}) {
 </div>
 <div style="padding:24px 4px 0">
 <p>${hi}</p>
-<p>du standest auf der Liste, als hier noch gebaut wurde. Jetzt hat der Tag eine Zahl und das Gym eine Adresse.</p>
-<p style="font-size:20px;line-height:1.35;margin:24px 0"><strong>2. November 2026</strong><br>Wittenberger Straße 15<br>04129 Leipzig</p>
+<p style="font-size:22px;line-height:1.3;margin:8px 0 20px"><strong>Endlich hat das Warten ein Ende.</strong></p>
+<p style="font-size:20px;line-height:1.35;margin:0 0 20px">Eröffnung am <strong>2. November 2026</strong><br>Wittenberger Straße 15<br>04129 Leipzig</p>
 <p>Von MMA-Profi Konrad Dyrschka. Endlich ein MMA Gym in Leipzig.</p>
 <p style="margin:28px 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#666">Die Tarife</p>
 <table style="width:100%;border-collapse:collapse">
