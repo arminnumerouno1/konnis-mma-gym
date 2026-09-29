@@ -1299,7 +1299,7 @@ p,
   text-transform: uppercase;
   font-size: 13px;
   line-height: 1.25;
-  max-width: 14em;
+  white-space: pre-line;
 }
 
 .price-card ul {

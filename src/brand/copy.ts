@@ -99,7 +99,7 @@ export const COPY = {
   priceTitle: 'Tarife.',
   priceLead: 'Alle Kurse nutzbar. Anmeldegebühr 0€ bis zum 2. November. Standard, Flex oder Day Pass.',
   signupFeePrice: '0€',
-  signupFeeLabel: 'Anmeldegebühr bis 2. November',
+  signupFeeLabel: 'Anmeldegebühr\nbis 2. November',
   priceFoot:
     'SEPA-Lastschrift zum 1. des Monats. Anmeldegebühr 0 € bis zum 2. November. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
   trialTitle: 'Komm vorbei.',
