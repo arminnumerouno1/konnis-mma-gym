@@ -55,6 +55,8 @@ type MemberDetail = MemberList & {
   fee?: number
   source?: string
   consents?: { photos?: boolean }
+  guardian?: { name: string; email: string; phone: string } | null
+  inviteSlot?: number | null
 }
 
 type Stats = {
@@ -535,6 +537,22 @@ function MemberPane({
             <small>{member.cancel?.hint}</small>
           </dd>
         </div>
+        {member.guardian ? (
+          <div>
+            <dt>Gesetzliche Vertretung</dt>
+            <dd>
+              {member.guardian.name}
+              <br />
+              {member.guardian.email} · {member.guardian.phone}
+            </dd>
+          </div>
+        ) : null}
+        {member.inviteSlot ? (
+          <div>
+            <dt>First 50</dt>
+            <dd>Platz {member.inviteSlot}</dd>
+          </div>
+        ) : null}
       </dl>
 
       <h3>Zahlungen</h3>
