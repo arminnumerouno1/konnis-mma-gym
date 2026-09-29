@@ -101,6 +101,9 @@ const ALL_PLANS: Plan[] = [...PLANS, FIRST50]
 /** Online-Mitgliedschaft. Auf true, wenn der Vertrag wieder angenommen wird. */
 export const SIGNUP_OPEN = false
 
+/** Probetraining-Anfrage. Auf true, wenn Einheiten wieder angefragt werden können. */
+export const TRIAL_OPEN = false
+
 export const SIGNUP_FEE = 0
 export const PAYMENT_NOTE =
   'Bei 12- und 24-Monats-Verträgen ziehen wir den Monatsbeitrag per SEPA-Lastschrift ein, in der Regel zum 1. des Monats. Mandat und Kontodaten klären wir vor dem ersten Einzug. Zahlungspflicht erst ab echter Eröffnung.'

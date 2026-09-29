@@ -104,6 +104,8 @@ export const COPY = {
     'SEPA-Lastschrift zum 1. des Monats. Aufnahmegebühr 0 €. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
   trialTitle: 'Komm vorbei.',
   trialLead: 'Eine Einheit. Kein Vertrag. Wenn du bleibst, bleibst du.',
+  trialClosedLead:
+    'Probetraining geht noch nicht. Sobald wir auf haben, kannst du hier eine Einheit anfragen. Bis dahin zur Eröffnung am 2. November kommen.',
   trialName: 'Name',
   trialEmail: 'E-Mail',
   trialPhone: 'Telefon',
@@ -153,7 +155,7 @@ export const COPY = {
   joinClosedKicker: 'Mitgliedschaft',
   joinClosedTitle: 'Bald.',
   joinClosedLead:
-    'Die Tarife stehen. Online Mitglied werden geht noch nicht. Sobald der Vertrag auf ist, kannst du ihn hier abschließen. Bis dahin Probetraining anfragen oder zur Eröffnung am 2. November kommen.',
+    'Die Tarife stehen. Online Mitglied werden geht noch nicht. Sobald der Vertrag auf ist, kannst du ihn hier abschließen. Bis dahin zur Eröffnung am 2. November kommen.',
   joinClosedInvite:
     'Dein First-50-Link bleibt. Der Platz ist für dich, sobald die Anmeldung aufgeht.',
   joinClosedHome: 'Zur Startseite',
@@ -225,11 +227,11 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Noch nicht online. Die Tarife siehst du schon. Den Vertrag schließen wir bald auf. Bis dahin Probetraining anfragen oder zur Eröffnung kommen.',
+    a: 'Noch nicht online. Die Tarife siehst du schon. Den Vertrag schließen wir bald auf. Bis dahin zur Eröffnung kommen.',
   },
   {
     q: 'Gibt es ein Probetraining?',
-    a: 'Ja. Unten auf der Seite anfragen. Sobald der Betrieb läuft, holen wir dich zu einer Einheit. Vertrag kannst du danach machen.',
+    a: 'Ja, sobald der Betrieb läuft. Online anfragen geht noch nicht. Zur Eröffnung kommen oder später hier eine Einheit holen.',
   },
   {
     q: 'Was bringe ich mit?',

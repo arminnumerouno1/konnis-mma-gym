@@ -6,6 +6,16 @@ const MAX_BODY = 8192
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 8
 
+/** Muss mit src/brand/plans.ts TRIAL_OPEN zusammenpassen, außer TRIAL_OPEN=true/false in der Umgebung. */
+export const TRIAL_OPEN = false
+
+export function isTrialOpen(env = {}) {
+  const raw = String(env.TRIAL_OPEN ?? '').trim().toLowerCase()
+  if (raw === 'true' || raw === '1') return true
+  if (raw === 'false' || raw === '0') return false
+  return TRIAL_OPEN
+}
+
 /** @type {Map<string, number[]>} */
 const hits = new Map()
 
@@ -104,6 +114,10 @@ export function createContactHandler({ dataDir, env }) {
       }
       if (req.method !== 'POST') {
         json(res, 405, { ok: false, error: 'method' })
+        return
+      }
+      if (!isTrialOpen(env)) {
+        json(res, 403, { ok: false, error: 'closed' })
         return
       }
       if (rateLimited(clientIp(req))) {

@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { COPY, FAQ } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
-import { PLANS, type Plan } from '../brand/plans'
+import { PLANS, TRIAL_OPEN, type Plan } from '../brand/plans'
 import { submitTrial } from '../contact/api'
 import { hasExtrasConsent, onConsentChange } from '../lib/consent'
 import { Link } from '../lib/Link'
@@ -384,8 +384,8 @@ export function Home() {
 
       <section className="block trial" id="probetraining" data-reveal>
         <h2>{COPY.trialTitle}</h2>
-        <p className="lead">{COPY.trialLead}</p>
-        <TrialForm />
+        <p className="lead">{TRIAL_OPEN ? COPY.trialLead : COPY.trialClosedLead}</p>
+        {TRIAL_OPEN ? <TrialForm /> : null}
       </section>
 
       <section className="block faq" id="faq">

@@ -5,7 +5,7 @@ export async function submitTrial(input: {
   interest: string
   note: string
   company?: string
-}): Promise<{ ok: true } | { ok: false; error: 'invalid' | 'rate' | 'upstream' | 'network' }> {
+}): Promise<{ ok: true } | { ok: false; error: 'invalid' | 'rate' | 'closed' | 'upstream' | 'network' }> {
   try {
     const response = await fetch('/api/kontakt', {
       method: 'POST',
@@ -14,6 +14,7 @@ export async function submitTrial(input: {
     })
     const data = (await response.json()) as { ok?: boolean; error?: string }
     if (response.status === 429) return { ok: false, error: 'rate' }
+    if (data.error === 'closed' || response.status === 403) return { ok: false, error: 'closed' }
     if (data.ok) return { ok: true }
     if (data.error === 'upstream') return { ok: false, error: 'upstream' }
     return { ok: false, error: 'invalid' }
