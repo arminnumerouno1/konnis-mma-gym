@@ -54,7 +54,7 @@ export function openingMailHtml({ first = '' } = {}) {
 </table>
 <p><strong>Online Mitglied werden ist noch nicht möglich.</strong> Sobald es möglich ist, Mitglied zu werden, schreiben wir dir und sagen es auf Instagram: <a href="https://www.instagram.com/konnimmagym/" style="color:#c4121a;font-weight:bold">@konnimmagym</a>.</p>
 <p>Die <strong>ersten 50</strong> von der Voranmeldung bekommen extra eine eigene Mail, sobald es möglich ist, Mitglied zu werden — mit persönlichem Link.</p>
-<p>Warst du nicht so schnell und nicht unter den ersten 50? Kein Stress. <strong>Wenn du dich bis zum 2. November anmeldest, entfällt die Anmeldegebühr.</strong> Das gilt für alle. Auch ohne den Sonderpreis der ersten 50 kommst du ohne Anmeldegebühr ins Gym.</p>
+<p>Warst du nicht so schnell und nicht unter den ersten 50? Kein Stress. <strong>Wenn du dich bis zum 2. November anmeldest, entfällt die Anmeldegebühr.</strong></p>
 <p>Am 2. November öffnet das KONNI MMA GYM in der Wittenberger Straße 15.</p>
 <p style="margin:28px 0 0"><a href="https://www.mma-in-leipzig.de/" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">mma-in-leipzig.de</a></p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
