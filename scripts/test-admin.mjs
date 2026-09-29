@@ -427,6 +427,29 @@ const kid2Up = await rawCall({
 })
 assert(kid2Up.data.member.status === 'active' && kid2Up.data.member.guardian.signedVia === 'paper', 'signed contract activates minor')
 
+const moved = await post({
+  action: 'update',
+  id: doraId,
+  profile: { street: 'Karl-Liebknecht-Straße 10', zip: '04107', city: 'Leipzig', email: 'Dora.Neu@Example.com' },
+})
+assert(moved.status === 200 && moved.data.member.street === 'Karl-Liebknecht-Straße 10', 'address changed')
+assert(moved.data.member.email === 'dora.neu@example.com', 'email normalized')
+const hist = moved.data.member.history
+assert(hist.some((row) => row.field === 'email' && row.from === 'dora@example.com'), 'history keeps old email')
+assert(hist.some((row) => row.field === 'zip' && row.to === '04107'), 'history keeps zip')
+
+const badMail = await post({ action: 'update', id: doraId, profile: { email: 'kaputt' } })
+assert(badMail.status === 400 && badMail.data.error === 'email', 'rejects bad email')
+const badZip = await post({ action: 'update', id: doraId, profile: { zip: '4107' } })
+assert(badZip.status === 400 && badZip.data.error === 'address', 'rejects bad zip')
+
+const nowMinor = await post({ action: 'update', id: doraId, profile: { birthDate: '2012-06-01' } })
+assert(nowMinor.data.member.minor === true, 'birth date change recomputes minor')
+
+const ibanSwap = await post({ action: 'update', id: doraId, bank: { iban: 'DE02120300000000202051', holder: 'Dora Lang', mandateSigned: false } })
+assert(ibanSwap.data.member.history.some((row) => row.field === 'iban' && row.to.endsWith('2051')), 'iban change logged masked')
+assert(!ibanSwap.data.member.history.some((row) => row.to.includes('120300000000')), 'full iban not in history')
+
 const suggestions = toSuggestions([
   { properties: { type: 'house', street: 'Wittenberger Straße', housenumber: '15', postcode: '04129', city: 'Leipzig', countrycode: 'DE' } },
   { properties: { type: 'house', street: 'Wittenberger Straße', housenumber: '15', postcode: '04129', city: 'Leipzig', countrycode: 'DE' } },

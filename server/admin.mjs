@@ -15,6 +15,7 @@ import {
   isValidBic,
   isValidIban,
   mandateRefFor,
+  maskIban,
   normalizeIban,
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
@@ -339,7 +340,60 @@ function createDeskMember(body, today) {
   return { ok: true, member: { ...memberFromSignup(record, today), status: record.status } }
 }
 
+const PROFILE_FIELDS = ['firstName', 'lastName', 'birthDate', 'street', 'zip', 'city', 'email', 'phone']
+const HISTORY_FIELDS = [...PROFILE_FIELDS, 'status', 'startDate']
+const HISTORY_MAX = 200
+
+function readProfile(input) {
+  const values = {}
+  for (const field of PROFILE_FIELDS) {
+    if (typeof input[field] !== 'string') continue
+    values[field] = field === 'email' ? normalizeEmail(input[field]) : input[field].trim()
+  }
+  if ('firstName' in values && !isValidName(values.firstName)) return { ok: false, error: 'name' }
+  if ('lastName' in values && !isValidName(values.lastName)) return { ok: false, error: 'name' }
+  if ('birthDate' in values) {
+    const age = ageOn(values.birthDate)
+    if (age == null || age < 6 || age > 100) return { ok: false, error: 'birth' }
+  }
+  if ('email' in values && !isValidEmail(values.email)) return { ok: false, error: 'email' }
+  if ('phone' in values && !isValidPhone(values.phone)) return { ok: false, error: 'phone' }
+  if ('street' in values && values.street && (values.street.length < 4 || values.street.length > 120)) {
+    return { ok: false, error: 'address' }
+  }
+  if ('zip' in values && values.zip && !/^\d{5}$/.test(values.zip)) return { ok: false, error: 'address' }
+  if ('city' in values && values.city.length > 80) return { ok: false, error: 'address' }
+  return { ok: true, values }
+}
+
+function historyOf(before, after, at) {
+  const rows = []
+  for (const field of HISTORY_FIELDS) {
+    const from = before[field] ?? ''
+    const to = after[field] ?? ''
+    if (String(from) !== String(to)) rows.push({ at, field, from: String(from), to: String(to) })
+  }
+  const ibanBefore = before.bank?.iban ?? ''
+  const ibanAfter = after.bank?.iban ?? ''
+  if (ibanBefore !== ibanAfter) {
+    rows.push({ at, field: 'iban', from: ibanBefore ? maskIban(ibanBefore) : '', to: ibanAfter ? maskIban(ibanAfter) : '' })
+  }
+  return rows
+}
+
 function patchMember(current, patch, today) {
+  const result = patchMemberFields(current, patch, today)
+  if (!result.ok) return result
+  const at = new Date().toISOString()
+  const changes = historyOf(current, result.member, at)
+  if (!changes.length) return result
+  return {
+    ok: true,
+    member: { ...result.member, history: [...(current.history ?? []), ...changes].slice(-HISTORY_MAX) },
+  }
+}
+
+function patchMemberFields(current, patch, today) {
   const next = { ...current }
   if (patch.status && ['received', 'active', 'paused', 'cancelled', 'expired'].includes(patch.status)) {
     next.status = patch.status
@@ -356,9 +410,14 @@ function patchMember(current, patch, today) {
     }
   }
   if (typeof patch.notes === 'string') next.notes = patch.notes.slice(0, 4000)
-  if (typeof patch.phone === 'string' && isValidPhone(patch.phone)) next.phone = patch.phone.trim()
-  if (typeof patch.email === 'string' && isValidEmail(normalizeEmail(patch.email))) {
-    next.email = normalizeEmail(patch.email)
+  if (patch.profile && typeof patch.profile === 'object') {
+    const profile = readProfile(patch.profile)
+    if (!profile.ok) return profile
+    Object.assign(next, profile.values)
+    if (profile.values.birthDate) {
+      next.age = ageOn(profile.values.birthDate)
+      next.minor = next.age < 18
+    }
   }
   if (typeof patch.startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(patch.startDate)) {
     next.startDate = patch.startDate

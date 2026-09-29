@@ -65,7 +65,111 @@ type MemberDetail = MemberList & {
   bank?: Bank | null
   stripe?: { customerId?: string } | null
   docs?: { contract?: DocMeta; sepa?: DocMeta }
+  history?: { at: string; field: string; from: string; to: string }[]
   inviteSlot?: number | null
+}
+
+const FIELD_LABEL: Record<string, string> = {
+  firstName: 'Vorname',
+  lastName: 'Nachname',
+  birthDate: 'Geburtstag',
+  street: 'Straße',
+  zip: 'PLZ',
+  city: 'Ort',
+  email: 'E-Mail',
+  phone: 'Telefon',
+  status: 'Status',
+  startDate: 'Start',
+  iban: 'IBAN',
+}
+
+function historyValue(field: string, value: string) {
+  if (!value) return '—'
+  if (field === 'birthDate' || field === 'startDate') return deDate(value)
+  if (field === 'status') return STATUS_LABEL[value as MemberStatus] ?? value
+  return value
+}
+
+function ProfileEditor({
+  member,
+  busy,
+  onSave,
+  onCancel,
+}: {
+  member: MemberDetail
+  busy: boolean
+  onSave: (profile: Record<string, string>) => Promise<void>
+  onCancel: () => void
+}) {
+  const [form, setForm] = useState({
+    firstName: member.firstName,
+    lastName: member.lastName,
+    birthDate: member.birthDate ?? '',
+    street: member.street ?? '',
+    zip: member.zip ?? '',
+    city: member.city ?? '',
+    email: member.email,
+    phone: member.phone,
+  })
+  const set = (field: keyof typeof form) => (value: string) => setForm((prev) => ({ ...prev, [field]: value }))
+
+  return (
+    <form
+      className="admin-block"
+      onSubmit={(event) => {
+        event.preventDefault()
+        void onSave(form)
+      }}
+    >
+      <h3>Daten ändern</h3>
+      <div className="admin-grid">
+        <label>
+          Vorname
+          <input value={form.firstName} onChange={(event) => set('firstName')(event.target.value)} required />
+        </label>
+        <label>
+          Nachname
+          <input value={form.lastName} onChange={(event) => set('lastName')(event.target.value)} required />
+        </label>
+        <label>
+          Geburtstag
+          <input type="date" value={form.birthDate} onChange={(event) => set('birthDate')(event.target.value)} required />
+        </label>
+        <label>
+          Straße und Hausnummer
+          <StreetInput
+            value={form.street}
+            onChange={set('street')}
+            onPick={(pick) => setForm((prev) => ({ ...prev, street: pick.street, zip: pick.zip, city: pick.city }))}
+          />
+        </label>
+        <label>
+          PLZ
+          <input value={form.zip} inputMode="numeric" onChange={(event) => set('zip')(event.target.value)} />
+        </label>
+        <label>
+          Ort
+          <input value={form.city} onChange={(event) => set('city')(event.target.value)} />
+        </label>
+        <label>
+          E-Mail
+          <input type="email" value={form.email} onChange={(event) => set('email')(event.target.value)} required />
+        </label>
+        <label>
+          Telefon
+          <input value={form.phone} onChange={(event) => set('phone')(event.target.value)} required />
+        </label>
+      </div>
+      <div className="admin-inline">
+        <button className="btn btn-solid" type="submit" disabled={busy}>
+          Speichern
+        </button>
+        <button className="btn btn-ghost" type="button" onClick={onCancel}>
+          Abbrechen
+        </button>
+      </div>
+    </form>
+  )
 }
 
 type Guardian = {
@@ -118,6 +222,7 @@ const ERROR_TEXT: Record<string, string> = {
   phone: 'Telefon prüfen.',
   visit: 'Trainingstag fehlt.',
   stripe: 'Stripe-Kunden-ID beginnt mit cus_.',
+  address: 'Adresse prüfen. PLZ hat 5 Ziffern.',
 }
 
 function errorText(code?: string) {
@@ -802,6 +907,7 @@ function MemberPane({
   const [guardian, setGuardian] = useState<GuardianForm>(guardianForm(member.guardian))
   const [stripeId, setStripeId] = useState(member.stripe?.customerId ?? '')
   const [paneError, setPaneError] = useState<string | null>(null)
+  const [editing, setEditing] = useState(false)
 
   async function save(payload: Record<string, unknown>) {
     setPaneError(null)
@@ -856,6 +962,25 @@ function MemberPane({
           <PayPill status={member.payThisMonth} />
         </div>
       </div>
+
+      {editing ? (
+        <>
+          <ProfileEditor
+            member={member}
+            busy={busy}
+            onSave={(profile) => save({ profile })}
+            onCancel={() => {
+              setEditing(false)
+              setPaneError(null)
+            }}
+          />
+          {paneError ? <p className="admin-error">{paneError}</p> : null}
+        </>
+      ) : (
+        <button className="btn btn-ghost admin-print" type="button" onClick={() => setEditing(true)}>
+          Daten ändern (Adresse, Mail, Telefon …)
+        </button>
+      )}
 
       <dl className="admin-dl">
         <div>
@@ -1052,6 +1177,23 @@ function MemberPane({
       <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void save({ notes })}>
         Notiz speichern
       </button>
+
+      {member.history?.length ? (
+        <section className="admin-block">
+          <h3>Änderungen</h3>
+          <ul className="admin-history">
+            {[...member.history].reverse().slice(0, 30).map((row, index) => (
+              <li key={`${row.at}-${row.field}-${index}`}>
+                <small>{new Date(row.at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</small>
+                <span>
+                  <strong>{FIELD_LABEL[row.field] ?? row.field}:</strong> {historyValue(row.field, row.from)} →{' '}
+                  {historyValue(row.field, row.to)}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </section>
   )
 }
