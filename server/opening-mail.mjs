@@ -32,7 +32,7 @@ export function openingMailHtml({ first = '' } = {}) {
 <p>Wir freuen uns auf euch. Auf den 2. November. Auf die, die von Tag eins an da sind. Darauf haben wir Bock. Und wir hoffen, ihr auch.</p>
 <p style="font-size:22px;line-height:1.3;margin:24px 0 16px"><strong>Endlich hat das Warten ein Ende.</strong></p>
 <p style="font-size:20px;line-height:1.35;margin:0 0 20px">Eröffnung am <strong>2. November 2026</strong><br>Wittenberger Straße 15<br>04129 Leipzig</p>
-<p>Von MMA-Profi Konrad Dyrschka. Endlich ein Top MMA Gym in Leipzig. Kein Abstecher in eine andere Stadt. Hier. Bei uns.</p>
+<p>Von MMA-Profi Konrad Dyrschka. Endlich ein Top MMA Gym in Leipzig.</p>
 <p style="margin:28px 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#666">Die Tarife</p>
 <table style="width:100%;border-collapse:collapse">
 <tr>
@@ -54,7 +54,7 @@ export function openingMailHtml({ first = '' } = {}) {
 </table>
 <p><strong>Online Mitglied werden ist noch nicht möglich.</strong> Sobald es möglich ist, Mitglied zu werden, schreiben wir dir und sagen es auf Instagram: <a href="https://www.instagram.com/konnimmagym/" style="color:#c4121a;font-weight:bold">@konnimmagym</a>.</p>
 <p>Die <strong>ersten 50</strong> von der Voranmeldung werden belohnt. Ihr bekommt extra eine eigene Mail, sobald es möglich ist, Mitglied zu werden — persönlicher Link, nur für euch.</p>
-<p>Am 2. November öffnet das KONNI MMA GYM in der Wittenberger Straße 15. Wer von Anfang an dabei sein will, ist hier genau richtig. Wir wollen euch voll haben, wenn es losgeht.</p>
+<p>Am 2. November öffnet das KONNI MMA GYM in der Wittenberger Straße 15.</p>
 <p style="margin:28px 0 0"><a href="https://www.mma-in-leipzig.de/" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">mma-in-leipzig.de</a></p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>
