@@ -40,7 +40,7 @@ function escapeHtml(value: string): string {
     .replaceAll('"', '&quot;')
 }
 
-const PAGE_PATHS = ['/', '/mitglied', '/impressum', '/datenschutz', '/agb', '/widerruf', '/hausordnung']
+const PAGE_PATHS = ['/', '/voranmeldung', '/mitglied', '/impressum', '/datenschutz', '/agb', '/widerruf', '/hausordnung']
 
 export function buildSeoHead(siteUrl = ''): string {
   const origin = canonicalOrigin(siteUrl)
@@ -159,6 +159,7 @@ export function buildSeoBody(): string {
       <a href="/#preise">${escapeHtml(COPY.navPlans)}</a>
       <a href="/#probetraining">${escapeHtml(COPY.navTrial)}</a>
       <a href="/#kontakt">${escapeHtml(COPY.navContact)}</a>
+      <a href="/voranmeldung">Voranmeldung</a>
       <a href="/mitglied">${escapeHtml(COPY.ctaJoin)}</a>
       <a href="/impressum">${escapeHtml(COPY.impressum)}</a>
       <a href="/datenschutz">${escapeHtml(COPY.privacy)}</a>
@@ -202,7 +203,7 @@ export function buildSitemap(siteUrl: string): string {
     (path, index) => `  <url>
     <loc>${origin}${path === '/' ? '/' : path}</loc>
     <changefreq>${index === 0 ? 'weekly' : 'monthly'}</changefreq>
-    <priority>${index === 0 ? '1.0' : index === 1 ? '0.8' : '0.3'}</priority>
+    <priority>${index === 0 ? '1.0' : index <= 2 ? '0.8' : '0.3'}</priority>
   </url>`,
   )
   return `<?xml version="1.0" encoding="UTF-8"?>

@@ -21,6 +21,7 @@ import {
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
+import { createPreregStore, patchPrereg, preregCsv, preregStats } from './prereg.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 12
@@ -460,6 +461,7 @@ function patchMemberFields(current, patch, today) {
 
 export function createAdminHandler({ dataDir, env }) {
   const store = createMemberStore({ dataDir, env })
+  const preregs = createPreregStore({ dataDir, env })
   const secret = () => adminSecret(env)
 
   return async function handleAdmin(req, res) {
@@ -700,6 +702,33 @@ export function createAdminHandler({ dataDir, env }) {
         return
       }
 
+      if (action === 'preregUpdate' || action === 'preregDelete') {
+        const id = String(body.id ?? '')
+        let result = null
+        await preregs.update((db) => {
+          const index = db.entries.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          if (action === 'preregDelete') {
+            db.entries.splice(index, 1)
+            result = { ok: true, entry: null }
+            return db
+          }
+          result = patchPrereg(db.entries[index], body)
+          if (result.ok) db.entries[index] = result.entry
+          return db
+        })
+        if (!result) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (!result.ok) {
+          json(res, 400, { ok: false, error: result.error })
+          return
+        }
+        json(res, 200, { ok: true, entry: result.entry })
+        return
+      }
+
       json(res, 400, { ok: false, error: 'invalid' })
       return
     }
@@ -711,6 +740,22 @@ export function createAdminHandler({ dataDir, env }) {
 
     if (!authed(req)) {
       json(res, 401, { ok: false, error: 'auth' })
+      return
+    }
+
+    const preregView = url.searchParams.get('prereg')
+    if (preregView) {
+      const { entries } = await preregs.load()
+      const sorted = [...entries].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+      if (preregView === 'csv') {
+        res.statusCode = 200
+        res.setHeader('content-type', 'text/csv; charset=utf-8')
+        res.setHeader('cache-control', 'no-store')
+        res.setHeader('content-disposition', `attachment; filename="voranmeldungen-${today}.csv"`)
+        res.end(preregCsv(sorted))
+        return
+      }
+      json(res, 200, { ok: true, entries: sorted, stats: preregStats(entries) })
       return
     }
 

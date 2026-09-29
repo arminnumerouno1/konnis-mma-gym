@@ -17,6 +17,7 @@
   ],
   "rewrites": [
     { "source": "/mitglied", "destination": "/index.html" },
+    { "source": "/voranmeldung", "destination": "/index.html" },
     { "source": "/verwaltung", "destination": "/index.html" },
     { "source": "/impressum", "destination": "/index.html" },
     { "source": "/datenschutz", "destination": "/index.html" },

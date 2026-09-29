@@ -792,6 +792,413 @@ function Report({ onShowList }: { onShowList: (ym: string) => void }) {
   )
 }
 
+type PreregStatus = 'neu' | 'kontaktiert' | 'mitglied' | 'abgesagt'
+
+type Prereg = {
+  id: string
+  name: string
+  age: number
+  email: string
+  phone: string
+  sports: string[]
+  sportsOther: string
+  experience: string
+  times: string
+  offer: 'ja' | 'nein' | 'vielleicht'
+  sources: string[]
+  sourceOther: string
+  notify: boolean
+  goal: string
+  message: string
+  status: PreregStatus
+  note: string
+  submissions: number
+  createdAt: string
+  updatedAt: string
+}
+
+type PreregStats = {
+  total: number
+  fresh: number
+  offerYes: number
+  offerMaybe: number
+  notify: number
+  minors: number
+  members: number
+  bySport: Record<string, number>
+  bySource: Record<string, number>
+}
+
+const PREREG_STATUS_LABEL: Record<PreregStatus, string> = {
+  neu: 'Neu',
+  kontaktiert: 'Kontaktiert',
+  mitglied: 'Ist Mitglied',
+  abgesagt: 'Kein Interesse',
+}
+
+const OFFER_LABEL: Record<Prereg['offer'], string> = { ja: 'Ja', nein: 'Nein', vielleicht: 'Vielleicht' }
+
+function sportLabel(sport: string) {
+  if (sport === 'SONSTIGES') return 'Sonstiges'
+  if (sport === 'FITNESS BOXEN') return 'Fitness-Boxen'
+  return sport
+}
+
+function initials(name: string) {
+  const parts = name.trim().split(/\s+/)
+  return `${parts[0]?.[0] ?? ''}${parts.length > 1 ? parts.at(-1)?.[0] ?? '' : ''}`.toUpperCase()
+}
+
+function deDateTime(iso?: string | null) {
+  if (!iso) return '—'
+  const date = new Date(iso)
+  if (Number.isNaN(date.getTime())) return iso
+  return date.toLocaleString('de-DE', {
+    timeZone: 'Europe/Berlin',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+function PreregPane({
+  entry,
+  onClose,
+  onSaved,
+  onDeleted,
+}: {
+  entry: Prereg
+  onClose: () => void
+  onSaved: (entry: Prereg) => void
+  onDeleted: (id: string) => void
+}) {
+  const [note, setNote] = useState(entry.note)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function send(payload: Record<string, unknown>) {
+    setBusy(true)
+    setError(null)
+    const { data } = await api('/api/admin', { method: 'POST', body: JSON.stringify({ id: entry.id, ...payload }) })
+    setBusy(false)
+    if (!data.ok) {
+      setError('Hat nicht geklappt. Bitte nochmal versuchen.')
+      return null
+    }
+    return data
+  }
+
+  async function update(payload: Record<string, unknown>) {
+    const data = await send({ action: 'preregUpdate', ...payload })
+    if (data?.entry) onSaved(data.entry)
+  }
+
+  async function remove() {
+    if (!window.confirm(`Voranmeldung von ${entry.name} wirklich löschen?`)) return
+    const data = await send({ action: 'preregDelete' })
+    if (data) onDeleted(entry.id)
+  }
+
+  const sports = entry.sports.map((sport) =>
+    sport === 'SONSTIGES' && entry.sportsOther ? `Sonstiges (${entry.sportsOther})` : sportLabel(sport),
+  )
+  const sources = entry.sources.map((source) =>
+    source === 'Sonstiges' && entry.sourceOther ? `Sonstiges (${entry.sourceOther})` : source,
+  )
+
+  return (
+    <section className="admin-pane">
+      <header className="admin-pane-top">
+        <button className="btn btn-ghost" type="button" onClick={onClose}>
+          Schließen
+        </button>
+        <select value={entry.status} disabled={busy} onChange={(event) => void update({ status: event.target.value })}>
+          {(Object.keys(PREREG_STATUS_LABEL) as PreregStatus[]).map((key) => (
+            <option key={key} value={key}>
+              {PREREG_STATUS_LABEL[key]}
+            </option>
+          ))}
+        </select>
+      </header>
+
+      <div>
+        <h2>
+          {entry.name}
+          {entry.age < 18 ? <em className="admin-u18"> U18</em> : null}
+        </h2>
+        <p className="admin-muted">
+          {entry.age} Jahre · eingegangen {deDateTime(entry.createdAt)}
+          {entry.submissions > 1 ? ` · ${entry.submissions}× abgeschickt, zuletzt ${deDateTime(entry.updatedAt)}` : ''}
+        </p>
+      </div>
+
+      <dl className="admin-dl">
+        <div>
+          <dt>Mail / Telefon</dt>
+          <dd>
+            <a href={`mailto:${entry.email}`}>{entry.email}</a>
+            {entry.phone ? (
+              <>
+                <br />
+                <a href={`tel:${entry.phone.replace(/[^+0-9]/g, '')}`}>{entry.phone}</a>
+              </>
+            ) : null}
+          </dd>
+        </div>
+        <div>
+          <dt>Sportarten</dt>
+          <dd>{sports.join(', ')}</dd>
+        </div>
+        <div>
+          <dt>Erfahrung</dt>
+          <dd className="admin-pre">{entry.experience}</dd>
+        </div>
+        <div>
+          <dt>Trainingszeiten</dt>
+          <dd className="admin-pre">{entry.times}</dd>
+        </div>
+        <div>
+          <dt>Mitgliedschaft zum Eröffnungspreis</dt>
+          <dd>{OFFER_LABEL[entry.offer]}</dd>
+        </div>
+        <div>
+          <dt>Infos zu Probetraining und Anmeldung</dt>
+          <dd>{entry.notify ? 'Ja, gern informieren' : 'Nein'}</dd>
+        </div>
+        <div>
+          <dt>Erfahren über</dt>
+          <dd>{sources.join(', ')}</dd>
+        </div>
+        <div>
+          <dt>Persönliches Ziel</dt>
+          <dd className="admin-pre">{entry.goal}</dd>
+        </div>
+        {entry.message ? (
+          <div>
+            <dt>Nachricht</dt>
+            <dd className="admin-pre">{entry.message}</dd>
+          </div>
+        ) : null}
+      </dl>
+
+      <label className="admin-notes">
+        <span>Interne Notiz</span>
+        <textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)} />
+      </label>
+      <div className="admin-pane-actions">
+        <button
+          className="btn btn-solid"
+          type="button"
+          disabled={busy || note === entry.note}
+          onClick={() => void update({ note })}
+        >
+          Notiz speichern
+        </button>
+        <button className="btn btn-ghost admin-danger" type="button" disabled={busy} onClick={() => void remove()}>
+          Löschen
+        </button>
+      </div>
+      {error ? <p className="admin-error">{error}</p> : null}
+    </section>
+  )
+}
+
+function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
+  const [entries, setEntries] = useState<Prereg[]>([])
+  const [stats, setStats] = useState<PreregStats | null>(null)
+  const [loaded, setLoaded] = useState(false)
+  const [q, setQ] = useState('')
+  const [status, setStatus] = useState('')
+  const [sport, setSport] = useState('')
+  const [offer, setOffer] = useState('')
+  const [openId, setOpenId] = useState<string | null>(null)
+
+  async function load() {
+    const { data } = await api('/api/admin?prereg=1')
+    if (data.ok) {
+      setEntries(data.entries ?? [])
+      setStats(data.stats ?? null)
+      onFresh(data.stats?.fresh ?? 0)
+    }
+    setLoaded(true)
+  }
+
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const needle = q.trim().toLowerCase()
+  const shown = entries.filter(
+    (row) =>
+      (!needle || [row.name, row.email, row.phone].some((value) => value.toLowerCase().includes(needle))) &&
+      (!status || row.status === status) &&
+      (!sport || row.sports.includes(sport)) &&
+      (!offer || row.offer === offer),
+  )
+  const open = openId ? entries.find((row) => row.id === openId) ?? null : null
+
+  if (!loaded) return <p className="admin-muted">Laden…</p>
+
+  return (
+    <>
+      {stats ? (
+        <>
+          <section className="admin-stats">
+            <article className={stats.fresh ? 'is-new' : ''}>
+              <strong>{stats.fresh}</strong>
+              <span>Neu, noch nicht kontaktiert</span>
+            </article>
+            <article>
+              <strong>{stats.total}</strong>
+              <span>Voranmeldungen gesamt</span>
+            </article>
+            <article>
+              <strong>
+                {stats.offerYes} / {stats.offerMaybe}
+              </strong>
+              <span>Eröffnungspreis: Ja / Vielleicht</span>
+            </article>
+            <article>
+              <strong>{stats.notify}</strong>
+              <span>Wollen informiert werden</span>
+            </article>
+            <article>
+              <strong>{stats.minors}</strong>
+              <span>Unter 18</span>
+            </article>
+            <article>
+              <strong>{stats.members}</strong>
+              <span>Schon Mitglied</span>
+            </article>
+          </section>
+          {stats.total ? (
+            <section className="admin-interest">
+              <div>
+                <h3>Interesse</h3>
+                <div className="admin-flags">
+                  {Object.entries(stats.bySport)
+                    .filter(([, count]) => count > 0)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([key, count]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`admin-chip ${sport === key ? 'is-on' : ''}`}
+                        onClick={() => setSport(sport === key ? '' : key)}
+                      >
+                        {sportLabel(key)} <strong>{count}</strong>
+                      </button>
+                    ))}
+                </div>
+              </div>
+              <div>
+                <h3>Erfahren über</h3>
+                <div className="admin-flags">
+                  {Object.entries(stats.bySource)
+                    .filter(([, count]) => count > 0)
+                    .sort((a, b) => b[1] - a[1])
+                    .map(([key, count]) => (
+                      <span key={key} className="admin-chip">
+                        {key} <strong>{count}</strong>
+                      </span>
+                    ))}
+                </div>
+              </div>
+            </section>
+          ) : null}
+        </>
+      ) : null}
+
+      <section className="admin-filters">
+        <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Name, Mail, Telefon" />
+        <select value={status} onChange={(event) => setStatus(event.target.value)}>
+          <option value="">Jeder Status</option>
+          {(Object.keys(PREREG_STATUS_LABEL) as PreregStatus[]).map((key) => (
+            <option key={key} value={key}>
+              {PREREG_STATUS_LABEL[key]}
+            </option>
+          ))}
+        </select>
+        <select value={sport} onChange={(event) => setSport(event.target.value)}>
+          <option value="">Alle Sportarten</option>
+          {stats
+            ? Object.keys(stats.bySport).map((key) => (
+                <option key={key} value={key}>
+                  {sportLabel(key)}
+                </option>
+              ))
+            : null}
+        </select>
+        <select value={offer} onChange={(event) => setOffer(event.target.value)}>
+          <option value="">Eröffnungspreis egal</option>
+          <option value="ja">Eröffnungspreis: Ja</option>
+          <option value="vielleicht">Eröffnungspreis: Vielleicht</option>
+          <option value="nein">Eröffnungspreis: Nein</option>
+        </select>
+        <a className="btn btn-ghost" href="/api/admin?prereg=csv">
+          Als Excel-Liste (CSV)
+        </a>
+      </section>
+
+      <div className="admin-split">
+        <section className="admin-list">
+          {shown.length === 0 ? (
+            <p className="admin-muted">
+              {entries.length ? 'Keine Voranmeldung passt zum Filter.' : 'Noch keine Voranmeldungen über die Website.'}
+            </p>
+          ) : null}
+          {shown.map((row) => (
+            <button
+              key={row.id}
+              type="button"
+              className={`admin-row ${openId === row.id ? 'is-open' : ''}`}
+              onClick={() => setOpenId(row.id)}
+            >
+              <span className="admin-face">{initials(row.name)}</span>
+              <span className="admin-row-copy">
+                <strong>
+                  {row.name}
+                  {row.age < 18 ? <em> U18</em> : null}
+                  {row.status === 'neu' ? <span className="admin-new">Neu</span> : null}
+                </strong>
+                <small>
+                  {row.age} J. · {row.sports.map(sportLabel).join(', ')} · Eröffnungspreis {OFFER_LABEL[row.offer]}
+                </small>
+              </span>
+              <span className="admin-row-meta">
+                <span className={`admin-pill prereg-${row.status}`}>{PREREG_STATUS_LABEL[row.status]}</span>
+                <small>{deDate(row.createdAt)}</small>
+              </span>
+            </button>
+          ))}
+        </section>
+
+        {open ? (
+          <PreregPane
+            key={`${open.id}-${open.updatedAt}`}
+            entry={open}
+            onClose={() => setOpenId(null)}
+            onSaved={(next) => {
+              setEntries((list) => list.map((row) => (row.id === next.id ? next : row)))
+              void load()
+            }}
+            onDeleted={(id) => {
+              setOpenId(null)
+              setEntries((list) => list.filter((row) => row.id !== id))
+              void load()
+            }}
+          />
+        ) : (
+          <p className="admin-muted admin-empty">Voranmeldung links antippen, dann siehst du alle Antworten.</p>
+        )}
+      </div>
+    </>
+  )
+}
+
 function PayPill({ status }: { status: PayStatus }) {
   return <span className={`admin-pill pay-${status}`}>{PAY_LABEL[status] ?? status}</span>
 }
@@ -812,7 +1219,8 @@ export function Admin() {
   const [detail, setDetail] = useState<MemberDetail | null>(null)
   const [busy, setBusy] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [tab, setTab] = useState<'members' | 'report'>('members')
+  const [tab, setTab] = useState<'members' | 'prereg' | 'report'>('members')
+  const [preregFresh, setPreregFresh] = useState(0)
   const [joined, setJoined] = useState('')
 
   useEffect(() => {
@@ -875,6 +1283,13 @@ export function Admin() {
     })()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  useEffect(() => {
+    if (!authed) return
+    void api('/api/admin?prereg=1').then(({ data }) => {
+      if (data.ok) setPreregFresh(data.stats?.fresh ?? 0)
+    })
+  }, [authed])
 
   useEffect(() => {
     if (!authed) return
@@ -989,10 +1404,14 @@ export function Admin() {
       <header className="admin-top">
         <div>
           <p className="admin-kicker">KONNI MMA GYM</p>
-          <h1>{tab === 'report' ? 'Auswertung' : 'Mitglieder'}</h1>
+          <h1>{tab === 'report' ? 'Auswertung' : tab === 'prereg' ? 'Voranmeldungen' : 'Mitglieder'}</h1>
           <nav className="admin-tabs" aria-label="Bereiche">
             <button type="button" className={tab === 'members' ? 'is-on' : ''} onClick={() => setTab('members')}>
               Mitglieder
+            </button>
+            <button type="button" className={tab === 'prereg' ? 'is-on' : ''} onClick={() => setTab('prereg')}>
+              Voranmeldungen
+              {preregFresh ? <span className="admin-tab-count">{preregFresh}</span> : null}
             </button>
             <button type="button" className={tab === 'report' ? 'is-on' : ''} onClick={() => setTab('report')}>
               Auswertung
@@ -1017,6 +1436,8 @@ export function Admin() {
           Blob-Token setzen, sonst gehen Daten nach dem Neustart verloren.
         </p>
       ) : null}
+
+      {tab === 'prereg' ? <Preregs onFresh={setPreregFresh} /> : null}
 
       {tab === 'report' ? (
         <Report

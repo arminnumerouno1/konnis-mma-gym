@@ -6,6 +6,7 @@ import { useRoute } from './lib/useRoute'
 import { scrollPageTop } from './lib/router'
 import { Home } from './pages/Home'
 import { Join } from './pages/Join'
+import { Preregister } from './pages/Preregister'
 import { Legal } from './pages/Legal'
 import { Admin } from './pages/Admin'
 
@@ -33,6 +34,7 @@ export default function App() {
     <div className={`shell route-${route.name}`}>
       <Nav route={route} />
       {route.name === 'home' ? <Home /> : null}
+      {route.name === 'prereg' ? <Preregister /> : null}
       {route.name === 'join' ? <Join plan={route.plan} invite={route.invite} /> : null}
       {LEGAL.has(route.name) ? (
         <Legal

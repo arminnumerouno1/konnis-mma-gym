@@ -115,10 +115,11 @@ export const PRIVACY: LegalBlock[] = [
     ],
   },
   {
-    title: '4. Kontakt, Probetraining, WhatsApp',
+    title: '4. Kontakt, Probetraining, Voranmeldung, WhatsApp',
     paragraphs: [
       `Schreibst du uns per Formular, E-Mail oder Telefon, verarbeiten wir die angegebenen Daten zur Bearbeitung und Antwort (Art. 6 Abs. 1 lit. b DSGVO bei vorvertraglicher Anfrage, sonst Art. 6 Abs. 1 lit. f DSGVO).`,
       `Das Probetraining-Formular erfasst Name, E-Mail, Telefon, gewünschtes Training und optional eine Nachricht. Die Angaben gehen an ${GYM.email}.`,
+      `Die Voranmeldung unter /voranmeldung erfasst Name, Alter, E-Mail, optional Telefon, deine Antworten zu Sportarten, Erfahrung, Trainingszeiten, Eröffnungspreis, wie du von uns erfahren hast und deinem Ziel sowie optional eine Nachricht. Wir speichern das in unserer Mitgliederverwaltung (Hosting und Speicher bei Vercel), um das Training zu planen und dich zur Eröffnung, zu Probetrainings und zur Mitgliedschaft zu kontaktieren. Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Du kannst sie jederzeit per Mail an ${GYM.email} widerrufen; dann löschen wir deine Voranmeldung. Wirst du kein Mitglied, löschen wir sie spätestens zwölf Monate nach der Eröffnung.`,
       'Bietest du uns WhatsApp an oder nutzt du unseren WhatsApp-Link, werden Inhalte und Metadaten über WhatsApp Ireland Limited / Meta verarbeitet. WhatsApp hat eigene Datenschutzhinweise. Die Nutzung ist freiwillig; du kannst uns stattdessen per E-Mail oder Telefon erreichen.',
       'Anfragen löschen wir, sobald die Sache erledigt ist und keine Aufbewahrungspflicht entgegensteht.',
     ],

@@ -9,6 +9,7 @@ import { createOpeningMailHandler } from './opening-mail.mjs'
 import { createMembershipHandler } from './membership.mjs'
 import { createAdminHandler } from './admin.mjs'
 import { createWaitlistHandler } from './waitlist.mjs'
+import { createPreregHandler } from './prereg.mjs'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const dist = join(root, 'dist')
@@ -18,6 +19,7 @@ const handleWaitlist = createWaitlistHandler({ dataDir, env: process.env })
 const handleMembership = createMembershipHandler({ dataDir, env: process.env })
 const handleAdmin = createAdminHandler({ dataDir, env: process.env })
 const handleContact = createContactHandler({ dataDir, env: process.env })
+const handlePrereg = createPreregHandler({ dataDir, env: process.env })
 const handleInviteMail = createInviteMailHandler({ env: process.env })
 const handleOpeningMail = createOpeningMailHandler({ env: process.env })
 
@@ -74,6 +76,10 @@ const server = createServer((req, res) => {
   }
   if (path === '/api/admin') {
     void handleAdmin(req, res)
+    return
+  }
+  if (path === '/api/voranmeldung') {
+    void handlePrereg(req, res)
     return
   }
   if (path === '/api/kontakt') {
