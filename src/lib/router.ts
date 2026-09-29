@@ -8,6 +8,7 @@ export type RouteName =
   | 'hausordnung'
   | 'vertrag12'
   | 'vertrag24'
+  | 'admin'
   | 'notfound'
 
 export type Route = {
@@ -28,6 +29,7 @@ export const PATHS: Record<Exclude<RouteName, 'notfound'>, string> = {
   hausordnung: '/hausordnung',
   vertrag12: '/vertrag/12',
   vertrag24: '/vertrag/24',
+  admin: '/verwaltung',
 }
 
 function cleanPath(pathname: string) {

@@ -3,6 +3,7 @@ import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
+import { createMemberStore, ingestSignup } from './member-store.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
@@ -346,6 +347,7 @@ function json(res, status, body) {
 
 export function createMembershipHandler({ dataDir, env }) {
   const file = join(dataDir, 'memberships.json')
+  const members = createMemberStore({ dataDir, env })
 
   return async function handleMembership(req, res) {
     try {
@@ -451,6 +453,11 @@ export function createMembershipHandler({ dataDir, env }) {
       await saveMemberships(file, memberships)
     } catch (error) {
       console.error('[mitglied] local save skipped', error)
+    }
+    try {
+      await ingestSignup(members, record)
+    } catch (error) {
+      console.error('[mitglied] member store skipped', error)
     }
 
     try {

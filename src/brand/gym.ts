@@ -13,6 +13,7 @@ export const GYM = {
   whatsapp: 'https://wa.me/4915221872354',
   instagram: 'https://www.instagram.com/konnimmagym/',
   instagramHandle: '@konnimmagym',
+  openingDate: '2026-11-02',
   partners: ['Konrad Dyrschka', 'Mehmet-Deniz Celik'] as const,
   agbStand: '27. September 2026',
   agbDate: '27.09.2026',

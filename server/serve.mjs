@@ -7,6 +7,7 @@ import { createContactHandler } from './contact.mjs'
 import { createInviteMailHandler } from './invite-mail.mjs'
 import { createOpeningMailHandler } from './opening-mail.mjs'
 import { createMembershipHandler } from './membership.mjs'
+import { createAdminHandler } from './admin.mjs'
 import { createWaitlistHandler } from './waitlist.mjs'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
@@ -15,6 +16,7 @@ const dataDir = join(root, 'data')
 const port = Number(process.env.PORT || 43177)
 const handleWaitlist = createWaitlistHandler({ dataDir, env: process.env })
 const handleMembership = createMembershipHandler({ dataDir, env: process.env })
+const handleAdmin = createAdminHandler({ dataDir, env: process.env })
 const handleContact = createContactHandler({ dataDir, env: process.env })
 const handleInviteMail = createInviteMailHandler({ env: process.env })
 const handleOpeningMail = createOpeningMailHandler({ env: process.env })
@@ -68,6 +70,10 @@ const server = createServer((req, res) => {
   }
   if (path === '/api/mitglied') {
     void handleMembership(req, res)
+    return
+  }
+  if (path === '/api/admin') {
+    void handleAdmin(req, res)
     return
   }
   if (path === '/api/kontakt') {

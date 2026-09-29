@@ -7,6 +7,7 @@ import { scrollPageTop } from './lib/router'
 import { Home } from './pages/Home'
 import { Join } from './pages/Join'
 import { Legal } from './pages/Legal'
+import { Admin } from './pages/Admin'
 
 const LEGAL = new Set(['impressum', 'datenschutz', 'agb', 'widerruf', 'hausordnung', 'vertrag12', 'vertrag24'])
 
@@ -23,6 +24,10 @@ export default function App() {
     const frame = window.requestAnimationFrame(() => scrollPageTop())
     return () => window.cancelAnimationFrame(frame)
   }, [route.hash, route.name, route.path])
+
+  if (route.name === 'admin') {
+    return <Admin />
+  }
 
   return (
     <div className={`shell route-${route.name}`}>

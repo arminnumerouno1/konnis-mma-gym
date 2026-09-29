@@ -5,6 +5,7 @@ import { contactPlugin } from './server/contact-plugin.ts'
 import { inviteMailPlugin } from './server/invite-mail-plugin.ts'
 import { openingMailPlugin } from './server/opening-mail-plugin.ts'
 import { membershipDataDir, membershipPlugin } from './server/membership-plugin.ts'
+import { adminPlugin } from './server/admin-plugin.ts'
 import { waitlistDataDir, waitlistPlugin } from './server/waitlist-plugin.ts'
 
 function seoPlugin(envUrl = ''): Plugin {
@@ -34,6 +35,7 @@ export default defineConfig(({ mode }) => {
       seoPlugin(env.VITE_SITE_URL),
       waitlistPlugin(env, dataDir),
       membershipPlugin(env, membershipDataDir(process.cwd())),
+      adminPlugin(env, membershipDataDir(process.cwd())),
       contactPlugin(env, dataDir),
       inviteMailPlugin(env),
       openingMailPlugin(env),

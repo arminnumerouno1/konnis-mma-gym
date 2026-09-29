@@ -1,0 +1,450 @@
+import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
+import { isValidEmail, isValidName, isValidPhone, ageOn, normalizeEmail } from './membership.mjs'
+import {
+  ADMIN_COOKIE,
+  cancelInfo,
+  ensurePayments,
+  isoDate,
+  listMember,
+  memberFromSignup,
+  publicMember,
+  setPayment,
+  termEndDate,
+  cancelDeadlineDate,
+  memberStartDate,
+} from './member-model.mjs'
+import { createMemberStore, storeKind } from './member-store.mjs'
+
+const RATE_WINDOW_MS = 10 * 60 * 1000
+const RATE_MAX = 12
+const MAX_BODY = 420_000
+const SESSION_MS = 12 * 60 * 60 * 1000
+const PHOTO_MAX = 140_000
+const PLAN_IDS = ['standard', 'flex', 'daypass', 'first50']
+const PLAN_META = {
+  standard: { name: 'Standard', price: 99.99, months: 24, fee: 0 },
+  flex: { name: 'Flex', price: 109.99, months: 12, fee: 0 },
+  daypass: { name: 'Day Pass', price: 19.99, months: null, fee: 0 },
+  first50: { name: 'First 50', price: 89.99, months: 24, fee: 0 },
+}
+const hits = new Map()
+
+function adminSecret(env) {
+  const value = env.ADMIN_SECRET?.trim() || env.INVITE_SECRET?.trim() || ''
+  return value.length >= 16 ? value : ''
+}
+
+function secretsEqual(left, right) {
+  const a = Buffer.from(String(left ?? ''))
+  const b = Buffer.from(String(right ?? ''))
+  if (!a.length || a.length !== b.length) return false
+  return timingSafeEqual(a, b)
+}
+
+function signSession(secret, exp) {
+  const payload = Buffer.from(JSON.stringify({ exp })).toString('base64url')
+  const sig = createHmac('sha256', secret).update(payload).digest('base64url')
+  return `${payload}.${sig}`
+}
+
+function readSession(secret, token) {
+  const [payload, sig] = String(token ?? '').split('.')
+  if (!payload || !sig) return false
+  const expected = createHmac('sha256', secret).update(payload).digest('base64url')
+  const left = Buffer.from(sig)
+  const right = Buffer.from(expected)
+  if (left.length !== right.length || !timingSafeEqual(left, right)) return false
+  try {
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
+    return Number(data.exp) > Date.now()
+  } catch {
+    return false
+  }
+}
+
+function cookieValue(header, name) {
+  if (!header) return ''
+  const prefix = `${name}=`
+  const hit = String(header)
+    .split(';')
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(prefix))
+  return hit ? decodeURIComponent(hit.slice(prefix.length)) : ''
+}
+
+function cookieHeader(token, secure) {
+  const base = `${ADMIN_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(SESSION_MS / 1000)}`
+  return secure ? `${base}; Secure` : base
+}
+
+function clearCookie(secure) {
+  const base = `${ADMIN_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`
+  return secure ? `${base}; Secure` : base
+}
+
+function isSecure(req) {
+  const proto = req.headers['x-forwarded-proto']
+  if (typeof proto === 'string') return proto.split(',')[0].trim() === 'https'
+  return Boolean(process.env.VERCEL)
+}
+
+function clientIp(req) {
+  const forwarded = req.headers['x-forwarded-for']
+  if (typeof forwarded === 'string' && forwarded.trim()) return forwarded.split(',')[0].trim()
+  return req.socket?.remoteAddress ?? 'unknown'
+}
+
+function rateLimited(ip) {
+  const now = Date.now()
+  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
+  if (recent.length >= RATE_MAX) {
+    hits.set(ip, recent)
+    return true
+  }
+  recent.push(now)
+  hits.set(ip, recent)
+  return false
+}
+
+function json(res, status, body, extraHeaders = {}) {
+  res.statusCode = status
+  res.setHeader('content-type', 'application/json; charset=utf-8')
+  res.setHeader('cache-control', 'no-store')
+  for (const [key, value] of Object.entries(extraHeaders)) res.setHeader(key, value)
+  res.end(JSON.stringify(body))
+}
+
+async function readBody(req) {
+  if (req.body != null && !Buffer.isBuffer(req.body)) {
+    if (typeof req.body === 'object') return req.body
+    if (typeof req.body === 'string') return req.body.trim() ? JSON.parse(req.body) : {}
+  }
+  return await new Promise((resolve, reject) => {
+    const chunks = []
+    let size = 0
+    req.on('data', (chunk) => {
+      size += chunk.length
+      if (size > MAX_BODY) {
+        reject(new Error('too_large'))
+        req.destroy()
+      } else chunks.push(chunk)
+    })
+    req.on('end', () => {
+      if (!chunks.length) {
+        resolve({})
+        return
+      }
+      try {
+        resolve(JSON.parse(Buffer.concat(chunks).toString('utf8')))
+      } catch {
+        reject(new Error('invalid_json'))
+      }
+    })
+    req.on('error', reject)
+  })
+}
+
+function statsOf(members, today) {
+  let active = 0
+  let openPay = 0
+  let canCancel = 0
+  let daypass = 0
+  for (const row of members) {
+    const view = listMember(row, today)
+    if (row.status === 'active' || row.status === 'received') active += 1
+    if (view.payThisMonth === 'open' || view.payThisMonth === 'failed') openPay += 1
+    if (view.cancel?.canCancelNow) canCancel += 1
+    if (row.plan === 'daypass') daypass += 1
+  }
+  return { total: members.length, active, openPay, canCancel, daypass }
+}
+
+function matches(member, { q, plan, status, pay }, today) {
+  const view = listMember(member, today)
+  if (plan && member.plan !== plan) return false
+  if (status && member.status !== status) return false
+  if (pay && view.payThisMonth !== pay) return false
+  if (!q) return true
+  const hay = `${member.firstName} ${member.lastName} ${member.email} ${member.phone} ${member.planName}`.toLowerCase()
+  return hay.includes(q)
+}
+
+function createDeskMember(body, today) {
+  const plan = String(body.plan ?? '')
+  if (!PLAN_IDS.includes(plan)) return { ok: false, error: 'plan' }
+  const firstName = String(body.firstName ?? '').trim()
+  const lastName = String(body.lastName ?? '').trim()
+  if (!isValidName(firstName) || !isValidName(lastName)) return { ok: false, error: 'name' }
+  const age = ageOn(body.birthDate)
+  if (age == null || age < 6 || age > 100) return { ok: false, error: 'birth' }
+  const email = normalizeEmail(body.email)
+  const phone = String(body.phone ?? '').trim()
+  if (!isValidEmail(email)) return { ok: false, error: 'email' }
+  if (!isValidPhone(phone)) return { ok: false, error: 'phone' }
+  const meta = PLAN_META[plan]
+  let visitDay = ''
+  if (plan === 'daypass') {
+    visitDay = String(body.visitDay ?? '').trim()
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(visitDay)) return { ok: false, error: 'visit' }
+  }
+  const record = {
+    id: randomUUID(),
+    status: 'active',
+    plan,
+    planName: meta.name,
+    price: meta.price,
+    termMonths: meta.months,
+    fee: meta.fee,
+    firstName,
+    lastName,
+    birthDate: String(body.birthDate),
+    age,
+    minor: age < 18,
+    street: String(body.street ?? '').trim(),
+    zip: String(body.zip ?? '').trim(),
+    city: String(body.city ?? '').trim() || 'Leipzig',
+    email,
+    phone,
+    inviteSlot: null,
+    guardian: null,
+    visitDay: visitDay || null,
+    place: String(body.place ?? 'Leipzig').trim() || 'Leipzig',
+    signature: `${firstName} ${lastName}`,
+    consents: {},
+    notes: String(body.notes ?? '').trim(),
+    createdAt: new Date().toISOString(),
+    source: 'admin',
+  }
+  record.startDate = String(body.startDate ?? '').trim() || memberStartDate(record, today)
+  return { ok: true, member: memberFromSignup(record, today) }
+}
+
+function patchMember(current, patch, today) {
+  const next = { ...current }
+  if (patch.status && ['received', 'active', 'paused', 'cancelled', 'expired'].includes(patch.status)) {
+    next.status = patch.status
+    if (patch.status === 'cancelled') {
+      next.cancelledAt = new Date().toISOString()
+      const info = cancelInfo({ ...next, status: 'active' }, today)
+      next.cancelEffectiveOn = patch.cancelEffectiveOn || info.nextEnd || today
+    }
+    if (patch.status === 'paused') next.pausedUntil = String(patch.pausedUntil ?? '') || null
+    if (patch.status === 'active') {
+      next.pausedUntil = null
+      next.cancelledAt = null
+      next.cancelEffectiveOn = null
+    }
+  }
+  if (typeof patch.notes === 'string') next.notes = patch.notes.slice(0, 4000)
+  if (typeof patch.phone === 'string' && isValidPhone(patch.phone)) next.phone = patch.phone.trim()
+  if (typeof patch.email === 'string' && isValidEmail(normalizeEmail(patch.email))) {
+    next.email = normalizeEmail(patch.email)
+  }
+  if (typeof patch.startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(patch.startDate)) {
+    next.startDate = patch.startDate
+    next.endDate = termEndDate(next.startDate, next.termMonths)
+    next.cancelDeadline = cancelDeadlineDate(next.startDate, next.termMonths)
+  }
+  if (patch.photoData === null) next.photoData = null
+  if (typeof patch.photoData === 'string') {
+    if (patch.photoData && (patch.photoData.length > PHOTO_MAX || !patch.photoData.startsWith('data:image/'))) {
+      return { ok: false, error: 'photo' }
+    }
+    next.photoData = patch.photoData || null
+  }
+  next.updatedAt = new Date().toISOString()
+  return { ok: true, member: ensurePayments(next, today) }
+}
+
+export function createAdminHandler({ dataDir, env }) {
+  const store = createMemberStore({ dataDir, env })
+  const secret = () => adminSecret(env)
+
+  return async function handleAdmin(req, res) {
+    try {
+      await run(req, res)
+    } catch (error) {
+      console.error('[admin]', error)
+      if (!res.headersSent) json(res, 500, { ok: false, error: 'upstream' })
+    }
+  }
+
+  function authed(req) {
+    const key = secret()
+    if (!key) return false
+    return readSession(key, cookieValue(req.headers.cookie, ADMIN_COOKIE))
+  }
+
+  async function run(req, res) {
+    if (req.method === 'OPTIONS') {
+      res.statusCode = 204
+      res.setHeader('allow', 'GET, POST, OPTIONS')
+      res.end()
+      return
+    }
+
+    const url = new URL(req.url || '/', 'http://localhost')
+    const today = isoDate()
+    const key = secret()
+    const secure = isSecure(req)
+
+    if (req.method === 'GET' && url.searchParams.get('ping') === '1') {
+      json(res, 200, { ok: true, auth: authed(req), store: storeKind(env) })
+      return
+    }
+
+    if (req.method === 'POST') {
+      let body
+      try {
+        body = await readBody(req)
+      } catch {
+        json(res, 400, { ok: false, error: 'invalid' })
+        return
+      }
+      const action = String(body.action ?? '')
+
+      if (action === 'login') {
+        if (rateLimited(clientIp(req))) {
+          json(res, 429, { ok: false, error: 'rate' })
+          return
+        }
+        if (!key || !secretsEqual(String(body.password ?? ''), key)) {
+          json(res, 403, { ok: false, error: 'auth' })
+          return
+        }
+        json(
+          res,
+          200,
+          { ok: true, store: storeKind(env) },
+          { 'set-cookie': cookieHeader(signSession(key, Date.now() + SESSION_MS), secure) },
+        )
+        return
+      }
+
+      if (action === 'logout') {
+        json(res, 200, { ok: true }, { 'set-cookie': clearCookie(secure) })
+        return
+      }
+
+      if (!authed(req)) {
+        json(res, 401, { ok: false, error: 'auth' })
+        return
+      }
+
+      if (action === 'create') {
+        const made = createDeskMember(body, today)
+        if (!made.ok) {
+          json(res, 400, { ok: false, error: made.error })
+          return
+        }
+        await store.update((db) => {
+          db.members.push(made.member)
+          return db
+        })
+        json(res, 200, { ok: true, member: publicMember(made.member, today, true) })
+        return
+      }
+
+      if (action === 'update') {
+        const id = String(body.id ?? '')
+        let result = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          const patched = patchMember(db.members[index], body, today)
+          if (!patched.ok) {
+            result = patched
+            return db
+          }
+          db.members[index] = patched.member
+          result = patched
+          return db
+        })
+        if (!result) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (!result.ok) {
+          json(res, 400, { ok: false, error: result.error })
+          return
+        }
+        json(res, 200, { ok: true, member: publicMember(result.member, today, true) })
+        return
+      }
+
+      if (action === 'pay') {
+        const id = String(body.id ?? '')
+        const status = String(body.status ?? '')
+        if (!['paid', 'open', 'failed', 'waived'].includes(status)) {
+          json(res, 400, { ok: false, error: 'invalid' })
+          return
+        }
+        let saved = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          db.members[index] = setPayment(
+            db.members[index],
+            {
+              period: String(body.period ?? ''),
+              kind: body.kind === 'day' ? 'day' : 'month',
+              status,
+              note: String(body.note ?? ''),
+            },
+            today,
+          )
+          saved = db.members[index]
+          return db
+        })
+        if (!saved) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        json(res, 200, { ok: true, member: publicMember(saved, today, true) })
+        return
+      }
+
+      json(res, 400, { ok: false, error: 'invalid' })
+      return
+    }
+
+    if (req.method !== 'GET') {
+      json(res, 405, { ok: false, error: 'method' })
+      return
+    }
+
+    if (!authed(req)) {
+      json(res, 401, { ok: false, error: 'auth' })
+      return
+    }
+
+    const db = await store.load()
+    const id = url.searchParams.get('id')
+    if (id) {
+      const row = db.members.find((item) => item.id === id)
+      if (!row) {
+        json(res, 404, { ok: false, error: 'missing' })
+        return
+      }
+      json(res, 200, { ok: true, member: publicMember(row, today, true), store: storeKind(env) })
+      return
+    }
+
+    const q = String(url.searchParams.get('q') ?? '')
+      .trim()
+      .toLowerCase()
+    const plan = String(url.searchParams.get('plan') ?? '')
+    const status = String(url.searchParams.get('status') ?? '')
+    const pay = String(url.searchParams.get('pay') ?? '')
+    const members = db.members
+      .filter((row) => matches(row, { q, plan, status, pay }, today))
+      .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
+      .map((row) => listMember(row, today))
+    json(res, 200, {
+      ok: true,
+      store: storeKind(env),
+      stats: statsOf(db.members, today),
+      members,
+    })
+  }
+}

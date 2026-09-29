@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /verwaltung
+Disallow: /api/
 
 Sitemap: https://www.mma-in-leipzig.de/sitemap.xml
