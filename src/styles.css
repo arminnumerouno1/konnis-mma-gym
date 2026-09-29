@@ -733,6 +733,44 @@ p,
   padding: 28px 32px 40px;
 }
 
+.fighter-ig {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 22px;
+  padding: 6px 16px 6px 6px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: #fff;
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-decoration: none;
+  transition:
+    border-color 0.25s ease,
+    background 0.25s ease;
+}
+
+.fighter-ig-icon {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(45deg, #f9ce34, #ee2a7b 55%, #6228d7);
+  color: #fff;
+  transition: transform 0.25s ease;
+}
+
+.fighter-ig:hover,
+.fighter-ig:focus-visible {
+  border-color: rgba(238, 42, 123, 0.6);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.fighter-ig:hover .fighter-ig-icon {
+  transform: rotate(-8deg) scale(1.06);
+}
+
 .fighter-kicker {
   margin: 0 0 8px;
   color: var(--red);

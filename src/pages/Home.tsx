@@ -8,6 +8,7 @@ import { Link } from '../lib/Link'
 import { href } from '../lib/router'
 import { wantsSmoothScroll } from '../lib/motion'
 import { useSiteMotion } from '../lib/useSiteMotion'
+import { InstagramIcon } from '../components/InstagramIcon'
 
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
 const SLOTS = [
@@ -139,6 +140,17 @@ function GymMap() {
         Karte
       </a>
     </div>
+  )
+}
+
+function FighterInstagram({ url, handle }: { url: string; handle: string }) {
+  return (
+    <a className="fighter-ig" href={url} target="_blank" rel="noreferrer" aria-label={`${handle} auf Instagram`}>
+      <span className="fighter-ig-icon">
+        <InstagramIcon size={18} />
+      </span>
+      <span>{handle}</span>
+    </a>
   )
 }
 
@@ -286,6 +298,7 @@ export function Home() {
             <img src={GYM.konrad} alt={COPY.konradName} width={720} height={1520} />
           </div>
           <div className="duo-copy">
+            <FighterInstagram url={GYM.konradInstagram} handle={GYM.konradInstagramHandle} />
             <p className="fighter-kicker">{COPY.konradRole}</p>
             <h2>
               KONRAD
@@ -308,6 +321,7 @@ export function Home() {
             <img src={GYM.mehmet} alt={COPY.mehmetName} width={1374} height={1206} />
           </div>
           <div className="duo-copy">
+            <FighterInstagram url={GYM.mehmetInstagram} handle={GYM.mehmetInstagramHandle} />
             <p className="fighter-kicker">{COPY.mehmetRole}</p>
             <h2>
               MEHMET
