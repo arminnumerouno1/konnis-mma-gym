@@ -41,6 +41,7 @@ type MemberList = {
   bankMissing: boolean
   guardianMissing: boolean
   contractMissing: boolean
+  isNew: boolean
   stripeLinked: boolean
   payThisMonth: PayStatus
   cancel: CancelInfo
@@ -67,6 +68,7 @@ type MemberDetail = MemberList & {
   docs?: { contract?: DocMeta; sepa?: DocMeta }
   history?: { at: string; field: string; from: string; to: string }[]
   inviteSlot?: number | null
+  reviewedAt?: string | null
 }
 
 const FIELD_LABEL: Record<string, string> = {
@@ -355,6 +357,7 @@ type Stats = {
   canCancel: number
   daypass: number
   todo: number
+  fresh: number
 }
 
 const STATUS_LABEL: Record<MemberStatus, string> = {
@@ -626,7 +629,18 @@ export function Admin() {
       setAuthed(false)
       return
     }
-    if (data.ok) setDetail(data.member)
+    if (!data.ok) return
+    setDetail(data.member)
+    if (data.member.source === 'online' && !data.member.reviewedAt) {
+      const marked = await api('/api/admin', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'update', id, reviewed: true }),
+      })
+      if (marked.data.ok) {
+        setDetail(marked.data.member)
+        await refreshList()
+      }
+    }
   }
 
   useEffect(() => {
@@ -652,6 +666,7 @@ export function Admin() {
   useEffect(() => {
     if (openId) void refreshDetail(openId)
     else setDetail(null)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openId])
 
   async function onLogin(event: FormEvent) {
@@ -773,6 +788,10 @@ export function Admin() {
 
       {stats ? (
         <section className="admin-stats">
+          <article className={stats.fresh ? 'is-new' : ''}>
+            <strong>{stats.fresh}</strong>
+            <span>Neu online</span>
+          </article>
           <article>
             <strong>{stats.total}</strong>
             <span>Gesamt</span>
@@ -846,6 +865,7 @@ export function Admin() {
                 <strong>
                   {row.firstName} {row.lastName}
                   {row.minor ? <em> U18</em> : null}
+                  {row.isNew ? <span className="admin-new">Neu online</span> : null}
                 </strong>
                 {row.guardianMissing || row.bankMissing || row.contractMissing ? (
                   <span className="admin-flags">

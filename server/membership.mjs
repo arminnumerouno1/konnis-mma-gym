@@ -349,6 +349,12 @@ export function createMembershipHandler({ dataDir, env }) {
   const file = join(dataDir, 'memberships.json')
   const members = createMemberStore({ dataDir, env })
 
+  async function knownSignups(local) {
+    const fromFile = local ?? (await loadMemberships(file))
+    const db = await members.load()
+    return [...fromFile, ...db.members]
+  }
+
   return async function handleMembership(req, res) {
     try {
       await runMembership(req, res)
@@ -375,7 +381,7 @@ export function createMembershipHandler({ dataDir, env }) {
           json(res, 400, { ok: false, error: checked.error === 'expired' ? 'expired' : 'invite' })
           return
         }
-        const memberships = await loadMemberships(file)
+        const memberships = await knownSignups()
         if (inviteUsed(memberships, checked.payload.email) || (await inviteUsedRemote(env, checked.payload.email))) {
           json(res, 400, { ok: false, error: 'invite' })
           return
@@ -429,7 +435,7 @@ export function createMembershipHandler({ dataDir, env }) {
     }
 
     const memberships = await loadMemberships(file)
-    const checked = validateMembership(body, { inviteSecret: env.INVITE_SECRET, memberships })
+    const checked = validateMembership(body, { inviteSecret: env.INVITE_SECRET, memberships: await knownSignups(memberships) })
     if (checked.ok && checked.honey) {
       json(res, 200, { ok: true, confirmation: 'saved', remainingFirst50: 0 })
       return

@@ -197,15 +197,17 @@ function statsOf(members, today) {
   let canCancel = 0
   let daypass = 0
   let todo = 0
+  let fresh = 0
   for (const row of members) {
     const view = listMember(row, today)
+    if (view.isNew) fresh += 1
     if (view.bankMissing || view.guardianMissing || view.contractMissing) todo += 1
     if (row.status === 'active' || row.status === 'received') active += 1
     if (view.payThisMonth === 'open' || view.payThisMonth === 'failed') openPay += 1
     if (view.cancel?.canCancelNow) canCancel += 1
     if (row.plan === 'daypass') daypass += 1
   }
-  return { total: members.length, active, openPay, canCancel, daypass, todo }
+  return { total: members.length, active, openPay, canCancel, daypass, todo, fresh }
 }
 
 function matches(member, { q, plan, status, pay }, today) {
@@ -410,6 +412,7 @@ function patchMemberFields(current, patch, today) {
     }
   }
   if (typeof patch.notes === 'string') next.notes = patch.notes.slice(0, 4000)
+  if (patch.reviewed === true && !next.reviewedAt) next.reviewedAt = new Date().toISOString()
   if (patch.profile && typeof patch.profile === 'object') {
     const profile = readProfile(patch.profile)
     if (!profile.ok) return profile

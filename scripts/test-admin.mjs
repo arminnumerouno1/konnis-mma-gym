@@ -17,6 +17,7 @@ import { createMemberStore, ingestSignup } from '../server/member-store.mjs'
 import { createAdminHandler } from '../server/admin.mjs'
 import { createStripeHandler } from '../server/stripe.mjs'
 import { toSuggestions } from '../server/address.mjs'
+import { createMembershipHandler } from '../server/membership.mjs'
 
 function assert(cond, message) {
   if (!cond) throw new Error(message)
@@ -449,6 +450,42 @@ assert(nowMinor.data.member.minor === true, 'birth date change recomputes minor'
 const ibanSwap = await post({ action: 'update', id: doraId, bank: { iban: 'DE02120300000000202051', holder: 'Dora Lang', mandateSigned: false } })
 assert(ibanSwap.data.member.history.some((row) => row.field === 'iban' && row.to.endsWith('2051')), 'iban change logged masked')
 assert(!ibanSwap.data.member.history.some((row) => row.to.includes('120300000000')), 'full iban not in history')
+
+const signupHandle = createMembershipHandler({ dataDir: tmp, env: { SIGNUP_OPEN: 'true' } })
+const signupRes = mockRes()
+await signupHandle(
+  {
+    method: 'POST',
+    url: '/api/mitglied',
+    headers: {},
+    socket: { remoteAddress: '10.9.9.9' },
+    body: {
+      plan: 'flex',
+      firstName: 'Olga',
+      lastName: 'Online',
+      birthDate: '1995-05-05',
+      street: 'Wittenberger Straße 15',
+      zip: '04129',
+      city: 'Leipzig',
+      email: 'olga.online@example.com',
+      phone: '+49 171 4445566',
+      place: 'Leipzig',
+      signature: 'Olga Online',
+      consents: { agb: true, hausordnung: true, widerruf: true, privacy: true, health: true, sign: true },
+    },
+  },
+  signupRes.res,
+)
+assert(signupRes.captured.status === 200, `online signup accepted ${signupRes.captured.body}`)
+const afterSignup = await call({ method: 'GET', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' } })
+const olga = afterSignup.data.members.find((row) => row.email === 'olga.online@example.com')
+assert(olga && olga.isNew && olga.planName === 'Flex', 'online signup shows up as new in admin')
+assert(olga.bankMissing, 'online signup asks for bank details')
+assert(afterSignup.data.stats.fresh >= 1, 'fresh stat')
+const reviewed = await post({ action: 'update', id: olga.id, reviewed: true })
+assert(reviewed.data.member.reviewedAt, 'marked reviewed')
+const afterReview = await call({ method: 'GET', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' } })
+assert(!afterReview.data.members.find((row) => row.id === olga.id).isNew, 'no longer new')
 
 const suggestions = toSuggestions([
   { properties: { type: 'house', street: 'Wittenberger Straße', housenumber: '15', postcode: '04129', city: 'Leipzig', countrycode: 'DE' } },

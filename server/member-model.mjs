@@ -286,6 +286,7 @@ export function listMember(member, today = isoDate()) {
     bankMissing: bankMissing(view),
     guardianMissing: guardianMissing(view),
     contractMissing: contractMissing(view),
+    isNew: view.source === 'online' && !view.reviewedAt,
     stripeLinked: Boolean(view.stripe?.customerId),
     payThisMonth: view.payThisMonth,
     cancel: view.cancel,
