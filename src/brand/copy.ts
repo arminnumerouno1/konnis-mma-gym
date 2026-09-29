@@ -97,11 +97,11 @@ export const COPY = {
   planSoon: 'Wird bald bekannt gegeben',
   planNote: 'Der konkrete Plan kommt mit dem Start. Hier siehst du nur die Form — die Zeiten sind noch nicht öffentlich.',
   priceTitle: 'Tarife.',
-  priceLead: 'Unlimited Training in jedem Monatstarif. Standard, Flex oder Day Pass.',
+  priceLead: 'Alle Kurse nutzbar. Anmeldegebühr 0€ bis zum 2. November. Standard, Flex oder Day Pass.',
   signupFeePrice: '0€',
-  signupFeeLabel: 'Anmeldegebühr',
+  signupFeeLabel: 'Anmeldegebühr bis 2. November',
   priceFoot:
-    'SEPA-Lastschrift zum 1. des Monats. Aufnahmegebühr 0 €. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
+    'SEPA-Lastschrift zum 1. des Monats. Anmeldegebühr 0 € bis zum 2. November. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
   trialTitle: 'Komm vorbei.',
   trialLead: 'Eine Einheit. Kein Vertrag. Wenn du bleibst, bleibst du.',
   trialClosedLead:

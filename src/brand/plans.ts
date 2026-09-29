@@ -30,7 +30,7 @@ export const PLANS: Plan[] = [
     termMonths: 24,
     accent: 'white',
     bullets: [
-      'Unlimited Training',
+      'Alle Kurse nutzbar',
       'Volle Mitgliedschaft',
       'Zahlung erst ab echter Eröffnung',
       'Kündigung 1 Monat zum Laufzeitende',
@@ -48,7 +48,7 @@ export const PLANS: Plan[] = [
     termMonths: 12,
     accent: 'gold',
     bullets: [
-      'Unlimited Training',
+      'Alle Kurse nutzbar',
       'Kürzere Erstlaufzeit',
       'Zahlung erst ab echter Eröffnung',
       'Kündigung 1 Monat zum Laufzeitende',
@@ -66,7 +66,7 @@ export const PLANS: Plan[] = [
     termMonths: null,
     accent: 'pink',
     bullets: [
-      'Unlimited Training an diesem Tag',
+      'Alle Kurse nutzbar an diesem Tag',
       'Kein Monatsvertrag',
       'Vor Ort oder online vormerken',
       'Hausordnung gilt trotzdem',
@@ -89,7 +89,7 @@ export const FIRST50: Plan = {
   limit: 50,
   bullets: [
     '89,99€ statt 99,99€',
-    'Unlimited Training',
+    'Alle Kurse nutzbar',
     'Nur für die Voranmeldung, persönlicher Link',
     'Zahlung erst ab echter Eröffnung',
   ],

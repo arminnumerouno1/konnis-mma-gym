@@ -1280,6 +1280,7 @@ p,
 .price-fee {
   margin: 0;
   display: flex;
+  flex-wrap: wrap;
   align-items: baseline;
   gap: 8px;
   color: var(--ink);
@@ -1297,6 +1298,8 @@ p,
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-size: 13px;
+  line-height: 1.25;
+  max-width: 14em;
 }
 
 .price-card ul {
