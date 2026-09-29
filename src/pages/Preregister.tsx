@@ -5,6 +5,12 @@ import { Link } from '../lib/Link'
 import { href } from '../lib/router'
 
 const SPORTS = ['MMA', 'BOXEN', 'RINGEN', 'BJJ', 'K1', 'FITNESS BOXEN', 'SONSTIGES'] as const
+const SPORT_LABEL: Record<string, string> = {
+  BOXEN: 'Boxen',
+  RINGEN: 'Ringen',
+  'FITNESS BOXEN': 'Fitness-Boxen',
+  SONSTIGES: 'Sonstiges',
+}
 const SOURCES = ['Instagram', 'Freunde und Bekannte', 'Tiktok', 'Google', 'Sonstiges'] as const
 const OFFERS = [
   ['ja', 'Ja'],
@@ -65,7 +71,8 @@ export function Preregister() {
   const [goal, setGoal] = useState('')
   const [message, setMessage] = useState('')
   const [consent, setConsent] = useState(false)
-  const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({})
+  const [tried, setTried] = useState(false)
+  const [serverError, setServerError] = useState<FieldKey | null>(null)
   const [pending, setPending] = useState(false)
   const [failed, setFailed] = useState<string | null>(null)
   const [done, setDone] = useState<{ repeat: boolean } | null>(null)
@@ -116,8 +123,9 @@ export function Preregister() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setFailed(null)
+    setServerError(null)
+    setTried(true)
     const found = validate()
-    setErrors(found)
     const keys = Object.keys(found) as FieldKey[]
     if (keys.length) {
       focusFirstError(keys)
@@ -160,7 +168,7 @@ export function Preregister() {
       }
       const field = data.error as FieldKey | undefined
       if (field && field in MESSAGES) {
-        setErrors({ [field]: MESSAGES[field] })
+        setServerError(field)
         focusFirstError([field])
         return
       }
@@ -199,6 +207,8 @@ export function Preregister() {
     )
   }
 
+  const errors: Partial<Record<FieldKey, string>> = tried ? validate() : {}
+  if (serverError && !errors[serverError]) errors[serverError] = MESSAGES[serverError]
   const fieldClass = (key: FieldKey, extra = '') => `prereg-q ${extra} ${errors[key] ? 'has-error' : ''}`.trim()
   const errorText = (key: FieldKey) =>
     errors[key] ? (
@@ -292,7 +302,7 @@ export function Preregister() {
                   checked={sports.includes(sport)}
                   onChange={() => setSports((list) => toggle(list, sport))}
                 />
-                <span>{sport === 'SONSTIGES' ? 'Sonstiges' : sport === 'FITNESS BOXEN' ? 'Fitness-Boxen' : sport}</span>
+                <span>{SPORT_LABEL[sport] ?? sport}</span>
               </label>
             ))}
           </div>

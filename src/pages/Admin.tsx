@@ -838,10 +838,15 @@ const PREREG_STATUS_LABEL: Record<PreregStatus, string> = {
 
 const OFFER_LABEL: Record<Prereg['offer'], string> = { ja: 'Ja', nein: 'Nein', vielleicht: 'Vielleicht' }
 
+const SPORT_LABEL: Record<string, string> = {
+  BOXEN: 'Boxen',
+  RINGEN: 'Ringen',
+  'FITNESS BOXEN': 'Fitness-Boxen',
+  SONSTIGES: 'Sonstiges',
+}
+
 function sportLabel(sport: string) {
-  if (sport === 'SONSTIGES') return 'Sonstiges'
-  if (sport === 'FITNESS BOXEN') return 'Fitness-Boxen'
-  return sport
+  return SPORT_LABEL[sport] ?? sport
 }
 
 function initials(name: string) {
@@ -1162,7 +1167,6 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
                 <strong>
                   {row.name}
                   {row.age < 18 ? <em> U18</em> : null}
-                  {row.status === 'neu' ? <span className="admin-new">Neu</span> : null}
                 </strong>
                 <small>
                   {row.age} J. · {row.sports.map(sportLabel).join(', ')} · Eröffnungspreis {OFFER_LABEL[row.offer]}
