@@ -17,17 +17,19 @@ export function openingMailSubject({ test = false } = {}) {
 export function openingMailHtml({ first = '' } = {}) {
   const who = escapeMail(String(first ?? '').trim() || 'du')
   const hi = who === 'du' ? 'Hi,' : `Hi ${who},`
+  const logo = 'https://www.mma-in-leipzig.de/brand/konni-logo-mail.jpg'
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
-<div style="background:#111;color:#ece8e1;padding:28px 24px">
+<div style="background:#111;color:#ece8e1;padding:28px 24px;text-align:center">
+<img src="${logo}" alt="KONNI MMA GYM" width="140" height="149" style="display:block;margin:0 auto 16px;border:0;outline:none;text-decoration:none" />
 <p style="margin:0;letter-spacing:.22em;font-size:12px;color:#c4121a">KONNI MMA GYM · LEIPZIG</p>
 <p style="margin:10px 0 0;font-size:36px;line-height:0.95;font-weight:bold;letter-spacing:.02em">2. NOVEMBER.</p>
 <p style="margin:8px 0 0;font-size:18px;color:#c9a227">Die Tür geht auf.</p>
 </div>
 <div style="padding:24px 4px 0">
 <p>${hi}</p>
-<p>du standest auf der Liste, als hier noch gebaut wurde. Jetzt hat der Tag eine Zahl und die Halle eine Adresse.</p>
+<p>du standest auf der Liste, als hier noch gebaut wurde. Jetzt hat der Tag eine Zahl und das Gym eine Adresse.</p>
 <p style="font-size:20px;line-height:1.35;margin:24px 0"><strong>2. November 2026</strong><br>Wittenberger Straße 15<br>04129 Leipzig</p>
-<p>Käfig. Matte. Konrad und Mehmet. Endlich ein MMA Gym in Leipzig — ohne dass du dafür in eine andere Stadt fährst.</p>
+<p>Von MMA-Profi Konrad Dyrschka. Endlich ein MMA Gym in Leipzig.</p>
 <p style="margin:28px 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#666">Die Tarife</p>
 <table style="width:100%;border-collapse:collapse">
 <tr>
@@ -47,10 +49,9 @@ export function openingMailHtml({ first = '' } = {}) {
 <td style="padding:12px 0;text-align:right"><strong>0€</strong></td>
 </tr>
 </table>
-<p>Zahlung erst, wenn das Gym wirklich öffnet. Kündigung ein Monat zum Laufzeitende.</p>
-<p><strong>Online Mitglied werden geht noch nicht.</strong> Sobald der Vertrag auf ist, schreiben wir dir. Parallel steht es auf Instagram: <a href="https://www.instagram.com/konnimmagym/" style="color:#c4121a;font-weight:bold">@konnimmagym</a>. Mail und Instagram. Beides, damit du es mitkriegst.</p>
-<p>Die <strong>ersten 50</strong> von der Voranmeldung werden belohnt. Ihr bekommt extra eine eigene Mail, sobald Mitglied werden geht — persönlicher Link, nur für euch. Nicht diese hier. Die kommt extra.</p>
-<p>Bis dahin gilt das Datum: 2. November. Wittenberger Straße 15. Komm vorbei, schau dir die Halle an, lern uns kennen. Vertrag kannst du später machen.</p>
+<p><strong>Online Mitglied werden geht noch nicht.</strong> Sobald es so weit ist, schreiben wir dir und sagen es auf Instagram: <a href="https://www.instagram.com/konnimmagym/" style="color:#c4121a;font-weight:bold">@konnimmagym</a>.</p>
+<p>Die <strong>ersten 50</strong> von der Voranmeldung werden belohnt. Ihr bekommt extra eine eigene Mail, sobald Mitglied werden geht — persönlicher Link, nur für euch.</p>
+<p>Am 2. November öffnet das KONNI MMA GYM in der Wittenberger Straße 15. Wir wollen euch von Anfang an dabei haben.</p>
 <p style="margin:28px 0 0"><a href="https://www.mma-in-leipzig.de/" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">mma-in-leipzig.de</a></p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>
