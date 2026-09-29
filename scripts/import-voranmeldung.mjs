@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto'
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { makeInvitePayload, signInvite } from '../server/invite.mjs'
+import { makeInvitePayload, namesMatch, signInvite, verifyInvite } from '../server/invite.mjs'
 import { isValidEmail, normalizeEmail } from '../server/membership.mjs'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
@@ -193,6 +193,7 @@ if (process.argv.includes('--help')) {
     [--send]
 
 Ohne --send nur CSV/JSON. Mails gehen nur mit --send und BREVO_API_KEY.
+Bestehende First-50-Links werden übernommen, wenn Name, Mail und Platz gleich sind und der Token noch gilt.
 INVITE_SECRET muss auf Vercel (Production) derselbe Wert sein.
 `)
   process.exit(0)
@@ -221,6 +222,44 @@ const skipped = []
 const invites = []
 const waitlist = []
 const seen = new Set()
+let reused = 0
+let minted = 0
+
+/** @type {Map<string, { token?: string, url?: string }>} */
+const previousByKey = new Map()
+if (existsSync(`${outBase}.json`)) {
+  try {
+    const previous = JSON.parse(readFileSync(`${outBase}.json`, 'utf8'))
+    for (const row of previous.invites ?? []) {
+      const email = normalizeEmail(row.email)
+      const name = String(row.name ?? '').replace(/\s+/g, ' ').trim()
+      const slot = Number(row.slot)
+      if (!email || !name || !Number.isInteger(slot)) continue
+      previousByKey.set(`${email}|${slot}|${name.toLocaleLowerCase('de-DE')}`, row)
+    }
+  } catch (error) {
+    console.warn('Vorherige Invite-Datei ignoriert:', error instanceof Error ? error.message : error)
+  }
+}
+
+function inviteFor({ email, name, slot }) {
+  const prev = previousByKey.get(`${email}|${slot}|${name.toLocaleLowerCase('de-DE')}`)
+  if (prev?.token) {
+    const checked = verifyInvite(secret, prev.token)
+    if (
+      checked.ok &&
+      checked.payload.email === email &&
+      namesMatch(checked.payload.name, name) &&
+      checked.payload.slot === slot
+    ) {
+      reused += 1
+      return { token: prev.token, url: prev.url || inviteUrl(site, prev.token) }
+    }
+  }
+  minted += 1
+  const token = signInvite(secret, makeInvitePayload({ email, name, slot }))
+  return { token, url: inviteUrl(site, token) }
+}
 
 rows.forEach((row, index) => {
   const slot = slotOf(row, index + 1)
@@ -247,8 +286,8 @@ rows.forEach((row, index) => {
     return
   }
   seen.add(email)
-  const token = signInvite(secret, makeInvitePayload({ email, name, slot }))
-  invites.push({ ...item, token, url: inviteUrl(site, token) })
+  const { token, url } = inviteFor({ email, name, slot })
+  invites.push({ ...item, token, url })
 })
 
 mkdirSync(dirname(outBase), { recursive: true })
@@ -272,7 +311,7 @@ if (waitlist.length) {
   writeFileSync(`${outBase}-waitlist.csv`, `${waitCsv}\n`, 'utf8')
 }
 
-console.log(`First 50 Links: ${invites.length}`)
+console.log(`First 50 Links: ${invites.length} (übernommen ${reused}, neu ${minted})`)
 console.log(`Übersprungen: ${skipped.length}`)
 for (const row of skipped.filter((item) => item.slot <= limit)) {
   console.log(`  #${row.slot} ${row.name} → ${row.reason}${row.email ? ` (${row.email})` : ''}`)
