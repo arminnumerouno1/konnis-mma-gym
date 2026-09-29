@@ -30,18 +30,10 @@ function normalizeStore(parsed) {
 }
 
 async function loadBlob(token) {
-  try {
-    const { list } = await import('@vercel/blob')
-    const listed = await list({ prefix: 'konni/', token, limit: 20 })
-    const hit = listed.blobs?.find((item) => item.pathname === BLOB_PATH)
-    if (!hit?.url) return null
-    const res = await fetch(hit.url, { headers: { authorization: `Bearer ${token}` } })
-    if (!res.ok) return null
-    return await res.json()
-  } catch (error) {
-    console.error('[members] blob load failed', error)
-    return null
-  }
+  const { get } = await import('@vercel/blob')
+  const res = await get(BLOB_PATH, { access: 'private', token, useCache: false })
+  if (!res || res.statusCode !== 200 || !res.stream) return null
+  return JSON.parse(await new Response(res.stream).text())
 }
 
 async function saveBlob(token, store) {
@@ -87,13 +79,7 @@ export function createMemberStore({ dataDir, env = process.env }) {
     const payload = { version: 1, members: store.members }
     await mkdir(dirname(file), { recursive: true })
     await writeFile(file, `${JSON.stringify(payload)}\n`, 'utf8')
-    if (token) {
-      try {
-        await saveBlob(token, payload)
-      } catch (error) {
-        console.error('[members] blob save failed', error)
-      }
-    }
+    if (token) await saveBlob(token, payload)
   }
 
   function withLock(fn) {

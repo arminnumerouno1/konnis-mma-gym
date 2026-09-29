@@ -42,3 +42,5 @@ data/opening-mail-sent.json
 *.njsproj
 *.sln
 *.sw?
+.env*
+.vercel
