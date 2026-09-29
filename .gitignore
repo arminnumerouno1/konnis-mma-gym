@@ -26,6 +26,7 @@ secrets.json
 data/waitlist.json
 data/memberships.json
 data/members.json
+data/docs/
 data/member-photos/
 data/contacts.json
 data/first50-*

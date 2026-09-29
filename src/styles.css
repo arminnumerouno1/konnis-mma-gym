@@ -2453,6 +2453,65 @@ p,
   justify-self: start;
 }
 
+.admin-docs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.admin-doc {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  padding: 12px;
+  border: 1px dashed var(--bad);
+}
+
+.admin-doc.is-done {
+  border: 1px solid rgba(47, 158, 95, 0.5);
+}
+
+.admin-doc-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.admin-doc-head .admin-pill {
+  white-space: nowrap;
+}
+
+.admin-doc p {
+  margin: 0;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.admin-upload {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.admin-upload input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.admin-upload.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+@media (max-width: 640px) {
+  .admin-docs {
+    grid-template-columns: 1fr;
+  }
+}
+
 .admin-card .admin-photo-create {
   display: grid;
   width: 120px;

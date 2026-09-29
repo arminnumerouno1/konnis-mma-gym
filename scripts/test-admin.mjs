@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto'
 import { mkdtempSync } from 'node:fs'
+import { Readable } from 'node:stream'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import {
@@ -333,6 +334,98 @@ assert(late.data.status === 'paid', 'late finalized does not reopen paid month')
 
 const nobody = await stripeCall(invoice('invoice.paid', { customer: 'cus_NOBODY0000', customer_email: 'x@example.com' }))
 assert(nobody.status === 200 && nobody.data.reason === 'unmatched', 'unmatched invoice acknowledged')
+
+async function rawCall({ method, url, headers = {}, bytes }) {
+  const req = bytes ? Readable.from([bytes]) : Readable.from([])
+  Object.assign(req, { method, url, headers: { cookie, ...headers }, socket: { remoteAddress: '10.0.0.3' } })
+  const { res, captured } = mockRes()
+  const chunks = []
+  res.end = function end(payload) {
+    captured.status = this.statusCode
+    chunks.push(payload)
+  }
+  await handle(req, res)
+  const buf = chunks[0] == null ? Buffer.alloc(0) : Buffer.from(chunks[0])
+  const isJson = String(captured.headers['content-type'] ?? '').includes('json')
+  return { status: captured.status, headers: captured.headers, bytes: buf, data: isJson ? JSON.parse(buf.toString()) : null }
+}
+
+const pdfBytes = Buffer.from('%PDF-1.4\n% test contract\n')
+const doraId = withBank.data.member.id
+const beforeDocs = await call({ method: 'GET', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' } })
+assert(beforeDocs.data.members.find((row) => row.id === doraId).contractMissing, 'desk member flags missing contract')
+
+const fakePdf = await rawCall({
+  method: 'POST',
+  url: `/api/admin?upload=contract&id=${doraId}`,
+  headers: { 'content-type': 'application/pdf' },
+  bytes: Buffer.from('<html>nope</html>'),
+})
+assert(fakePdf.status === 400 && fakePdf.data.error === 'doctype', 'rejects fake pdf')
+
+const upContract = await rawCall({
+  method: 'POST',
+  url: `/api/admin?upload=contract&id=${doraId}`,
+  headers: { 'content-type': 'application/pdf', 'x-file-name': encodeURIComponent('Vertrag Dora.pdf') },
+  bytes: pdfBytes,
+})
+assert(upContract.status === 200 && upContract.data.member.docs.contract.name === 'Vertrag Dora.pdf', 'contract uploaded')
+
+const upSepa = await rawCall({
+  method: 'POST',
+  url: `/api/admin?upload=sepa&id=${doraId}`,
+  headers: { 'content-type': 'image/jpeg' },
+  bytes: Buffer.from([0xff, 0xd8, 0xff, 0xe0, 1, 2, 3]),
+})
+assert(upSepa.status === 200 && upSepa.data.member.docs.sepa.type === 'image/jpeg', 'sepa uploaded')
+
+const afterDocs = await call({ method: 'GET', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' } })
+assert(!afterDocs.data.members.find((row) => row.id === doraId).contractMissing, 'contract flag cleared')
+
+const download = await rawCall({ method: 'GET', url: `/api/admin?id=${doraId}&doc=contract` })
+assert(download.status === 200 && download.headers['content-type'] === 'application/pdf', 'doc download type')
+assert(download.bytes.equals(pdfBytes), 'doc bytes roundtrip')
+
+const noCookie = await (async () => {
+  const req = Readable.from([pdfBytes])
+  Object.assign(req, { method: 'POST', url: `/api/admin?upload=contract&id=${doraId}`, headers: { 'content-type': 'application/pdf' }, socket: {} })
+  const { res, captured } = mockRes()
+  await handle(req, res)
+  return captured.status
+})()
+assert(noCookie === 401, 'upload needs login')
+
+const replaced = await rawCall({
+  method: 'POST',
+  url: `/api/admin?upload=contract&id=${doraId}`,
+  headers: { 'content-type': 'application/pdf' },
+  bytes: Buffer.from('%PDF-1.7\n% second\n'),
+})
+assert(replaced.data.member.docs.contract.path !== upContract.data.member.docs.contract.path, 'replace makes new file')
+const oldGone = await createMemberStore({ dataDir: tmp, env: {} }).getDoc(upContract.data.member.docs.contract.path)
+assert(oldGone === null, 'replaced file removed')
+
+const delDoc = await post({ action: 'deleteDoc', id: doraId, kind: 'sepa' })
+assert(delDoc.status === 200 && !delDoc.data.member.docs.sepa, 'sepa doc deleted')
+
+const kid2 = await post({
+  action: 'create',
+  plan: 'standard',
+  firstName: 'Mia',
+  lastName: 'Kurz',
+  birthDate: '2011-01-01',
+  email: 'mia@example.com',
+  phone: '+49 171 3334456',
+  guardian: { name: 'Sabine Kurz', relation: 'Mutter', phone: '+49 171 9998877', signed: false },
+})
+assert(kid2.data.member.status === 'received', 'second minor waits')
+const kid2Up = await rawCall({
+  method: 'POST',
+  url: `/api/admin?upload=contract&id=${kid2.data.member.id}`,
+  headers: { 'content-type': 'application/pdf' },
+  bytes: pdfBytes,
+})
+assert(kid2Up.data.member.status === 'active' && kid2Up.data.member.guardian.signedVia === 'paper', 'signed contract activates minor')
 
 const suggestions = toSuggestions([
   { properties: { type: 'house', street: 'Wittenberger Straße', housenumber: '15', postcode: '04129', city: 'Leipzig', countrycode: 'DE' } },

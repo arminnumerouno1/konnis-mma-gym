@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { memberFromSignup } from './member-model.mjs'
 
@@ -91,8 +91,48 @@ export function createMemberStore({ dataDir, env = process.env }) {
     return run
   }
 
+  const docsDir = join(dataDir, 'docs')
+
   return {
     kind: storeKind(env),
+    async putDoc(path, bytes, contentType) {
+      if (token) {
+        const { put } = await import('@vercel/blob')
+        await put(`konni/docs/${path}`, bytes, {
+          access: 'private',
+          token,
+          addRandomSuffix: false,
+          allowOverwrite: true,
+          contentType,
+        })
+        return
+      }
+      const target = join(docsDir, path)
+      await mkdir(dirname(target), { recursive: true })
+      await writeFile(target, bytes)
+    },
+    async getDoc(path) {
+      if (token) {
+        const { get } = await import('@vercel/blob')
+        const res = await get(`konni/docs/${path}`, { access: 'private', token, useCache: false })
+        if (!res || res.statusCode !== 200 || !res.stream) return null
+        return Buffer.from(await new Response(res.stream).arrayBuffer())
+      }
+      try {
+        return await readFile(join(docsDir, path))
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') return null
+        throw error
+      }
+    },
+    async deleteDoc(path) {
+      if (token) {
+        const { del } = await import('@vercel/blob')
+        await del(`konni/docs/${path}`, { token })
+        return
+      }
+      await rm(join(docsDir, path), { force: true })
+    },
     async load() {
       return withLock(loadUnlocked)
     },
@@ -121,6 +161,9 @@ export async function ingestSignup(store, record) {
         ...member,
         photoData: db.members[index].photoData || member.photoData,
         notes: db.members[index].notes || member.notes,
+        bank: db.members[index].bank || member.bank,
+        docs: db.members[index].docs || member.docs,
+        stripe: db.members[index].stripe || member.stripe,
         payments: member.payments,
       }
     } else db.members.push(member)

@@ -149,6 +149,47 @@ async function readBody(req) {
   })
 }
 
+const DOC_KINDS = ['contract', 'sepa']
+const DOC_MAX = 4_200_000
+const DOC_TYPES = {
+  'application/pdf': { ext: 'pdf', magic: (b) => b.subarray(0, 5).toString('latin1') === '%PDF-' },
+  'image/jpeg': { ext: 'jpg', magic: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+  'image/png': { ext: 'png', magic: (b) => b.subarray(1, 4).toString('latin1') === 'PNG' },
+  'image/webp': {
+    ext: 'webp',
+    magic: (b) => b.subarray(0, 4).toString('latin1') === 'RIFF' && b.subarray(8, 12).toString('latin1') === 'WEBP',
+  },
+}
+
+async function readRawBody(req, limit) {
+  if (Buffer.isBuffer(req.body)) return req.body
+  return await new Promise((resolve, reject) => {
+    const chunks = []
+    let size = 0
+    req.on('data', (chunk) => {
+      size += chunk.length
+      if (size > limit) {
+        reject(new Error('too_large'))
+        req.destroy()
+      } else chunks.push(chunk)
+    })
+    req.on('end', () => resolve(Buffer.concat(chunks)))
+    req.on('error', reject)
+  })
+}
+
+function applyDocSideEffects(member, kind, at) {
+  const next = { ...member }
+  if (kind === 'sepa' && next.bank?.iban && !next.bank.mandateSignedAt) {
+    next.bank = { ...next.bank, mandateSignedAt: at }
+  }
+  if (kind === 'contract' && next.minor && next.guardian && !next.guardian.signedAt) {
+    next.guardian = { ...next.guardian, signedAt: at, signedVia: 'paper' }
+    if (next.status === 'received') next.status = 'active'
+  }
+  return next
+}
+
 function statsOf(members, today) {
   let active = 0
   let openPay = 0
@@ -157,7 +198,7 @@ function statsOf(members, today) {
   let todo = 0
   for (const row of members) {
     const view = listMember(row, today)
-    if (view.bankMissing || view.guardianMissing) todo += 1
+    if (view.bankMissing || view.guardianMissing || view.contractMissing) todo += 1
     if (row.status === 'active' || row.status === 'received') active += 1
     if (view.payThisMonth === 'open' || view.payThisMonth === 'failed') openPay += 1
     if (view.cancel?.canCancelNow) canCancel += 1
@@ -387,6 +428,71 @@ export function createAdminHandler({ dataDir, env }) {
       return
     }
 
+    const uploadKind = url.searchParams.get('upload')
+    if (req.method === 'POST' && uploadKind) {
+      if (!authed(req)) {
+        json(res, 401, { ok: false, error: 'auth' })
+        return
+      }
+      if (!DOC_KINDS.includes(uploadKind)) {
+        json(res, 400, { ok: false, error: 'invalid' })
+        return
+      }
+      const type = String(req.headers['content-type'] ?? '').split(';')[0].trim().toLowerCase()
+      const spec = DOC_TYPES[type]
+      if (!spec) {
+        json(res, 400, { ok: false, error: 'doctype' })
+        return
+      }
+      let bytes
+      try {
+        bytes = await readRawBody(req, DOC_MAX)
+      } catch {
+        json(res, 413, { ok: false, error: 'docsize' })
+        return
+      }
+      if (!bytes.length || !spec.magic(bytes)) {
+        json(res, 400, { ok: false, error: 'doctype' })
+        return
+      }
+      const id = String(url.searchParams.get('id') ?? '')
+      const db = await store.load()
+      const current = db.members.find((row) => row.id === id)
+      if (!current) {
+        json(res, 404, { ok: false, error: 'missing' })
+        return
+      }
+      const at = new Date().toISOString()
+      const path = `${id}/${uploadKind}-${Date.now()}.${spec.ext}`
+      await store.putDoc(path, bytes, type)
+      const rawName = decodeURIComponent(String(req.headers['x-file-name'] ?? ''))
+      const name = rawName.replace(/[^\p{L}\p{N} ._()-]+/gu, '_').slice(0, 120) || `${uploadKind}.${spec.ext}`
+      let saved = null
+      let previous = null
+      await store.update((fresh) => {
+        const index = fresh.members.findIndex((row) => row.id === id)
+        if (index < 0) return fresh
+        const row = fresh.members[index]
+        previous = row.docs?.[uploadKind]?.path ?? null
+        const withDoc = {
+          ...row,
+          docs: { ...(row.docs ?? {}), [uploadKind]: { path, name, type, size: bytes.length, uploadedAt: at } },
+          updatedAt: at,
+        }
+        fresh.members[index] = ensurePayments(applyDocSideEffects(withDoc, uploadKind, at), today)
+        saved = fresh.members[index]
+        return fresh
+      })
+      if (previous && previous !== path) await store.deleteDoc(previous).catch(() => undefined)
+      if (!saved) {
+        await store.deleteDoc(path).catch(() => undefined)
+        json(res, 404, { ok: false, error: 'missing' })
+        return
+      }
+      json(res, 200, { ok: true, member: publicMember(saved, today, true) })
+      return
+    }
+
     if (req.method === 'POST') {
       let body
       try {
@@ -498,6 +604,35 @@ export function createAdminHandler({ dataDir, env }) {
         return
       }
 
+      if (action === 'deleteDoc') {
+        const id = String(body.id ?? '')
+        const kind = String(body.kind ?? '')
+        if (!DOC_KINDS.includes(kind)) {
+          json(res, 400, { ok: false, error: 'invalid' })
+          return
+        }
+        let saved = null
+        let removed = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          const row = db.members[index]
+          removed = row.docs?.[kind]?.path ?? null
+          const docs = { ...(row.docs ?? {}) }
+          delete docs[kind]
+          db.members[index] = { ...row, docs, updatedAt: new Date().toISOString() }
+          saved = db.members[index]
+          return db
+        })
+        if (!saved) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (removed) await store.deleteDoc(removed).catch(() => undefined)
+        json(res, 200, { ok: true, member: publicMember(saved, today, true) })
+        return
+      }
+
       json(res, 400, { ok: false, error: 'invalid' })
       return
     }
@@ -518,6 +653,25 @@ export function createAdminHandler({ dataDir, env }) {
       const row = db.members.find((item) => item.id === id)
       if (!row) {
         json(res, 404, { ok: false, error: 'missing' })
+        return
+      }
+      const docKind = url.searchParams.get('doc')
+      if (docKind) {
+        const meta = DOC_KINDS.includes(docKind) ? row.docs?.[docKind] : null
+        const bytes = meta ? await store.getDoc(meta.path) : null
+        if (!meta || !bytes) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        res.statusCode = 200
+        res.setHeader('content-type', meta.type)
+        res.setHeader('cache-control', 'no-store')
+        res.setHeader('x-content-type-options', 'nosniff')
+        res.setHeader(
+          'content-disposition',
+          `inline; filename="${docKind}.${DOC_TYPES[meta.type]?.ext ?? 'bin'}"; filename*=UTF-8''${encodeURIComponent(meta.name)}`,
+        )
+        res.end(bytes)
         return
       }
       if (url.searchParams.get('pdf') === 'contract') {

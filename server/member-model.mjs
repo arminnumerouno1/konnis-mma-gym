@@ -62,6 +62,10 @@ export function bankMissing(member) {
   return needsBank(member) && !(member.bank?.iban && member.bank?.mandateSignedAt)
 }
 
+export function contractMissing(member) {
+  return member.source === 'admin' && needsBank(member) && !member.docs?.contract
+}
+
 export function guardianMissing(member) {
   return Boolean(member.minor) && !member.guardian?.signedAt
 }
@@ -281,6 +285,7 @@ export function listMember(member, today = isoDate()) {
     hasPhoto: view.hasPhoto,
     bankMissing: bankMissing(view),
     guardianMissing: guardianMissing(view),
+    contractMissing: contractMissing(view),
     stripeLinked: Boolean(view.stripe?.customerId),
     payThisMonth: view.payThisMonth,
     cancel: view.cancel,

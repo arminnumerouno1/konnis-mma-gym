@@ -40,6 +40,7 @@ type MemberList = {
   hasPhoto: boolean
   bankMissing: boolean
   guardianMissing: boolean
+  contractMissing: boolean
   stripeLinked: boolean
   payThisMonth: PayStatus
   cancel: CancelInfo
@@ -63,6 +64,7 @@ type MemberDetail = MemberList & {
   guardian?: Guardian | null
   bank?: Bank | null
   stripe?: { customerId?: string } | null
+  docs?: { contract?: DocMeta; sepa?: DocMeta }
   inviteSlot?: number | null
 }
 
@@ -287,6 +289,154 @@ async function api(path: string, init?: RequestInit) {
   })
   const data = await response.json().catch(() => ({}))
   return { status: response.status, data }
+}
+
+function scanToJpeg(file: File) {
+  return new Promise<Blob>((resolve, reject) => {
+    const image = new Image()
+    const url = URL.createObjectURL(file)
+    image.onload = () => {
+      const scale = Math.min(1, 2200 / Math.max(image.width, image.height))
+      const canvas = document.createElement('canvas')
+      canvas.width = Math.max(1, Math.round(image.width * scale))
+      canvas.height = Math.max(1, Math.round(image.height * scale))
+      const ctx = canvas.getContext('2d')
+      URL.revokeObjectURL(url)
+      if (!ctx) {
+        reject(new Error('canvas'))
+        return
+      }
+      ctx.fillStyle = '#fff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
+      canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('blob'))), 'image/jpeg', 0.82)
+    }
+    image.onerror = () => {
+      URL.revokeObjectURL(url)
+      reject(new Error('image'))
+    }
+    image.src = url
+  })
+}
+
+const DOC_MAX = 4_000_000
+
+type DocMeta = { name: string; type: string; size: number; uploadedAt: string }
+
+function DocSlot({
+  memberId,
+  kind,
+  label,
+  hint,
+  doc,
+  busy,
+  onChanged,
+}: {
+  memberId: string
+  kind: 'contract' | 'sepa'
+  label: string
+  hint: string
+  doc?: DocMeta
+  busy: boolean
+  onChanged: (member: MemberDetail) => void
+}) {
+  const [working, setWorking] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function upload(file: File | undefined) {
+    if (!file) return
+    setError(null)
+    setWorking(true)
+    try {
+      let body: Blob = file
+      let type = file.type
+      let name = file.name
+      if (type !== 'application/pdf') {
+        body = await scanToJpeg(file)
+        type = 'image/jpeg'
+        name = name.replace(/\.[^.]+$/, '') + '.jpg'
+      }
+      if (body.size > DOC_MAX) {
+        setError('Datei ist zu groß (max. 4 MB). PDF kleiner speichern oder als Foto hochladen.')
+        return
+      }
+      const response = await fetch(`/api/admin?upload=${kind}&id=${encodeURIComponent(memberId)}`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'content-type': type, 'x-file-name': encodeURIComponent(name) },
+        body,
+      })
+      const data = await response.json().catch(() => ({}))
+      if (!data.ok) {
+        setError(data.error === 'doctype' ? 'Nur PDF oder Foto (JPG, PNG).' : 'Hochladen hat nicht geklappt.')
+        return
+      }
+      onChanged(data.member)
+    } catch {
+      setError('Datei konnte nicht gelesen werden. Als PDF oder JPG versuchen.')
+    } finally {
+      setWorking(false)
+    }
+  }
+
+  async function remove() {
+    if (!window.confirm(`${label} wirklich löschen?`)) return
+    setWorking(true)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'deleteDoc', id: memberId, kind }),
+    })
+    setWorking(false)
+    if (data.ok) onChanged(data.member)
+  }
+
+  const disabled = busy || working
+
+  return (
+    <div className={`admin-doc ${doc ? 'is-done' : ''}`}>
+      <div className="admin-doc-head">
+        <strong>{label}</strong>
+        <span className={`admin-pill ${doc ? 'pay-paid' : 'pay-open'}`}>{doc ? 'Liegt vor' : 'Fehlt'}</span>
+      </div>
+      {doc ? (
+        <p className="admin-muted">
+          {doc.name} · {deDate(doc.uploadedAt)} · {Math.max(1, Math.round(doc.size / 1024))} KB
+        </p>
+      ) : (
+        <p className="admin-muted">{hint}</p>
+      )}
+      <div className="admin-inline">
+        {doc ? (
+          <a
+            className="btn btn-ghost"
+            href={`/api/admin?id=${encodeURIComponent(memberId)}&doc=${kind}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Ansehen
+          </a>
+        ) : null}
+        <label className={`btn ${doc ? 'btn-ghost' : 'btn-solid'} admin-upload ${disabled ? 'is-disabled' : ''}`}>
+          {working ? 'Lädt…' : doc ? 'Ersetzen' : 'Hochladen / Foto'}
+          <input
+            type="file"
+            accept="application/pdf,image/*"
+            disabled={disabled}
+            onChange={(event) => {
+              void upload(event.target.files?.[0])
+              event.target.value = ''
+            }}
+          />
+        </label>
+        {doc ? (
+          <button className="btn btn-ghost" type="button" disabled={disabled} onClick={() => void remove()}>
+            Löschen
+          </button>
+        ) : null}
+      </div>
+      {error ? <p className="admin-error">{error}</p> : null}
+    </div>
+  )
 }
 
 function compressPhoto(file: File) {
@@ -540,7 +690,7 @@ export function Admin() {
           </article>
           <article className={stats.todo ? 'is-alert' : ''}>
             <strong>{stats.todo}</strong>
-            <span>Konto / Eltern fehlt</span>
+            <span>Unterlagen fehlen</span>
           </article>
         </section>
       ) : null}
@@ -592,8 +742,9 @@ export function Admin() {
                   {row.firstName} {row.lastName}
                   {row.minor ? <em> U18</em> : null}
                 </strong>
-                {row.guardianMissing || row.bankMissing ? (
+                {row.guardianMissing || row.bankMissing || row.contractMissing ? (
                   <span className="admin-flags">
+                    {row.contractMissing ? <span className="admin-flag">Vertrag fehlt</span> : null}
                     {row.guardianMissing ? <span className="admin-flag">Eltern-Unterschrift fehlt</span> : null}
                     {row.bankMissing ? <span className="admin-flag">Kontodaten fehlen</span> : null}
                   </span>
@@ -618,6 +769,10 @@ export function Admin() {
             onClose={() => setOpenId(null)}
             onPatch={(payload) => patch(detail.id, payload)}
             onPay={(payment, next) => markPay(detail.id, payment, next)}
+            onReplace={(next) => {
+              setDetail(next)
+              void refreshList()
+            }}
           />
         ) : (
           <p className="admin-muted admin-empty">Mitglied antippen.</p>
@@ -633,12 +788,14 @@ function MemberPane({
   onClose,
   onPatch,
   onPay,
+  onReplace,
 }: {
   member: MemberDetail
   busy: boolean
   onClose: () => void
   onPatch: (payload: Record<string, unknown>) => Promise<string | null>
   onPay: (payment: Payment, next: PayStatus) => Promise<void>
+  onReplace: (member: MemberDetail) => void
 }) {
   const [notes, setNotes] = useState(member.notes ?? '')
   const [bank, setBank] = useState<BankForm>(bankForm(member.bank))
@@ -775,6 +932,34 @@ function MemberPane({
       >
         Vertrag{member.plan !== 'daypass' ? ' + SEPA-Mandat' : ''} zum Unterschreiben drucken
       </a>
+
+      <section className="admin-block">
+        <h3>Unterlagen</h3>
+        <div className="admin-docs">
+          <DocSlot
+            memberId={member.id}
+            kind="contract"
+            label="Unterschriebener Vertrag"
+            hint={
+              member.source === 'admin'
+                ? 'PDF-Scan oder Handyfoto vom unterschriebenen Vertrag.'
+                : 'Online abgeschlossen. Upload nur, falls es eine Papierversion gibt.'
+            }
+            doc={member.docs?.contract}
+            busy={busy}
+            onChanged={onReplace}
+          />
+          <DocSlot
+            memberId={member.id}
+            kind="sepa"
+            label="SEPA-Lastschriftmandat"
+            hint="PDF-Scan oder Handyfoto vom unterschriebenen Mandat."
+            doc={member.docs?.sepa}
+            busy={busy}
+            onChanged={onReplace}
+          />
+        </div>
+      </section>
 
       {paneError ? <p className="admin-error">{paneError}</p> : null}
 
