@@ -150,6 +150,14 @@ export const COPY = {
   joinPageTitle: 'Vertrag online abschließen',
   joinPageLead:
     'Gleicher Inhalt wie die Papierverträge. Du füllst aus, bestätigst AGB, Hausordnung und Widerruf und unterschreibst digital.',
+  joinClosedKicker: 'Mitgliedschaft',
+  joinClosedTitle: 'Bald.',
+  joinClosedLead:
+    'Die Tarife stehen. Online Mitglied werden geht noch nicht. Sobald der Vertrag auf ist, kannst du ihn hier abschließen. Bis dahin Probetraining anfragen oder zur Eröffnung am 2. November kommen.',
+  joinClosedInvite:
+    'Dein First-50-Link bleibt. Der Platz ist für dich, sobald die Anmeldung aufgeht.',
+  joinClosedHome: 'Zur Startseite',
+  joinClosedError: 'Anmeldung ist noch nicht offen.',
   inviteLead:
     'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 24 Monate. Der Link gilt nur für deine E-Mail. Nicht weiterleiten.',
   inviteBad: 'Dieser Einladungslink ist ungültig oder schon benutzt.',
@@ -214,6 +222,10 @@ export const FAQ = [
   {
     q: 'Brauche ich Vorerfahrung?',
     a: 'Nein. Sag uns vorher Bescheid, dann passen wir die Einheit an. Wer schon kämpft, trainiert trotzdem mit.',
+  },
+  {
+    q: 'Kann ich schon Mitglied werden?',
+    a: 'Noch nicht online. Die Tarife siehst du schon. Den Vertrag schließen wir bald auf. Bis dahin Probetraining anfragen oder zur Eröffnung kommen.',
   },
   {
     q: 'Gibt es ein Probetraining?',

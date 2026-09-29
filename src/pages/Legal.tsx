@@ -224,7 +224,8 @@ function Contract({ months }: { months: 12 | 24 }) {
         des Vertrags.
       </p>
       <p>
-        Online schließt du denselben Inhalt über <Link href={href('join')}>das Anmeldeformular</Link> ab.
+        Sobald die Online-Anmeldung offen ist, schließt du denselben Inhalt über{' '}
+        <Link href={href('join')}>das Anmeldeformular</Link> ab.
       </p>
     </>
   )

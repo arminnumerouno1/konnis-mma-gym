@@ -1,12 +1,26 @@
-import { readFileSync } from 'node:fs'
+import { mkdirSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { PDFDocument } from 'pdf-lib'
-import { ageOn, first50Taken, validateMembership } from '../server/membership.mjs'
+import {
+  ageOn,
+  createMembershipHandler,
+  first50Taken,
+  isSignupOpen,
+  SIGNUP_OPEN,
+  validateMembership,
+} from '../server/membership.mjs'
 import { membershipCopyHtml, membershipMailSubject } from '../server/membership-mail.mjs'
 import { membershipPdfAttachments } from '../server/membership-pdf.mjs'
 
 function assert(cond, message) {
   if (!cond) throw new Error(message)
 }
+
+assert(SIGNUP_OPEN === false, 'signup closed until launch')
+assert(isSignupOpen({}) === false, 'closed default')
+assert(isSignupOpen({ SIGNUP_OPEN: 'true' }) === true, 'env override open')
+assert(isSignupOpen({ SIGNUP_OPEN: 'false' }) === false, 'env override closed')
 
 assert(ageOn('2000-01-15') !== null, 'age parses')
 assert(ageOn('1990-13-01') === null, 'bad month')
@@ -161,5 +175,31 @@ const minorFiles = await membershipPdfAttachments({
 })
 const minorPdf = await PDFDocument.load(Buffer.from(minorFiles[0].content, 'base64'))
 assert(String(minorPdf.getSubject() || '').includes('Leo Hartmann'), 'minor subject')
+
+function mockRes() {
+  const captured = { status: 0, body: '' }
+  const res = {
+    get headersSent() {
+      return captured.status !== 0
+    },
+    statusCode: 0,
+    setHeader() {},
+    end(payload) {
+      captured.status = this.statusCode
+      captured.body = String(payload ?? '')
+    },
+  }
+  return { res, captured }
+}
+
+const dataDir = join(tmpdir(), `konni-mem-${process.pid}`)
+mkdirSync(dataDir, { recursive: true })
+{
+  const handle = createMembershipHandler({ dataDir, env: {} })
+  const { res, captured } = mockRes()
+  await handle({ method: 'POST', url: '/api/mitglied', headers: {}, socket: { remoteAddress: '127.0.0.1' } }, res)
+  const parsed = JSON.parse(captured.body)
+  assert(captured.status === 403 && parsed.ok === false && parsed.error === 'closed', 'handler rejects closed signup')
+}
 
 console.log('membership tests ok')

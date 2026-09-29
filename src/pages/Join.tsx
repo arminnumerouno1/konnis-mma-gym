@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
-import { FIRST50, PAYMENT_NOTE, PLANS, isPublicPlanId, planById, type PlanId } from '../brand/plans'
+import { FIRST50, PAYMENT_NOTE, PLANS, SIGNUP_OPEN, isPublicPlanId, planById, type PlanId } from '../brand/plans'
 import { Link } from '../lib/Link'
 import { ageFromIso } from '../lib/motion'
 import { href } from '../lib/router'
@@ -23,6 +23,7 @@ const ERRORS: Record<MembershipError, string> = {
   signature: 'Die Unterschrift muss genau Vor- und Nachname sein.',
   visit: 'Bitte einen Tag für den Day Pass wählen.',
   rate: COPY.rate,
+  closed: COPY.joinClosedError,
   upstream: COPY.error,
   network: COPY.error,
   invalid: COPY.invalid,
@@ -62,7 +63,31 @@ function splitInviteName(full: string) {
   return { firstName: parts.slice(0, -1).join(' '), lastName: parts.at(-1) ?? '' }
 }
 
+function JoinClosed({ invite }: { invite: string | null }) {
+  return (
+    <main className="page join-page">
+      <p className="kicker">{COPY.joinClosedKicker}</p>
+      <h1>{COPY.joinClosedTitle}</h1>
+      <p className="lead">{COPY.joinClosedLead}</p>
+      {invite ? <p className="lead">{COPY.joinClosedInvite}</p> : null}
+      <div className="join-closed-actions">
+        <Link className="btn btn-solid" href="/#probetraining">
+          {COPY.ctaTrial}
+        </Link>
+        <Link className="btn btn-ghost" href="/">
+          {COPY.joinClosedHome}
+        </Link>
+      </div>
+    </main>
+  )
+}
+
 export function Join({ plan, invite }: JoinProps) {
+  if (!SIGNUP_OPEN) return <JoinClosed invite={invite} />
+  return <JoinForm plan={plan} invite={invite} />
+}
+
+function JoinForm({ plan, invite }: JoinProps) {
   const initial = plan && isPublicPlanId(plan) ? plan : 'standard'
   const [step, setStep] = useState(0)
   const [chosen, setChosen] = useState<PlanId>(initial)

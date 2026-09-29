@@ -16,6 +16,7 @@ export type MembershipError =
   | 'signature'
   | 'visit'
   | 'rate'
+  | 'closed'
   | 'upstream'
   | 'network'
   | 'invalid'

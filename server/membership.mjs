@@ -13,6 +13,16 @@ const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 6
 const PLAN_IDS = ['standard', 'flex', 'daypass', 'first50']
 
+/** Muss mit src/brand/plans.ts SIGNUP_OPEN zusammenpassen, außer SIGNUP_OPEN=true/false in der Umgebung. */
+export const SIGNUP_OPEN = false
+
+export function isSignupOpen(env = {}) {
+  const raw = String(env.SIGNUP_OPEN ?? '').trim().toLowerCase()
+  if (raw === 'true' || raw === '1') return true
+  if (raw === 'false' || raw === '0') return false
+  return SIGNUP_OPEN
+}
+
 const PLAN_META = {
   standard: { name: 'Standard', price: 99.99, months: 24, fee: 0 },
   flex: { name: 'Flex', price: 109.99, months: 12, fee: 0 },
@@ -391,6 +401,11 @@ export function createMembershipHandler({ dataDir, env }) {
 
     if (req.method !== 'POST') {
       json(res, 405, { ok: false, error: 'method' })
+      return
+    }
+
+    if (!isSignupOpen(env)) {
+      json(res, 403, { ok: false, error: 'closed' })
       return
     }
 
