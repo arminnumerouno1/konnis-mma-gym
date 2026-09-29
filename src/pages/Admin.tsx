@@ -573,6 +573,225 @@ function compressPhoto(file: File) {
   })
 }
 
+const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+
+function monthLabel(ym: string) {
+  const [year, month] = ym.split('-')
+  return `${MONTH_NAMES[Number(month) - 1] ?? month} ${year}`
+}
+
+type ReportMonth = {
+  ym: string
+  signups: number
+  online: number
+  desk: number
+  minors: number
+  byPlan: { standard: number; flex: number; first50: number }
+  daypasses: number
+  dayRevenue: number
+  cancellations: number
+  endings: number
+  stock?: number
+  paused?: number
+  expected?: number
+  due: number
+  paid: number
+  open: number
+  openCount: number
+}
+
+type Report = { year: number; today: string; months: ReportMonth[]; totals: ReportMonth; years: number[] }
+
+function Report({ onShowList }: { onShowList: (ym: string) => void }) {
+  const thisYear = new Date().getFullYear()
+  const [year, setYear] = useState(thisYear)
+  const [month, setMonth] = useState('')
+  const [report, setReport] = useState<Report | null>(null)
+
+  useEffect(() => {
+    let alive = true
+    void api(`/api/admin?report=${year}`).then(({ data }) => {
+      if (alive && data.ok) setReport(data.report)
+    })
+    return () => {
+      alive = false
+    }
+  }, [year])
+
+  if (!report) return <p className="admin-muted">Laden…</p>
+
+  const picked = month ? report.months.find((row) => row.ym === month) : null
+  const view = picked ?? report.totals
+  const nowYm = report.today.slice(0, 7)
+  const lastStockMonth =
+    [...report.months].reverse().find((row) => (row.stock ?? 0) > 0) ??
+    [...report.months].reverse().find((row) => row.ym <= nowYm) ??
+    report.months[0]
+  const stockRow = picked ?? lastStockMonth
+  const stockLabel = `${MONTH_NAMES[Number(stockRow.ym.slice(5)) - 1]}${stockRow.ym > nowYm ? ', geplant' : ''}`
+  const peak = Math.max(1, ...report.months.map((row) => Math.max(row.signups, row.cancellations)))
+  const scope = picked ? monthLabel(picked.ym) : `Jahr ${report.year}`
+
+  return (
+    <section className="admin-report">
+      <div className="admin-filters admin-report-filters">
+        <select value={year} onChange={(event) => setYear(Number(event.target.value))}>
+          {report.years.map((y) => (
+            <option key={y} value={y}>
+              {y}
+            </option>
+          ))}
+        </select>
+        <select value={month} onChange={(event) => setMonth(event.target.value)}>
+          <option value="">Ganzes Jahr</option>
+          {report.months.map((row) => (
+            <option key={row.ym} value={row.ym}>
+              {MONTH_NAMES[Number(row.ym.slice(5)) - 1]}
+            </option>
+          ))}
+        </select>
+        {picked ? (
+          <button className="btn btn-ghost" type="button" onClick={() => onShowList(picked.ym)}>
+            Anmeldungen {monthLabel(picked.ym)} in der Liste
+          </button>
+        ) : null}
+      </div>
+
+      <h2 className="admin-report-scope">{scope}</h2>
+      <div className="admin-stats">
+        <article className="is-new">
+          <strong>{view.signups}</strong>
+          <span>Neue Verträge</span>
+        </article>
+        <article>
+          <strong>
+            {view.online} / {view.desk}
+          </strong>
+          <span>Online / Tresen</span>
+        </article>
+        <article className={view.cancellations ? 'is-alert' : ''}>
+          <strong>{view.cancellations}</strong>
+          <span>Kündigungen eingegangen</span>
+        </article>
+        <article>
+          <strong>{view.endings}</strong>
+          <span>Verträge beendet</span>
+        </article>
+        <article>
+          <strong>{stockRow.stock ?? 0}</strong>
+          <span>Mitglieder Ende {stockLabel}</span>
+        </article>
+        <article>
+          <strong>{view.daypasses}</strong>
+          <span>Tageskarten · {euro(view.dayRevenue)}</span>
+        </article>
+      </div>
+      <div className="admin-stats">
+        <article>
+          <strong>{euro(stockRow.expected ?? 0)}</strong>
+          <span>Beiträge laut Bestand ({stockLabel})</span>
+        </article>
+        <article className="is-new">
+          <strong>{euro(view.paid)}</strong>
+          <span>Beiträge eingegangen</span>
+        </article>
+        <article className={view.open ? 'is-alert' : ''}>
+          <strong>{euro(view.open)}</strong>
+          <span>Offen / nicht erhalten ({view.openCount})</span>
+        </article>
+        <article>
+          <strong>
+            {view.byPlan.standard} · {view.byPlan.flex} · {view.byPlan.first50}
+          </strong>
+          <span>Standard · Flex · First 50</span>
+        </article>
+        <article>
+          <strong>{view.minors}</strong>
+          <span>Davon unter 18</span>
+        </article>
+      </div>
+
+      <h3>Anmeldungen und Kündigungen {report.year}</h3>
+      <div className="admin-chart" role="img" aria-label={`Neue Verträge und Kündigungen pro Monat ${report.year}`}>
+        {report.months.map((row) => (
+          <button
+            key={row.ym}
+            type="button"
+            className={`admin-chart-col ${row.ym === month ? 'is-on' : ''}`}
+            onClick={() => setMonth(row.ym === month ? '' : row.ym)}
+          >
+            <span className="admin-chart-bars">
+              <span className="bar-in" style={{ height: `${(row.signups / peak) * 100}%` }}>
+                {row.signups || ''}
+              </span>
+              <span className="bar-out" style={{ height: `${(row.cancellations / peak) * 100}%` }}>
+                {row.cancellations || ''}
+              </span>
+            </span>
+            <small>{MONTH_NAMES[Number(row.ym.slice(5)) - 1].slice(0, 3)}</small>
+          </button>
+        ))}
+      </div>
+      <p className="admin-muted">
+        <span className="legend-in" /> Neue Verträge <span className="legend-out" /> Kündigungen. Monat antippen zum Filtern.
+      </p>
+
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Monat</th>
+              <th>Neu</th>
+              <th>Online</th>
+              <th>Tresen</th>
+              <th>Kündig.</th>
+              <th>Bestand</th>
+              <th>Tageskarten</th>
+              <th>Soll</th>
+              <th>Eingang</th>
+              <th>Offen</th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.months.map((row) => (
+              <tr key={row.ym} className={row.ym === month ? 'is-on' : ''} onClick={() => setMonth(row.ym)}>
+                <td>{MONTH_NAMES[Number(row.ym.slice(5)) - 1]}</td>
+                <td>{row.signups}</td>
+                <td>{row.online}</td>
+                <td>{row.desk}</td>
+                <td>{row.cancellations}</td>
+                <td>{row.stock}</td>
+                <td>{row.daypasses}</td>
+                <td>{euro(row.expected)}</td>
+                <td>{euro(row.paid)}</td>
+                <td className={row.open ? 'is-bad' : ''}>{euro(row.open)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td>Summe</td>
+              <td>{report.totals.signups}</td>
+              <td>{report.totals.online}</td>
+              <td>{report.totals.desk}</td>
+              <td>{report.totals.cancellations}</td>
+              <td>—</td>
+              <td>{report.totals.daypasses}</td>
+              <td>—</td>
+              <td>{euro(report.totals.paid)}</td>
+              <td>{euro(report.totals.open)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <p className="admin-muted">
+        Neue Verträge nach Anmeldedatum. Bestand = laufende Verträge am Monatsende (ohne wartende U18-Anmeldungen).
+        Soll = Monatsbeiträge dieser Verträge ohne Pausen. Eingang und Offen kommen aus den Zahlungsmonaten.
+      </p>
+    </section>
+  )
+}
+
 function PayPill({ status }: { status: PayStatus }) {
   return <span className={`admin-pill pay-${status}`}>{PAY_LABEL[status] ?? status}</span>
 }
@@ -593,6 +812,8 @@ export function Admin() {
   const [detail, setDetail] = useState<MemberDetail | null>(null)
   const [busy, setBusy] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [tab, setTab] = useState<'members' | 'report'>('members')
+  const [joined, setJoined] = useState('')
 
   useEffect(() => {
     const robots = document.createElement('meta')
@@ -609,6 +830,7 @@ export function Admin() {
     if (plan) query.set('plan', plan)
     if (status) query.set('status', status)
     if (pay) query.set('pay', pay)
+    if (joined) query.set('joined', joined)
     const suffix = query.toString() ? `?${query}` : ''
     const { status: code, data } = await api(`/api/admin${suffix}`)
     if (code === 401) {
@@ -661,7 +883,7 @@ export function Admin() {
     }, 180)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, plan, status, pay, authed])
+  }, [q, plan, status, pay, joined, authed, tab])
 
   useEffect(() => {
     if (openId) void refreshDetail(openId)
@@ -767,12 +989,22 @@ export function Admin() {
       <header className="admin-top">
         <div>
           <p className="admin-kicker">KONNI MMA GYM</p>
-          <h1>Mitglieder</h1>
+          <h1>{tab === 'report' ? 'Auswertung' : 'Mitglieder'}</h1>
+          <nav className="admin-tabs" aria-label="Bereiche">
+            <button type="button" className={tab === 'members' ? 'is-on' : ''} onClick={() => setTab('members')}>
+              Mitglieder
+            </button>
+            <button type="button" className={tab === 'report' ? 'is-on' : ''} onClick={() => setTab('report')}>
+              Auswertung
+            </button>
+          </nav>
         </div>
         <div className="admin-top-actions">
-          <button className="btn btn-ghost" type="button" onClick={() => setCreating((v) => !v)}>
-            {creating ? 'Abbrechen' : 'Neu anlegen'}
-          </button>
+          {tab === 'members' ? (
+            <button className="btn btn-ghost" type="button" onClick={() => setCreating((v) => !v)}>
+              {creating ? 'Abbrechen' : 'Neu anlegen'}
+            </button>
+          ) : null}
           <button className="btn btn-ghost" type="button" onClick={() => void onLogout()}>
             Raus
           </button>
@@ -786,7 +1018,16 @@ export function Admin() {
         </p>
       ) : null}
 
-      {stats ? (
+      {tab === 'report' ? (
+        <Report
+          onShowList={(ym) => {
+            setJoined(ym)
+            setTab('members')
+          }}
+        />
+      ) : null}
+
+      {tab === 'members' && stats ? (
         <section className="admin-stats">
           <article className={stats.fresh ? 'is-new' : ''}>
             <strong>{stats.fresh}</strong>
@@ -819,12 +1060,14 @@ export function Admin() {
         </section>
       ) : null}
 
-      {creating ? <CreateMember onDone={async (id) => {
+      {tab === 'members' && creating ? <CreateMember onDone={async (id) => {
         setCreating(false)
         setOpenId(id)
         await refreshList()
       }} /> : null}
 
+      {tab === 'members' ? (
+      <>
       <section className="admin-filters">
         <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Name, Mail, Telefon" />
         <select value={plan} onChange={(event) => setPlan(event.target.value)}>
@@ -848,6 +1091,15 @@ export function Admin() {
           <option value="failed">Nicht erhalten</option>
           <option value="upcoming">Noch nicht fällig</option>
         </select>
+        <label className="admin-month">
+          <span>Angemeldet im</span>
+          <input type="month" value={joined} onChange={(event) => setJoined(event.target.value)} />
+        </label>
+        {joined ? (
+          <button className="btn btn-ghost" type="button" onClick={() => setJoined('')}>
+            {monthLabel(joined)} ✕
+          </button>
+        ) : null}
       </section>
 
       <div className="admin-split">
@@ -903,6 +1155,8 @@ export function Admin() {
           <p className="admin-muted admin-empty">Mitglied antippen.</p>
         )}
       </div>
+      </>
+      ) : null}
     </main>
   )
 }

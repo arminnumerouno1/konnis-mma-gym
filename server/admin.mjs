@@ -20,6 +20,7 @@ import {
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
+import { berlinYm, buildReport } from './member-report.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 12
@@ -210,8 +211,12 @@ function statsOf(members, today) {
   return { total: members.length, active, openPay, canCancel, daypass, todo, fresh }
 }
 
-function matches(member, { q, plan, status, pay }, today) {
+function matches(member, { q, plan, status, pay, joined }, today) {
   const view = listMember(member, today)
+  if (joined) {
+    const month = member.plan === 'daypass' ? String(member.visitDay ?? '').slice(0, 7) : berlinYm(member.createdAt)
+    if (month !== joined) return false
+  }
   if (plan && member.plan !== plan) return false
   if (status && member.status !== status) return false
   if (pay && view.payThisMonth !== pay) return false
@@ -710,6 +715,12 @@ export function createAdminHandler({ dataDir, env }) {
     }
 
     const db = await store.load()
+    const reportYear = url.searchParams.get('report')
+    if (reportYear) {
+      const year = /^\d{4}$/.test(reportYear) ? reportYear : today.slice(0, 4)
+      json(res, 200, { ok: true, report: buildReport(db.members, year, today) })
+      return
+    }
     const id = url.searchParams.get('id')
     if (id) {
       const row = db.members.find((item) => item.id === id)
@@ -759,8 +770,10 @@ export function createAdminHandler({ dataDir, env }) {
     const plan = String(url.searchParams.get('plan') ?? '')
     const status = String(url.searchParams.get('status') ?? '')
     const pay = String(url.searchParams.get('pay') ?? '')
+    const joinedParam = String(url.searchParams.get('joined') ?? '')
+    const joined = /^\d{4}-\d{2}$/.test(joinedParam) ? joinedParam : ''
     const members = db.members
-      .filter((row) => matches(row, { q, plan, status, pay }, today))
+      .filter((row) => matches(row, { q, plan, status, pay, joined }, today))
       .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
       .map((row) => listMember(row, today))
     json(res, 200, {

@@ -18,6 +18,7 @@ import { createAdminHandler } from '../server/admin.mjs'
 import { createStripeHandler } from '../server/stripe.mjs'
 import { toSuggestions } from '../server/address.mjs'
 import { createMembershipHandler } from '../server/membership.mjs'
+import { buildReport } from '../server/member-report.mjs'
 
 function assert(cond, message) {
   if (!cond) throw new Error(message)
@@ -486,6 +487,26 @@ const reviewed = await post({ action: 'update', id: olga.id, reviewed: true })
 assert(reviewed.data.member.reviewedAt, 'marked reviewed')
 const afterReview = await call({ method: 'GET', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' } })
 assert(!afterReview.data.members.find((row) => row.id === olga.id).isNew, 'no longer new')
+
+const reportMembers = [
+  memberFromSignup({ id: 'r1', plan: 'standard', planName: 'Standard', price: 99.99, termMonths: 24, firstName: 'A', lastName: 'A', email: 'r1@example.com', startDate: '2026-11-02', createdAt: '2026-10-05T10:00:00.000Z', source: 'online' }, '2026-12-15'),
+  memberFromSignup({ id: 'r2', plan: 'flex', planName: 'Flex', price: 109.99, termMonths: 12, firstName: 'B', lastName: 'B', email: 'r2@example.com', minor: true, startDate: '2026-11-02', createdAt: '2026-10-31T23:30:00.000Z', source: 'admin' }, '2026-12-15'),
+  { ...memberFromSignup({ id: 'r3', plan: 'standard', planName: 'Standard', price: 99.99, termMonths: 24, firstName: 'C', lastName: 'C', email: 'r3@example.com', startDate: '2026-11-02', createdAt: '2026-11-10T10:00:00.000Z', source: 'online' }, '2026-12-15'), status: 'cancelled', cancelledAt: '2026-12-01T09:00:00.000Z', cancelEffectiveOn: '2028-11-01' },
+  memberFromSignup({ id: 'r4', plan: 'daypass', planName: 'Day Pass', price: 19.99, termMonths: null, firstName: 'D', lastName: 'D', email: 'r4@example.com', visitDay: '2026-11-20', createdAt: '2026-11-19T10:00:00.000Z' }, '2026-12-15'),
+]
+reportMembers[0] = setPayment(reportMembers[0], { period: '2026-11', kind: 'month', status: 'paid' }, '2026-12-15')
+reportMembers[3] = setPayment(reportMembers[3], { period: '2026-11-20', kind: 'day', status: 'paid' }, '2026-12-15')
+const rep = buildReport(reportMembers, '2026', '2026-12-15')
+const rOct = rep.months.find((row) => row.ym === '2026-10')
+const rNov = rep.months.find((row) => row.ym === '2026-11')
+const rDec = rep.months.find((row) => row.ym === '2026-12')
+assert(rOct.signups === 1 && rNov.signups === 2, 'signups by Berlin month (31.10. 23:30 UTC is November)')
+assert(rNov.desk === 1 && rNov.minors === 1, 'desk and minor split')
+assert(rDec.cancellations === 1 && rDec.endings === 0, 'cancellation received, not yet ended')
+assert(rNov.daypasses === 1 && rNov.dayRevenue === 19.99, 'day pass counted by visit day')
+assert(rNov.stock === 3 && rOct.stock === 0, 'stock at month end')
+assert(rNov.paid === 99.99 && rNov.openCount === 2, 'payments paid and open')
+assert(rep.totals.signups === 3, 'year total')
 
 const suggestions = toSuggestions([
   { properties: { type: 'house', street: 'Wittenberger Straße', housenumber: '15', postcode: '04129', city: 'Leipzig', countrycode: 'DE' } },
