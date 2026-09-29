@@ -3,6 +3,7 @@ import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { buildSeoBody, buildSeoHead, buildSitemap, canonicalOrigin } from './src/brand/seo.ts'
 import { contactPlugin } from './server/contact-plugin.ts'
 import { inviteMailPlugin } from './server/invite-mail-plugin.ts'
+import { openingMailPlugin } from './server/opening-mail-plugin.ts'
 import { membershipDataDir, membershipPlugin } from './server/membership-plugin.ts'
 import { waitlistDataDir, waitlistPlugin } from './server/waitlist-plugin.ts'
 
@@ -35,6 +36,7 @@ export default defineConfig(({ mode }) => {
       membershipPlugin(env, membershipDataDir(process.cwd())),
       contactPlugin(env, dataDir),
       inviteMailPlugin(env),
+      openingMailPlugin(env),
     ],
     server: {
       host: '127.0.0.1',

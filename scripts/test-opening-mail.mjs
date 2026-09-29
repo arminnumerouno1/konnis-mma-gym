@@ -1,0 +1,49 @@
+import { createOpeningMailHandler, openingMailHtml, openingMailSubject } from '../server/opening-mail.mjs'
+
+function assert(cond, message) {
+  if (!cond) throw new Error(message)
+}
+
+assert(openingMailSubject().includes('2. November'), 'subject date')
+assert(openingMailSubject().includes('KONNI MMA GYM'), 'subject gym')
+assert(openingMailSubject({ test: true }).startsWith('Test:'), 'test prefix')
+
+const html = openingMailHtml({ first: 'Armin' })
+assert(html.includes('Hi Armin,'), 'greeting')
+assert(html.includes('2. November 2026'), 'opening date')
+assert(html.includes('Wittenberger Straße 15'), 'street')
+assert(html.includes('99,99€') && html.includes('109,99€') && html.includes('19,99€'), 'prices')
+assert(html.includes('Anmeldegebühr') && html.includes('0€'), 'fee')
+assert(html.includes('Online Mitglied werden geht noch nicht'), 'signup closed')
+assert(html.includes('@konnimmagym') && html.includes('instagram.com/konnimmagym'), 'instagram')
+assert(html.includes('ersten 50') && html.includes('extra eine eigene Mail'), 'first50 later')
+assert(!html.includes('89,99'), 'no first50 price in blast')
+assert(!html.includes('/mitglied?invite='), 'no invite links')
+assert(!html.includes('<script'), 'no script')
+assert(!openingMailHtml({ first: '<x>' }).includes('<x>'), 'escaped name')
+
+function mockRes() {
+  const captured = { status: 0, body: '' }
+  const res = {
+    get headersSent() {
+      return captured.status !== 0
+    },
+    statusCode: 0,
+    setHeader() {},
+    end(payload) {
+      captured.status = this.statusCode
+      captured.body = String(payload ?? '')
+    },
+  }
+  return { res, captured }
+}
+
+{
+  const handle = createOpeningMailHandler({ env: { INVITE_SECRET: 'test-invite-secret-key', BREVO_API_KEY: 'x' } })
+  const { res, captured } = mockRes()
+  await handle({ method: 'POST', url: '/api/opening-mail', headers: {}, socket: { remoteAddress: '127.0.0.1' }, body: { email: 'armin@example.com' } }, res)
+  const parsed = JSON.parse(captured.body)
+  assert(captured.status === 403 && parsed.error === 'invite', 'opening mail needs secret')
+}
+
+console.log('opening mail tests ok')
