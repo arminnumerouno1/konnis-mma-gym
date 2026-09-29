@@ -1709,6 +1709,8 @@ p,
 
 .footer-top img {
   width: 64px;
+  height: auto;
+  flex-shrink: 0;
 }
 
 .footer-tag {
