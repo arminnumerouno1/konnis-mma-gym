@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
+import { TRIAL_OPEN } from '../brand/plans'
 import { Link } from '../lib/Link'
 import { href, type Route } from '../lib/router'
 
@@ -23,7 +24,7 @@ export function Nav({ route }: NavProps) {
     { href: '/#training', label: COPY.navTraining },
     { href: '/#team', label: COPY.navTeam },
     { href: '/#preise', label: COPY.navPlans },
-    { href: '/#probetraining', label: COPY.navTrial },
+    TRIAL_OPEN ? { href: '/#probetraining', label: COPY.navTrial } : { href: href('prereg'), label: COPY.navPrereg },
     { href: '/#kontakt', label: COPY.navContact },
   ]
 

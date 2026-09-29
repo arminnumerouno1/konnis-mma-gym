@@ -157,7 +157,6 @@ export function buildSeoBody(): string {
       <a href="/#training">${escapeHtml(COPY.navTraining)}</a>
       <a href="/#team">${escapeHtml(COPY.navTeam)}</a>
       <a href="/#preise">${escapeHtml(COPY.navPlans)}</a>
-      <a href="/#probetraining">${escapeHtml(COPY.navTrial)}</a>
       <a href="/#kontakt">${escapeHtml(COPY.navContact)}</a>
       <a href="/voranmeldung">Voranmeldung</a>
       <a href="/mitglied">${escapeHtml(COPY.ctaJoin)}</a>
@@ -168,7 +167,7 @@ export function buildSeoBody(): string {
       <a href="/hausordnung">${escapeHtml(COPY.house)}</a>
     </nav>
     <h1>MMA Gym in Leipzig | ${escapeHtml(COPY.gymName)}</h1>
-    <p>MMA Gym in Leipzig: ${escapeHtml(COPY.gymName)} von ${escapeHtml(GYM.partners[0])} und ${escapeHtml(GYM.partners[1])} an der ${escapeHtml(GYM_ADDRESS)}. MMA in Leipzig, Ringen in Leipzig, BJJ in Leipzig, Boxen in Leipzig und Kick- &amp; Thai-Boxen in Leipzig. ${escapeHtml(COPY.heroHit)} ${escapeHtml(COPY.ctaJoinNow)} oder zuerst zum ${escapeHtml(COPY.ctaTrial)} kommen.</p>
+    <p>MMA Gym in Leipzig: ${escapeHtml(COPY.gymName)} von ${escapeHtml(GYM.partners[0])} und ${escapeHtml(GYM.partners[1])} an der ${escapeHtml(GYM_ADDRESS)}. MMA in Leipzig, Ringen in Leipzig, BJJ in Leipzig, Boxen in Leipzig und Kick- &amp; Thai-Boxen in Leipzig. ${escapeHtml(COPY.heroHit)} ${escapeHtml(COPY.ctaJoinNow)} oder dich unverbindlich voranmelden.</p>
 ${about}
     <p>${escapeHtml(COPY.aboutClose.replace('🥊', '').trim())} ${escapeHtml(COPY.aboutStreet)}, ${escapeHtml(COPY.aboutZip)}. ${escapeHtml(COPY.aboutWhen)}.</p>
     <h2>${escapeHtml(COPY.trainTitle)} MMA Training Leipzig</h2>
@@ -182,7 +181,7 @@ ${people}
     <h2>${escapeHtml(COPY.priceTitle)} Mitglied werden</h2>
     <p>${escapeHtml(COPY.priceLead)} ${escapeHtml(COPY.priceFoot)}</p>
 ${plans}
-    <p><a href="/mitglied">${escapeHtml(COPY.ctaJoinNow)}</a> · <a href="/#probetraining">${escapeHtml(COPY.ctaTrial)}</a></p>
+    <p><a href="/mitglied">${escapeHtml(COPY.ctaJoinNow)}</a> · <a href="/voranmeldung">Voranmeldung</a></p>
     <h2>${escapeHtml(COPY.faqTitle)}</h2>
 ${faq}
     <h2>${escapeHtml(COPY.contactTitle)}</h2>

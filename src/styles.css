@@ -3070,3 +3070,14 @@ button.admin-chip {
     justify-self: stretch;
   }
 }
+
+.prereg-band .btn-xl {
+  margin-top: 8px;
+}
+
+.prereg-band-meta {
+  margin: 14px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}

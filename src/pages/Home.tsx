@@ -10,6 +10,10 @@ import { wantsSmoothScroll } from '../lib/motion'
 import { useSiteMotion } from '../lib/useSiteMotion'
 import { InstagramIcon } from '../components/InstagramIcon'
 
+const SECOND_CTA = TRIAL_OPEN
+  ? { href: '/#probetraining', label: COPY.ctaTrial }
+  : { href: href('prereg'), label: COPY.ctaPrereg }
+
 const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
 const SLOTS = [
   ['16:00 MMA', '16:00 Ringen', '16:00 Boxen', '16:00 MMA', '16:00 BJJ', '10:00 Open'],
@@ -213,8 +217,8 @@ export function Home() {
         </div>
         <p className="hero-hit">{COPY.heroHit}</p>
         <div className="hero-actions">
-          <Link className="btn btn-solid btn-xl" href="/#probetraining">
-            {COPY.ctaTrial}
+          <Link className="btn btn-solid btn-xl" href={SECOND_CTA.href}>
+            {SECOND_CTA.label}
           </Link>
           <Link className="btn btn-ghost btn-xl" href={href('join')}>
             {COPY.ctaJoin}
@@ -258,8 +262,8 @@ export function Home() {
           <Link className="btn btn-solid btn-xl" href={href('join')}>
             {COPY.ctaJoinNow}
           </Link>
-          <Link className="btn btn-ghost btn-xl" href="/#probetraining">
-            {COPY.ctaTrial}
+          <Link className="btn btn-ghost btn-xl" href={SECOND_CTA.href}>
+            {SECOND_CTA.label}
           </Link>
         </div>
       </section>
@@ -346,8 +350,8 @@ export function Home() {
           ))}
         </ul>
         <div className="who-actions">
-          <Link className="btn btn-solid" href="/#probetraining">
-            {COPY.ctaTrial}
+          <Link className="btn btn-solid" href={SECOND_CTA.href}>
+            {SECOND_CTA.label}
           </Link>
           <Link className="btn btn-ghost" href={href('join')}>
             {COPY.ctaJoin}
@@ -396,11 +400,22 @@ export function Home() {
         <p className="price-foot">{COPY.priceFoot}</p>
       </section>
 
-      <section className="block trial" id="probetraining" data-reveal>
-        <h2>{COPY.trialTitle}</h2>
-        <p className="lead">{TRIAL_OPEN ? COPY.trialLead : COPY.trialClosedLead}</p>
-        {TRIAL_OPEN ? <TrialForm /> : null}
-      </section>
+      {TRIAL_OPEN ? (
+        <section className="block trial" id="probetraining" data-reveal>
+          <h2>{COPY.trialTitle}</h2>
+          <p className="lead">{COPY.trialLead}</p>
+          <TrialForm />
+        </section>
+      ) : (
+        <section className="block trial prereg-band" id="voranmelden" data-reveal>
+          <h2>{COPY.preregTitle}</h2>
+          <p className="lead">{COPY.preregLead}</p>
+          <Link className="btn btn-solid btn-xl" href={href('prereg')}>
+            {COPY.preregButton}
+          </Link>
+          <p className="prereg-band-meta">{COPY.preregMeta}</p>
+        </section>
+      )}
 
       <section className="block faq" id="faq">
         <h2>{COPY.faqTitle}</h2>

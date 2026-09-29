@@ -9,6 +9,7 @@ export const COPY = {
   tape: 'Endlich ein MMA Gym in Leipzig · 2. November geht die Tür auf · Wittenberger Straße 15 · Kommt vorbei · ',
   ctaJoin: 'Mitglied werden',
   ctaTrial: 'Probetraining',
+  ctaPrereg: 'Voranmelden',
   ctaPlans: 'Preise',
   navStudio: 'Gym',
   navTraining: 'Training',
@@ -16,6 +17,7 @@ export const COPY = {
   navPlan: 'Plan',
   navPlans: 'Preise',
   navTrial: 'Probetraining',
+  navPrereg: 'Voranmelden',
   navFaq: 'FAQ',
   navContact: 'Kontakt',
   aboutKicker: 'Eröffnung',
@@ -103,6 +105,11 @@ export const COPY = {
   priceFoot:
     'SEPA-Lastschrift zum 1. des Monats. Anmeldegebühr 0 € bis zum 2. November. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
   trialTitle: 'Komm vorbei.',
+  preregTitle: 'Sei von Anfang an dabei.',
+  preregLead:
+    'Probetrainings starten mit der Eröffnung am 2. November. Melde dich jetzt unverbindlich vor: Du erfährst als Erstes, wann du zum Probetraining kommen kannst, und hilfst uns, den Trainingsplan nach euren Zeiten zu bauen.',
+  preregButton: 'Jetzt unverbindlich voranmelden',
+  preregMeta: 'Dauert etwa zwei Minuten · kostenlos',
   trialLead: 'Eine Einheit. Kein Vertrag. Wenn du bleibst, bleibst du.',
   trialClosedLead:
     'Probetraining geht noch nicht. Sobald wir auf haben, kannst du hier eine Einheit anfragen. Bis dahin zur Eröffnung am 2. November kommen.',
