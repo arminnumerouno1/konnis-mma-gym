@@ -152,10 +152,6 @@ export function createOpeningMailHandler({ env }) {
         json(res, 405, { ok: false, error: 'method' })
         return
       }
-      if (rateLimited(clientIp(req))) {
-        json(res, 429, { ok: false, error: 'rate' })
-        return
-      }
 
       let body
       try {
@@ -168,6 +164,10 @@ export function createOpeningMailHandler({ env }) {
       const secret = env.INVITE_SECRET
       const apiKey = env.BREVO_API_KEY?.trim()
       if (!secretsMatch(body.secret, secret) || !apiKey) {
+        if (rateLimited(clientIp(req))) {
+          json(res, 429, { ok: false, error: 'rate' })
+          return
+        }
         json(res, 403, { ok: false, error: 'invite' })
         return
       }

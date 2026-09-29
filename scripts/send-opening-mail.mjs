@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { openingMailHtml, openingMailSubject } from '../server/opening-mail.mjs'
@@ -128,6 +128,41 @@ async function deliver({ to, name, first, test }) {
   await sendViaApi({ origin: site, secret, to, name, test })
 }
 
+function loadSent() {
+  const file = resolve(root, 'data/opening-mail-sent.json')
+  if (!existsSync(file)) return { file, emails: new Set() }
+  try {
+    const data = JSON.parse(readFileSync(file, 'utf8'))
+    return { file, emails: new Set(Array.isArray(data.emails) ? data.emails : []) }
+  } catch {
+    return { file, emails: new Set() }
+  }
+}
+
+function saveSent(file, emails) {
+  writeFileSync(file, `${JSON.stringify({ emails: [...emails], at: new Date().toISOString() }, null, 2)}\n`)
+}
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function deliverWithRetry(person) {
+  let last = null
+  for (let attempt = 1; attempt <= 8; attempt += 1) {
+    try {
+      await deliver({ to: person.email, name: person.name, first: person.first, test: false })
+      return
+    } catch (error) {
+      last = error
+      const msg = String(error?.message ?? error)
+      if (!/api_429|api_502|rate|upstream/i.test(msg) && attempt > 2) throw error
+      await sleep(Math.min(8000, 700 * attempt))
+    }
+  }
+  throw last ?? new Error('retry')
+}
+
 if (testTo && testTo !== 'true') {
   const email = normalizeEmail(testTo)
   if (!isValidEmail(email)) {
@@ -146,16 +181,28 @@ if (wantAll) {
     process.exit(1)
   }
   const people = loadList()
-  console.log(`Versand an ${people.length} Adressen. First-50-Links sind nicht in dieser Mail.`)
+  const sentLog = loadSent()
+  const pending = people.filter((person) => !sentLog.emails.has(person.email))
+  console.log(
+    `Versand an ${pending.length} Adressen (${people.length - pending.length} schon raus). First-50-Links sind nicht in dieser Mail.`,
+  )
   let sent = 0
-  for (const person of people) {
-    await deliver({ to: person.email, name: person.name, first: person.first, test: false })
-    sent += 1
-    process.stdout.write(`Mail ${sent}/${people.length}\r`)
-    await new Promise((resolve) => setTimeout(resolve, 350))
+  let failed = 0
+  for (const person of pending) {
+    try {
+      await deliverWithRetry(person)
+      sentLog.emails.add(person.email)
+      saveSent(sentLog.file, sentLog.emails)
+      sent += 1
+      process.stdout.write(`Mail ${sent}/${pending.length}   \r`)
+    } catch (error) {
+      failed += 1
+      console.error(`\nFehler ${failed}: ${String(error?.message ?? error).slice(0, 120)}`)
+    }
+    await sleep(350)
   }
-  console.log(`Mails raus: ${sent}`)
-  process.exit(0)
+  console.log(`Mails raus: ${sent}. Fehler: ${failed}. Gesamt auf der Liste: ${people.length}.`)
+  process.exit(failed ? 1 : 0)
 }
 
 console.error('Bitte --test ADRESSE oder --all --confirm-all angeben.')

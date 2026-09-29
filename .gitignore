@@ -30,6 +30,7 @@ data/member-photos/
 data/contacts.json
 data/first50-*
 data/voranmeldung*
+data/opening-mail-sent.json
 
 # Editor directories and files
 .vscode/*
