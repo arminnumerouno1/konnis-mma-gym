@@ -797,24 +797,30 @@ type PreregStatus = 'neu' | 'kontaktiert' | 'mitglied' | 'abgesagt'
 type Prereg = {
   id: string
   name: string
-  age: number
+  age: number | null
   email: string
   phone: string
   sports: string[]
   sportsOther: string
   experience: string
   times: string
-  offer: 'ja' | 'nein' | 'vielleicht'
+  offer: 'ja' | 'nein' | 'vielleicht' | ''
   sources: string[]
   sourceOther: string
-  notify: boolean
+  notify: boolean | null
   goal: string
   message: string
   status: PreregStatus
   note: string
   submissions: number
-  createdAt: string
+  createdAt: string | null
   updatedAt: string
+  listNo?: number | null
+  price?: number | null
+  remarks?: string[]
+  extraEmails?: string[]
+  first50?: boolean
+  openingMail?: boolean
 }
 
 type PreregStats = {
@@ -825,6 +831,9 @@ type PreregStats = {
   notify: number
   minors: number
   members: number
+  fromList: number
+  fromWebsite: number
+  first50: number
   bySport: Record<string, number>
   bySource: Record<string, number>
 }
@@ -836,7 +845,20 @@ const PREREG_STATUS_LABEL: Record<PreregStatus, string> = {
   abgesagt: 'Kein Interesse',
 }
 
-const OFFER_LABEL: Record<Prereg['offer'], string> = { ja: 'Ja', nein: 'Nein', vielleicht: 'Vielleicht' }
+const OFFER_LABEL: Record<Prereg['offer'], string> = { ja: 'Ja', nein: 'Nein', vielleicht: 'Vielleicht', '': '—' }
+
+const isMinor = (entry: Prereg) => typeof entry.age === 'number' && entry.age < 18
+
+function preregSummary(row: Prereg) {
+  const parts: string[] = []
+  if (row.age != null) parts.push(`${row.age} J.`)
+  if (row.sports.length) parts.push(row.sports.map(sportLabel).join(', '))
+  if (row.offer) parts.push(`Eröffnungspreis ${OFFER_LABEL[row.offer]}`)
+  if (row.listNo != null) {
+    parts.push(`Google-Liste Nr. ${row.listNo}${row.first50 ? ' · First 50' : ''}`)
+  }
+  return parts.join(' · ')
+}
 
 const SPORT_LABEL: Record<string, string> = {
   BOXEN: 'Boxen',
@@ -930,12 +952,17 @@ function PreregPane({
 
       <div>
         <h2>
-          {entry.name}
-          {entry.age < 18 ? <em className="admin-u18"> U18</em> : null}
+          {entry.name || entry.email}
+          {isMinor(entry) ? <em className="admin-u18"> U18</em> : null}
         </h2>
         <p className="admin-muted">
-          {entry.age} Jahre · eingegangen {deDateTime(entry.createdAt)}
-          {entry.submissions > 1 ? ` · ${entry.submissions}× abgeschickt, zuletzt ${deDateTime(entry.updatedAt)}` : ''}
+          {[
+            entry.age != null ? `${entry.age} Jahre` : null,
+            entry.createdAt ? `über die Website am ${deDateTime(entry.createdAt)}` : null,
+            entry.submissions > 1 ? `${entry.submissions}× abgeschickt, zuletzt ${deDateTime(entry.updatedAt)}` : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </p>
       </div>
 
@@ -952,34 +979,75 @@ function PreregPane({
             ) : null}
           </dd>
         </div>
-        <div>
-          <dt>Sportarten</dt>
-          <dd>{sports.join(', ')}</dd>
-        </div>
-        <div>
-          <dt>Erfahrung</dt>
-          <dd className="admin-pre">{entry.experience}</dd>
-        </div>
-        <div>
-          <dt>Trainingszeiten</dt>
-          <dd className="admin-pre">{entry.times}</dd>
-        </div>
-        <div>
-          <dt>Mitgliedschaft zum Eröffnungspreis</dt>
-          <dd>{OFFER_LABEL[entry.offer]}</dd>
-        </div>
-        <div>
-          <dt>Infos zu Probetraining und Anmeldung</dt>
-          <dd>{entry.notify ? 'Ja, gern informieren' : 'Nein'}</dd>
-        </div>
-        <div>
-          <dt>Erfahren über</dt>
-          <dd>{sources.join(', ')}</dd>
-        </div>
-        <div>
-          <dt>Persönliches Ziel</dt>
-          <dd className="admin-pre">{entry.goal}</dd>
-        </div>
+        {entry.listNo != null ? (
+          <div>
+            <dt>Google-Voranmeldung (Excel-Liste)</dt>
+            <dd>
+              Nr. {entry.listNo}
+              {entry.first50 ? ' · First 50' : ' · Warteliste'}
+              {entry.price != null ? ` · ${euro(entry.price)}` : ''}
+              {entry.openingMail ? ' · Eröffnungsmail verschickt' : ''}
+            </dd>
+          </div>
+        ) : null}
+        {entry.remarks?.length || entry.extraEmails?.length ? (
+          <div>
+            <dt>Hinweise aus der Liste</dt>
+            <dd>
+              {[...(entry.remarks ?? []), ...(entry.extraEmails ?? []).map((mail) => `weitere Mail: ${mail}`)].join(' · ')}
+            </dd>
+          </div>
+        ) : null}
+        {sports.length ? (
+          <div>
+            <dt>Sportarten</dt>
+            <dd>{sports.join(', ')}</dd>
+          </div>
+        ) : null}
+        {entry.experience ? (
+          <div>
+            <dt>Erfahrung</dt>
+            <dd className="admin-pre">{entry.experience}</dd>
+          </div>
+        ) : null}
+        {entry.times ? (
+          <div>
+            <dt>Trainingszeiten</dt>
+            <dd className="admin-pre">{entry.times}</dd>
+          </div>
+        ) : null}
+        {entry.offer ? (
+          <div>
+            <dt>Mitgliedschaft zum Eröffnungspreis</dt>
+            <dd>{OFFER_LABEL[entry.offer]}</dd>
+          </div>
+        ) : null}
+        {entry.notify != null ? (
+          <div>
+            <dt>Infos zu Probetraining und Anmeldung</dt>
+            <dd>{entry.notify ? 'Ja, gern informieren' : 'Nein'}</dd>
+          </div>
+        ) : null}
+        {sources.length ? (
+          <div>
+            <dt>Erfahren über</dt>
+            <dd>{sources.join(', ')}</dd>
+          </div>
+        ) : null}
+        {entry.goal ? (
+          <div>
+            <dt>Persönliches Ziel</dt>
+            <dd className="admin-pre">{entry.goal}</dd>
+          </div>
+        ) : null}
+        {!entry.createdAt ? (
+          <div>
+            <dt>Antworten zum Formular</dt>
+            <dd className="admin-muted">
+              Nicht in der Excel-Liste enthalten. Füllt die Person das neue Formular aus, erscheinen die Antworten hier.
+            </dd>
+          </div>
+        ) : null}
         {entry.message ? (
           <div>
             <dt>Nachricht</dt>
@@ -1018,6 +1086,7 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
   const [status, setStatus] = useState('')
   const [sport, setSport] = useState('')
   const [offer, setOffer] = useState('')
+  const [origin, setOrigin] = useState('')
   const [openId, setOpenId] = useState<string | null>(null)
 
   async function load() {
@@ -1041,7 +1110,12 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
       (!needle || [row.name, row.email, row.phone].some((value) => value.toLowerCase().includes(needle))) &&
       (!status || row.status === status) &&
       (!sport || row.sports.includes(sport)) &&
-      (!offer || row.offer === offer),
+      (!offer || row.offer === offer) &&
+      (!origin ||
+        (origin === 'website' && Boolean(row.createdAt)) ||
+        (origin === 'liste' && row.listNo != null) ||
+        (origin === 'first50' && row.first50 === true) ||
+        (origin === 'warteliste' && row.listNo != null && !row.first50)),
   )
   const open = openId ? entries.find((row) => row.id === openId) ?? null : null
 
@@ -1062,6 +1136,12 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
             </article>
             <article>
               <strong>
+                {stats.fromWebsite} / {stats.fromList}
+              </strong>
+              <span>Website / Google-Liste ({stats.first50} First 50)</span>
+            </article>
+            <article>
+              <strong>
                 {stats.offerYes} / {stats.offerMaybe}
               </strong>
               <span>Eröffnungspreis: Ja / Vielleicht</span>
@@ -1079,7 +1159,7 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
               <span>Schon Mitglied</span>
             </article>
           </section>
-          {stats.total ? (
+          {stats.fromWebsite ? (
             <section className="admin-interest">
               <div>
                 <h3>Interesse</h3>
@@ -1137,6 +1217,13 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
               ))
             : null}
         </select>
+        <select value={origin} onChange={(event) => setOrigin(event.target.value)}>
+          <option value="">Alle Herkünfte</option>
+          <option value="website">Über die Website</option>
+          <option value="liste">Google-Liste (Excel)</option>
+          <option value="first50">First 50</option>
+          <option value="warteliste">Warteliste</option>
+        </select>
         <select value={offer} onChange={(event) => setOffer(event.target.value)}>
           <option value="">Eröffnungspreis egal</option>
           <option value="ja">Eröffnungspreis: Ja</option>
@@ -1162,19 +1249,17 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
               className={`admin-row ${openId === row.id ? 'is-open' : ''}`}
               onClick={() => setOpenId(row.id)}
             >
-              <span className="admin-face">{initials(row.name)}</span>
+              <span className="admin-face">{initials(row.name || row.email)}</span>
               <span className="admin-row-copy">
                 <strong>
-                  {row.name}
-                  {row.age < 18 ? <em> U18</em> : null}
+                  {row.name || row.email}
+                  {isMinor(row) ? <em> U18</em> : null}
                 </strong>
-                <small>
-                  {row.age} J. · {row.sports.map(sportLabel).join(', ')} · Eröffnungspreis {OFFER_LABEL[row.offer]}
-                </small>
+                <small>{preregSummary(row) || row.email}</small>
               </span>
               <span className="admin-row-meta">
                 <span className={`admin-pill prereg-${row.status}`}>{PREREG_STATUS_LABEL[row.status]}</span>
-                <small>{deDate(row.createdAt)}</small>
+                <small>{row.createdAt ? deDate(row.createdAt) : row.listNo != null ? `Liste Nr. ${row.listNo}` : ''}</small>
               </span>
             </button>
           ))}

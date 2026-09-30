@@ -2,7 +2,8 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createAdminHandler } from '../server/admin.mjs'
-import { createPreregHandler, preregCsv, readPrereg } from '../server/prereg.mjs'
+import { addPrereg, createPreregStore, createPreregHandler, importPreregs, preregCsv, preregStats, readPrereg, sortPreregs } from '../server/prereg.mjs'
+import { rowsFromSheet } from './import-prereg-list.mjs'
 
 function assert(cond, message) {
   if (!cond) throw new Error(message)
@@ -55,7 +56,7 @@ for (const [patch, error] of fails) {
 }
 
 const csv = preregCsv([{ ...parsed.entry, name: '=HYPERLINK("x")', status: 'neu', note: '', createdAt: '2026-09-29' }])
-assert(csv.startsWith('\uFEFF"Eingang"'), 'csv header with bom')
+assert(csv.startsWith('\uFEFF"Nr. Google-Liste"'), 'csv header with bom')
 assert(csv.includes(`"'=HYPERLINK(""x"")"`), 'csv formula escaped')
 
 const tmp = mkdtempSync(join(tmpdir(), 'konni-prereg-'))
@@ -167,5 +168,48 @@ assert(afterDelete.data.entries.length === 1 && afterDelete.data.entries[0].emai
 
 const members = await call(adminHandle, { method: 'GET', url: '/api/admin', headers: { cookie } })
 assert(members.data.ok && members.data.members.length === 0, 'preregs are not members')
+
+const sheet = [
+  { row: 5, cells: { B: 'Name ', D: 'email ', F: 'Preis ' } },
+  { row: 6, cells: { A: '1', B: 'Anna  Alt', D: 'Anna@Example.com', F: '89.99', H: '17 Jahre' } },
+  { row: 7, cells: { A: '2', B: 'Ohne Mail', D: 'Keine email', F: '89.99' } },
+  { row: 8, cells: { A: '51', B: 'Wart Liste', D: 'wart@example.com', G: '99.99', I: 'Zweit@Example.com' } },
+  { row: 9, cells: { A: '60', B: 'Anna Alt', D: 'anna@example.com', I: '99.99' } },
+  { row: 10, cells: {} },
+]
+const sheetRows = rowsFromSheet(sheet, { invited: new Set(['anna@example.com']), mailed: new Set(['wart@example.com']) })
+assert(sheetRows.length === 4, 'sheet rows without empty lines')
+assert(sheetRows[0].name === 'Anna Alt' && sheetRows[0].age === 17 && sheetRows[0].price === 89.99, 'sheet age and price')
+assert(sheetRows[1].email === '' && sheetRows[1].remarks[0] === 'Mailfeld: Keine email' && sheetRows[1].first50, 'no mail kept as remark')
+assert(sheetRows[2].extraEmails[0] === 'zweit@example.com' && sheetRows[2].openingMail && !sheetRows[2].first50, 'extra mail and waitlist')
+
+const importDir = mkdtempSync(join(tmpdir(), 'konni-prereg-import-'))
+const importStore = createPreregStore({ dataDir: importDir, env: {} })
+await addPrereg(importStore, { ...parsed.entry, email: 'wart@example.com', name: 'Wart Liste' })
+let importResult = null
+await importStore.update((db) => {
+  importResult = importPreregs(db, sheetRows)
+  return db
+})
+assert(importResult.added === 2 && importResult.updated === 2, 'import adds new, merges website entry and duplicate')
+let imported = sortPreregs((await importStore.load()).entries)
+assert(imported.length === 3, 'three people')
+assert(imported[0].email === 'wart@example.com' && imported[0].createdAt && imported[0].listNo === 51, 'website entry first, gets list number')
+assert(imported[0].goal === parsed.entry.goal && imported[0].status === 'neu', 'website answers kept')
+const anna = imported.find((row) => row.email === 'anna@example.com')
+assert(anna.listNo === 1 && anna.first50 && anna.remarks.includes('Doppelt eingetragen, auch Nr. 60'), 'duplicate merged with note')
+assert(anna.status === 'neu' && anna.notify === null && anna.createdAt === null, 'imported defaults')
+assert(imported[1].listNo === 1 && imported[2].listNo === 2, 'list entries by number')
+await importStore.update((db) => {
+  importResult = importPreregs(db, sheetRows)
+  return db
+})
+assert(importResult.added === 0 && (await importStore.load()).entries.length === 3, 'import is repeatable')
+const importStats = preregStats((await importStore.load()).entries)
+assert(importStats.fromList === 3 && importStats.fromWebsite === 1 && importStats.first50 === 2, 'import stats')
+assert(importStats.minors === 2, 'minors ignore missing age')
+await addPrereg(importStore, { ...parsed.entry, email: 'anna@example.com', name: 'Anna Alt' })
+const annaWeb = (await importStore.load()).entries.find((row) => row.email === 'anna@example.com')
+assert(annaWeb.listNo === 1 && annaWeb.first50 && annaWeb.createdAt && annaWeb.sports.length, 'later website form fills imported entry')
 
 console.log('prereg tests ok')

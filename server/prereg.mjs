@@ -156,7 +156,15 @@ export async function addPrereg(store, entry, now = new Date()) {
     if (index >= 0) {
       const row = db.entries[index]
       repeat = true
-      saved = { ...row, ...entry, status: row.status, note: row.note, submissions: (row.submissions ?? 1) + 1, updatedAt: at }
+      saved = {
+        ...row,
+        ...entry,
+        status: row.status,
+        note: row.note,
+        submissions: (row.submissions ?? 0) + 1,
+        createdAt: row.createdAt ?? at,
+        updatedAt: at,
+      }
       db.entries[index] = saved
     } else {
       saved = { id: randomUUID(), ...entry, status: 'neu', note: '', submissions: 1, createdAt: at, updatedAt: at }
@@ -165,6 +173,111 @@ export async function addPrereg(store, entry, now = new Date()) {
     return db
   })
   return { entry: saved, repeat }
+}
+
+function readImportRow(input) {
+  const listNo = Number(input?.listNo)
+  const name = text(input?.name, 80)
+  const email = normalizeEmail(input?.email).slice(0, 254)
+  if (!Number.isInteger(listNo) || listNo < 1 || (!name && !email)) return null
+  const age = Number(input?.age)
+  const price = Number(input?.price)
+  const strings = (value, max, count) =>
+    (Array.isArray(value) ? value : [])
+      .map((item) => text(item, max))
+      .filter(Boolean)
+      .slice(0, count)
+  return {
+    listNo,
+    name,
+    email,
+    age: Number.isInteger(age) && age >= 5 && age <= 99 ? age : null,
+    price: Number.isFinite(price) && price > 0 && price < 1000 ? price : null,
+    remarks: strings(input?.remarks, 160, 6),
+    extraEmails: strings(input?.extraEmails, 254, 3).map(normalizeEmail),
+    first50: input?.first50 === true,
+    openingMail: input?.openingMail === true,
+  }
+}
+
+export function importPreregs(db, rows, now = new Date()) {
+  const at = now.toISOString()
+  let added = 0
+  let updated = 0
+  let skipped = 0
+  for (const input of Array.isArray(rows) ? rows : []) {
+    const row = readImportRow(input)
+    if (!row) {
+      skipped += 1
+      continue
+    }
+    const listFields = {
+      listNo: row.listNo,
+      price: row.price,
+      remarks: row.remarks,
+      extraEmails: row.extraEmails,
+      first50: row.first50,
+      openingMail: row.openingMail,
+    }
+    const index = db.entries.findIndex(
+      (entry) => (row.email && entry.email === row.email) || entry.listNo === row.listNo,
+    )
+    if (index >= 0) {
+      const current = db.entries[index]
+      const twice = current.listNo != null && current.listNo !== row.listNo ? [`Doppelt eingetragen, auch Nr. ${row.listNo}`] : []
+      db.entries[index] = {
+        ...current,
+        ...listFields,
+        first50: current.first50 === true || row.first50,
+        openingMail: current.openingMail === true || row.openingMail,
+        price: current.price ?? row.price,
+        remarks: [...new Set([...(current.remarks ?? []), ...row.remarks, ...twice])],
+        extraEmails: [...new Set([...(current.extraEmails ?? []), ...row.extraEmails])],
+        listNo: current.listNo ?? row.listNo,
+        age: current.age ?? row.age,
+        name: current.name || row.name,
+        updatedAt: at,
+      }
+      updated += 1
+      continue
+    }
+    db.entries.push({
+      id: randomUUID(),
+      source: 'liste',
+      name: row.name,
+      age: row.age,
+      email: row.email,
+      phone: '',
+      sports: [],
+      sportsOther: '',
+      experience: '',
+      times: '',
+      offer: '',
+      sources: [],
+      sourceOther: '',
+      notify: null,
+      goal: '',
+      message: '',
+      ...listFields,
+      status: row.openingMail ? 'kontaktiert' : 'neu',
+      note: '',
+      submissions: 0,
+      createdAt: null,
+      importedAt: at,
+      updatedAt: at,
+    })
+    added += 1
+  }
+  return { added, updated, skipped }
+}
+
+export function sortPreregs(entries) {
+  return [...entries].sort((a, b) => {
+    if (a.createdAt && b.createdAt) return String(b.createdAt).localeCompare(String(a.createdAt))
+    if (a.createdAt) return -1
+    if (b.createdAt) return 1
+    return (a.listNo ?? 0) - (b.listNo ?? 0)
+  })
 }
 
 export function preregStats(entries) {
@@ -176,9 +289,12 @@ export function preregStats(entries) {
     fresh: count((row) => row.status === 'neu'),
     offerYes: count((row) => row.offer === 'ja'),
     offerMaybe: count((row) => row.offer === 'vielleicht'),
-    notify: count((row) => row.notify),
-    minors: count((row) => row.age < 18),
+    notify: count((row) => row.notify === true),
+    minors: count((row) => typeof row.age === 'number' && row.age < 18),
     members: count((row) => row.status === 'mitglied'),
+    fromList: count((row) => row.listNo != null),
+    fromWebsite: count((row) => Boolean(row.createdAt)),
+    first50: count((row) => row.first50 === true),
     bySport,
     bySource,
   }
@@ -203,7 +319,11 @@ function csvCell(value) {
 
 export function preregCsv(entries) {
   const head = [
-    'Eingang',
+    'Nr. Google-Liste',
+    'First 50',
+    'Preis laut Liste',
+    'Hinweise Liste',
+    'Eingang Website',
     'Name',
     'Alter',
     'E-Mail',
@@ -223,7 +343,11 @@ export function preregCsv(entries) {
   ]
   const rows = entries.map((row) =>
     [
-      row.createdAt,
+      row.listNo ?? '',
+      row.first50 ? 'ja' : '',
+      row.price != null ? String(row.price).replace('.', ',') : '',
+      [...(row.remarks ?? []), ...(row.extraEmails ?? [])],
+      row.createdAt ?? '',
       row.name,
       row.age,
       row.email,
@@ -235,7 +359,7 @@ export function preregCsv(entries) {
       row.offer,
       row.sources,
       row.sourceOther,
-      row.notify ? 'ja' : 'nein',
+      row.notify === true ? 'ja' : row.notify === false ? 'nein' : '',
       row.goal,
       row.message,
       row.status,

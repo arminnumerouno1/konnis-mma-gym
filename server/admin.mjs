@@ -21,7 +21,7 @@ import {
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
-import { createPreregStore, patchPrereg, preregCsv, preregStats } from './prereg.mjs'
+import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 12
@@ -702,6 +702,16 @@ export function createAdminHandler({ dataDir, env }) {
         return
       }
 
+      if (action === 'preregImport') {
+        let result = null
+        await preregs.update((db) => {
+          result = importPreregs(db, body.rows)
+          return db
+        })
+        json(res, 200, { ok: true, ...result })
+        return
+      }
+
       if (action === 'preregUpdate' || action === 'preregDelete') {
         const id = String(body.id ?? '')
         let result = null
@@ -746,7 +756,7 @@ export function createAdminHandler({ dataDir, env }) {
     const preregView = url.searchParams.get('prereg')
     if (preregView) {
       const { entries } = await preregs.load()
-      const sorted = [...entries].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)))
+      const sorted = sortPreregs(entries)
       if (preregView === 'csv') {
         res.statusCode = 200
         res.setHeader('content-type', 'text/csv; charset=utf-8')
