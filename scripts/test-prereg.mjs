@@ -199,7 +199,7 @@ assert(imported[0].goal === parsed.entry.goal && imported[0].status === 'neu', '
 const anna = imported.find((row) => row.email === 'anna@example.com')
 assert(anna.listNo === 1 && anna.first50 && anna.remarks.includes('Doppelt eingetragen, auch Nr. 60'), 'duplicate merged with note')
 assert(anna.status === 'neu' && anna.notify === null && anna.createdAt === null, 'imported defaults')
-assert(imported[1].listNo === 1 && imported[2].listNo === 2, 'list entries by number')
+assert(imported[1].listNo === 2 && imported[2].listNo === 1, 'list entries newest number first, oldest last')
 await importStore.update((db) => {
   importResult = importPreregs(db, sheetRows)
   return db

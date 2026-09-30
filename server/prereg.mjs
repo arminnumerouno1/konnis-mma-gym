@@ -276,7 +276,7 @@ export function sortPreregs(entries) {
     if (a.createdAt && b.createdAt) return String(b.createdAt).localeCompare(String(a.createdAt))
     if (a.createdAt) return -1
     if (b.createdAt) return 1
-    return (a.listNo ?? 0) - (b.listNo ?? 0)
+    return (b.listNo ?? 0) - (a.listNo ?? 0)
   })
 }
 
