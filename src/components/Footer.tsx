@@ -10,7 +10,7 @@ export function Footer() {
     <footer className="footer">
       <div className="footer-top">
         <div className="footer-brand">
-          <img src={GYM.logo} alt="" width={72} height={76} />
+          <img src={GYM.logo} alt="" width={1036} height={1125} />
           <p className="footer-tag">{COPY.footerTag}</p>
         </div>
         <a className="footer-ig" href={GYM.instagram} target="_blank" rel="noreferrer">

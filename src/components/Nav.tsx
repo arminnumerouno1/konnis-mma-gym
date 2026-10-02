@@ -31,7 +31,7 @@ export function Nav({ route }: NavProps) {
   return (
     <header className={`nav ${solid || route.name !== 'home' ? 'is-solid' : ''} ${open ? 'is-open' : ''}`}>
       <Link href="/" className="nav-brand" onClick={() => setOpen(false)}>
-        <img src={GYM.logo} alt={GYM.name} width={56} height={60} />
+        <img src={GYM.logo} alt={GYM.name} width={1036} height={1125} />
         <span>
           {COPY.gymName}
           <small>Leipzig</small>

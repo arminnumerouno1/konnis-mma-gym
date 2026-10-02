@@ -202,9 +202,9 @@ export function Home() {
         <div className="hero-slash" aria-hidden="true" />
         <div className="hero-poster">
           <div className="hero-logo-wrap">
-            <img className="hero-logo ghost cyan" src={GYM.logo} alt="" width={640} height={680} />
-            <img className="hero-logo ghost red" src={GYM.logo} alt="" width={640} height={680} />
-            <img className="hero-logo" src={GYM.logo} alt={GYM.name} width={640} height={680} />
+            <img className="hero-logo ghost cyan" src={GYM.logo} alt="" width={1036} height={1125} />
+            <img className="hero-logo ghost red" src={GYM.logo} alt="" width={1036} height={1125} />
+            <img className="hero-logo" src={GYM.logo} alt={GYM.name} width={1036} height={1125} />
           </div>
           <p className="hero-stamp">{COPY.heroStamp}</p>
           <h1>

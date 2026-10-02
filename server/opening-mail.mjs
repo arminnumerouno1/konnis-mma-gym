@@ -20,7 +20,7 @@ export function openingMailHtml({ first = '' } = {}) {
   const logo = 'https://www.mma-in-leipzig.de/brand/konni-logo-mail.jpg'
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <div style="background:#111;color:#ece8e1;padding:28px 24px;text-align:center">
-<img src="${logo}" alt="KONNI MMA GYM" width="140" height="149" style="display:block;margin:0 auto 16px;border:0;outline:none;text-decoration:none" />
+<img src="${logo}" alt="KONNI MMA GYM" width="164" height="178" style="display:block;margin:0 auto 16px;border:0;outline:none;text-decoration:none" />
 <p style="margin:0;letter-spacing:.22em;font-size:12px;color:#c4121a">KONNI MMA GYM · LEIPZIG</p>
 <p style="margin:10px 0 0;font-size:36px;line-height:0.95;font-weight:bold;letter-spacing:.02em">2. NOVEMBER.</p>
 <p style="margin:8px 0 0;font-size:18px;color:#c9a227">Die Tür geht auf.</p>
