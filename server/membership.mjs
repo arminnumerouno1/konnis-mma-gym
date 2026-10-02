@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 import { createMemberStore, ingestSignup } from './member-store.mjs'
+import { createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
@@ -345,7 +346,7 @@ function json(res, status, body) {
   res.end(payload)
 }
 
-export function createMembershipHandler({ dataDir, env }) {
+export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
   const file = join(dataDir, 'memberships.json')
   const members = createMemberStore({ dataDir, env })
 
@@ -362,6 +363,43 @@ export function createMembershipHandler({ dataDir, env }) {
       console.error('[mitglied]', error)
       if (!res.headersSent) json(res, 500, { ok: false, error: 'upstream' })
     }
+  }
+
+  async function startStripeCheckout(req, record) {
+    const secret = env.STRIPE_SECRET_KEY?.trim() || ''
+    if (!secret) return { payment: record.plan === 'daypass' ? 'later' : 'unlinked' }
+    const session = await createCheckoutSession({
+      secret,
+      member: record,
+      origin: siteOrigin(req, env),
+      fetchImpl,
+    })
+    if (session.skipped) return { payment: 'later', billingStart: session.billingStart }
+    if (!session.ok || !session.url) {
+      console.error('[mitglied] stripe checkout failed', session.detail || session.error)
+      return { payment: 'unlinked' }
+    }
+    try {
+      await members.update((db) => {
+        const index = db.members.findIndex((row) => row.id === record.id)
+        if (index < 0) return db
+        db.members[index] = {
+          ...db.members[index],
+          stripe: {
+            ...(db.members[index].stripe ?? {}),
+            checkoutSessionId: session.id,
+            billingStart: session.billingStart,
+            chargeNow: Boolean(session.chargeNow),
+            delay: session.delay,
+          },
+          updatedAt: new Date().toISOString(),
+        }
+        return db
+      })
+    } catch (error) {
+      console.error('[mitglied] stripe link save failed', error)
+    }
+    return { payment: 'checkout', checkoutUrl: session.url, billingStart: session.billingStart }
   }
 
   async function runMembership(req, res) {
@@ -488,11 +526,16 @@ export function createMembershipHandler({ dataDir, env }) {
       console.error('[mitglied] mail failed', error)
     }
 
+    const payment = await startStripeCheckout(req, record)
+
     json(res, 200, {
       ok: true,
       confirmation,
       id: record.id,
       remainingFirst50: 0,
+      payment: payment.payment,
+      ...(payment.checkoutUrl ? { checkoutUrl: payment.checkoutUrl } : {}),
+      ...(payment.billingStart ? { billingStart: payment.billingStart } : {}),
     })
   }
 }

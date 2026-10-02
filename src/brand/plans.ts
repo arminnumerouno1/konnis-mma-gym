@@ -105,8 +105,10 @@ export const SIGNUP_OPEN = false
 export const TRIAL_OPEN = false
 
 export const SIGNUP_FEE = 0
+/** Erste volle Monatsabbuchung. Muss zu server/stripe-checkout.mjs BILLING_START passen. */
+export const FIRST_CHARGE = '2026-11-01'
 export const PAYMENT_NOTE =
-  'Bei 12- und 24-Monats-Verträgen ziehen wir den Monatsbeitrag per SEPA-Lastschrift ein, in der Regel zum 1. des Monats. Mandat und Kontodaten klären wir vor dem ersten Einzug. Zahlungspflicht erst ab echter Eröffnung.'
+  'Monatsbeiträge ziehen wir per SEPA-Lastschrift über Stripe ein, jeweils zum 1. des Monats. Wer vor der Eröffnung abschließt, wird erstmals am 1. November 2026 belastet. Vorher geht nichts vom Konto. Karte geht auch, wenn die Lastschrift nicht klappt.'
 
 export function planById(id: string | null | undefined): Plan | undefined {
   return ALL_PLANS.find((plan) => plan.id === id)

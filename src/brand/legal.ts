@@ -128,7 +128,8 @@ export const PRIVACY: LegalBlock[] = [
     title: '5. Mitgliedschaft und Day Pass',
     paragraphs: [
       'Beim Online-Vertrag verarbeiten wir die angegebenen Vertragsdaten: Name, Geburtsdatum, Anschrift, E-Mail, Telefon, Tarif, Bestätigungen, digitale Unterschrift, bei Minderjährigen die Daten der gesetzlichen Vertretung. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertrag) und Art. 6 Abs. 1 lit. c DSGVO, soweit gesetzliche Aufbewahrung gilt.',
-      'Die Monatsbeiträge der 12- und 24-Monats-Verträge werden per SEPA-Lastschrift eingezogen. IBAN, Kontoinhaber und Mandatsdaten verarbeiten wir zur Zahlung (Art. 6 Abs. 1 lit. b DSGVO), sobald du sie uns mitteilst.',
+      'Die Monatsbeiträge der 12- und 24-Monats-Verträge werden per SEPA-Lastschrift eingezogen, erstmals am 1. November 2026 und danach jeweils zum 1. des Monats. Vor diesem Termin wird nichts abgebucht. IBAN, Kontoinhaber und Mandatsdaten verarbeiten wir zur Zahlung (Art. 6 Abs. 1 lit. b DSGVO), sobald du sie uns mitteilst.',
+      'Die Zahlung läuft über Stripe Payments Europe, Limited, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, D02 H210, Irland. Stripe verarbeitet Name, E-Mail, Tarif und die Zahlungsdaten, also IBAN bei SEPA oder Kartendaten. Bei uns liegen die Stripe-Kundennummer, die Abo-Nummer und ob ein Monat bezahlt ist. Kartennummer und die volle IBAN aus dem Stripe-Checkout bleiben bei Stripe. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. Hinweise von Stripe: https://stripe.com/de/privacy',
       'Ohne diese Daten kommt kein Online-Vertrag zustande. Die Daten bleiben für die Vertragsdauer und danach so lange, wie handels- und steuerrechtliche Pflichten das verlangen — in der Regel bis zu zehn Jahre nach Vertragsende.',
       `Änderungen von Anschrift, E-Mail, Bankverbindung und Zahlweg bitte zeitnah an ${GYM.legalEmail}.`,
     ],
@@ -161,7 +162,7 @@ export const PRIVACY: LegalBlock[] = [
   {
     title: '9. Empfänger',
     paragraphs: [
-      'Empfänger können sein: unser Hosting-Dienstleister, der E-Mail-Dienstleister, soweit eingesetzt, sowie Stellen, denen wir gesetzlich zur Auskunft verpflichtet sind.',
+      'Empfänger können sein: unser Hosting-Dienstleister, der E-Mail-Dienstleister, soweit eingesetzt, Stripe Payments Europe, Limited für die Zahlung, sowie Stellen, denen wir gesetzlich zur Auskunft verpflichtet sind.',
       'Eine Übermittlung zu eigenen Werbezwecken an Dritte findet nicht statt.',
     ],
   },
@@ -255,7 +256,7 @@ export const AGB: LegalBlock[] = [
     paragraphs: [
       '1. Die Höhe des Mitgliedsbeitrags und einer gegebenenfalls vereinbarten Anmeldegebühr ergeben sich aus dem jeweiligen Mitgliedsvertrag.',
       '2. Die Beiträge sind zu den im Mitgliedsvertrag vereinbarten Zeitpunkten fällig.',
-      '3. Die Zahlung erfolgt grundsätzlich per SEPA-Lastschrift, sofern keine andere Zahlungsweise vereinbart wurde.',
+      '3. Die Zahlung erfolgt grundsätzlich per SEPA-Lastschrift über Stripe, sofern keine andere Zahlungsweise vereinbart wurde. Wer den Vertrag vor der Eröffnung am 2. November 2026 abschließt, wird erstmals zum 1. November 2026 belastet. Vorher wird kein Beitrag eingezogen. Danach ist der Monatsbeitrag jeweils zum 1. des Monats fällig.',
       '4. Das Mitglied verpflichtet sich, für eine ausreichende Deckung des angegebenen Kontos zu sorgen.',
       '5. Entstehen durch eine vom Mitglied zu vertretende Rücklastschrift tatsächliche Bank- oder Rücklastschriftkosten, können diese in tatsächlich entstandener Höhe berechnet werden. Dem Mitglied bleibt der Nachweis gestattet, dass kein oder ein geringerer Schaden entstanden ist.',
       '6. Änderungen der Bankverbindung oder sonstiger für die Zahlungsabwicklung erforderlicher Daten sind unverzüglich mitzuteilen.',

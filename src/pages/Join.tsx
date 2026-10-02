@@ -86,7 +86,42 @@ function JoinClosed({ invite }: { invite: string | null }) {
   )
 }
 
+function paymentReturn() {
+  if (typeof window === 'undefined') return null
+  const value = new URLSearchParams(window.location.search).get('zahlung')
+  if (value === 'ok' || value === 'abgebrochen') return value
+  return null
+}
+
+function beforeFirstCharge() {
+  const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Berlin',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+  return today < '2026-11-01'
+}
+
+function JoinPayResult({ status }: { status: 'ok' | 'abgebrochen' }) {
+  const lead = status === 'ok' ? (beforeFirstCharge() ? COPY.payReturnOk : COPY.payReturnOkNow) : COPY.payReturnCancel
+  return (
+    <main className="page join-page">
+      <p className="kicker">{COPY.joinPageKicker}</p>
+      <h1>{status === 'ok' ? 'Zahlung ist eingerichtet.' : 'Zahlung abgebrochen.'}</h1>
+      <p className="lead">{lead}</p>
+      <div className="join-closed-actions">
+        <Link className="btn btn-solid" href="/">
+          Zur Startseite
+        </Link>
+      </div>
+    </main>
+  )
+}
+
 export function Join({ plan, invite }: JoinProps) {
+  const returned = paymentReturn()
+  if (returned) return <JoinPayResult status={returned} />
   if (!SIGNUP_OPEN) return <JoinClosed invite={invite} />
   return <JoinForm plan={plan} invite={invite} />
 }
@@ -116,7 +151,7 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [consents, setConsents] = useState(emptyConsents)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState<{ id?: string; at: string } | null>(null)
+  const [done, setDone] = useState<{ id?: string; at: string; payment?: 'checkout' | 'later' | 'unlinked' } | null>(null)
   const pageRef = useRef<HTMLElement>(null)
   const stepAnchorRef = useRef<HTMLOListElement>(null)
   const skipStepScroll = useRef(true)
@@ -166,6 +201,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       plan: selected,
       name: `${firstName} ${lastName}`,
       at: done.at,
+      payment: done.payment,
     }
   }, [selected, done, firstName, lastName])
 
@@ -257,7 +293,11 @@ function JoinForm({ plan, invite }: JoinProps) {
       setError(ERRORS[result.error])
       return
     }
-    setDone({ id: result.id, at: new Date().toISOString() })
+    if (result.checkoutUrl?.startsWith('https://checkout.stripe.com/')) {
+      window.location.assign(result.checkoutUrl)
+      return
+    }
+    setDone({ id: result.id, at: new Date().toISOString(), payment: result.payment })
     window.scrollTo(0, 0)
   }
 
@@ -267,6 +307,10 @@ function JoinForm({ plan, invite }: JoinProps) {
         <p className="kicker">{COPY.joinPageKicker}</p>
         <h1>{COPY.successTitle}</h1>
         <p className="lead">{COPY.successLead}</p>
+        {summary.payment === 'later' ? (
+          <p className="lead">{summary.plan.id === 'daypass' ? COPY.payDayLater : COPY.payLater}</p>
+        ) : null}
+        {summary.payment === 'unlinked' || !summary.payment ? <p className="lead">{COPY.payUnlinked}</p> : null}
         <article className="contract-sheet">
           <h2>Mitgliedsvertrag · {summary.plan.name}</h2>
           <p>

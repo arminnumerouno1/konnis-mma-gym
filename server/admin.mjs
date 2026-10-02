@@ -22,6 +22,7 @@ import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
+import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 12
@@ -459,7 +460,7 @@ function patchMemberFields(current, patch, today) {
   return { ok: true, member: ensurePayments(next, today) }
 }
 
-export function createAdminHandler({ dataDir, env }) {
+export function createAdminHandler({ dataDir, env, fetchImpl = fetch }) {
   const store = createMemberStore({ dataDir, env })
   const preregs = createPreregStore({ dataDir, env })
   const secret = () => adminSecret(env)
@@ -638,6 +639,63 @@ export function createAdminHandler({ dataDir, env }) {
           return
         }
         json(res, 200, { ok: true, member: publicMember(result.member, today, true) })
+        return
+      }
+
+      if (action === 'stripeLink') {
+        const id = String(body.id ?? '')
+        const current = (await store.load()).members.find((row) => row.id === id)
+        if (!current) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (current.plan === 'daypass') {
+          json(res, 400, { ok: false, error: 'stripe_early' })
+          return
+        }
+        if (current.stripe?.subscriptionId) {
+          json(res, 409, { ok: false, error: 'stripe_exists' })
+          return
+        }
+        const secretKey = env.STRIPE_SECRET_KEY?.trim() || ''
+        if (!secretKey) {
+          json(res, 503, { ok: false, error: 'stripe_off' })
+          return
+        }
+        const session = await createCheckoutSession({
+          secret: secretKey,
+          member: current,
+          origin: siteOrigin(req, env),
+          fetchImpl,
+        })
+        if (!session.ok || !session.url) {
+          console.error('[admin] stripe checkout failed', session.detail || session.error)
+          json(res, 502, { ok: false, error: session.skipped ? 'stripe_early' : 'stripe_fail' })
+          return
+        }
+        let saved = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          db.members[index] = {
+            ...db.members[index],
+            stripe: {
+              ...(db.members[index].stripe ?? {}),
+              checkoutSessionId: session.id,
+              billingStart: session.billingStart || BILLING_START,
+              chargeNow: Boolean(session.chargeNow),
+              delay: session.delay,
+            },
+            updatedAt: new Date().toISOString(),
+          }
+          saved = db.members[index]
+          return db
+        })
+        if (!saved) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        json(res, 200, { ok: true, checkoutUrl: session.url, member: publicMember(saved, today, true) })
         return
       }
 

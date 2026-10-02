@@ -41,6 +41,7 @@ function invoiceMemberId(invoice) {
     invoice.parent?.subscription_details?.metadata?.memberId ||
     invoice.subscription_details?.metadata?.memberId ||
     invoice.metadata?.memberId ||
+    invoice.client_reference_id ||
     invoice.lines?.data?.[0]?.metadata?.memberId ||
     ''
   )
@@ -62,7 +63,7 @@ export function findMemberIndex(members, invoice) {
     const byCustomer = members.findIndex((row) => row.stripe?.customerId === customer)
     if (byCustomer >= 0) return byCustomer
   }
-  const email = String(invoice.customer_email ?? '').trim().toLowerCase()
+  const email = String(invoice.customer_email || invoice.customer_details?.email || '').trim().toLowerCase()
   if (email) {
     const hits = members.filter((row) => row.email === email && row.plan !== 'daypass')
     if (hits.length === 1) return members.indexOf(hits[0])
@@ -70,7 +71,56 @@ export function findMemberIndex(members, invoice) {
   return -1
 }
 
+function stripeId(value) {
+  if (typeof value === 'string') return value
+  if (value && typeof value.id === 'string') return value.id
+  return ''
+}
+
+function applyCheckoutCompleted(db, event, today) {
+  const session = event?.data?.object
+  if (session?.object !== 'checkout.session') return { handled: false, reason: 'ignored' }
+  const index = findMemberIndex(db.members, session)
+  if (index < 0) return { handled: false, reason: 'unmatched' }
+  const member = db.members[index]
+  const customer = stripeId(session.customer)
+  const subscription = stripeId(session.subscription)
+  const linked = {
+    ...member,
+    stripe: {
+      ...(member.stripe ?? {}),
+      ...(customer ? { customerId: customer } : {}),
+      ...(subscription ? { subscriptionId: subscription } : {}),
+      checkoutSessionId: session.id,
+      linkedAt: new Date().toISOString(),
+    },
+    updatedAt: new Date().toISOString(),
+  }
+  const paidDay =
+    session.mode === 'payment' && session.payment_status === 'paid' && member.plan === 'daypass'
+  if (paidDay) {
+    const amount = Number.isFinite(session.amount_total) ? Math.round(session.amount_total) / 100 : null
+    db.members[index] = setPayment(
+      linked,
+      {
+        period: member.visitDay || member.startDate || today,
+        kind: 'day',
+        status: 'paid',
+        note: `Stripe ${session.id}`,
+        source: 'stripe',
+        ref: session.id,
+        amount,
+      },
+      today,
+    )
+  } else {
+    db.members[index] = linked
+  }
+  return { handled: true, memberId: member.id, linked: true, charged: Boolean(paidDay) }
+}
+
 export function applyStripeEvent(db, event, today = isoDate()) {
+  if (event?.type === 'checkout.session.completed') return applyCheckoutCompleted(db, event, today)
   const status = INVOICE_STATUS[event?.type]
   const invoice = event?.data?.object
   if (!status || invoice?.object !== 'invoice') return { handled: false, reason: 'ignored' }
@@ -154,7 +204,7 @@ export function createStripeHandler({ dataDir, env }) {
       reply(res, 400, { ok: false, error: 'invalid' })
       return
     }
-    if (!INVOICE_STATUS[event?.type]) {
+    if (!INVOICE_STATUS[event?.type] && event?.type !== 'checkout.session.completed') {
       reply(res, 200, { ok: true, handled: false, reason: 'ignored' })
       return
     }

@@ -337,6 +337,27 @@ assert(late.data.status === 'paid', 'late finalized does not reopen paid month')
 const nobody = await stripeCall(invoice('invoice.paid', { customer: 'cus_NOBODY0000', customer_email: 'x@example.com' }))
 assert(nobody.status === 200 && nobody.data.reason === 'unmatched', 'unmatched invoice acknowledged')
 
+const sessionEvt = await stripeCall({
+  id: 'evt_cs',
+  type: 'checkout.session.completed',
+  data: {
+    object: {
+      object: 'checkout.session',
+      id: 'cs_1',
+      mode: 'subscription',
+      payment_status: 'no_payment_required',
+      customer: 'cus_TEST123456',
+      subscription: 'sub_NOVEMBER',
+      client_reference_id: withBank.data.member.id,
+      metadata: { memberId: withBank.data.member.id },
+    },
+  },
+})
+assert(sessionEvt.data.handled && sessionEvt.data.charged === false, 'checkout links without charging')
+const afterSession = (await store.load()).members.find((row) => row.id === withBank.data.member.id)
+assert(afterSession.stripe.subscriptionId === 'sub_NOVEMBER', 'subscription stored')
+assert(afterSession.payments.find((row) => row.period === '2026-11').status === 'paid', 'november stays as the invoice left it')
+
 async function rawCall({ method, url, headers = {}, bytes }) {
   const req = bytes ? Readable.from([bytes]) : Readable.from([])
   Object.assign(req, { method, url, headers: { cookie, ...headers }, socket: { remoteAddress: '10.0.0.3' } })
@@ -516,5 +537,71 @@ const suggestions = toSuggestions([
 ])
 assert(suggestions.length === 2, 'address dedupe and DE only')
 assert(suggestions[1].street === 'Karl-Liebknecht-Straße' && suggestions[1].housenumber === '', 'street suggestion')
+
+const off = await post({ action: 'stripeLink', id: kid.data.member.id })
+assert(off.status === 503 && off.data.error === 'stripe_off', 'link needs stripe key')
+
+const capturedCheckout = []
+const stripeAdmin = createAdminHandler({
+  dataDir: tmp,
+  env: { ADMIN_SECRET: secret, STRIPE_SECRET_KEY: 'sk_test_example' },
+  fetchImpl: async (_url, init) => {
+    capturedCheckout.push(String(init.body))
+    return {
+      ok: true,
+      async json() {
+        return { id: 'cs_test_link', url: 'https://checkout.stripe.com/c/pay/cs_test_link' }
+      },
+    }
+  },
+})
+const linkCall = await (async () => {
+  const { res, captured } = mockRes()
+  await stripeAdmin(
+    {
+      method: 'POST',
+      url: '/api/admin',
+      headers: { cookie },
+      socket: { remoteAddress: '10.0.0.3' },
+      body: { action: 'stripeLink', id: withBank.data.member.id },
+    },
+    res,
+  )
+  return { status: captured.status, data: JSON.parse(captured.body) }
+})()
+assert(linkCall.status === 409 && linkCall.data.error === 'stripe_exists', 'no second subscription')
+
+const fresh = await post({
+  action: 'create',
+  plan: 'first50',
+  firstName: 'Niko',
+  lastName: 'Berg',
+  birthDate: '1991-01-01',
+  email: 'niko@example.com',
+  phone: '+49 171 4445566',
+})
+const freshLink = await (async () => {
+  const { res, captured } = mockRes()
+  await stripeAdmin(
+    {
+      method: 'POST',
+      url: '/api/admin',
+      headers: { cookie, 'content-type': 'application/json' },
+      socket: { remoteAddress: '10.0.0.3' },
+      body: { action: 'stripeLink', id: fresh.data.member.id },
+    },
+    res,
+  )
+  return { status: captured.status, data: JSON.parse(captured.body) }
+})()
+assert(freshLink.status === 200 && freshLink.data.checkoutUrl.includes('checkout.stripe.com'), 'admin payment link')
+assert(freshLink.data.member.stripe.billingStart === '2026-11-01', 'first charge stored as november')
+assert(freshLink.data.member.stripe.chargeNow === false, 'nothing charged now')
+const posted = new URLSearchParams(capturedCheckout.at(-1) || '')
+assert(posted.get('subscription_data[trial_end]'), 'trial until november')
+assert(posted.get('line_items[0][price_data][unit_amount]') === '8999', 'first50 cents')
+assert(posted.get('payment_method_types[0]') === 'sepa_debit', 'sepa first')
+assert(posted.get('line_items[0][price_data][recurring][interval]') === 'month', 'monthly')
+assert(posted.get('subscription_data[proration_behavior]') == null, 'no proration before november')
 
 console.log('admin tests ok')

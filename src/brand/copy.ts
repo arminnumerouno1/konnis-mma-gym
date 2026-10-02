@@ -202,6 +202,18 @@ export const COPY = {
   successTitle: 'Anmeldung ist raus.',
   successLead:
     'Wir haben deinen Vertrag. Die PDF-Kopie und die Widerrufsbelehrung gehen an deine Mail, eine Nachricht an das Gym. Unten die Zusammenfassung. Widerruf: 14 Tage.',
+  payLater:
+    'Deine Anmeldung ist da. Abgebucht wird erstmals am 1. November 2026, danach immer zum 1. Vorher geht nichts vom Konto. Den Link zur Zahlung schicken wir dir.',
+  payDayLater:
+    'Dein Day Pass ist gespeichert. Abgebucht wird er erst ab dem 1. November 2026. Vorher geht nichts vom Konto.',
+  payUnlinked:
+    'Deine Anmeldung ist da. Der Zahlungslink konnte gerade nicht erzeugt werden. Wir schicken ihn dir.',
+  payReturnOk:
+    'Danke. Dein Vertrag ist gespeichert. Die erste Abbuchung ist am 1. November 2026. Vorher wird nichts eingezogen. Danach immer zum 1. des Monats.',
+  payReturnOkNow:
+    'Danke. Dein Vertrag ist gespeichert. Die Zahlung läuft über Stripe. Den laufenden Monat ziehen wir jetzt ein, danach immer zum 1.',
+  payReturnCancel:
+    'Die Zahlung wurde abgebrochen. Deine Anmeldung bleibt gespeichert. Wir schicken dir einen neuen Link, oder du meldest dich im Studio.',
   invalid: 'Bitte alle Pflichtfelder sauber ausfüllen.',
   error: 'Das hat nicht geklappt. Versuch es gleich noch einmal.',
   rate: 'Zu viele Versuche. Warte kurz und versuch es erneut.',

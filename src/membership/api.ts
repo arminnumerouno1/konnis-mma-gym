@@ -60,6 +60,9 @@ export type MembershipOk = {
   confirmation: 'saved' | 'listed'
   id?: string
   remainingFirst50: number
+  payment?: 'checkout' | 'later' | 'unlinked'
+  checkoutUrl?: string
+  billingStart?: string
 }
 
 export type MembershipFail = { ok: false; error: MembershipError }

@@ -64,7 +64,14 @@ type MemberDetail = MemberList & {
   consents?: { photos?: boolean }
   guardian?: Guardian | null
   bank?: Bank | null
-  stripe?: { customerId?: string } | null
+  stripe?: {
+    customerId?: string
+    subscriptionId?: string
+    checkoutSessionId?: string
+    billingStart?: string | null
+    chargeNow?: boolean
+    delay?: string
+  } | null
   docs?: { contract?: DocMeta; sepa?: DocMeta }
   history?: { at: string; field: string; from: string; to: string }[]
   inviteSlot?: number | null
@@ -224,6 +231,10 @@ const ERROR_TEXT: Record<string, string> = {
   phone: 'Telefon prüfen.',
   visit: 'Trainingstag fehlt.',
   stripe: 'Stripe-Kunden-ID beginnt mit cus_.',
+  stripe_off: 'Stripe ist noch nicht verbunden. Der Zahlungslink geht, sobald der Schlüssel hinterlegt ist.',
+  stripe_exists: 'Für dieses Mitglied läuft schon ein Stripe-Abo.',
+  stripe_early: 'Der Day Pass wird erst ab dem 1. November abgebucht.',
+  stripe_fail: 'Stripe hat den Link nicht angenommen. Bitte später noch einmal.',
   address: 'Adresse prüfen. PLZ hat 5 Ziffern.',
 }
 
@@ -1435,6 +1446,19 @@ export function Admin() {
     return null
   }
 
+  async function stripeLink(id: string) {
+    setBusy(true)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'stripeLink', id }),
+    })
+    setBusy(false)
+    if (!data.ok) return { error: String(data.error ?? 'stripe_fail') }
+    if (data.member) setDetail(data.member)
+    await refreshList()
+    return { url: String(data.checkoutUrl ?? '') }
+  }
+
   async function markPay(id: string, payment: Payment, next: PayStatus) {
     setBusy(true)
     const { data } = await api('/api/admin', {
@@ -1656,6 +1680,7 @@ export function Admin() {
             onClose={() => setOpenId(null)}
             onPatch={(payload) => patch(detail.id, payload)}
             onPay={(payment, next) => markPay(detail.id, payment, next)}
+            onStripeLink={() => stripeLink(detail.id)}
             onReplace={(next) => {
               setDetail(next)
               void refreshList()
@@ -1678,6 +1703,7 @@ function MemberPane({
   onPatch,
   onPay,
   onReplace,
+  onStripeLink,
 }: {
   member: MemberDetail
   busy: boolean
@@ -1685,11 +1711,13 @@ function MemberPane({
   onPatch: (payload: Record<string, unknown>) => Promise<string | null>
   onPay: (payment: Payment, next: PayStatus) => Promise<void>
   onReplace: (member: MemberDetail) => void
+  onStripeLink: () => Promise<{ error?: string; url?: string }>
 }) {
   const [notes, setNotes] = useState(member.notes ?? '')
   const [bank, setBank] = useState<BankForm>(bankForm(member.bank))
   const [guardian, setGuardian] = useState<GuardianForm>(guardianForm(member.guardian))
   const [stripeId, setStripeId] = useState(member.stripe?.customerId ?? '')
+  const [payLink, setPayLink] = useState('')
   const [paneError, setPaneError] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
 
@@ -1927,9 +1955,48 @@ function MemberPane({
         <section className="admin-block">
           <h3>Stripe</h3>
           <p className="admin-muted">
-            Sobald Stripe läuft, färben sich die Monate von selbst grün oder rot. Die Kunden-ID verknüpft das Mitglied, falls
-            die Mail bei Stripe anders ist.
+            {member.stripe?.chargeNow && member.stripe.delay === 'prorate'
+              ? `Anteiliger Beitrag jetzt, volle Monate ab ${deDate(member.stripe.billingStart)}.`
+              : `Erste Abbuchung ${deDate(member.stripe?.billingStart || '2026-11-01')}. Vorher wird nichts eingezogen.`}
+            {member.stripe?.subscriptionId
+              ? ' Das Abo ist verknüpft. Die Monate färben sich, sobald die Rechnung kommt.'
+              : ' Das Mitglied trägt IBAN oder Karte auf der Stripe-Seite ein. Der Link gilt 24 Stunden.'}
           </p>
+          {member.stripe?.subscriptionId ? null : (
+            <div className="admin-inline">
+              <button
+                className="btn btn-solid"
+                type="button"
+                disabled={busy}
+                onClick={() => {
+                  void (async () => {
+                    const result = await onStripeLink()
+                    if (result.error) {
+                      setPaneError(errorText(result.error))
+                      setPayLink('')
+                      return
+                    }
+                    setPaneError(null)
+                    setPayLink(result.url || '')
+                  })()
+                }}
+              >
+                Zahlungslink erzeugen
+              </button>
+            </div>
+          )}
+          {payLink ? (
+            <div className="admin-inline">
+              <input readOnly value={payLink} onFocus={(event) => event.currentTarget.select()} />
+              <button
+                className="btn btn-ghost"
+                type="button"
+                onClick={() => void navigator.clipboard.writeText(payLink)}
+              >
+                Kopieren
+              </button>
+            </div>
+          ) : null}
           <div className="admin-inline">
             <input value={stripeId} placeholder="cus_…" onChange={(event) => setStripeId(event.target.value.trim())} />
             <button

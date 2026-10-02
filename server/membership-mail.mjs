@@ -50,7 +50,7 @@ function memberLead(record, { attached = false } = {}) {
     return `<p>Hi ${first},</p>
 <p><strong>Schön, dass du einer der Ersten bist.</strong> Die ersten 50 bekommen den Preis, den wir dafür gemacht haben: 89,99€ statt 99,99€, 24 Monate.</p>
 <p>Wir freuen uns, dass du von Anfang an dabei bist. Am 2. November geht die Tür auf. Dann sehen wir uns in der Wittenberger Straße.</p>
-<p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. Zahlen tust du erst, wenn das Gym wirklich öffnet.</p>`
+<p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. Zahlen tust du erst, wenn das Gym wirklich öffnet. Die erste Abbuchung ist am 1. November 2026, danach immer zum 1.</p>`
   }
 
   if (record.plan === 'daypass') {
@@ -61,8 +61,8 @@ function memberLead(record, { attached = false } = {}) {
 
   return `<p>Hi ${first},</p>
 <p>dein Vertrag ist da. Willkommen im KONNI MMA GYM. Wir freuen uns, dass du dabei bist.</p>
-<p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. Zahlen tust du erst, wenn das Gym wirklich öffnet.</p>`
-}
+<p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. Zahlen tust du erst, wenn das Gym wirklich öffnet. Die erste Abbuchung ist am 1. November 2026, danach immer zum 1.</p>`
+  }
 
 function memberSignoff() {
   return `<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>`
