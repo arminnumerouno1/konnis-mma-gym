@@ -1464,6 +1464,20 @@ export function Admin() {
     return { url: String(data.checkoutUrl ?? '') }
   }
 
+  async function removeMember(id: string) {
+    setBusy(true)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'delete', id }),
+    })
+    setBusy(false)
+    if (!data.ok) return String(data.error ?? 'invalid')
+    setOpenId(null)
+    setDetail(null)
+    await refreshList()
+    return null
+  }
+
   async function markPay(id: string, payment: Payment, next: PayStatus) {
     setBusy(true)
     const { data } = await api('/api/admin', {
@@ -1690,6 +1704,7 @@ export function Admin() {
             onPatch={(payload) => patch(detail.id, payload)}
             onPay={(payment, next) => markPay(detail.id, payment, next)}
             onStripeLink={() => stripeLink(detail.id)}
+            onDelete={() => removeMember(detail.id)}
             onReplace={(next) => {
               setDetail(next)
               void refreshList()
@@ -1713,6 +1728,7 @@ function MemberPane({
   onPay,
   onReplace,
   onStripeLink,
+  onDelete,
 }: {
   member: MemberDetail
   busy: boolean
@@ -1721,6 +1737,7 @@ function MemberPane({
   onPay: (payment: Payment, next: PayStatus) => Promise<void>
   onReplace: (member: MemberDetail) => void
   onStripeLink: () => Promise<{ error?: string; url?: string }>
+  onDelete: () => Promise<string | null>
 }) {
   const [notes, setNotes] = useState(member.notes ?? '')
   const [bank, setBank] = useState<BankForm>(bankForm(member.bank))
@@ -1742,6 +1759,20 @@ function MemberPane({
     if (!file) return
     const photoData = await compressPhoto(file)
     await onPatch({ photoData })
+  }
+
+  async function remove() {
+    const name = `${member.firstName} ${member.lastName}`.trim()
+    const stripe = Boolean(member.stripe?.customerId || member.stripe?.subscriptionId)
+    const stripeNote = stripe
+      ? '\n\nDas Stripe-Abo wird nicht beendet. Die Abbuchung läuft weiter, bis du es in Stripe stoppst.'
+      : ''
+    if (!window.confirm(`${name} wirklich aus der Verwaltung löschen? Die Person und die hochgeladenen Unterlagen sind danach weg.${stripeNote}`)) {
+      return
+    }
+    setPaneError(null)
+    const error = await onDelete()
+    if (error) setPaneError(errorText(error))
   }
 
   return (
@@ -2129,6 +2160,19 @@ function MemberPane({
           </ul>
         </section>
       ) : null}
+
+      <section className="admin-block is-alert">
+        <h3>Mitglied löschen</h3>
+        <p className="admin-muted">
+          Entfernt {member.firstName} {member.lastName} aus der Verwaltung, inklusive hochgeladener Unterlagen.
+          {member.stripe?.customerId || member.stripe?.subscriptionId
+            ? ' Das Stripe-Abo läuft danach weiter, bis es in Stripe beendet wird.'
+            : ''}
+        </p>
+        <button className="btn btn-ghost admin-danger" type="button" disabled={busy} onClick={() => void remove()}>
+          Mitglied löschen
+        </button>
+      </section>
     </section>
   )
 }

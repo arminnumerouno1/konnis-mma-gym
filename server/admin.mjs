@@ -754,6 +754,33 @@ export function createAdminHandler({ dataDir, env, fetchImpl = fetch }) {
         return
       }
 
+      if (action === 'delete') {
+        const id = String(body.id ?? '')
+        if (!id) {
+          json(res, 400, { ok: false, error: 'invalid' })
+          return
+        }
+        let removed = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          removed = db.members[index]
+          db.members.splice(index, 1)
+          return db
+        })
+        if (!removed) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        const paths = [
+          ...DOC_KINDS.map((kind) => removed.docs?.[kind]?.path).filter(Boolean),
+          `mail-lock/${id}`,
+        ]
+        await Promise.all(paths.map((path) => store.deleteDoc(path).catch(() => undefined)))
+        json(res, 200, { ok: true })
+        return
+      }
+
       if (action === 'deleteDoc') {
         const id = String(body.id ?? '')
         const kind = String(body.kind ?? '')

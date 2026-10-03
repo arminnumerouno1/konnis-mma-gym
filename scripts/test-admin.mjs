@@ -738,4 +738,37 @@ assert(posted.get('payment_method_types[0]') === 'card' && !posted.get('payment_
 assert(posted.get('line_items[0][price_data][recurring][interval]') === 'month', 'monthly')
 assert(posted.get('subscription_data[proration_behavior]') == null, 'no proration before november')
 
+const dropId = fresh.data.member.id
+const docPath = `${dropId}/contract-1.pdf`
+await store.putDoc(docPath, Buffer.from('%PDF-1.4 test'), 'application/pdf')
+await store.update((db) => {
+  const row = db.members.find((item) => item.id === dropId)
+  row.docs = {
+    ...(row.docs ?? {}),
+    contract: { path: docPath, name: 'Vertrag.pdf', type: 'application/pdf', size: 12, uploadedAt: '2026-10-03T12:00:00.000Z' },
+  }
+  return db
+})
+const beforeDelete = await store.load()
+const beforeCount = beforeDelete.members.length
+const deleted = await post({ action: 'delete', id: dropId })
+assert(deleted.status === 200 && deleted.data.ok, 'delete member')
+const afterDelete = await store.load()
+assert(afterDelete.members.length === beforeCount - 1, 'one member removed')
+assert(!afterDelete.members.some((row) => row.id === dropId), 'deleted member is gone')
+assert(afterDelete.members.some((row) => row.email === 'anna@example.com'), 'other members stay')
+assert((await store.getDoc(docPath)) == null, 'uploaded contract is removed')
+const missingDelete = await post({ action: 'delete', id: 'does-not-exist' })
+assert(missingDelete.status === 404 && missingDelete.data.error === 'missing', 'delete missing member')
+const deniedDelete = await call({
+  method: 'POST',
+  url: '/api/admin',
+  headers: {},
+  socket: { remoteAddress: '10.9.9.9' },
+  body: { action: 'delete', id: 'm1' },
+})
+assert(deniedDelete.status === 401 && deniedDelete.data.error === 'auth', 'delete needs login')
+const stillThere = await store.load()
+assert(stillThere.members.some((row) => row.id === 'm1'), 'unauthenticated delete does not remove')
+
 console.log('admin tests ok')
