@@ -246,7 +246,7 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Noch nicht online. Die Tarife siehst du schon. Den Vertrag schließen wir bald auf. Bis dahin zur Eröffnung kommen.',
+    a: 'Ja. Unter Mitglied werden schließt du Standard, Flex oder den Day Pass online ab. Die erste Monatsabbuchung ist am 1. November 2026. Vorher geht nichts vom Konto.',
   },
   {
     q: 'Gibt es ein Probetraining?',

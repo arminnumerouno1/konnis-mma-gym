@@ -3,10 +3,9 @@ import { CookieBanner } from './components/CookieBanner'
 import { Footer } from './components/Footer'
 import { Nav } from './components/Nav'
 import { useRoute } from './lib/useRoute'
-import { scrollPageTop } from './lib/router'
+import { href, navigate, scrollPageTop } from './lib/router'
 import { Home } from './pages/Home'
 import { Join } from './pages/Join'
-import { Preregister } from './pages/Preregister'
 import { Legal } from './pages/Legal'
 import { Admin } from './pages/Admin'
 
@@ -20,6 +19,12 @@ export default function App() {
   }, [])
 
   useEffect(() => {
+    if (route.name !== 'prereg') return
+    navigate(href('join'))
+  }, [route.name])
+
+  useEffect(() => {
+    if (route.name === 'prereg') return
     if (route.hash) return
     scrollPageTop()
     const frame = window.requestAnimationFrame(() => scrollPageTop())
@@ -34,7 +39,6 @@ export default function App() {
     <div className={`shell route-${route.name}`}>
       <Nav route={route} />
       {route.name === 'home' ? <Home /> : null}
-      {route.name === 'prereg' ? <Preregister /> : null}
       {route.name === 'join' ? <Join plan={route.plan} invite={route.invite} /> : null}
       {LEGAL.has(route.name) ? (
         <Legal

@@ -24,7 +24,7 @@ export function Nav({ route }: NavProps) {
     { href: '/#training', label: COPY.navTraining },
     { href: '/#team', label: COPY.navTeam },
     { href: '/#preise', label: COPY.navPlans },
-    TRIAL_OPEN ? { href: '/#probetraining', label: COPY.navTrial } : { href: href('prereg'), label: COPY.navPrereg },
+    ...(TRIAL_OPEN ? [{ href: '/#probetraining', label: COPY.navTrial }] : []),
     { href: '/#kontakt', label: COPY.navContact },
   ]
 

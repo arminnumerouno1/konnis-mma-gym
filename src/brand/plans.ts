@@ -98,8 +98,8 @@ export const FIRST50: Plan = {
 
 const ALL_PLANS: Plan[] = [...PLANS, FIRST50]
 
-/** Online-Mitgliedschaft. Auf true, wenn der Vertrag wieder angenommen wird. */
-export const SIGNUP_OPEN = false
+/** Online-Mitgliedschaft. false sperrt das Formular wieder. */
+export const SIGNUP_OPEN = true
 
 /** Probetraining-Anfrage. Auf true, wenn Einheiten wieder angefragt werden können. */
 export const TRIAL_OPEN = false

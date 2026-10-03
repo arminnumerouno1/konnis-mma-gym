@@ -2,7 +2,7 @@ import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createAdminHandler } from '../server/admin.mjs'
-import { addPrereg, createPreregStore, createPreregHandler, importPreregs, preregCsv, preregStats, readPrereg, sortPreregs } from '../server/prereg.mjs'
+import { addPrereg, createPreregStore, createPreregHandler, importPreregs, isPreregOpen, PREREG_OPEN, preregCsv, preregStats, readPrereg, sortPreregs } from '../server/prereg.mjs'
 import { rowsFromSheet } from './import-prereg-list.mjs'
 
 function assert(cond, message) {
@@ -61,7 +61,12 @@ assert(csv.includes(`"'=HYPERLINK(""x"")"`), 'csv formula escaped')
 
 const tmp = mkdtempSync(join(tmpdir(), 'konni-prereg-'))
 const secret = 'test-admin-secret-key'
-const publicHandle = createPreregHandler({ dataDir: tmp, env: {} })
+assert(PREREG_OPEN === false, 'public prereg closed')
+assert(isPreregOpen({}) === false, 'prereg closed by default')
+assert(isPreregOpen({ PREREG_OPEN: 'true' }) === true, 'prereg env open')
+
+const publicHandle = createPreregHandler({ dataDir: tmp, env: { PREREG_OPEN: 'true' } })
+const closedHandle = createPreregHandler({ dataDir: tmp, env: {} })
 const adminHandle = createAdminHandler({ dataDir: tmp, env: { ADMIN_SECRET: secret } })
 
 async function call(handle, req) {
@@ -83,6 +88,9 @@ async function call(handle, req) {
   const isJson = String(captured.headers['content-type'] ?? '').includes('json')
   return { status: captured.status, data: isJson && captured.body ? JSON.parse(captured.body) : captured.body, headers: captured.headers }
 }
+
+const closed = await call(closedHandle, { method: 'POST', url: '/api/voranmeldung', body: valid })
+assert(closed.status === 403 && closed.data.error === 'closed', 'public prereg rejects new signups')
 
 const wrongMethod = await call(publicHandle, { method: 'GET', url: '/api/voranmeldung' })
 assert(wrongMethod.status === 405, 'public GET refused')

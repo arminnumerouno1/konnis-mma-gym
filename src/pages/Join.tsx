@@ -72,10 +72,7 @@ function JoinClosed({ invite }: { invite: string | null }) {
       <p className="lead">{COPY.joinClosedLead}</p>
       {invite ? <p className="lead">{COPY.joinClosedInvite}</p> : null}
       <div className="join-closed-actions">
-        <Link className="btn btn-solid" href={href('prereg')}>
-          Jetzt voranmelden
-        </Link>
-        <Link className="btn btn-ghost" href="/">
+        <Link className="btn btn-solid" href="/">
           {COPY.joinClosedHome}
         </Link>
         <Link className="btn btn-ghost" href="/#kontakt">

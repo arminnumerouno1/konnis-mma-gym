@@ -7,6 +7,8 @@ import {
   createMembershipHandler,
   first50Taken,
   isSignupOpen,
+  isMembershipMailOpen,
+  MEMBERSHIP_MAIL,
   SIGNUP_OPEN,
   validateMembership,
 } from '../server/membership.mjs'
@@ -17,10 +19,14 @@ function assert(cond, message) {
   if (!cond) throw new Error(message)
 }
 
-assert(SIGNUP_OPEN === false, 'signup closed until launch')
-assert(isSignupOpen({}) === false, 'closed default')
+assert(SIGNUP_OPEN === true, 'signup open')
+assert(isSignupOpen({}) === true, 'open default')
 assert(isSignupOpen({ SIGNUP_OPEN: 'true' }) === true, 'env override open')
 assert(isSignupOpen({ SIGNUP_OPEN: 'false' }) === false, 'env override closed')
+assert(MEMBERSHIP_MAIL === false, 'membership mail stays off')
+assert(isMembershipMailOpen({}) === false, 'no mail by default')
+assert(isMembershipMailOpen({ MEMBERSHIP_MAIL: 'true' }) === true, 'mail env on')
+assert(isMembershipMailOpen({ MEMBERSHIP_MAIL: 'false' }) === false, 'mail env off')
 
 assert(ageOn('2000-01-15') !== null, 'age parses')
 assert(ageOn('1990-13-01') === null, 'bad month')
@@ -195,11 +201,42 @@ function mockRes() {
 const dataDir = join(tmpdir(), `konni-mem-${process.pid}`)
 mkdirSync(dataDir, { recursive: true })
 {
-  const handle = createMembershipHandler({ dataDir, env: {} })
+  const handle = createMembershipHandler({ dataDir, env: { SIGNUP_OPEN: 'false' } })
   const { res, captured } = mockRes()
   await handle({ method: 'POST', url: '/api/mitglied', headers: {}, socket: { remoteAddress: '127.0.0.1' } }, res)
   const parsed = JSON.parse(captured.body)
   assert(captured.status === 403 && parsed.ok === false && parsed.error === 'closed', 'handler rejects closed signup')
+}
+
+{
+  const calls = []
+  const previous = globalThis.fetch
+  globalThis.fetch = async (url) => {
+    calls.push(String(url))
+    return { ok: true, status: 200, json: async () => ({}), text: async () => '' }
+  }
+  try {
+    const handle = createMembershipHandler({
+      dataDir,
+      env: { BREVO_API_KEY: 'xkeysib-test', BREVO_LIST_ID: '9' },
+    })
+    const { res, captured } = mockRes()
+    await handle(
+      {
+        method: 'POST',
+        url: '/api/mitglied',
+        headers: { 'content-type': 'application/json' },
+        body: { ...base, email: 'offen@example.com' },
+        socket: { remoteAddress: '127.0.0.8' },
+      },
+      res,
+    )
+    const parsed = JSON.parse(captured.body)
+    assert(captured.status === 200 && parsed.ok === true && parsed.confirmation === 'saved', 'signup saves without mail')
+    assert(!calls.some((url) => url.includes('brevo.com')), 'signup does not call brevo')
+  } finally {
+    globalThis.fetch = previous
+  }
 }
 
 console.log('membership tests ok')

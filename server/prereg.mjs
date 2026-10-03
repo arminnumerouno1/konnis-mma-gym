@@ -8,6 +8,16 @@ export const PREREG_SOURCES = ['Instagram', 'Freunde und Bekannte', 'Tiktok', 'G
 export const PREREG_OFFER = ['ja', 'nein', 'vielleicht']
 export const PREREG_STATUS = ['neu', 'kontaktiert', 'mitglied', 'abgesagt']
 
+/** Öffentliches Formular. Bestehende Einträge bleiben in der Verwaltung. */
+export const PREREG_OPEN = false
+
+export function isPreregOpen(env = {}) {
+  const raw = String(env.PREREG_OPEN ?? '').trim().toLowerCase()
+  if (raw === 'true' || raw === '1') return true
+  if (raw === 'false' || raw === '0') return false
+  return PREREG_OPEN
+}
+
 const FILE_NAME = 'voranmeldungen.json'
 const BLOB_PATH = 'konni/voranmeldungen.json'
 const MAX_BODY = 12_000
@@ -429,6 +439,10 @@ export function createPreregHandler({ dataDir, env }) {
     try {
       if (req.method !== 'POST') {
         json(res, 405, { ok: false, error: 'method' })
+        return
+      }
+      if (!isPreregOpen(env)) {
+        json(res, 403, { ok: false, error: 'closed' })
         return
       }
       if (rateLimited(clientIp(req))) {

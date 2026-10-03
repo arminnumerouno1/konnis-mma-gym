@@ -16,13 +16,23 @@ const RATE_MAX = 6
 const PLAN_IDS = ['standard', 'flex', 'daypass', 'first50']
 
 /** Muss mit src/brand/plans.ts SIGNUP_OPEN zusammenpassen, außer SIGNUP_OPEN=true/false in der Umgebung. */
-export const SIGNUP_OPEN = false
+export const SIGNUP_OPEN = true
+
+/** Vertragsmail und Brevo-Liste. false: Anmeldung speichert und öffnet Stripe, sendet aber nichts. */
+export const MEMBERSHIP_MAIL = false
 
 export function isSignupOpen(env = {}) {
   const raw = String(env.SIGNUP_OPEN ?? '').trim().toLowerCase()
   if (raw === 'true' || raw === '1') return true
   if (raw === 'false' || raw === '0') return false
   return SIGNUP_OPEN
+}
+
+export function isMembershipMailOpen(env = {}) {
+  const raw = String(env.MEMBERSHIP_MAIL ?? '').trim().toLowerCase()
+  if (raw === 'true' || raw === '1') return true
+  if (raw === 'false' || raw === '0') return false
+  return MEMBERSHIP_MAIL
 }
 
 const PLAN_META = {
@@ -513,17 +523,19 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     }
 
     let confirmation = 'saved'
-    try {
-      const brevo = await pushBrevo(env, record)
-      if (brevo === 'listed') confirmation = 'listed'
-    } catch (error) {
-      console.error('[mitglied] brevo failed', error)
-    }
+    if (isMembershipMailOpen(env)) {
+      try {
+        const brevo = await pushBrevo(env, record)
+        if (brevo === 'listed') confirmation = 'listed'
+      } catch (error) {
+        console.error('[mitglied] brevo failed', error)
+      }
 
-    try {
-      await sendMembershipEmails(env, record)
-    } catch (error) {
-      console.error('[mitglied] mail failed', error)
+      try {
+        await sendMembershipEmails(env, record)
+      } catch (error) {
+        console.error('[mitglied] mail failed', error)
+      }
     }
 
     const payment = await startStripeCheckout(req, record)
