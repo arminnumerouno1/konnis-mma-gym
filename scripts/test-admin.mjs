@@ -20,6 +20,7 @@ import { createStripeHandler } from '../server/stripe.mjs'
 import { toSuggestions } from '../server/address.mjs'
 import { createMembershipHandler } from '../server/membership.mjs'
 import { buildReport } from '../server/member-report.mjs'
+import { snapshotMonth } from '../src/admin/snapshot.ts'
 
 function assert(cond, message) {
   if (!cond) throw new Error(message)
@@ -660,6 +661,8 @@ assert(rNov.desk === 1 && rNov.minors === 1, 'desk and minor split')
 assert(rDec.cancellations === 1 && rDec.endings === 0, 'cancellation received, not yet ended')
 assert(rNov.daypasses === 1 && rNov.dayRevenue === 19.99, 'day pass counted by visit day')
 assert(rNov.stock === 3 && rOct.stock === 0, 'stock at month end')
+assert(snapshotMonth(rep.months, '2026-10-03').ym === '2026-11', 'before opening the book is November')
+assert(snapshotMonth(rep.months, '2026-12-15').ym === '2026-12', 'in December the book is December')
 assert(rNov.paid === 99.99 && rNov.openCount === 2, 'payments paid and open')
 assert(rep.totals.signups === 3, 'year total')
 

@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { StreetInput } from '../components/StreetInput'
+import { snapshotMonth } from '../admin/snapshot.ts'
 
 type PayStatus = 'paid' | 'open' | 'failed' | 'waived' | 'upcoming' | 'na'
 type MemberStatus = 'received' | 'active' | 'paused' | 'cancelled' | 'expired'
@@ -639,11 +640,7 @@ function Report({ onShowList }: { onShowList: (ym: string) => void }) {
   const picked = month ? report.months.find((row) => row.ym === month) : null
   const view = picked ?? report.totals
   const nowYm = report.today.slice(0, 7)
-  const lastStockMonth =
-    [...report.months].reverse().find((row) => (row.stock ?? 0) > 0) ??
-    [...report.months].reverse().find((row) => row.ym <= nowYm) ??
-    report.months[0]
-  const stockRow = picked ?? lastStockMonth
+  const stockRow = picked ?? snapshotMonth(report.months, report.today)
   const stockLabel = `${MONTH_NAMES[Number(stockRow.ym.slice(5)) - 1]}${stockRow.ym > nowYm ? ', geplant' : ''}`
   const peak = Math.max(1, ...report.months.map((row) => Math.max(row.signups, row.cancellations)))
   const scope = picked ? monthLabel(picked.ym) : `Jahr ${report.year}`
