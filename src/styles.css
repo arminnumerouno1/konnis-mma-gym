@@ -1480,11 +1480,26 @@ p,
   color: #fff;
 }
 
-.plan-pick {
+.plan-pick,
+.pay-pick {
   border: 0;
   padding: 0;
   display: grid;
   gap: 12px;
+}
+
+.pay-pick {
+  margin: 0 0 8px;
+}
+
+.transfer-box {
+  border: 1px solid var(--line);
+  padding: 16px;
+  margin: 0 0 20px;
+}
+
+.transfer-box dd {
+  font-variant-numeric: tabular-nums;
 }
 
 .plan-option {

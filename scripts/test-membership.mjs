@@ -84,6 +84,12 @@ assert(!kidNoGuard.ok && kidNoGuard.error === 'guardian', 'minor needs guardian'
 
 const day = validateMembership({ ...base, plan: 'daypass', visitDay: '2026-10-02' }, {})
 assert(day.ok && day.record?.visitDay === '2026-10-02', 'day pass date')
+assert(day.record?.payMethod === 'card', 'card is the default')
+
+const transfer = validateMembership({ ...base, payMethod: 'transfer' }, {})
+assert(transfer.ok && transfer.record?.payMethod === 'transfer', 'monthly bank transfer')
+const transferDay = validateMembership({ ...base, plan: 'daypass', visitDay: '2026-11-02', payMethod: 'transfer' }, {})
+assert(!transferDay.ok && transferDay.error === 'pay', 'day pass stays on card')
 
 assert(first50Taken([{ plan: 'first50' }, { plan: 'standard' }, { plan: 'first50', status: 'cancelled' }]) === 1, 'count')
 

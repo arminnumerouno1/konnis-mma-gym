@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 import { createMemberStore, ingestSignup } from './member-store.mjs'
-import { createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
+import { createBankTransferSubscription, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
@@ -246,6 +246,9 @@ export function validateMembership(body, ctx = {}) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(visitDay)) return { ok: false, error: 'visit' }
   }
 
+  const payMethod = body.payMethod === 'transfer' ? 'transfer' : 'card'
+  if (payMethod === 'transfer' && plan === 'daypass') return { ok: false, error: 'pay' }
+
   const meta = PLAN_META[plan]
   return {
     ok: true,
@@ -271,6 +274,7 @@ export function validateMembership(body, ctx = {}) {
       inviteSlot: invite ? invite.slot : null,
       guardian: minor ? guardian : null,
       visitDay: visitDay || null,
+      payMethod,
       place,
       signature,
       consents: {
@@ -412,6 +416,48 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     return { payment: 'checkout', checkoutUrl: session.url, billingStart: session.billingStart }
   }
 
+  async function startBankTransfer(record) {
+    const secret = env.STRIPE_SECRET_KEY?.trim() || ''
+    if (!secret) return { payment: 'unlinked' }
+    const result = await createBankTransferSubscription({
+      secret,
+      member: record,
+      fetchImpl,
+    })
+    if (!result.ok || !result.transfer) {
+      console.error('[mitglied] bank transfer failed', result.detail || result.error)
+      return { payment: 'unlinked' }
+    }
+    try {
+      await members.update((db) => {
+        const index = db.members.findIndex((row) => row.id === record.id)
+        if (index < 0) return db
+        db.members[index] = {
+          ...db.members[index],
+          stripe: {
+            ...(db.members[index].stripe ?? {}),
+            customerId: result.customerId,
+            subscriptionId: result.subscriptionId,
+            billingStart: result.billingStart,
+            chargeNow: Boolean(result.chargeNow),
+            delay: result.delay,
+            payMethod: 'transfer',
+            transfer: result.transfer,
+          },
+          updatedAt: new Date().toISOString(),
+        }
+        return db
+      })
+    } catch (error) {
+      console.error('[mitglied] bank transfer save failed', error)
+    }
+    return {
+      payment: 'transfer',
+      billingStart: result.billingStart,
+      transfer: result.transfer,
+    }
+  }
+
   async function runMembership(req, res) {
     if (req.method === 'OPTIONS') {
       res.statusCode = 204
@@ -538,7 +584,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
       }
     }
 
-    const payment = await startStripeCheckout(req, record)
+    const payment = record.payMethod === 'transfer' ? await startBankTransfer(record) : await startStripeCheckout(req, record)
 
     json(res, 200, {
       ok: true,
@@ -548,6 +594,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
       payment: payment.payment,
       ...(payment.checkoutUrl ? { checkoutUrl: payment.checkoutUrl } : {}),
       ...(payment.billingStart ? { billingStart: payment.billingStart } : {}),
+      ...(payment.transfer ? { transfer: payment.transfer } : {}),
     })
   }
 }

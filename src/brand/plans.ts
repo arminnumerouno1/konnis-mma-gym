@@ -108,7 +108,7 @@ export const SIGNUP_FEE = 0
 /** Erste volle Monatsabbuchung. Muss zu server/stripe-checkout.mjs BILLING_START passen. */
 export const FIRST_CHARGE = '2026-11-01'
 export const PAYMENT_NOTE =
-  'Monatsbeiträge ziehen wir über Stripe mit Karte oder Apple Pay ein, jeweils zum 1. des Monats. Wer vor der Eröffnung abschließt, wird erstmals am 1. November 2026 belastet. Vorher geht nichts vom Konto. Lastschrift wird in der Kasse nicht angeboten.'
+  'Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. Bei der Karte zieht Stripe zum 1. des Monats ein. Bei der Überweisung zeigen wir nach dem Abschluss die Kontodaten, du überweist selbst. Wer vor der Eröffnung abschließt, zahlt erstmals am 1. November 2026. Vorher geht nichts vom Konto.'
 
 export function planById(id: string | null | undefined): Plan | undefined {
   return ALL_PLANS.find((plan) => plan.id === id)

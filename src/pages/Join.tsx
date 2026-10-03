@@ -23,6 +23,7 @@ const ERRORS: Record<MembershipError, string> = {
   place: 'Bitte den Ort der Unterschrift eintragen.',
   signature: 'Die Unterschrift muss genau Vor- und Nachname sein.',
   visit: 'Bitte einen Tag für den Day Pass wählen.',
+  pay: 'Banküberweisung gibt es für den Day Pass nicht. Bitte Karte oder Apple Pay wählen.',
   rate: COPY.rate,
   closed: COPY.joinClosedError,
   upstream: COPY.error,
@@ -148,7 +149,13 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [consents, setConsents] = useState(emptyConsents)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [done, setDone] = useState<{ id?: string; at: string; payment?: 'checkout' | 'later' | 'unlinked' } | null>(null)
+  const [payMethod, setPayMethod] = useState<'card' | 'transfer'>('card')
+  const [done, setDone] = useState<{
+    id?: string
+    at: string
+    payment?: 'checkout' | 'later' | 'unlinked' | 'transfer'
+    transfer?: { iban: string; bic: string; holder: string; amount: number }
+  } | null>(null)
   const pageRef = useRef<HTMLElement>(null)
   const stepAnchorRef = useRef<HTMLOListElement>(null)
   const skipStepScroll = useRef(true)
@@ -199,6 +206,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       name: `${firstName} ${lastName}`,
       at: done.at,
       payment: done.payment,
+      transfer: done.transfer,
     }
   }, [selected, done, firstName, lastName])
 
@@ -284,6 +292,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       consents,
       invite: invite || undefined,
       company: honey,
+      payMethod: chosen === 'daypass' ? 'card' : payMethod,
     })
     setPending(false)
     if (!result.ok) {
@@ -294,7 +303,12 @@ function JoinForm({ plan, invite }: JoinProps) {
       window.location.assign(result.checkoutUrl)
       return
     }
-    setDone({ id: result.id, at: new Date().toISOString(), payment: result.payment })
+    setDone({
+      id: result.id,
+      at: new Date().toISOString(),
+      payment: result.payment,
+      transfer: result.transfer,
+    })
     window.scrollTo(0, 0)
   }
 
@@ -306,6 +320,29 @@ function JoinForm({ plan, invite }: JoinProps) {
         <p className="lead">{COPY.successLead}</p>
         {summary.payment === 'later' ? (
           <p className="lead">{summary.plan.id === 'daypass' ? COPY.payDayLater : COPY.payLater}</p>
+        ) : null}
+        {summary.payment === 'transfer' && summary.transfer ? (
+          <div className="transfer-box">
+            <p className="lead">{COPY.payTransferDone}</p>
+            <dl>
+              <div>
+                <dt>Betrag</dt>
+                <dd>{(summary.transfer.amount / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} im Monat</dd>
+              </div>
+              <div>
+                <dt>Kontoinhaber</dt>
+                <dd>{summary.transfer.holder}</dd>
+              </div>
+              <div>
+                <dt>IBAN</dt>
+                <dd>{summary.transfer.iban.replace(/(.{4})/g, '$1 ').trim()}</dd>
+              </div>
+              <div>
+                <dt>BIC</dt>
+                <dd>{summary.transfer.bic}</dd>
+              </div>
+            </dl>
+          </div>
         ) : null}
         {summary.payment === 'unlinked' || !summary.payment ? <p className="lead">{COPY.payUnlinked}</p> : null}
         <article className="contract-sheet">
@@ -575,7 +612,30 @@ function JoinForm({ plan, invite }: JoinProps) {
           <div className="legal-step">
             <p>{selected ? `${selected.name} · ${selected.price}€ ${selected.unit} · ${selected.term}` : ''}</p>
             {minor ? <p>{COPY.minorLegalNote}</p> : null}
-            <p>{PAYMENT_NOTE}</p>
+            <fieldset className="pay-pick">
+              <legend>Zahlungsweise</legend>
+              <label className="check">
+                <input
+                  type="radio"
+                  name="payMethod"
+                  checked={payMethod === 'card' || chosen === 'daypass'}
+                  onChange={() => setPayMethod('card')}
+                />
+                <span>{COPY.payCard}</span>
+              </label>
+              {chosen !== 'daypass' ? (
+                <label className="check">
+                  <input
+                    type="radio"
+                    name="payMethod"
+                    checked={payMethod === 'transfer'}
+                    onChange={() => setPayMethod('transfer')}
+                  />
+                  <span>{COPY.payTransfer}</span>
+                </label>
+              ) : null}
+            </fieldset>
+            <p>{chosen !== 'daypass' && payMethod === 'transfer' ? COPY.payTransferNote : PAYMENT_NOTE}</p>
             <label className="check">
               <input type="checkbox" checked={consents.agb} onChange={() => toggleConsent('agb')} />
               <span>

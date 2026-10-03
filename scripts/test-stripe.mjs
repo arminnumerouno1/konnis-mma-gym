@@ -5,6 +5,7 @@ import { createMembershipHandler } from '../server/membership.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
 import {
   PLAN_CENTS,
+  PLAN_PRICE_IDS,
   berlinMidnightUnix,
   buildCheckoutFields,
   checkoutSchedule,
@@ -158,5 +159,77 @@ const db = await createMemberStore({ dataDir, env: {} }).load()
 const stored = db.members.find((row) => row.id === joined.id)
 assert(stored.stripe.billingStart === '2026-11-01' && stored.stripe.chargeNow === false, 'member remembers november')
 assert(stored.stripe.checkoutSessionId === 'cs_join', 'session id stored')
+
+const bankDir = mkdtempSync(join(tmpdir(), 'konni-bank-'))
+const bankCalls = []
+const bankHandle = createMembershipHandler({
+  dataDir: bankDir,
+  env: { SIGNUP_OPEN: 'true', STRIPE_SECRET_KEY: 'sk_test_example' },
+  fetchImpl: async (url, init) => {
+    bankCalls.push({ url: String(url), method: init?.method || 'GET', body: String(init?.body || '') })
+    const path = String(url)
+    const payload = path.endsWith('/customers')
+      ? { id: 'cus_bank' }
+      : path.includes('/funding_instructions')
+        ? {
+            bank_transfer: {
+              financial_addresses: [
+                {
+                  type: 'iban',
+                  iban: { iban: 'DE89370400440532013000', bic: 'CITIDEFFXXX', account_holder_name: 'KONNI MMA GYM GbR' },
+                },
+              ],
+            },
+          }
+        : path.endsWith('/subscriptions')
+          ? { id: 'sub_bank', status: 'trialing' }
+          : { id: 'unused' }
+    return { ok: true, async json() { return payload } }
+  },
+})
+const bankRes = mockRes()
+await bankHandle(
+  {
+    method: 'POST',
+    url: '/api/mitglied',
+    headers: {},
+    socket: { remoteAddress: '127.0.0.18' },
+    body: {
+      plan: 'standard',
+      payMethod: 'transfer',
+      firstName: 'Anna',
+      lastName: 'Müller',
+      birthDate: '1994-04-12',
+      street: 'Wittenberger Straße 15',
+      zip: '04129',
+      city: 'Leipzig',
+      email: 'anna-bank@example.com',
+      phone: '+49 171 1234567',
+      place: 'Leipzig',
+      signature: 'Anna Müller',
+      consents: { agb: true, hausordnung: true, widerruf: true, privacy: true, health: true, sign: true },
+    },
+  },
+  bankRes.res,
+)
+const bankJoined = JSON.parse(bankRes.captured.body)
+assert(bankRes.captured.status === 200 && bankJoined.payment === 'transfer', 'signup returns transfer')
+assert(bankJoined.transfer.iban === 'DE89370400440532013000', 'iban returned')
+assert(bankJoined.transfer.bic === 'CITIDEFFXXX', 'bic returned')
+assert(bankJoined.transfer.amount === 9999, 'monthly cents')
+assert(!bankJoined.checkoutUrl, 'transfer does not open card checkout')
+const subCall = bankCalls.find((call) => call.url.endsWith('/subscriptions'))
+const subBody = new URLSearchParams(subCall?.body || '')
+assert(subBody.get('items[0][price]') === PLAN_PRICE_IDS.standard, 'catalog price')
+assert(subBody.get('collection_method') === 'send_invoice', 'invoice collection')
+assert(subBody.get('trial_end') === String(nov1), 'transfer trial is 1 november')
+assert(subBody.get('payment_settings[payment_method_types][0]') === 'customer_balance', 'bank balance')
+assert(subBody.get('payment_settings[payment_method_options][customer_balance][bank_transfer][type]') === 'eu_bank_transfer', 'eu transfer')
+const bankDb = await createMemberStore({ dataDir: bankDir, env: {} }).load()
+const bankStored = bankDb.members.find((row) => row.id === bankJoined.id)
+assert(bankStored.payMethod === 'transfer', 'member pay method stored')
+assert(bankStored.stripe.subscriptionId === 'sub_bank' && bankStored.stripe.customerId === 'cus_bank', 'stripe ids stored')
+assert(bankStored.stripe.transfer.iban.endsWith('3000'), 'iban stored for the gym')
+assert(!bankCalls.some((call) => call.url.includes('brevo.com')), 'transfer sends no mail')
 
 console.log('stripe tests ok')

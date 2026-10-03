@@ -71,6 +71,8 @@ type MemberDetail = MemberList & {
     billingStart?: string | null
     chargeNow?: boolean
     delay?: string
+    payMethod?: string
+    transfer?: { iban?: string; bic?: string; holder?: string; amount?: number }
   } | null
   docs?: { contract?: DocMeta; sepa?: DocMeta }
   history?: { at: string; field: string; from: string; to: string }[]
@@ -1958,10 +1960,19 @@ function MemberPane({
             {member.stripe?.chargeNow && member.stripe.delay === 'prorate'
               ? `Anteiliger Beitrag jetzt, volle Monate ab ${deDate(member.stripe.billingStart)}.`
               : `Erste Abbuchung ${deDate(member.stripe?.billingStart || '2026-11-01')}. Vorher wird nichts eingezogen.`}
-            {member.stripe?.subscriptionId
-              ? ' Das Abo ist verknüpft. Die Monate färben sich, sobald die Rechnung kommt.'
-              : ' Das Mitglied zahlt auf der Stripe-Seite mit Karte oder Apple Pay. Lastschrift wird dort nicht angezeigt. Der Link gilt 24 Stunden.'}
+            {member.stripe?.payMethod === 'transfer'
+              ? ' Zahlungsweise: Banküberweisung. Das Mitglied überweist selbst auf die angezeigte IBAN.'
+              : member.stripe?.subscriptionId
+                ? ' Das Abo ist verknüpft. Die Monate färben sich, sobald die Rechnung kommt.'
+                : ' Das Mitglied zahlt auf der Stripe-Seite mit Karte oder Apple Pay. Lastschrift wird dort nicht angezeigt. Der Link gilt 24 Stunden.'}
           </p>
+          {member.stripe?.transfer?.iban ? (
+            <p className="admin-muted">
+              {member.stripe.transfer.holder ? `${member.stripe.transfer.holder} · ` : ''}
+              {member.stripe.transfer.iban.replace(/(.{4})/g, '$1 ').trim()}
+              {member.stripe.transfer.bic ? ` · ${member.stripe.transfer.bic}` : ''}
+            </p>
+          ) : null}
           {member.stripe?.subscriptionId ? null : (
             <div className="admin-inline">
               <button

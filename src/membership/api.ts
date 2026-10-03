@@ -15,6 +15,7 @@ export type MembershipError =
   | 'place'
   | 'signature'
   | 'visit'
+  | 'pay'
   | 'rate'
   | 'closed'
   | 'upstream'
@@ -53,6 +54,7 @@ export type MembershipInput = {
   consents: MembershipConsents
   invite?: string
   company?: string
+  payMethod?: 'card' | 'transfer'
 }
 
 export type MembershipOk = {
@@ -60,9 +62,10 @@ export type MembershipOk = {
   confirmation: 'saved' | 'listed'
   id?: string
   remainingFirst50: number
-  payment?: 'checkout' | 'later' | 'unlinked'
+  payment?: 'checkout' | 'later' | 'unlinked' | 'transfer'
   checkoutUrl?: string
   billingStart?: string
+  transfer?: { iban: string; bic: string; holder: string; amount: number }
 }
 
 export type MembershipFail = { ok: false; error: MembershipError }

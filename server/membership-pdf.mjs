@@ -236,8 +236,12 @@ function contractParagraphs(record) {
   return [
     'Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.',
     'Die Zahlungspflicht beginnt erst mit der tatsächlichen Eröffnung. Verschiebt sich die Eröffnung um mehr als acht Wochen über den geplanten Termin, kannst du vor Leistungsbeginn in Textform zurücktreten. Schon gezahlte Beträge werden erstattet.',
-    'Die Monatsbeiträge werden per SEPA-Lastschrift eingezogen. Fälligkeit ist der 1. des Monats. Fällt der 1. auf ein Wochenende oder einen Feiertag, gilt der nächste Bankarbeitstag. Der erste angebrochene Monat wird anteilig berechnet. Aufnahmegebühr: 0,00 EUR, fällig mit Beginn der Zahlungspflicht.',
-    'Du erteilst uns ein SEPA-Lastschriftmandat. Gläubiger-Identifikationsnummer und Mandatsreferenz teilen wir vor dem ersten Einzug mit. Das Konto muss am Abbuchungstag gedeckt sein. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe berechnet werden. Mandat und Kontodaten klären wir vor dem ersten Einzug.',
+    record.payMethod === 'transfer'
+      ? 'Die Monatsbeiträge überweist du selbst auf die beim Abschluss genannten Kontodaten. Fälligkeit ist der 1. des Monats. Der erste angebrochene Monat wird anteilig berechnet. Aufnahmegebühr: 0,00 EUR, fällig mit Beginn der Zahlungspflicht.'
+      : 'Die Monatsbeiträge werden mit Karte oder Apple Pay über Stripe eingezogen. Fälligkeit ist der 1. des Monats. Fällt der 1. auf ein Wochenende oder einen Feiertag, gilt der nächste Bankarbeitstag. Der erste angebrochene Monat wird anteilig berechnet. Aufnahmegebühr: 0,00 EUR, fällig mit Beginn der Zahlungspflicht.',
+    record.payMethod === 'transfer'
+      ? 'Die Kontodaten für die Überweisung nennt KONNI MMA GYM beim Vertragsschluss. Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Kommt eine Überweisung nicht an, gelten die Regeln zum Zahlungsverzug.'
+      : 'Kartenzahlung läuft über Stripe. Ein SEPA-Lastschriftmandat erteilen wir nur, wenn das gesondert vereinbart wird. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.',
     `Anfängliche Vertragsdauer: ${months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt.`,
     'Hausordnung gilt. Eigenverantwortliche Gesundheitsprüfung. Haftung nach Gesetz. Minderjährige brauchen die Zustimmung aller erforderlichen gesetzlichen Vertreter. AGB Stand 27.09.2026 und Hausordnung sind Teil des Vertrags.',
   ]
