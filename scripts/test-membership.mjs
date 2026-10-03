@@ -83,6 +83,17 @@ const base = {
 const ok = validateMembership(base, {})
 assert(ok.ok && ok.record?.plan === 'standard', 'valid standard')
 
+const earlyBlocked = validateMembership(
+  { ...base, consents: { ...base.consents, earlyStart: true } },
+  { now: new Date('2026-10-03T12:00:00Z') },
+)
+assert(earlyBlocked.ok && earlyBlocked.record?.consents.earlyStart === false, 'no early training before 2 november')
+const earlyLater = validateMembership(
+  { ...base, consents: { ...base.consents, earlyStart: true } },
+  { now: new Date('2026-11-03T12:00:00Z') },
+)
+assert(earlyLater.ok && earlyLater.record?.consents.earlyStart === true, 'early start can be requested after opening')
+
 const honey = validateMembership({ ...base, company: 'bot' }, {})
 assert(honey.ok && honey.honey, 'honeypot')
 
@@ -142,6 +153,8 @@ const mail = membershipCopyHtml(mailRecord)
 assert(mail.includes('First 50') && mail.includes('89,99') && mail.includes('Anna Müller'), 'mail copy')
 assert(mail.includes('einer der Ersten') && mail.includes('freuen') && mail.includes('Konrad und Mehmet'), 'first50 welcome')
 assert(mail.includes('jeweils zum 1. des Monats fällig'), 'fee due on the first')
+assert(mail.includes('Vorher gibt es kein Training'), 'mail says training starts at opening')
+assert(!mail.includes('Vorzeitiger Leistungsbeginn ausdrücklich verlangt'), 'pre-opening mail drops the early-start demand')
 const transferMail = membershipCopyHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', payMethod: 'transfer' })
 assert(transferMail.includes('DE77 8605 5592 1090 4292 70'), 'transfer mail has the gym iban')
 assert(transferMail.includes('WELADE8LXXX') && transferMail.includes('Stadt- und Kreissparkasse Leipzig'), 'transfer mail names the bank')
@@ -219,6 +232,7 @@ assert(contractText.includes('DE77') && contractText.includes('8605') && contrac
 assert(contractText.includes('WELADE8LXXX'), 'card contract contains the bic')
 assert(contractText.includes('SEPA-Lastschrift kommt später'), 'card contract says sepa comes later')
 assert(contractText.includes('nur bis zum 2. November 2026') && contractText.includes('Danach beträgt sie 49,00 EUR'), 'signup fee is 49 euro after 2 november')
+assert(contractText.includes('Vorher gibt es kein Training'), 'contract refuses training before opening')
 const transferPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard', planName: 'Standard', payMethod: 'transfer' }))
 const transferText = pdfText(transferPdf)
 assert(transferText.includes('Banküberweisung') && transferText.includes('DE77 8605') && transferText.includes('4292 70'), 'transfer contract contains the gym account')

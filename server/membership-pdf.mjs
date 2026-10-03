@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { GYM_BANK, spacedIban as spaceGymIban } from './gym-bank.mjs'
+import { trainingHasStarted } from './opening.mjs'
 
 const A4 = [595.28, 841.89]
 const MARGIN = 54
@@ -103,6 +104,10 @@ function formatWhen(iso) {
 }
 
 function earlyText(record) {
+  const at = record.createdAt ? new Date(record.createdAt) : new Date()
+  if (!trainingHasStarted(at)) {
+    return 'Training beginnt frühestens am 2. November 2026. Vorher gibt es kein Training. Der Widerruf von 14 Tagen ändert daran nichts.'
+  }
   return record.consents?.earlyStart
     ? 'Vorzeitiger Leistungsbeginn ausdrücklich verlangt. Das Widerrufsrecht bleibt. Für schon genutzte Tage kann ein angemessener Anteil berechnet werden.'
     : 'Kein vorzeitiger Leistungsbeginn. 14 Tage Widerruf ohne Training in der Frist.'

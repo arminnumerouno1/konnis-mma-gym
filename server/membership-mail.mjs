@@ -1,5 +1,6 @@
 import { GYM_BANK, spacedIban } from './gym-bank.mjs'
 import { membershipPdfAttachments } from './membership-pdf.mjs'
+import { trainingHasStarted } from './opening.mjs'
 
 function escapeMail(value) {
   return String(value ?? '')
@@ -104,9 +105,13 @@ export function membershipCopyHtml(record, { forGym = false, attached = false } 
   const who = whoOf(record)
   const { formatted, unit, term } = money(record)
   const when = record.createdAt ? new Date(record.createdAt).toLocaleString('de-DE') : ''
-  const early = record.consents?.earlyStart
-    ? 'Vorzeitiger Leistungsbeginn ausdrücklich verlangt. Widerruf bleibt. Schon genutzte Tage können berechnet werden.'
-    : 'Kein vorzeitiger Leistungsbeginn. 14 Tage Widerruf.'
+  const beforeOpening = !trainingHasStarted(record.createdAt ? new Date(record.createdAt) : new Date())
+  const early = beforeOpening
+    ? 'Training beginnt frühestens am 2. November 2026. Vorher gibt es kein Training.'
+    : record.consents?.earlyStart
+      ? 'Vorzeitiger Leistungsbeginn ausdrücklich verlangt. Widerruf bleibt. Schon genutzte Tage können berechnet werden.'
+      : 'Kein vorzeitiger Leistungsbeginn. 14 Tage Widerruf.'
+  const earlyLabel = beforeOpening ? 'Training' : 'Leistungsbeginn in der Widerrufsfrist'
   const guardian = record.guardian
     ? `<p><strong>Gesetzliche Vertretung</strong><br>${escapeMail(record.guardian.name)} · ${escapeMail(record.guardian.email)} · ${escapeMail(record.guardian.phone)}</p>`
     : ''
@@ -133,7 +138,7 @@ ${record.plan === 'daypass' ? '' : '<p><strong>Aufnahmegebühr</strong><br>0,00 
 ${visit}
 ${guardian}
 <p><strong>Unterschrift</strong><br>${escapeMail(record.signature)}, ${escapeMail(record.place)}</p>
-<p><strong>Leistungsbeginn in der Widerrufsfrist</strong><br>${escapeMail(early)}</p>
+<p><strong>${earlyLabel}</strong><br>${escapeMail(early)}</p>
 ${bankBlock(record)}
 <p>${record.plan === 'daypass' ? 'Der Day Pass wird mit Karte oder Apple Pay bezahlt.' : record.payMethod === 'transfer' ? 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du überweist ihn selbst auf das Konto oben.' : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später. Zahlungspflicht erst ab echter Eröffnung.'}</p>
 <p>AGB Stand 27. September 2026 und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.</p>

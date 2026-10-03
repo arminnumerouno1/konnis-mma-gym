@@ -59,6 +59,15 @@ function scrollJoinStepIntoView(target: HTMLElement | null) {
   })
 }
 
+function berlinToday() {
+  return new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Berlin',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(new Date())
+}
+
 function splitInviteName(full: string) {
   const parts = full.trim().split(/\s+/).filter(Boolean)
   if (parts.length <= 1) return { firstName: parts[0] ?? '', lastName: '' }
@@ -171,6 +180,7 @@ function JoinForm({ plan, invite }: JoinProps) {
   const skipStepScroll = useRef(true)
 
   const selected = planById(chosen)
+  const beforeOpening = berlinToday() < GYM.openingDate
   const age = ageFromIso(birthDate)
   const minor = age != null && age < 18
   const inviteLocked = Boolean(invite) && chosen === 'first50'
@@ -299,7 +309,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       guardianEmail: minor ? guardianEmail : undefined,
       guardianPhone: minor ? guardianPhone : undefined,
       guardianConsent: minor ? guardianConsent : undefined,
-      consents,
+      consents: beforeOpening ? { ...consents, earlyStart: false } : consents,
       invite: invite || undefined,
       company: honey,
       payMethod: chosen === 'daypass' ? 'card' : payMethod,
@@ -420,8 +430,14 @@ function JoinForm({ plan, invite }: JoinProps) {
               </dd>
             </div>
             <div>
-              <dt>{COPY.consentEarlyKicker}</dt>
-              <dd>{consents.earlyStart ? COPY.earlyStartYes : COPY.earlyStartNo}</dd>
+              <dt>{beforeOpening ? 'Training' : COPY.consentEarlyKicker}</dt>
+              <dd>
+                {beforeOpening
+                  ? COPY.trainingFromOpening
+                  : consents.earlyStart
+                    ? COPY.earlyStartYes
+                    : COPY.earlyStartNo}
+              </dd>
             </div>
           </dl>
           <p>{summary.plan.id === 'daypass' ? COPY.payDayNote : PAYMENT_NOTE}</p>
@@ -685,16 +701,20 @@ function JoinForm({ plan, invite }: JoinProps) {
               <input type="checkbox" checked={consents.health} onChange={() => toggleConsent('health')} />
               <span>{COPY.consentHealth}</span>
             </label>
-            <div className="early-start">
-              <p className="early-start-kicker">{COPY.consentEarlyKicker}</p>
-              <p className="early-start-hint">{COPY.consentEarlyHint}</p>
-              <label className="check">
-                <input type="checkbox" checked={consents.earlyStart} onChange={() => toggleConsent('earlyStart')} />
-                <span>
-                  {COPY.consentEarly} <Link href={href('widerruf')}>{COPY.withdraw}</Link>
-                </span>
-              </label>
-            </div>
+            {beforeOpening ? (
+              <p className="opening-note">{COPY.trainingFromOpening}</p>
+            ) : (
+              <div className="early-start">
+                <p className="early-start-kicker">{COPY.consentEarlyKicker}</p>
+                <p className="early-start-hint">{COPY.consentEarlyHint}</p>
+                <label className="check">
+                  <input type="checkbox" checked={consents.earlyStart} onChange={() => toggleConsent('earlyStart')} />
+                  <span>
+                    {COPY.consentEarly} <Link href={href('widerruf')}>{COPY.withdraw}</Link>
+                  </span>
+                </label>
+              </div>
+            )}
             <label className="check">
               <input type="checkbox" checked={consents.photos} onChange={() => toggleConsent('photos')} />
               <span>{COPY.consentPhoto}</span>

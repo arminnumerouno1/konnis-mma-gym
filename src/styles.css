@@ -1670,6 +1670,13 @@ p,
   gap: 14px;
 }
 
+.opening-note {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
 .early-start {
   border: 1px solid var(--red);
   padding: 16px 18px;

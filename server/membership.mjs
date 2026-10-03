@@ -7,6 +7,7 @@ import { createMemberStore, ingestSignup } from './member-store.mjs'
 import { attachSignupDocs } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
 import { createCheckoutSession, siteOrigin, PLAN_CENTS } from './stripe-checkout.mjs'
+import { trainingHasStarted } from './opening.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
@@ -172,6 +173,8 @@ function truthy(value) {
 }
 
 export function validateMembership(body, ctx = {}) {
+  const now = ctx.now instanceof Date ? ctx.now : new Date()
+  const beforeOpening = !trainingHasStarted(now)
   if (typeof body.company === 'string' && body.company.trim()) {
     return { ok: true, honey: true }
   }
@@ -287,7 +290,7 @@ export function validateMembership(body, ctx = {}) {
         privacy: true,
         health: true,
         sign: true,
-        earlyStart: truthy(consents.earlyStart),
+        earlyStart: beforeOpening ? false : truthy(consents.earlyStart),
         photos: truthy(consents.photos),
         newsletter: truthy(consents.newsletter),
       },

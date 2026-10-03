@@ -235,7 +235,8 @@ export const COPY = {
   consentEarly:
     'Ich verlange ausdrücklich, dass KONNI MMA GYM schon vor Ablauf der 14-Tage-Widerrufsfrist mit dem Training beginnt. Widerrufen kann ich trotzdem. Für schon genutzte Tage kann ein Anteil berechnet werden.',
   consentEarlyHint:
-    'Kein kompletter Widerrufsverzicht. Nur ankreuzen, wenn du in den ersten 14 Tagen schon trainieren willst.',
+    'Nur ankreuzen, wenn du nach der Eröffnung schon in der Widerrufsfrist trainieren willst. Vor dem 2. November gibt es kein Training.',
+  trainingFromOpening: 'Training gibt es erst ab dem 2. November. Vorher nicht.',
   earlyStartYes:
     'Ausdrücklich verlangt. Das Widerrufsrecht bleibt. Schon genutzte Tage können berechnet werden.',
   earlyStartNo: 'Nicht verlangt. 14 Tage Widerruf, ohne vorzeitiges Training.',
