@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent }
 import { COPY } from '../brand/copy'
 import { StreetInput } from '../components/StreetInput'
 import { GYM } from '../brand/gym'
-import { FIRST50, PAYMENT_NOTE, PLANS, SIGNUP_OPEN, isPublicPlanId, planById, type PlanId } from '../brand/plans'
+import { FIRST50, PAYMENT_NOTE, PUBLIC_PLANS, SIGNUP_OPEN, isPublicPlanId, planById, type PlanId } from '../brand/plans'
 import { Link } from '../lib/Link'
 import { ageFromIso } from '../lib/motion'
 import { href } from '../lib/router'
@@ -174,7 +174,7 @@ function JoinForm({ plan, invite }: JoinProps) {
   const age = ageFromIso(birthDate)
   const minor = age != null && age < 18
   const inviteLocked = Boolean(invite) && chosen === 'first50'
-  const visiblePlans = inviteLocked ? [FIRST50] : PLANS
+  const visiblePlans = inviteLocked ? [FIRST50] : PUBLIC_PLANS
 
   useEffect(() => {
     if (!invite) return

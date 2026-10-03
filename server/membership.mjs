@@ -16,6 +16,8 @@ const MAX_BODY = 24_576
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 6
 const PLAN_IDS = ['standard', 'flex', 'daypass', 'first50']
+/** Online-Day-Pass. false lehnt die Tageskarte ab. Muss zu src/brand/plans.ts DAY_PASS_OPEN passen. */
+const DAY_PASS_OPEN = false
 
 /** Muss mit src/brand/plans.ts SIGNUP_OPEN zusammenpassen, außer SIGNUP_OPEN=true/false in der Umgebung. */
 export const SIGNUP_OPEN = true
@@ -176,6 +178,7 @@ export function validateMembership(body, ctx = {}) {
 
   const plan = String(body.plan ?? '')
   if (!PLAN_IDS.includes(plan)) return { ok: false, error: 'plan' }
+  if (plan === 'daypass' && !DAY_PASS_OPEN) return { ok: false, error: 'plan' }
 
   let invite = null
   if (plan === 'first50') {

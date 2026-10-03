@@ -44,10 +44,6 @@ export function openingMailHtml({ first = '' } = {}) {
 <td style="padding:12px 0;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap"><strong>109,99€</strong><br><span style="color:#666">/ Monat</span></td>
 </tr>
 <tr>
-<td style="padding:12px 0;border-bottom:1px solid #ddd"><strong>Day Pass</strong><br><span style="color:#666">Ein Trainingstag</span></td>
-<td style="padding:12px 0;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap"><strong>19,99€</strong><br><span style="color:#666">/ Tag</span></td>
-</tr>
-<tr>
 <td style="padding:12px 0"><strong>Anmeldegebühr</strong><br><span style="color:#666">0€ nur bis 2. November, danach 49€</span></td>
 <td style="padding:12px 0;text-align:right"><strong>0€</strong></td>
 </tr>

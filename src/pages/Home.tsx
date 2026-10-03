@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { COPY, FAQ } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
-import { PLANS, TRIAL_OPEN, type Plan } from '../brand/plans'
+import { PUBLIC_PLANS, TRIAL_OPEN, type Plan } from '../brand/plans'
 import { submitTrial } from '../contact/api'
 import { hasExtrasConsent, onConsentChange } from '../lib/consent'
 import { Link } from '../lib/Link'
@@ -397,7 +397,7 @@ export function Home() {
         <h2>{COPY.priceTitle}</h2>
         <p className="lead">{COPY.priceLead}</p>
         <div className="price-grid">
-          {PLANS.map((plan) => (
+          {PUBLIC_PLANS.map((plan) => (
             <PlanCard key={plan.id} plan={plan} />
           ))}
         </div>

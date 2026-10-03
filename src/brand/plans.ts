@@ -98,6 +98,11 @@ export const FIRST50: Plan = {
 
 const ALL_PLANS: Plan[] = [...PLANS, FIRST50]
 
+/** Online-Day-Pass. false blendet die Tageskarte aus, bis sie wieder angeboten wird. Muss zu server/membership.mjs DAY_PASS_OPEN passen. */
+export const DAY_PASS_OPEN = false
+
+export const PUBLIC_PLANS: Plan[] = DAY_PASS_OPEN ? PLANS : PLANS.filter((plan) => plan.id !== 'daypass')
+
 /** Online-Mitgliedschaft. false sperrt das Formular wieder. */
 export const SIGNUP_OPEN = true
 
@@ -119,5 +124,7 @@ export function isPlanId(value: string): value is PlanId {
 }
 
 export function isPublicPlanId(value: string): value is Exclude<PlanId, 'first50'> {
-  return value !== 'first50' && isPlanId(value)
+  if (!isPlanId(value) || value === 'first50') return false
+  if (value === 'daypass' && !DAY_PASS_OPEN) return false
+  return true
 }

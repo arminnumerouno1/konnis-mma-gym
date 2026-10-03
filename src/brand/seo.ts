@@ -1,6 +1,6 @@
 import { COPY, FAQ } from './copy.ts'
 import { GYM, GYM_ADDRESS } from './gym.ts'
-import { PLANS } from './plans.ts'
+import { PUBLIC_PLANS } from './plans.ts'
 
 export const CANONICAL_ORIGIN = 'https://www.mma-in-leipzig.de'
 
@@ -139,7 +139,7 @@ export function buildSeoBody(): string {
     .map(([name, text]) => `      <p><strong>${escapeHtml(name)}:</strong> ${escapeHtml(text)}</p>`)
     .join('\n')
 
-  const plans = PLANS.map(
+  const plans = PUBLIC_PLANS.map(
     (plan) =>
       `      <p><strong>${escapeHtml(plan.name)}</strong> ${escapeHtml(plan.price)}€ ${escapeHtml(plan.unit)}, ${escapeHtml(plan.term)}. ${plan.bullets.map(escapeHtml).join(' ')}</p>`,
   ).join('\n')
