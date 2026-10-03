@@ -59,6 +59,7 @@ export function needsBank(member) {
 }
 
 export function bankMissing(member) {
+  if (member.payMethod === 'transfer') return false
   return needsBank(member) && !(member.bank?.iban && member.bank?.mandateSignedAt)
 }
 
@@ -286,6 +287,7 @@ export function listMember(member, today = isoDate()) {
     bankMissing: bankMissing(view),
     guardianMissing: guardianMissing(view),
     contractMissing: contractMissing(view),
+    payMethod: view.payMethod === 'transfer' ? 'transfer' : view.payMethod === 'card' ? 'card' : null,
     isNew: view.source === 'online' && !view.reviewedAt,
     stripeLinked: Boolean(view.stripe?.customerId),
     payThisMonth: view.payThisMonth,

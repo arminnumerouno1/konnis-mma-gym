@@ -20,6 +20,7 @@ import {
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
+import { attachSignupDocs } from './signup-docs.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
@@ -153,7 +154,7 @@ async function readBody(req) {
   })
 }
 
-const DOC_KINDS = ['contract', 'sepa']
+const DOC_KINDS = ['contract', 'sepa', 'payment']
 const DOC_MAX = 4_200_000
 const DOC_TYPES = {
   'application/pdf': { ext: 'pdf', magic: (b) => b.subarray(0, 5).toString('latin1') === '%PDF-' },
@@ -836,10 +837,17 @@ export function createAdminHandler({ dataDir, env, fetchImpl = fetch }) {
     }
     const id = url.searchParams.get('id')
     if (id) {
-      const row = db.members.find((item) => item.id === id)
+      let row = db.members.find((item) => item.id === id)
       if (!row) {
         json(res, 404, { ok: false, error: 'missing' })
         return
+      }
+      if (!url.searchParams.get('doc') && url.searchParams.get('pdf') !== 'contract') {
+        try {
+          row = await attachSignupDocs(store, row)
+        } catch (error) {
+          console.error('[admin] signup docs skipped', error)
+        }
       }
       const docKind = url.searchParams.get('doc')
       if (docKind) {

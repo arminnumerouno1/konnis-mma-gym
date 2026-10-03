@@ -2647,6 +2647,11 @@ p,
   background: rgba(224, 36, 44, 0.16);
 }
 
+.admin-flag.is-ok {
+  color: var(--ok);
+  background: rgba(47, 158, 95, 0.16);
+}
+
 .admin-block {
   display: grid;
   gap: 10px;
@@ -2656,6 +2661,10 @@ p,
 
 .admin-block.is-alert {
   border-color: var(--bad);
+}
+
+.admin-block.is-pay {
+  border-color: rgba(47, 158, 95, 0.55);
 }
 
 .admin-block h3 {

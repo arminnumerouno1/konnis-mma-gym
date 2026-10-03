@@ -41,6 +41,7 @@ type MemberList = {
   bankMissing: boolean
   guardianMissing: boolean
   contractMissing: boolean
+  payMethod?: 'transfer' | 'card' | null
   isNew: boolean
   stripeLinked: boolean
   payThisMonth: PayStatus
@@ -76,7 +77,7 @@ type MemberDetail = MemberList & {
   } | null
   payMethod?: string
   transfer?: { iban?: string; bic?: string; holder?: string; bank?: string }
-  docs?: { contract?: DocMeta; sepa?: DocMeta }
+  docs?: { contract?: DocMeta; sepa?: DocMeta; payment?: DocMeta }
   history?: { at: string; field: string; from: string; to: string }[]
   inviteSlot?: number | null
   reviewedAt?: string | null
@@ -456,7 +457,7 @@ function DocSlot({
   onChanged,
 }: {
   memberId: string
-  kind: 'contract' | 'sepa'
+  kind: 'contract' | 'sepa' | 'payment'
   label: string
   hint: string
   doc?: DocMeta
@@ -1657,8 +1658,9 @@ export function Admin() {
                   {row.minor ? <em> U18</em> : null}
                   {row.isNew ? <span className="admin-new">Neu online</span> : null}
                 </strong>
-                {row.guardianMissing || row.bankMissing || row.contractMissing ? (
+                {row.payMethod === 'transfer' || row.guardianMissing || row.bankMissing || row.contractMissing ? (
                   <span className="admin-flags">
+                    {row.payMethod === 'transfer' ? <span className="admin-flag is-ok">Banküberweisung</span> : null}
                     {row.contractMissing ? <span className="admin-flag">Vertrag fehlt</span> : null}
                     {row.guardianMissing ? <span className="admin-flag">Eltern-Unterschrift fehlt</span> : null}
                     {row.bankMissing ? <span className="admin-flag">Kontodaten fehlen</span> : null}
@@ -1848,9 +1850,20 @@ function MemberPane({
         ) : null}
         {member.plan !== 'daypass' ? (
           <div>
-            <dt>Konto / SEPA</dt>
+            <dt>{member.payMethod === 'transfer' ? 'Zahlung' : 'Konto / SEPA'}</dt>
             <dd>
-              {member.bank ? (
+              {member.payMethod === 'transfer' ? (
+                <>
+                  Banküberweisung
+                  <br />
+                  {member.transfer?.holder || 'KONNI MMA GYM GbR'}
+                  {member.transfer?.iban ? ` · ${spacedIban(member.transfer.iban)}` : ''}
+                  <br />
+                  {[member.transfer?.bic, member.transfer?.bank].filter(Boolean).join(' · ')}
+                  <br />
+                  <small>Beitrag jeweils zum 1. des Monats. Erste Überweisung am 1. November 2026.</small>
+                </>
+              ) : member.bank ? (
                 <>
                   {member.bank.holder} · {spacedIban(member.bank.iban)}
                   <br />
@@ -1865,14 +1878,37 @@ function MemberPane({
         ) : null}
       </dl>
 
-      <a
-        className="btn btn-ghost admin-print"
-        href={`/api/admin?id=${encodeURIComponent(member.id)}&pdf=contract`}
-        target="_blank"
-        rel="noreferrer"
-      >
-        Vertrag{member.plan !== 'daypass' ? ' + SEPA-Mandat' : ''} zum Unterschreiben drucken
-      </a>
+      <div className="admin-inline">
+        {member.docs?.contract ? (
+          <a
+            className="btn btn-ghost admin-print"
+            href={`/api/admin?id=${encodeURIComponent(member.id)}&doc=contract`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Unterschriebenen Vertrag öffnen
+          </a>
+        ) : (
+          <a
+            className="btn btn-ghost admin-print"
+            href={`/api/admin?id=${encodeURIComponent(member.id)}&pdf=contract`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Vertrag{member.plan !== 'daypass' && member.payMethod !== 'transfer' ? ' + SEPA-Mandat' : ''} zum Unterschreiben drucken
+          </a>
+        )}
+        {member.payMethod === 'transfer' && member.docs?.payment ? (
+          <a
+            className="btn btn-ghost admin-print"
+            href={`/api/admin?id=${encodeURIComponent(member.id)}&doc=payment`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Hinweis Banküberweisung öffnen
+          </a>
+        ) : null}
+      </div>
 
       <section className="admin-block">
         <h3>Unterlagen</h3>
@@ -1890,15 +1926,27 @@ function MemberPane({
             busy={busy}
             onChanged={onReplace}
           />
-          <DocSlot
-            memberId={member.id}
-            kind="sepa"
-            label="SEPA-Lastschriftmandat"
-            hint="PDF-Scan oder Handyfoto vom unterschriebenen Mandat."
-            doc={member.docs?.sepa}
-            busy={busy}
-            onChanged={onReplace}
-          />
+          {member.payMethod === 'transfer' ? (
+            <DocSlot
+              memberId={member.id}
+              kind="payment"
+              label="Zahlungsart Banküberweisung"
+              hint="Bei der Anmeldung wurde Banküberweisung als Zahlung genommen."
+              doc={member.docs?.payment}
+              busy={busy}
+              onChanged={onReplace}
+            />
+          ) : (
+            <DocSlot
+              memberId={member.id}
+              kind="sepa"
+              label="SEPA-Lastschriftmandat"
+              hint="PDF-Scan oder Handyfoto vom unterschriebenen Mandat."
+              doc={member.docs?.sepa}
+              busy={busy}
+              onChanged={onReplace}
+            />
+          )}
         </div>
       </section>
 
@@ -1919,7 +1967,25 @@ function MemberPane({
         </section>
       ) : null}
 
-      {member.plan !== 'daypass' ? (
+      {member.plan !== 'daypass' && member.payMethod === 'transfer' ? (
+        <section className="admin-block is-pay">
+          <h3>Zahlung: Banküberweisung</h3>
+          <p className="admin-muted">
+            Bei der Anmeldung wurde Banküberweisung als Zahlung genommen. Es gibt kein SEPA-Lastschriftmandat. Der
+            Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.
+            Das Mitglied überweist selbst auf das Konto der KONNI MMA GYM GbR.
+          </p>
+          {member.transfer?.iban ? (
+            <p>
+              {member.transfer.holder || 'KONNI MMA GYM GbR'}
+              <br />
+              {spacedIban(member.transfer.iban)}
+              {member.transfer.bic ? ` · ${member.transfer.bic}` : ''}
+              {member.transfer.bank ? ` · ${member.transfer.bank}` : ''}
+            </p>
+          ) : null}
+        </section>
+      ) : member.plan !== 'daypass' ? (
         <section className={`admin-block ${member.bank?.iban && member.bank.mandateSignedAt ? '' : 'is-alert'}`}>
           <h3>Kontodaten für Lastschrift</h3>
           <BankFields value={bank} onChange={setBank} holderHint={holderHint} />

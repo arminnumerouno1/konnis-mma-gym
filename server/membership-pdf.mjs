@@ -500,6 +500,37 @@ export async function loadWithdrawalPdf() {
   return (await loadOfficialWithdrawal()) || (await buildWithdrawalPdf())
 }
 
+export async function buildTransferNoticePdf(record) {
+  const who = whoOf(record)
+  const price = Number(record.price)
+  const amount = Number.isFinite(price) ? `${price.toFixed(2).replace('.', ',')} EUR je Monat` : ''
+  const writer = new PdfWriter(`Banküberweisung ${who}`.trim(), 'Zahlungsart Banküberweisung')
+  await writer.init()
+  writer.doc.setSubject(`Banküberweisung · ${who}`)
+  writer.text('KONNI MMA GYM', { font: writer.bold, size: 16, leading: 20, color: RULE })
+  writer.text('Zahlungsart: Banküberweisung', { font: writer.bold, size: 18, leading: 22 })
+  writer.gap(8)
+  writer.para(
+    `Für ${who || 'dieses Mitglied'} wurde bei der Anmeldung Banküberweisung als Zahlung genommen. Es gibt kein SEPA-Lastschriftmandat und keinen Einzug über Stripe.`,
+  )
+  writer.heading('Fälligkeit')
+  writer.para(
+    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.',
+  )
+  if (amount) writer.kv('Monatsbeitrag', amount)
+  writer.kv('Mitglied', who)
+  writer.kv('Anmeldung', formatWhen(record.createdAt))
+  writer.heading('Konto der KONNI MMA GYM GbR')
+  writer.kv('Kontoinhaber', GYM_BANK.holder)
+  writer.kv('IBAN', spaceGymIban(GYM_BANK.iban))
+  writer.kv('BIC', GYM_BANK.bic)
+  writer.kv('Bank', GYM_BANK.bank)
+  writer.para(
+    'Das Mitglied überweist den Beitrag selbst auf dieses Konto. Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Sobald eine Überweisung da ist, wird der Monat in der Verwaltung als gezahlt markiert.',
+  )
+  return writer.bytes()
+}
+
 export async function membershipPdfAttachments(record) {
   const [contract, withdrawal] = await Promise.all([buildContractPdf(record), loadWithdrawalPdf()])
   return [

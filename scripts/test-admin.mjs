@@ -7,6 +7,7 @@ import {
   addMonthsIso,
   cancelDeadlineDate,
   cancelInfo,
+  bankMissing,
   isValidIban,
   memberFromSignup,
   payStatusThisMonth,
@@ -503,6 +504,94 @@ const afterSignup = await call({ method: 'GET', url: '/api/admin', headers: { co
 const olga = afterSignup.data.members.find((row) => row.email === 'olga.online@example.com')
 assert(olga && olga.isNew && olga.planName === 'Flex', 'online signup shows up as new in admin')
 assert(olga.bankMissing, 'online signup asks for bank details')
+const olgaStored = (await store.load()).members.find((row) => row.id === olga.id)
+assert(olgaStored.docs?.contract?.name === 'Mitgliedsvertrag.pdf', 'online card signup stores the contract')
+assert(!olgaStored.docs?.payment, 'card signup has no transfer notice')
+
+const transferRes = mockRes()
+await signupHandle(
+  {
+    method: 'POST',
+    url: '/api/mitglied',
+    headers: {},
+    socket: { remoteAddress: '10.9.9.10' },
+    body: {
+      plan: 'standard',
+      payMethod: 'transfer',
+      firstName: 'Heiko',
+      lastName: 'Hahn',
+      birthDate: '1988-03-03',
+      street: 'Wittenberger Straße 15',
+      zip: '04129',
+      city: 'Leipzig',
+      email: 'heiko.transfer@example.com',
+      phone: '+49 171 7778899',
+      place: 'Leipzig',
+      signature: 'Heiko Hahn',
+      consents: { agb: true, hausordnung: true, widerruf: true, privacy: true, health: true, sign: true },
+    },
+  },
+  transferRes.res,
+)
+assert(transferRes.captured.status === 200, `transfer signup accepted ${transferRes.captured.body}`)
+const transferId = JSON.parse(transferRes.captured.body).id
+const bare = memberFromSignup(
+  {
+    id: 'bare-transfer',
+    plan: 'standard',
+    planName: 'Standard',
+    price: 99.99,
+    termMonths: 24,
+    firstName: 'Mia',
+    lastName: 'Alt',
+    birthDate: '1991-01-01',
+    email: 'mia.alt@example.com',
+    phone: '+49 171 1010101',
+    street: 'Wittenberger Straße 15',
+    zip: '04129',
+    city: 'Leipzig',
+    place: 'Leipzig',
+    signature: 'Mia Alt',
+    payMethod: 'transfer',
+    transfer: { holder: 'KONNI MMA GYM GbR', iban: 'DE77860555921090429270', bic: 'WELADE8LXXX', bank: 'Stadt- und Kreissparkasse Leipzig' },
+    source: 'online',
+    createdAt: '2026-10-03T10:00:00.000Z',
+  },
+  '2026-10-03',
+)
+assert(!bankMissing(bare), 'transfer member does not need a sepa mandate')
+await store.update((db) => {
+  db.members.push(bare)
+  return db
+})
+const transferList = await call({ method: 'GET', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' } })
+const heiko = transferList.data.members.find((row) => row.id === transferId)
+assert(heiko && heiko.payMethod === 'transfer' && !heiko.bankMissing, 'transfer signup is not flagged for missing bank details')
+const heikoDetail = await call({
+  method: 'GET',
+  url: `/api/admin?id=${transferId}`,
+  headers: { cookie },
+  socket: { remoteAddress: '10.0.0.3' },
+})
+assert(heikoDetail.data.member.docs.contract.name === 'Mitgliedsvertrag.pdf', 'transfer detail has the contract')
+assert(heikoDetail.data.member.docs.payment.name === 'Banküberweisung.pdf', 'transfer detail has the payment notice')
+assert(heikoDetail.data.member.transfer.iban === 'DE77860555921090429270', 'gym iban on the member')
+const backfill = await call({
+  method: 'GET',
+  url: '/api/admin?id=bare-transfer',
+  headers: { cookie },
+  socket: { remoteAddress: '10.0.0.3' },
+})
+assert(backfill.data.member.docs.contract.name === 'Mitgliedsvertrag.pdf', 'opening an old transfer member stores the contract')
+assert(backfill.data.member.docs.payment.name === 'Banküberweisung.pdf', 'opening an old transfer member stores the payment notice')
+const backfillAgain = await call({
+  method: 'GET',
+  url: '/api/admin?id=bare-transfer',
+  headers: { cookie },
+  socket: { remoteAddress: '10.0.0.3' },
+})
+assert(backfillAgain.data.member.docs.contract.path === backfill.data.member.docs.contract.path, 'backfill does not replace the contract')
+assert(backfillAgain.data.member.docs.payment.path === backfill.data.member.docs.payment.path, 'backfill does not replace the payment notice')
 assert(afterSignup.data.stats.fresh >= 1, 'fresh stat')
 const reviewed = await post({ action: 'update', id: olga.id, reviewed: true })
 assert(reviewed.data.member.reviewedAt, 'marked reviewed')

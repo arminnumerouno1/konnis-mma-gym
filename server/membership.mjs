@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto'
 import { inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 import { createMemberStore, ingestSignup } from './member-store.mjs'
+import { attachSignupDocs } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
 import { createCheckoutSession, siteOrigin, PLAN_CENTS } from './stripe-checkout.mjs'
 
@@ -543,6 +544,11 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
       await ingestSignup(members, record)
     } catch (error) {
       console.error('[mitglied] member store skipped', error)
+    }
+    try {
+      await attachSignupDocs(members, record)
+    } catch (error) {
+      console.error('[mitglied] signup docs skipped', error)
     }
 
     try {
