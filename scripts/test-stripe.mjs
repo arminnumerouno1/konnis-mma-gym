@@ -4,7 +4,6 @@ import { join } from 'node:path'
 import { createMembershipHandler } from '../server/membership.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
 import {
-  BILLING_START,
   PLAN_CENTS,
   berlinMidnightUnix,
   buildCheckoutFields,
@@ -34,6 +33,8 @@ assert(!earlyFields.fields['subscription_data[billing_cycle_anchor]'], 'no ancho
 assert(earlyFields.fields['line_items[0][price_data][unit_amount]'] === '9999', 'standard cents')
 assert(earlyFields.fields.mode === 'subscription', 'subscription mode')
 assert(earlyFields.fields['metadata[memberId]'] === 'mem_1', 'member metadata')
+assert(earlyFields.fields['payment_method_types[0]'] === 'sepa_debit', 'sepa only')
+assert(!earlyFields.fields['payment_method_types[1]'], 'no card')
 
 const close = nov1 * 1000 - 47 * 60 * 60 * 1000
 const closePlan = checkoutSchedule(close, { plan: 'flex' })
@@ -70,35 +71,26 @@ const dayLate = buildCheckoutFields({
 assert(dayLate.fields.mode === 'payment' && !dayLate.fields['line_items[0][price_data][recurring][interval]'], 'day pass is one payment')
 
 const seen = []
-const session = await createCheckoutSession({
+const refused = await createCheckoutSession({
   secret: 'sk_test_example',
   member: { id: 'mem_1', plan: 'standard', email: 'anna@example.com', stripe: { customerId: 'cus_abc12345' } },
   origin: 'https://www.mma-in-leipzig.de',
   nowMs: early,
   fetchImpl: async (_url, init) => {
     seen.push(String(init.body))
-    const params = new URLSearchParams(String(init.body))
-    if (params.get('payment_method_types[0]') === 'sepa_debit') {
-      return {
-        ok: false,
-        async json() {
-          return { error: { message: 'sepa_debit is not enabled', code: 'payment_method_invalid', param: 'payment_method_types' } }
-        },
-      }
-    }
     return {
-      ok: true,
+      ok: false,
       async json() {
-        return { id: 'cs_card', url: 'https://checkout.stripe.com/c/pay/cs_card' }
+        return { error: { message: 'sepa_debit is not enabled', code: 'payment_method_invalid', param: 'payment_method_types' } }
       },
     }
   },
 })
-assert(session.ok && session.url.includes('checkout.stripe.com'), 'card fallback when sepa is off')
-assert(session.chargeNow === false && session.billingStart === BILLING_START, 'fallback still waits for november')
-const second = new URLSearchParams(seen[1] || '')
-assert(second.get('payment_method_types[0]') === 'card', 'second try is card')
-assert(second.get('customer') === 'cus_abc12345' && !second.get('customer_email'), 'existing customer is reused')
+assert(refused.ok === false && refused.error === 'stripe', 'no card when sepa is refused')
+assert(seen.length === 1, 'checkout is not retried with a card')
+const only = new URLSearchParams(seen[0] || '')
+assert(only.get('payment_method_types[0]') === 'sepa_debit' && !only.get('payment_method_types[1]'), 'request is sepa only')
+assert(only.get('customer') === 'cus_abc12345' && !only.get('customer_email'), 'existing customer is reused')
 
 function mockRes() {
   const captured = { status: 0, body: '' }
