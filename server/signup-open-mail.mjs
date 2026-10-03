@@ -41,7 +41,7 @@ export function signupOpenMailHtml({ first = '' } = {}) {
 <div style="padding:24px 4px 0">
 <p>${hi}</p>
 <p>du hast dich vorangemeldet. Danke dafür. <strong>Du kannst jetzt online Mitglied werden.</strong></p>
-<p>Standard oder Flex. Alle Kurse sind nutzbar. Der Preis für die ersten 50 gilt nur mit persönlichem Link. Den haben die ersten 50 bekommen. Hier buchst du Standard oder Flex.</p>
+<p>Standard oder Flex. Alle Kurse sind nutzbar.</p>
 <p style="margin:28px 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#666">Die Tarife</p>
 <table style="width:100%;border-collapse:collapse">
 <tr>

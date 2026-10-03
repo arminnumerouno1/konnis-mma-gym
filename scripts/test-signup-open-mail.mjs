@@ -29,7 +29,7 @@ assert(html.includes('Vorher geht nichts vom Konto.'), 'nothing before opening c
 assert(html.includes('Karte oder Apple Pay'), 'card')
 assert(html.includes('Banküberweisung'), 'transfer')
 assert(html.includes('SEPA-Lastschrift kommt später.'), 'sepa later')
-assert(html.includes('Den haben die ersten 50 bekommen.'), 'first50 stays on their own mail')
+assert(!/ersten\s+50|First 50|persönlichen Link/i.test(html), 'no first 50 in this mail')
 assert(html.includes('Bist du schon Mitglied'), 'already member')
 assert(html.includes('Konrad und Mehmet'), 'signoff')
 assert(html.includes('Wittenberger Straße 15'), 'street')
