@@ -108,7 +108,7 @@ export const SIGNUP_FEE = 0
 /** Erste volle Monatsabbuchung. Muss zu server/stripe-checkout.mjs BILLING_START passen. */
 export const FIRST_CHARGE = '2026-11-01'
 export const PAYMENT_NOTE =
-  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Wer vor der Eröffnung abschließt, zahlt erstmals am 1. November 2026. Vorher geht nichts vom Konto.'
+  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Wer vor der Eröffnung abschließt, zahlt erstmals am 1. November 2026. Vorher geht nichts vom Konto. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach nicht mehr.'
 
 export function planById(id: string | null | undefined): Plan | undefined {
   return ALL_PLANS.find((plan) => plan.id === id)

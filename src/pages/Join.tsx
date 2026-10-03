@@ -381,7 +381,7 @@ function JoinForm({ plan, invite }: JoinProps) {
             </div>
             <div>
               <dt>Aufnahmegebühr</dt>
-              <dd>0,00 €</dd>
+              <dd>0,00 €, nur bis zum 2. November 2026. Danach gilt sie nicht mehr.</dd>
             </div>
             <div>
               <dt>Vertragsschluss</dt>

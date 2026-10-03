@@ -19,7 +19,7 @@ assert(html.includes('Wenn du dich bis zum 2. November anmeldest, entfällt die 
 assert(html.includes('nicht unter den ersten 50'), 'waitlist still gets a win')
 assert(!html.includes('Das gilt für alle'), 'no gilt für alle')
 assert(!html.includes('Sonderpreis der ersten 50'), 'no sonderpreis closer')
-assert(html.includes('entfällt bis 2. November'), 'fee row until nov 2')
+assert(html.includes('0€ nur bis 2. November, danach nicht mehr'), 'fee ends after 2 november')
 assert(html.includes('Endlich hat das Warten ein Ende.'), 'wait is over')
 assert(html.includes('Eröffnung am'), 'opening lead')
 assert(html.includes('2. November 2026'), 'opening date')

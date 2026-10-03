@@ -99,11 +99,11 @@ export const COPY = {
   planSoon: 'Wird bald bekannt gegeben',
   planNote: 'Der konkrete Plan kommt mit dem Start. Hier siehst du nur die Form — die Zeiten sind noch nicht öffentlich.',
   priceTitle: 'Tarife.',
-  priceLead: 'Alle Kurse nutzbar. Anmeldegebühr 0€ bis zum 2. November. Standard, Flex oder Day Pass.',
+  priceLead: 'Alle Kurse nutzbar. Anmeldegebühr 0€ nur bis zum 2. November, danach nicht mehr. Standard, Flex oder Day Pass.',
   signupFeePrice: '0€',
-  signupFeeLabel: 'Anmeldegebühr\nbis 2. November',
+  signupFeeLabel: 'Anmeldegebühr\nnur bis 2. November\ndanach nicht mehr',
   priceFoot:
-    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 0 € bis zum 2. November. Vor der Eröffnung zahlst du nichts.',
+    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 0 € nur bis zum 2. November 2026, danach nicht mehr. Vor der Eröffnung zahlst du nichts.',
   trialTitle: 'Komm vorbei.',
   preregTitle: 'Sei von Anfang an dabei.',
   preregLead:
@@ -268,7 +268,7 @@ export const FAQ = [
   },
   {
     q: 'Wie wird bezahlt?',
-    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026 fällig. Vorher geht nichts vom Konto.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026 fällig. Vorher geht nichts vom Konto. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach nicht mehr.',
   },
   {
     q: 'Kann ich unter 18 trainieren?',
