@@ -12,7 +12,8 @@
     "waitlist:brevo": "node server/brevo-setup.mjs",
     "invite:first50": "node scripts/import-voranmeldung.mjs",
     "mail:opening": "node scripts/send-opening-mail.mjs",
-    "test": "node scripts/test-membership.mjs && node scripts/test-invite.mjs && node scripts/test-contact.mjs && node scripts/test-opening-mail.mjs && node --experimental-strip-types scripts/test-admin.mjs && node scripts/test-prereg.mjs && node scripts/test-stripe.mjs",
+    "mail:signup-open": "node scripts/send-signup-open-mail.mjs",
+    "test": "node scripts/test-membership.mjs && node scripts/test-invite.mjs && node scripts/test-contact.mjs && node scripts/test-opening-mail.mjs && node scripts/test-signup-open-mail.mjs && node --experimental-strip-types scripts/test-admin.mjs && node scripts/test-prereg.mjs && node scripts/test-stripe.mjs",
     "lint": "oxlint",
     "preview": "vite preview --host 127.0.0.1 --port 43177"
   },

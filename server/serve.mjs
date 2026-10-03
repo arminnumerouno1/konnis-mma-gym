@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { createContactHandler } from './contact.mjs'
 import { createInviteMailHandler } from './invite-mail.mjs'
 import { createOpeningMailHandler } from './opening-mail.mjs'
+import { createSignupOpenMailHandler } from './signup-open-mail.mjs'
 import { createMembershipHandler } from './membership.mjs'
 import { createAdminHandler } from './admin.mjs'
 import { createWaitlistHandler } from './waitlist.mjs'
@@ -22,6 +23,7 @@ const handleContact = createContactHandler({ dataDir, env: process.env })
 const handlePrereg = createPreregHandler({ dataDir, env: process.env })
 const handleInviteMail = createInviteMailHandler({ env: process.env })
 const handleOpeningMail = createOpeningMailHandler({ env: process.env })
+const handleSignupOpenMail = createSignupOpenMailHandler({ env: process.env })
 
 const MIME = {
   '.css': 'text/css; charset=utf-8',
@@ -92,6 +94,10 @@ const server = createServer((req, res) => {
   }
   if (path === '/api/opening-mail') {
     void handleOpeningMail(req, res)
+    return
+  }
+  if (path === '/api/signup-open-mail') {
+    void handleSignupOpenMail(req, res)
     return
   }
 

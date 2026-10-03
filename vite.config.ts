@@ -4,6 +4,7 @@ import { buildSeoBody, buildSeoHead, buildSitemap, canonicalOrigin } from './src
 import { contactPlugin } from './server/contact-plugin.ts'
 import { inviteMailPlugin } from './server/invite-mail-plugin.ts'
 import { openingMailPlugin } from './server/opening-mail-plugin.ts'
+import { signupOpenMailPlugin } from './server/signup-open-mail-plugin.ts'
 import { membershipDataDir, membershipPlugin } from './server/membership-plugin.ts'
 import { adminPlugin } from './server/admin-plugin.ts'
 import { waitlistDataDir, waitlistPlugin } from './server/waitlist-plugin.ts'
@@ -39,6 +40,7 @@ export default defineConfig(({ mode }) => {
       contactPlugin(env, dataDir),
       inviteMailPlugin(env),
       openingMailPlugin(env),
+      signupOpenMailPlugin(env),
     ],
     server: {
       host: '127.0.0.1',
