@@ -1658,9 +1658,12 @@ export function Admin() {
                   {row.minor ? <em> U18</em> : null}
                   {row.isNew ? <span className="admin-new">Neu online</span> : null}
                 </strong>
-                {row.payMethod === 'transfer' || row.guardianMissing || row.bankMissing || row.contractMissing ? (
+                {row.payMethod === 'transfer' || row.payMethod === 'card' || row.guardianMissing || row.bankMissing || row.contractMissing ? (
                   <span className="admin-flags">
                     {row.payMethod === 'transfer' ? <span className="admin-flag is-ok">Banküberweisung</span> : null}
+                    {row.payMethod === 'card' && !row.bankMissing ? (
+                      <span className="admin-flag is-ok">Karte / Apple Pay</span>
+                    ) : null}
                     {row.contractMissing ? <span className="admin-flag">Vertrag fehlt</span> : null}
                     {row.guardianMissing ? <span className="admin-flag">Eltern-Unterschrift fehlt</span> : null}
                     {row.bankMissing ? <span className="admin-flag">Kontodaten fehlen</span> : null}
@@ -1850,7 +1853,7 @@ function MemberPane({
         ) : null}
         {member.plan !== 'daypass' ? (
           <div>
-            <dt>{member.payMethod === 'transfer' ? 'Zahlung' : 'Konto / SEPA'}</dt>
+            <dt>Zahlung</dt>
             <dd>
               {member.payMethod === 'transfer' ? (
                 <>
@@ -1863,18 +1866,20 @@ function MemberPane({
                   <br />
                   <small>Beitrag jeweils zum 1. des Monats. Erste Überweisung am 1. November 2026.</small>
                 </>
-              ) : member.bank ? (
-                <>
-                  {member.bank.holder} · {spacedIban(member.bank.iban)}
-                  <br />
-                  Mandat {member.bank.mandateRef} ·{' '}
-                  {member.bank.mandateSignedAt ? `unterschrieben ${deDate(member.bank.mandateSignedAt)}` : 'Unterschrift fehlt'}
-                </>
               ) : (
                 <>
-                  Noch keine Kontodaten
+                  Karte, Apple Pay oder Google Pay
                   <br />
-                  <small>Banküberweisung ist möglich. SEPA-Lastschrift kommt später.</small>
+                  <small>Über Stripe. Erste Abbuchung am 1. November 2026. Eine IBAN ist dafür nicht nötig.</small>
+                  {member.bank?.iban ? (
+                    <>
+                      <br />
+                      {member.bank.holder} · {spacedIban(member.bank.iban)}
+                      <br />
+                      Mandat {member.bank.mandateRef} ·{' '}
+                      {member.bank.mandateSignedAt ? `unterschrieben ${deDate(member.bank.mandateSignedAt)}` : 'Unterschrift fehlt'}
+                    </>
+                  ) : null}
                 </>
               )}
             </dd>
@@ -1990,11 +1995,12 @@ function MemberPane({
           ) : null}
         </section>
       ) : member.plan !== 'daypass' ? (
-        <section className={`admin-block ${member.bank?.iban && member.bank.mandateSignedAt ? '' : 'is-alert'}`}>
-          <h3>Kontodaten für Lastschrift</h3>
+        <section className={`admin-block ${member.bank?.iban && !member.bank.mandateSignedAt ? 'is-alert' : ''}`}>
+          <h3>{member.bank?.iban ? 'Kontodaten für Lastschrift' : 'Zahlung: Karte / Apple Pay'}</h3>
           <p className="admin-muted">
-            SEPA-Lastschrift kommt später. Bis dahin zahlt das Mitglied mit Karte oder Apple Pay, oder per Banküberweisung
-            auf das Konto der KONNI MMA GYM GbR.
+            {member.bank?.iban
+              ? 'SEPA-Lastschrift kommt später. Das Mandat ist nur vollständig, wenn die Unterschrift da ist.'
+              : 'Das Mitglied zahlt mit Karte, Apple Pay oder Google Pay über Stripe. Eine IBAN ist dafür nicht nötig. SEPA-Lastschrift kommt später und kann hier erfasst werden, sobald sie vereinbart ist.'}
           </p>
           <BankFields value={bank} onChange={setBank} holderHint={holderHint} />
           <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void save({ bank })}>

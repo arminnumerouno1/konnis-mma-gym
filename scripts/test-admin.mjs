@@ -532,7 +532,7 @@ assert(signupRes.captured.status === 200, `online signup accepted ${signupRes.ca
 const afterSignup = await call({ method: 'GET', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' } })
 const olga = afterSignup.data.members.find((row) => row.email === 'olga.online@example.com')
 assert(olga && olga.isNew && olga.planName === 'Flex', 'online signup shows up as new in admin')
-assert(olga.bankMissing, 'online signup asks for bank details')
+assert(olga.payMethod === 'card' && !olga.bankMissing, 'card signup is marked as card, not missing bank details')
 const olgaStored = (await store.load()).members.find((row) => row.id === olga.id)
 assert(olgaStored.docs?.contract?.name === 'Mitgliedsvertrag.pdf', 'online card signup stores the contract')
 assert(!olgaStored.docs?.payment, 'card signup has no transfer notice')
@@ -589,6 +589,22 @@ const bare = memberFromSignup(
   '2026-10-03',
 )
 assert(!bankMissing(bare), 'transfer member does not need a sepa mandate')
+const cardOnly = memberFromSignup(
+  {
+    ...bare,
+    id: 'bare-card',
+    email: 'mia.card@example.com',
+    payMethod: 'card',
+    transfer: null,
+    bank: null,
+  },
+  '2026-10-03',
+)
+assert(!bankMissing(cardOnly), 'card, Apple Pay and Google Pay do not need an iban')
+assert(
+  bankMissing({ ...cardOnly, bank: { iban: 'DE89370400440532013000', mandateSignedAt: null } }),
+  'a started sepa mandate still needs the signature',
+)
 await store.update((db) => {
   db.members.push(bare)
   return db

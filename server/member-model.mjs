@@ -60,7 +60,12 @@ export function needsBank(member) {
 
 export function bankMissing(member) {
   if (member.payMethod === 'transfer') return false
-  return needsBank(member) && !(member.bank?.iban && member.bank?.mandateSignedAt)
+  if (!needsBank(member)) return false
+  const hasIban = Boolean(member.bank?.iban)
+  // Karte, Apple Pay und Google Pay laufen über Stripe. Dafür gibt es keine IBAN.
+  // Eine fehlende Unterschrift zählt erst, wenn schon ein Mandat angelegt wurde.
+  if (member.payMethod === 'card' && !hasIban) return false
+  return !(hasIban && member.bank?.mandateSignedAt)
 }
 
 export function contractMissing(member) {
