@@ -93,6 +93,9 @@ const nameSwap = validateMembership(
 )
 assert(!nameSwap.ok && nameSwap.error === 'invite', 'name must match token')
 
+const typoSign = validateMembership({ ...base, signature: 'Anna Mueller' }, ctx)
+assert(typoSign.ok && typoSign.record?.signature === 'Anna Mueller', 'signature can differ from the invited name')
+
 const reused = validateMembership(base, {
   inviteSecret: secret,
   memberships: [{ plan: 'first50', email: 'anna@example.com' }],

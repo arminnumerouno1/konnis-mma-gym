@@ -21,7 +21,7 @@ const ERRORS: Record<MembershipError, string> = {
   guardian: 'Unter 18 braucht die gesetzliche Vertretung inkl. Zustimmung.',
   consent: 'Bitte alle Pflicht-Häkchen setzen.',
   place: 'Bitte den Ort der Unterschrift eintragen.',
-  signature: 'Die Unterschrift muss genau Vor- und Nachname sein.',
+  signature: 'Bitte die Unterschrift eintragen.',
   visit: 'Bitte einen Tag für den Day Pass wählen.',
   pay: 'Banküberweisung gibt es für den Day Pass nicht. Bitte Karte oder Apple Pay wählen.',
   rate: COPY.rate,
@@ -276,7 +276,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       setError(ERRORS.consent)
       return
     }
-    if (signature.trim().toLocaleLowerCase('de-DE') !== `${firstName} ${lastName}`.trim().toLocaleLowerCase('de-DE')) {
+    if (signature.trim().replace(/\s+/g, ' ').length < 2) {
       setError(ERRORS.signature)
       return
     }

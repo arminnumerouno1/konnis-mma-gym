@@ -86,8 +86,10 @@ assert(ok.ok && ok.record?.plan === 'standard', 'valid standard')
 const honey = validateMembership({ ...base, company: 'bot' }, {})
 assert(honey.ok && honey.honey, 'honeypot')
 
-const badSign = validateMembership({ ...base, signature: 'Anna M' }, {})
-assert(!badSign.ok && badSign.error === 'signature', 'signature must match')
+const looseSign = validateMembership({ ...base, signature: 'Anna M' }, {})
+assert(looseSign.ok && looseSign.record?.signature === 'Anna M', 'signature need not match the name')
+const emptySign = validateMembership({ ...base, signature: ' ' }, {})
+assert(!emptySign.ok && emptySign.error === 'signature', 'signature still required')
 
 const gone = validateMembership({ ...base, plan: 'first50' }, {})
 assert(!gone.ok && gone.error === 'invite', 'first50 needs invite')

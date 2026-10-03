@@ -240,10 +240,8 @@ export function validateMembership(body, ctx = {}) {
   if (place.length < 2 || place.length > 80) return { ok: false, error: 'place' }
 
   const signature = String(body.signature ?? '').trim().replace(/\s+/g, ' ')
-  const expected = `${firstName} ${lastName}`.replace(/\s+/g, ' ')
-  if (signature.toLocaleLowerCase('de-DE') !== expected.toLocaleLowerCase('de-DE')) {
-    return { ok: false, error: 'signature' }
-  }
+  // Nicht mit Vor- und Nachname vergleichen. Vertipper aus der Voranmeldung bleiben sonst hängen.
+  if (signature.length < 2 || signature.length > 120) return { ok: false, error: 'signature' }
 
   let visitDay = ''
   if (plan === 'daypass') {

@@ -186,7 +186,7 @@ export const COPY = {
   email: 'E-Mail',
   phone: 'Telefon',
   place: 'Ort der Unterschrift',
-  signature: 'Digitale Unterschrift (Vor- und Nachname)',
+  signature: 'Digitale Unterschrift',
   minorTitle: 'Unter 18',
   minorLead:
     'Vertrag nur mit Mutter, Vater oder Vormund. Die tragen hier Name, Mail und Telefon ein und stimmen zu.',
