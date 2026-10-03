@@ -8,6 +8,9 @@
     },
     "api/invite-mail.js": {
       "includeFiles": "public/legal/widerrufsbelehrung.pdf"
+    },
+    "api/signup-open-mail.js": {
+      "maxDuration": 60
     }
   },
   "redirects": [

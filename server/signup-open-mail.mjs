@@ -1,8 +1,11 @@
 import { timingSafeEqual } from 'node:crypto'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
 
-/** Nur diese Adresse darf die Testmail bekommen, bis der Versand freigegeben ist. */
+/** Nur diese Adresse darf die Testmail bekommen. */
 export const SIGNUP_OPEN_TEST_TO = 'armin.scholtz@gmail.com'
+export const SIGNUP_OPEN_CONFIRM = 'an-alle-ausser-first-50'
+const PREREG_BLOB = 'konni/voranmeldungen.json'
+const SENT_BLOB = 'konni/signup-open-sent.json'
 
 function escapeMail(value) {
   return String(value ?? '')
@@ -98,6 +101,86 @@ export function signupOpenRecipients(entries) {
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 4
 const hits = new Map()
+const BATCH_MAX = 20
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function blobToken(env) {
+  const token = env.BLOB_READ_WRITE_TOKEN?.trim() || ''
+  if (!token) {
+    const error = new Error('no-blob')
+    error.code = 'no-blob'
+    throw error
+  }
+  return token
+}
+
+export async function readSignupOpenEntries(env) {
+  const token = await blobToken(env)
+  const { get } = await import('@vercel/blob')
+  const res = await get(PREREG_BLOB, { access: 'private', token, useCache: false })
+  if (!res || res.statusCode !== 200 || !res.stream) {
+    const error = new Error('no-list')
+    error.code = 'no-list'
+    throw error
+  }
+  const data = JSON.parse(await new Response(res.stream).text())
+  const entries = Array.isArray(data?.entries) ? data.entries : []
+  if (!entries.length) {
+    const error = new Error('empty-list')
+    error.code = 'empty-list'
+    throw error
+  }
+  return entries
+}
+
+export async function readSignupOpenSent(env) {
+  const token = await blobToken(env)
+  const { get } = await import('@vercel/blob')
+  const res = await get(SENT_BLOB, { access: 'private', token, useCache: false })
+  if (!res || res.statusCode !== 200 || !res.stream) return []
+  const data = JSON.parse(await new Response(res.stream).text())
+  return Array.isArray(data.emails) ? data.emails : []
+}
+
+export async function writeSignupOpenSent(env, emails) {
+  const token = await blobToken(env)
+  const { put } = await import('@vercel/blob')
+  await put(SENT_BLOB, JSON.stringify({ emails, at: new Date().toISOString() }), {
+    access: 'private',
+    token,
+    addRandomSuffix: false,
+    allowOverwrite: true,
+    contentType: 'application/json',
+  })
+}
+
+function brevoPayload({ sender, person, test }) {
+  return {
+    sender: { name: 'KONNI MMA GYM', email: sender },
+    to: [{ email: person.email, name: person.name || person.email }],
+    replyTo: { email: sender, name: 'KONNI MMA GYM' },
+    subject: signupOpenMailSubject({ test }),
+    htmlContent: signupOpenMailHtml({ first: person.first }),
+    tags: [test ? 'signup-open-test' : 'signup-open'],
+  }
+}
+
+async function deliverOne({ fetchImpl, apiKey, sender, person, test }) {
+  const response = await fetchImpl('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'api-key': apiKey, accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify(brevoPayload({ sender, person, test })),
+  })
+  const detail = await response.text()
+  if (!response.ok) {
+    const error = new Error(`brevo_${response.status}`)
+    error.detail = detail.slice(0, 180)
+    throw error
+  }
+}
 
 function secretsMatch(left, right) {
   const a = Buffer.from(String(left ?? ''))
@@ -163,7 +246,13 @@ async function readBody(req) {
   })
 }
 
-export function createSignupOpenMailHandler({ env, fetchImpl = fetch }) {
+export function createSignupOpenMailHandler({
+  env,
+  fetchImpl = fetch,
+  loadEntries = () => readSignupOpenEntries(env),
+  loadSent = () => readSignupOpenSent(env),
+  saveSent = (emails) => writeSignupOpenSent(env, emails),
+}) {
   return async function handleSignupOpenMail(req, res) {
     try {
       if (req.method === 'OPTIONS') {
@@ -196,7 +285,71 @@ export function createSignupOpenMailHandler({ env, fetchImpl = fetch }) {
         return
       }
 
-      if (body.test !== true || body.all === true) {
+      const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
+
+      if (body.count === true) {
+        const entries = await loadEntries()
+        const people = signupOpenRecipients(entries)
+        const sent = new Set((await loadSent()).map((item) => normalizeEmail(item)))
+        const pending = people.filter((person) => !sent.has(person.email))
+        json(res, 200, { ok: true, outside: people.length, pending: pending.length, already: people.length - pending.length })
+        return
+      }
+
+      if (body.all === true) {
+        if (body.confirm !== SIGNUP_OPEN_CONFIRM || body.test === true) {
+          json(res, 403, { ok: false, error: 'confirm' })
+          return
+        }
+        const entries = await loadEntries()
+        const people = signupOpenRecipients(entries)
+        if (!people.length) {
+          json(res, 409, { ok: false, error: 'empty-list' })
+          return
+        }
+        const sent = new Set((await loadSent()).map((item) => normalizeEmail(item)))
+        const pending = people.filter((person) => !sent.has(person.email))
+        const limit = Math.min(BATCH_MAX, Math.max(1, Number(body.limit) || 12))
+        let sentNow = 0
+        let failed = 0
+        for (const person of pending.slice(0, limit)) {
+          try {
+            await deliverOne({ fetchImpl, apiKey, sender, person, test: false })
+          } catch (error) {
+            failed += 1
+            console.error('[signup-open-mail]', String(error?.detail || error?.message || error).slice(0, 180))
+            break
+          }
+          sent.add(person.email)
+          let stored = false
+          for (let attempt = 0; attempt < 3; attempt += 1) {
+            try {
+              await saveSent([...sent])
+              stored = true
+              break
+            } catch {
+              await sleep(200)
+            }
+          }
+          if (!stored) {
+            failed += 1
+            break
+          }
+          sentNow += 1
+          await sleep(250)
+        }
+        const remaining = pending.length - sentNow
+        json(res, failed ? 502 : 200, {
+          ok: failed === 0,
+          sent: sentNow,
+          failed,
+          remaining,
+          outside: people.length,
+        })
+        return
+      }
+
+      if (body.test !== true) {
         json(res, 403, { ok: false, error: 'test-only' })
         return
       }
@@ -209,28 +362,27 @@ export function createSignupOpenMailHandler({ env, fetchImpl = fetch }) {
       }
 
       const first = firstNameOf(name) || firstNameOf(body.first)
-      const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
-      const response = await fetchImpl('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: { 'api-key': apiKey, accept: 'application/json', 'content-type': 'application/json' },
-        body: JSON.stringify({
-          sender: { name: 'KONNI MMA GYM', email: sender },
-          to: [{ email, name: name || email }],
-          replyTo: { email: sender, name: 'KONNI MMA GYM' },
-          subject: signupOpenMailSubject({ test: true }),
-          htmlContent: signupOpenMailHtml({ first }),
-          tags: ['signup-open-test'],
-        }),
-      })
-      const detail = await response.text()
-      if (!response.ok) {
-        console.error('[signup-open-mail]', response.status, detail.slice(0, 180))
+      try {
+        await deliverOne({
+          fetchImpl,
+          apiKey,
+          sender,
+          person: { email, name: name || email, first },
+          test: true,
+        })
+      } catch (error) {
+        console.error('[signup-open-mail]', String(error?.detail || error?.message || error).slice(0, 180))
         json(res, 502, { ok: false, error: 'upstream' })
         return
       }
       json(res, 200, { ok: true, email, test: true })
     } catch (error) {
       console.error('[signup-open-mail]', error)
+      const code = error && typeof error === 'object' && 'code' in error ? error.code : ''
+      if (!res.headersSent && (code === 'no-list' || code === 'empty-list' || code === 'no-blob')) {
+        json(res, 409, { ok: false, error: code })
+        return
+      }
       if (!res.headersSent) json(res, 500, { ok: false, error: 'upstream' })
     }
   }

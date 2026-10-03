@@ -1,4 +1,5 @@
 import {
+  SIGNUP_OPEN_CONFIRM,
   SIGNUP_OPEN_TEST_TO,
   createSignupOpenMailHandler,
   signupOpenMailHtml,
@@ -157,7 +158,66 @@ const env = { SIGNUP_MAIL_PROOF: proof, BREVO_API_KEY: 'xkeysib-test' }
     },
     res,
   )
-  assert(captured.status === 403, 'list send refused')
+  assert(captured.status === 403, 'list send refused without confirm')
+}
+
+{
+  const entries = [
+    { name: 'Anna Müller', email: 'anna@example.com', first50: true },
+    { name: 'Ben Kurz', email: 'ben@example.com', first50: false },
+    { name: 'Cem Lang', email: 'cem@example.com', first50: false },
+  ]
+  let saved = []
+  const sentTo = []
+  const subjects = []
+  const handle = createSignupOpenMailHandler({
+    env,
+    fetchImpl: async (_url, init) => {
+      const payload = JSON.parse(init.body)
+      sentTo.push(payload.to[0].email)
+      subjects.push(payload.subject)
+      return { ok: true, text: async () => '{}' }
+    },
+    loadEntries: async () => entries,
+    loadSent: async () => saved,
+    saveSent: async (emails) => {
+      saved = emails
+    },
+  })
+  const preview = mockRes()
+  await handle(
+    { method: 'POST', headers: {}, socket: { remoteAddress: '127.0.0.1' }, body: { proof, count: true } },
+    preview.res,
+  )
+  const counted = JSON.parse(preview.captured.body)
+  assert(preview.captured.status === 200 && counted.outside === 2 && counted.pending === 2 && sentTo.length === 0, 'count does not send')
+  const first = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      body: { proof, all: true, confirm: SIGNUP_OPEN_CONFIRM, limit: 1 },
+    },
+    first.res,
+  )
+  const batch = JSON.parse(first.captured.body)
+  assert(first.captured.status === 200 && batch.sent === 1 && batch.remaining === 1, 'one batch')
+  assert(sentTo.join(',') === 'ben@example.com', 'first outside person')
+  assert(!subjects[0].startsWith('Test:'), 'live subject')
+  assert(!sentTo.includes('anna@example.com'), 'first 50 skipped')
+  const rest = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.1' },
+      body: { proof, all: true, confirm: SIGNUP_OPEN_CONFIRM },
+    },
+    rest.res,
+  )
+  const done = JSON.parse(rest.captured.body)
+  assert(done.remaining === 0 && sentTo.join(',') === 'ben@example.com,cem@example.com', 'rest without first 50')
 }
 
 console.log('signup-open mail ok')
