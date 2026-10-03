@@ -239,8 +239,8 @@ function contractParagraphs(record) {
     'Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.',
     'Die Zahlungspflicht beginnt erst mit der tatsächlichen Eröffnung. Verschiebt sich die Eröffnung um mehr als acht Wochen über den geplanten Termin, kannst du vor Leistungsbeginn in Textform zurücktreten. Schon gezahlte Beträge werden erstattet.',
     record.payMethod === 'transfer'
-      ? `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst per Banküberweisung auf das Konto der ${GYM_BANK.holder}. ${account}. Die erste Überweisung ist am 1. November 2026 fällig. Aufnahmegebühr: 0,00 EUR nur bis zum 2. November 2026. Danach gilt sie nicht mehr.`
-      : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Die erste Abbuchung ist am 1. November 2026 fällig. Aufnahmegebühr: 0,00 EUR nur bis zum 2. November 2026. Danach gilt sie nicht mehr. Banküberweisung ist ebenfalls möglich: ${account}.`,
+      ? `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst per Banküberweisung auf das Konto der ${GYM_BANK.holder}. ${account}. Die erste Überweisung ist am 1. November 2026 fällig. Aufnahmegebühr: 0,00 EUR nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.`
+      : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Die erste Abbuchung ist am 1. November 2026 fällig. Aufnahmegebühr: 0,00 EUR nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR. Banküberweisung ist ebenfalls möglich: ${account}.`,
     record.payMethod === 'transfer'
       ? 'Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Karte oder Apple Pay über Stripe ist die andere Zahlungsart. SEPA-Lastschrift kommt später und ist in diesem Vertrag nicht erteilt. Kommt eine Überweisung nicht an, gelten die Regeln zum Zahlungsverzug.'
       : 'Kartenzahlung läuft über Stripe. Banküberweisung auf das oben genannte Konto ist ebenfalls möglich. SEPA-Lastschrift kommt später. Ein Lastschriftmandat gibt es nur, wenn das extra vereinbart wird. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.',
@@ -300,7 +300,7 @@ export async function buildContractPdf(record, { paper = false, creditorId = '' 
   writer.heading('2. Tarif, Beginn und Preis')
   writer.kv('Tarif', `${record.planName || record.plan}${term ? ` · ${term}` : ''}`)
   writer.kv('Beitrag', `${formatted}${unit ? ` ${unit}` : ''}`)
-  writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach gilt sie nicht mehr.')
+  writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.')
   writer.kv('Vertragsschluss', formatWhen(record.createdAt))
   if (record.visitDay) writer.kv('Day Pass', formatIsoDate(record.visitDay))
   if (record.inviteSlot) writer.kv('First 50', `Persönlicher Platz ${record.inviteSlot} von 50`)
@@ -388,7 +388,7 @@ async function buildPaperContractPdf(record, creditorId) {
   writer.heading('2. Tarif, Beginn und Preis')
   writer.kv('Tarif', `${record.planName || record.plan}${term ? ` · ${term}` : ''}`)
   writer.kv('Beitrag', `${formatted}${unit ? ` ${unit}` : ''}`)
-  writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach gilt sie nicht mehr.')
+  writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.')
   writer.kv('Beginn', formatIsoDate(record.startDate))
   if (record.inviteSlot) writer.kv('First 50', `Persönlicher Platz ${record.inviteSlot} von 50`)
   for (const block of contractParagraphs(record)) writer.para(block)

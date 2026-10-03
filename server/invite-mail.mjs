@@ -28,7 +28,7 @@ export function first50InviteHtml({ first, name, email, url }) {
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
 <p>Weiterleiten bringt den Sonderpreis niemandem sonst. Nach 48 Stunden ist der Link abgelaufen.</p>
-<p>Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Zahlung ist am 1. November 2026. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach nicht mehr.</p>
+<p>Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Zahlung ist am 1. November 2026. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>`
 }
