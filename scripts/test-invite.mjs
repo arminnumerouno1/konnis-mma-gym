@@ -1,4 +1,5 @@
 import {
+  INVITE_TTL_HOURS,
   inviteUsed,
   makeInvitePayload,
   namesMatch,
@@ -16,7 +17,11 @@ function assert(cond, message) {
 const secret = 'test-invite-secret-key'
 const other = 'other-invite-secret-k'
 
-const payload = makeInvitePayload({ email: 'anna@example.com', name: 'Anna Müller', slot: 7, ttlDays: 60 })
+const issuedAt = Date.parse('2026-10-03T12:00:00.000Z')
+const timed = makeInvitePayload({ email: 'anna@example.com', name: 'Anna Müller', slot: 7, nowMs: issuedAt })
+assert(INVITE_TTL_HOURS === 48, 'invite lasts 48 hours')
+assert(timed.exp === Math.floor(issuedAt / 1000) + 48 * 60 * 60, 'expiry is 48 hours after issue')
+const payload = makeInvitePayload({ email: 'anna@example.com', name: 'Anna Müller', slot: 7 })
 const token = signInvite(secret, payload)
 const checked = verifyInvite(secret, token)
 assert(checked.ok, 'valid token')
@@ -107,6 +112,7 @@ const inviteHtml = first50InviteHtml({
 })
 assert(inviteHtml.includes('ersten 50') && inviteHtml.includes('freuen') && inviteHtml.includes('89,99'), 'invite welcome')
 assert(inviteHtml.includes('Jetzt Vertrag abschließen') && inviteHtml.includes('anna@example.com'), 'invite link')
+assert(inviteHtml.includes('48 Stunden') && inviteHtml.includes('1. November 2026'), 'invite explains the 48 hour link')
 assert(!inviteHtml.includes('<script'), 'invite escaped')
 
 console.log('invite tests ok')

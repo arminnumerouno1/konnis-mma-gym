@@ -24,10 +24,11 @@ export function first50InviteHtml({ first, name, email, url }) {
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 <p>Hi ${who},</p>
 <p><strong>Du gehörst zu den ersten 50.</strong> Deshalb bekommst du den Preis, den wir dafür gemacht haben: <strong>89,99€ statt 99,99€</strong>, 24 Monate.</p>
-<p>Wir freuen uns, wenn du von Anfang an dabei bist. Am 2. November geht die Tür auf. Über den Link schließt du den Vertrag ab – Name und Mail sind fest, der Link gilt nur für dich.</p>
+<p>Wir freuen uns, wenn du von Anfang an dabei bist. Am 2. November geht die Tür auf. Über den Link schließt du den Vertrag ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.</p>
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
-<p>Weiterleiten bringt den Sonderpreis niemandem sonst. Zahlung erst, wenn das Gym wirklich öffnet.</p>
+<p>Weiterleiten bringt den Sonderpreis niemandem sonst. Nach 48 Stunden ist der Link abgelaufen.</p>
+<p>Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Zahlung ist am 1. November 2026. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach nicht mehr.</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>`
 }

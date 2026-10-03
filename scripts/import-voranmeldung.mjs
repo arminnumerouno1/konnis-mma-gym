@@ -4,6 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { makeInvitePayload, namesMatch, signInvite, verifyInvite } from '../server/invite.mjs'
+import { first50InviteHtml, first50InviteSubject } from '../server/invite-mail.mjs'
 import { isValidEmail, normalizeEmail } from '../server/membership.mjs'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
@@ -162,19 +163,16 @@ function inviteUrl(site, token) {
   return `${origin}/mitglied?invite=${encodeURIComponent(token)}`
 }
 
-async function sendBrevo({ apiKey, sender, to, name, url, slot }) {
+async function sendBrevo({ apiKey, sender, to, name, url }) {
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: { 'api-key': apiKey, accept: 'application/json', 'content-type': 'application/json' },
     body: JSON.stringify({
       sender: { name: 'KONNI MMA GYM', email: sender },
       to: [{ email: to, name }],
-      subject: 'Dein First-50-Platz im KONNI MMA GYM',
-      htmlContent: `<p>Hi ${name.split(' ')[0]},</p>
-<p>du stehst auf der Voranmeldung. Platz ${slot} von 50 gilt nur für dich: <strong>89,99€ im Monat statt 99,99€</strong>, 24 Monate.</p>
-<p><a href="${url}">Hier Vertrag abschließen</a></p>
-<p>Der Link ist an deine E-Mail gebunden. Weiterleiten bringt nichts – Name und Mail müssen zu dieser Voranmeldung passen. Zahlung erst ab echter Eröffnung.</p>
-<p>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>`,
+      replyTo: { email: sender, name: 'KONNI MMA GYM' },
+      subject: first50InviteSubject(),
+      htmlContent: first50InviteHtml({ first: name.split(' ')[0] || name, name, email: to, url }),
     }),
   })
   const text = await response.text()
@@ -193,6 +191,7 @@ if (process.argv.includes('--help')) {
     [--send]
 
 Ohne --send nur CSV/JSON. Mails gehen nur mit --send und BREVO_API_KEY.
+Jeder Link gilt 48 Stunden ab Erzeugung.
 Bestehende First-50-Links werden übernommen, wenn Name, Mail und Platz gleich sind und der Token noch gilt.
 INVITE_SECRET muss auf Vercel (Production) derselbe Wert sein.
 `)
@@ -334,7 +333,7 @@ if (!apiKey) {
 const sender = process.env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
 let sent = 0
 for (const row of invites) {
-  await sendBrevo({ apiKey, sender, to: row.email, name: row.name, url: row.url, slot: row.slot })
+  await sendBrevo({ apiKey, sender, to: row.email, name: row.name, url: row.url })
   sent += 1
   process.stdout.write(`Mail ${sent}/${invites.length}\r`)
   await new Promise((resolveWait) => setTimeout(resolveWait, 350))

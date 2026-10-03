@@ -168,7 +168,7 @@ export const COPY = {
   joinClosedHome: 'Zur Startseite',
   joinClosedError: 'Anmeldung ist noch nicht offen.',
   inviteLead:
-    'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 24 Monate. Der Link gilt nur für deine E-Mail. Nicht weiterleiten.',
+    'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 24 Monate. Der Link gilt 48 Stunden und nur für deine E-Mail. Nicht weiterleiten.',
   inviteBad: 'Dieser Einladungslink ist ungültig oder schon benutzt.',
   inviteExpired: 'Der Link ist abgelaufen. Schreib uns an info@mma-in-leipzig.de.',
   inviteChecking: 'Link wird geprüft…',
@@ -276,7 +276,7 @@ export const FAQ = [
   },
   {
     q: 'Ich war auf der Voranmeldung. Wo ist der First-50-Preis?',
-    a: 'Die ersten 50 bekommen einen persönlichen Link per Mail. 89,99€ statt 99,99€, 24 Monate. Der Link gilt nur für die Mail aus dem Formular. Weiterleiten bringt nichts: der Vertrag prüft Name und E-Mail.',
+    a: 'Die ersten 50 bekommen einen persönlichen Link per Mail. 89,99€ statt 99,99€, 24 Monate. Der Link gilt 48 Stunden und nur für die Mail aus dem Formular. Weiterleiten bringt nichts: der Vertrag prüft Name und E-Mail.',
   },
   {
     q: 'Wie kündige ich?',

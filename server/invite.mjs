@@ -2,7 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export const FIRST50_ID = 'first50'
 export const FIRST50_LIMIT = 50
-export const INVITE_TTL_DAYS = 60
+export const INVITE_TTL_HOURS = 48
 
 export function normalizeInviteEmail(raw) {
   return String(raw ?? '')
@@ -82,12 +82,12 @@ export function inviteUsed(memberships, email) {
   )
 }
 
-export function makeInvitePayload({ email, name, slot, ttlDays = INVITE_TTL_DAYS }) {
+export function makeInvitePayload({ email, name, slot, ttlHours = INVITE_TTL_HOURS, nowMs = Date.now() }) {
   return {
     p: FIRST50_ID,
     e: normalizeInviteEmail(email),
     n: normalizePersonName(name),
     s: Number(slot),
-    exp: Math.floor(Date.now() / 1000) + ttlDays * 24 * 60 * 60,
+    exp: Math.floor(nowMs / 1000) + ttlHours * 60 * 60,
   }
 }
