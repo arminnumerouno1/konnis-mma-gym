@@ -114,6 +114,7 @@ assert(inviteHtml.includes('ersten 50') && inviteHtml.includes('freuen') && invi
 assert(inviteHtml.includes('Jetzt Vertrag abschließen') && inviteHtml.includes('anna@example.com'), 'invite link')
 assert(inviteHtml.includes('48 Stunden') && inviteHtml.includes('1. November 2026'), 'invite explains the 48 hour link')
 assert(inviteHtml.includes('Danach beträgt sie 49 €'), 'invite states the later signup fee')
+assert(inviteHtml.includes('geht dein Platz automatisch an die nächste Person'), 'unused invite passes to the next person')
 assert(!inviteHtml.includes('<script'), 'invite escaped')
 
 console.log('invite tests ok')
