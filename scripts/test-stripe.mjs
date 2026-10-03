@@ -1,8 +1,11 @@
+import { createHmac } from 'node:crypto'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { checkoutSettled } from '../server/contract-mail.mjs'
 import { createMembershipHandler } from '../server/membership.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
+import { createStripeHandler } from '../server/stripe.mjs'
 import { GYM_BANK } from '../server/gym-bank.mjs'
 import {
   PLAN_CENTS,
@@ -93,6 +96,9 @@ const postedCheckout = new URLSearchParams(seen[0] || '')
 assert(postedCheckout.get('payment_method_types[0]') === 'card' && !postedCheckout.get('payment_method_types[1]'), 'card only, no sepa')
 assert(![...postedCheckout.values()].includes('sepa_debit'), 'sepa is not requested')
 assert(postedCheckout.get('customer') === 'cus_abc12345' && !postedCheckout.get('customer_email'), 'existing customer is reused')
+assert(postedCheckout.get('success_url')?.includes('session_id={CHECKOUT_SESSION_ID}'), 'return can confirm the session')
+assert(postedCheckout.get('cancel_url')?.includes('zahlung=abgebrochen'), 'cancel url stays on the site')
+assert(!postedCheckout.get('cancel_url')?.includes('session_id'), 'cancel does not confirm a session')
 
 function mockRes() {
   const captured = { status: 0, body: '' }
@@ -217,5 +223,222 @@ const contractFile = await createMemberStore({ dataDir: bankDir, env: {} }).getD
 const paymentFile = await createMemberStore({ dataDir: bankDir, env: {} }).getDoc(bankStored.docs.payment.path)
 assert(contractFile?.subarray(0, 5).toString() === '%PDF-', 'contract file is a pdf')
 assert(paymentFile?.subarray(0, 5).toString() === '%PDF-', 'transfer notice is a pdf')
+
+assert(checkoutSettled({ object: 'checkout.session', status: 'open', payment_status: 'unpaid' }) === false, 'open checkout is not settled')
+assert(checkoutSettled({ object: 'checkout.session', status: 'expired', payment_status: 'unpaid' }) === false, 'expired checkout is not settled')
+assert(checkoutSettled({ object: 'checkout.session', status: 'complete', payment_status: 'unpaid' }) === false, 'unpaid checkout is not settled')
+assert(checkoutSettled({ object: 'checkout.session', status: 'complete', payment_status: 'paid' }) === true, 'paid checkout is settled')
+assert(
+  checkoutSettled({ object: 'checkout.session', status: 'complete', payment_status: 'no_payment_required' }) === true,
+  'trial checkout is settled',
+)
+
+const mailDir = mkdtempSync(join(tmpdir(), 'konni-mail-'))
+const whsec = 'whsec_mail_test'
+const mailCalls = []
+let mailMemberId = ''
+const previousFetch = globalThis.fetch
+globalThis.fetch = async (url, init) => {
+  const href = String(url)
+  mailCalls.push({ url: href, method: init?.method || 'GET', body: String(init?.body || '') })
+  if (href.includes('/v1/checkout/sessions') && (init?.method || 'GET') === 'POST') {
+    return { ok: true, json: async () => ({ id: 'cs_mail', url: 'https://checkout.stripe.com/c/pay/cs_mail' }), text: async () => '' }
+  }
+  if (href.endsWith('/v1/checkout/sessions/cs_open')) {
+    return {
+      ok: true,
+      json: async () => ({
+        id: 'cs_open',
+        object: 'checkout.session',
+        status: 'open',
+        payment_status: 'unpaid',
+        metadata: { memberId: mailMemberId },
+      }),
+      text: async () => '',
+    }
+  }
+  if (href.endsWith('/v1/checkout/sessions/cs_mail')) {
+    return {
+      ok: true,
+      json: async () => ({
+        id: 'cs_mail',
+        object: 'checkout.session',
+        status: 'complete',
+        mode: 'subscription',
+        payment_status: 'no_payment_required',
+        customer: 'cus_MAIL',
+        subscription: 'sub_MAIL',
+        client_reference_id: mailMemberId,
+        metadata: { memberId: mailMemberId },
+      }),
+      text: async () => '',
+    }
+  }
+  return { ok: true, status: 200, json: async () => ({}), text: async () => '' }
+}
+
+function smtpCount() {
+  return mailCalls.filter((call) => call.url.includes('/smtp/email')).length
+}
+
+const person = {
+  plan: 'standard',
+  firstName: 'Anna',
+  lastName: 'Müller',
+  birthDate: '1994-04-12',
+  street: 'Wittenberger Straße 15',
+  zip: '04129',
+  city: 'Leipzig',
+  phone: '+49 171 1234567',
+  place: 'Leipzig',
+  signature: 'Anna Müller',
+  consents: { agb: true, hausordnung: true, widerruf: true, privacy: true, health: true, sign: true },
+}
+
+try {
+  const mailHandle = createMembershipHandler({
+    dataDir: mailDir,
+    env: { SIGNUP_OPEN: 'true', STRIPE_SECRET_KEY: 'sk_test_example', BREVO_API_KEY: 'xkeysib-test', BREVO_LIST_ID: '9' },
+  })
+  const mailRes = mockRes()
+  await mailHandle(
+    {
+      method: 'POST',
+      url: '/api/mitglied',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.40' },
+      body: { ...person, email: 'anna-cancel@example.com' },
+    },
+    mailRes.res,
+  )
+  const mailJoined = JSON.parse(mailRes.captured.body)
+  mailMemberId = mailJoined.id
+  assert(mailRes.captured.status === 200 && mailJoined.payment === 'checkout', 'card signup still opens checkout')
+  assert(smtpCount() === 0, 'cancelled-capable signup sends no contract mail yet')
+  const waiting = (await createMemberStore({ dataDir: mailDir, env: {} }).load()).members.find((row) => row.id === mailMemberId)
+  assert(waiting.contractMail === 'after_payment', 'mail stays pending until stripe')
+
+  const stripeHandle = createStripeHandler({
+    dataDir: mailDir,
+    env: { STRIPE_WEBHOOK_SECRET: whsec, STRIPE_SECRET_KEY: 'sk_test_example', BREVO_API_KEY: 'xkeysib-test' },
+  })
+
+  async function postStripe(event, { sign = true, rawBody } = {}) {
+    const raw = rawBody ?? JSON.stringify(event)
+    const t = Math.floor(Date.now() / 1000)
+    const sig = createHmac('sha256', whsec).update(`${t}.${raw}`).digest('hex')
+    const { res, captured } = mockRes()
+    await stripeHandle(
+      {
+        method: 'POST',
+        headers: sign ? { 'stripe-signature': `t=${t},v1=${sig}` } : { 'content-type': 'application/json' },
+        rawBody: raw,
+      },
+      res,
+    )
+    return { status: captured.status, data: JSON.parse(captured.body) }
+  }
+
+  const openConfirm = await postStripe(null, { sign: false, rawBody: JSON.stringify({ sessionId: 'cs_open' }) })
+  assert(openConfirm.status === 200 && openConfirm.data.mailed === false, 'open checkout does not mail')
+  assert(smtpCount() === 0, 'cancel lookup sends no contract mail')
+
+  const expired = await postStripe({
+    id: 'evt_expired',
+    type: 'checkout.session.expired',
+    data: {
+      object: {
+        object: 'checkout.session',
+        id: 'cs_mail',
+        status: 'expired',
+        payment_status: 'unpaid',
+        metadata: { memberId: mailMemberId },
+      },
+    },
+  })
+  assert(expired.data.handled === false && expired.data.reason === 'ignored', 'expired checkout is ignored')
+  assert(smtpCount() === 0, 'expired checkout sends no contract mail')
+
+  const unpaid = await postStripe({
+    id: 'evt_unpaid',
+    type: 'checkout.session.completed',
+    data: {
+      object: {
+        object: 'checkout.session',
+        id: 'cs_unpaid',
+        status: 'complete',
+        mode: 'subscription',
+        payment_status: 'unpaid',
+        metadata: { memberId: mailMemberId },
+      },
+    },
+  })
+  assert(unpaid.data.handled === true && !unpaid.data.mail, 'unpaid completion does not mail')
+  assert(smtpCount() === 0, 'unpaid stripe session sends no contract mail')
+
+  const done = await postStripe({
+    id: 'evt_done',
+    type: 'checkout.session.completed',
+    data: {
+      object: {
+        object: 'checkout.session',
+        id: 'cs_mail',
+        status: 'complete',
+        mode: 'subscription',
+        payment_status: 'no_payment_required',
+        customer: 'cus_MAIL',
+        subscription: 'sub_MAIL',
+        metadata: { memberId: mailMemberId },
+      },
+    },
+  })
+  assert(done.data.mail === 'sent', 'settled checkout mails the contract')
+  assert(smtpCount() === 2, 'contract mail goes to member and gym after payment')
+  const sentMails = mailCalls.filter((call) => call.url.includes('/smtp/email'))
+  assert(sentMails.every((call) => call.body.includes('Mitgliedsvertrag.pdf')), 'settled mail attaches the contract')
+  assert(sentMails.some((call) => call.body.includes('anna-cancel@example.com')), 'settled mail reaches the member')
+
+  const again = await postStripe({
+    id: 'evt_done_2',
+    type: 'checkout.session.completed',
+    data: {
+      object: {
+        object: 'checkout.session',
+        id: 'cs_mail',
+        status: 'complete',
+        mode: 'subscription',
+        payment_status: 'no_payment_required',
+        customer: 'cus_MAIL',
+        subscription: 'sub_MAIL',
+        metadata: { memberId: mailMemberId },
+      },
+    },
+  })
+  assert(again.data.mail === 'already', 'contract mail is not sent twice')
+  assert(smtpCount() === 2, 'repeat webhook stays quiet')
+
+  const confirm = await postStripe(null, { sign: false, rawBody: JSON.stringify({ sessionId: 'cs_mail' }) })
+  assert(confirm.status === 200 && confirm.data.mailed === false, 'return confirm does not mail again')
+  assert(smtpCount() === 2, 'return confirm stays quiet')
+
+  const transferRes = mockRes()
+  await mailHandle(
+    {
+      method: 'POST',
+      url: '/api/mitglied',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.41' },
+      body: { ...person, email: 'anna-transfer-mail@example.com', payMethod: 'transfer' },
+    },
+    transferRes.res,
+  )
+  const transferJoined = JSON.parse(transferRes.captured.body)
+  assert(transferRes.captured.status === 200 && transferJoined.payment === 'transfer', 'transfer signup has no stripe step')
+  assert(smtpCount() === 4, 'transfer mails the contract immediately')
+  const transferMember = (await createMemberStore({ dataDir: mailDir, env: {} }).load()).members.find((row) => row.id === transferJoined.id)
+  assert(transferMember.contractMail === 'sent', 'transfer mail is marked sent')
+} finally {
+  globalThis.fetch = previousFetch
+}
 
 console.log('stripe tests ok')

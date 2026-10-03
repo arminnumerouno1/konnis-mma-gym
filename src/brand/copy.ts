@@ -201,7 +201,7 @@ export const COPY = {
   next: 'Weiter',
   successTitle: 'Anmeldung ist raus.',
   successLead:
-    'Wir haben deinen Vertrag. Die PDF-Kopie und die Widerrufsbelehrung gehen an deine Mail, auch wenn du mit Karte oder Apple Pay über Stripe zahlst. Unten die Zusammenfassung. Widerruf: 14 Tage.',
+    'Wir haben deinen Vertrag. Bei Banküberweisung gehen die PDF-Kopie und die Widerrufsbelehrung an deine Mail. Bei Karte oder Apple Pay erst, wenn die Zahlung bei Stripe abgeschlossen ist. Unten die Zusammenfassung. Widerruf: 14 Tage.',
   payTransfer: 'Banküberweisung',
   payCard: 'Karte oder Apple Pay',
   payTransferNote:
@@ -219,7 +219,7 @@ export const COPY = {
   payReturnOkNow:
     'Danke. Dein Vertrag ist gespeichert. Die Zahlung läuft über Stripe. Den laufenden Monat ziehen wir jetzt ein, danach immer zum 1.',
   payReturnCancel:
-    'Die Zahlung wurde abgebrochen. Deine Anmeldung bleibt gespeichert. Wir schicken dir einen neuen Link, oder du meldest dich im Studio.',
+    'Die Zahlung wurde abgebrochen. Die Mail mit dem Vertrag geht nicht raus. Deine Anmeldung bleibt gespeichert. Wir schicken dir einen neuen Link, oder du meldest dich im Studio.',
   invalid: 'Bitte alle Pflichtfelder sauber ausfüllen.',
   error: 'Das hat nicht geklappt. Versuch es gleich noch einmal.',
   rate: 'Zu viele Versuche. Warte kurz und versuch es erneut.',

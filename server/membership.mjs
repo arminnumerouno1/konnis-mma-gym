@@ -541,7 +541,8 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
       console.error('[mitglied] local save skipped', error)
     }
     try {
-      await ingestSignup(members, record)
+      const stored = record.payMethod === 'transfer' ? record : { ...record, contractMail: 'after_payment' }
+      await ingestSignup(members, stored)
     } catch (error) {
       console.error('[mitglied] member store skipped', error)
     }
@@ -568,14 +569,29 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
         console.error('[mitglied] brevo failed', error)
       }
 
+    }
+
+    const payment = record.payMethod === 'transfer' ? await startBankTransfer(record) : await startStripeCheckout(req, record)
+
+    if (isMembershipMailOpen(env) && record.payMethod === 'transfer') {
       try {
-        await sendMembershipEmails(env, record)
+        const mailed = await sendMembershipEmails(env, record)
+        if (mailed.member !== 'skipped') {
+          await members.update((db) => {
+            const index = db.members.findIndex((row) => row.id === record.id)
+            if (index < 0) return db
+            db.members[index] = {
+              ...db.members[index],
+              contractMail: 'sent',
+              contractMailAt: new Date().toISOString(),
+            }
+            return db
+          })
+        }
       } catch (error) {
         console.error('[mitglied] mail failed', error)
       }
     }
-
-    const payment = record.payMethod === 'transfer' ? await startBankTransfer(record) : await startStripeCheckout(req, record)
 
     json(res, 200, {
       ok: true,

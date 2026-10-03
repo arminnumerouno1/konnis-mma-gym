@@ -102,6 +102,16 @@ function beforeFirstCharge() {
 }
 
 function JoinPayResult({ status }: { status: 'ok' | 'abgebrochen' }) {
+  useEffect(() => {
+    if (status !== 'ok') return
+    const sessionId = new URLSearchParams(window.location.search).get('session_id') ?? ''
+    if (!/^cs_[A-Za-z0-9]+$/.test(sessionId)) return
+    void fetch('/api/stripe', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ sessionId }),
+    }).catch(() => undefined)
+  }, [status])
   const lead = status === 'ok' ? (beforeFirstCharge() ? COPY.payReturnOk : COPY.payReturnOkNow) : COPY.payReturnCancel
   return (
     <main className="page join-page">

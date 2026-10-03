@@ -143,7 +143,7 @@ export function buildCheckoutFields({ member, origin, nowMs = Date.now() }) {
     mode: schedule.mode,
     client_reference_id: member.id,
     locale: 'de',
-    success_url: `${origin}/mitglied?zahlung=ok`,
+    success_url: `${origin}/mitglied?zahlung=ok&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${origin}/mitglied?zahlung=abgebrochen`,
     'metadata[memberId]': member.id,
     'metadata[plan]': member.plan,

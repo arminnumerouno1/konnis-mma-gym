@@ -111,6 +111,35 @@ export function createMemberStore({ dataDir, env = process.env }) {
       await mkdir(dirname(target), { recursive: true })
       await writeFile(target, bytes)
     },
+    /** First writer wins. A second call returns false and does not replace the file. */
+    async putDocOnce(path, bytes, contentType) {
+      if (token) {
+        const { put } = await import('@vercel/blob')
+        try {
+          await put(`konni/docs/${path}`, bytes, {
+            access: 'private',
+            token,
+            addRandomSuffix: false,
+            allowOverwrite: false,
+            contentType,
+          })
+          return true
+        } catch {
+          const existing = await this.getDoc(path)
+          if (existing) return false
+          throw new Error('mail_lock')
+        }
+      }
+      const target = join(docsDir, path)
+      await mkdir(dirname(target), { recursive: true })
+      try {
+        await writeFile(target, bytes, { flag: 'wx' })
+        return true
+      } catch (error) {
+        if (error && typeof error === 'object' && 'code' in error && error.code === 'EEXIST') return false
+        throw error
+      }
+    },
     async getDoc(path) {
       if (token) {
         const { get } = await import('@vercel/blob')

@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
+import { checkoutSettled, sendContractMailOnce } from './contract-mail.mjs'
 import { isoDate, setPayment } from './member-model.mjs'
 import { createMemberStore } from './member-store.mjs'
 
@@ -179,21 +180,84 @@ function reply(res, status, body) {
   res.end(JSON.stringify(body))
 }
 
-export function createStripeHandler({ dataDir, env }) {
+async function deliverSettledMail(store, env, result, session) {
+  if (!result?.handled || !checkoutSettled(session)) return result
+  const mail = await sendContractMailOnce(store, env, result.memberId)
+  return { ...result, mail: mail.sent ? 'sent' : mail.reason }
+}
+
+export function createStripeHandler({ dataDir, env, fetchImpl = fetch }) {
   const store = createMemberStore({ dataDir, env })
 
+  async function confirmSession(raw, res) {
+    let body
+    try {
+      body = JSON.parse(raw)
+    } catch {
+      reply(res, 400, { ok: false, error: 'invalid' })
+      return
+    }
+    const sessionId = String(body?.sessionId || '')
+    if (!/^cs_[A-Za-z0-9]+$/.test(sessionId)) {
+      reply(res, 400, { ok: false, error: 'invalid' })
+      return
+    }
+    const key = env.STRIPE_SECRET_KEY?.trim() || ''
+    if (!key) {
+      reply(res, 503, { ok: false, error: 'not_configured' })
+      return
+    }
+    let session = null
+    try {
+      const response = await fetchImpl(`https://api.stripe.com/v1/checkout/sessions/${sessionId}`, {
+        headers: { authorization: `Bearer ${key}` },
+      })
+      const data = await response.json().catch(() => null)
+      if (response.ok && data && typeof data === 'object') session = data
+    } catch (error) {
+      console.error('[stripe] session lookup failed', error)
+      reply(res, 502, { ok: false, error: 'stripe' })
+      return
+    }
+    if (!checkoutSettled(session)) {
+      reply(res, 200, { ok: true, mailed: false })
+      return
+    }
+    let result = null
+    await store.update((db) => {
+      result = applyStripeEvent(db, { type: 'checkout.session.completed', data: { object: session } })
+      return db
+    })
+    if (!result?.handled) {
+      reply(res, 200, { ok: true, mailed: false, reason: result?.reason || 'unmatched' })
+      return
+    }
+    try {
+      const mailed = await deliverSettledMail(store, env, result, session)
+      reply(res, 200, { ok: true, mailed: mailed.mail === 'sent' })
+    } catch (error) {
+      console.error('[stripe] contract mail failed', error)
+      reply(res, 500, { ok: false, error: 'mail' })
+    }
+  }
+
   return async function handleStripe(req, res) {
-    const secret = env.STRIPE_WEBHOOK_SECRET?.trim() || ''
     if (req.method !== 'POST') {
       reply(res, 405, { ok: false, error: 'method' })
       return
     }
+    const raw = await readRaw(req)
+    const signature = req.headers['stripe-signature']
+    if (!signature) {
+      await confirmSession(raw, res)
+      return
+    }
+    const secret = env.STRIPE_WEBHOOK_SECRET?.trim() || ''
     if (!secret) {
       reply(res, 503, { ok: false, error: 'not_configured' })
       return
     }
-    const raw = await readRaw(req)
-    if (!verifyStripeSignature(raw, req.headers['stripe-signature'], secret)) {
+    if (!verifyStripeSignature(raw, signature, secret)) {
       reply(res, 400, { ok: false, error: 'signature' })
       return
     }
@@ -215,6 +279,15 @@ export function createStripeHandler({ dataDir, env }) {
     })
     if (result && !result.handled && result.reason === 'unmatched') {
       console.warn('[stripe] no member for', event.type, event.data?.object?.id, event.data?.object?.customer_email)
+    }
+    if (event?.type === 'checkout.session.completed' && checkoutSettled(event.data?.object)) {
+      try {
+        result = await deliverSettledMail(store, env, result, event.data.object)
+      } catch (error) {
+        console.error('[stripe] contract mail failed', error)
+        reply(res, 500, { ok: false, error: 'mail' })
+        return
+      }
     }
     reply(res, 200, { ok: true, ...result })
   }

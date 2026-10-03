@@ -286,12 +286,11 @@ mkdirSync(dataDir, { recursive: true })
     const parsed = JSON.parse(captured.body)
     assert(captured.status === 200 && parsed.ok === true && parsed.confirmation === 'listed', 'signup lists the member')
     const mails = calls.filter((call) => call.url.includes('/smtp/email'))
-    assert(mails.length === 2, 'contract mail goes to member and gym')
-    assert(mails.every((call) => call.body.includes('Mitgliedsvertrag.pdf')), 'stripe signup mail attaches the contract')
-    assert(mails.some((call) => call.body.includes('offen@example.com')), 'mail reaches the member')
+    assert(mails.length === 0, 'card signup does not mail the contract before stripe')
     const filed = (await createMemberStore({ dataDir, env: {} }).load()).members.find((row) => row.email === 'offen@example.com')
     assert(filed?.docs?.contract?.name === 'Mitgliedsvertrag.pdf', 'stripe signup files the contract in admin')
     assert(filed?.payMethod === 'card', 'stripe signup keeps card')
+    assert(filed?.contractMail === 'after_payment', 'card contract mail waits for stripe')
   } finally {
     globalThis.fetch = previous
   }
