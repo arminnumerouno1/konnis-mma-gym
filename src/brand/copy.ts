@@ -200,13 +200,14 @@ export const COPY = {
   back: 'Zurück',
   next: 'Weiter',
   successTitle: 'Anmeldung ist raus.',
-  successLead: 'Wir haben deinen Vertrag. Unten die Zusammenfassung. Widerruf: 14 Tage. Es geht keine Mail raus.',
+  successLead:
+    'Wir haben deinen Vertrag. Die PDF-Kopie und die Widerrufsbelehrung gehen an deine Mail. Unten die Zusammenfassung. Widerruf: 14 Tage.',
   payTransfer: 'Banküberweisung',
   payCard: 'Karte oder Apple Pay',
   payTransferNote:
-    'Du überweist den Monatsbeitrag selbst. Die Kontodaten stehen nach dem Abschluss auf dieser Seite. Erste Überweisung vor dem 1. November 2026, danach jeden Monat derselbe Betrag auf dasselbe Konto. Vorher wird nichts eingezogen.',
+    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig. Die Kontodaten stehen nach dem Abschluss hier und in der E-Mail mit dem Vertrag.',
   payTransferDone:
-    'Überweise den Monatsbeitrag vor dem 1. November 2026 auf dieses Konto. Danach jeden Monat derselbe Betrag, gleiche IBAN. Stripe erkennt die Zahlung. Es geht jetzt keine Mail raus.',
+    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig. Überweise auf das Konto der KONNI MMA GYM GbR. Den Vertrag schicken wir dir per E-Mail.',
   payLater:
     'Deine Anmeldung ist da. Abgebucht wird erstmals am 1. November 2026, danach immer zum 1. Vorher geht nichts vom Konto. Den Link zur Zahlung schicken wir dir.',
   payDayLater:
@@ -267,7 +268,7 @@ export const FAQ = [
   },
   {
     q: 'Wie wird bezahlt?',
-    a: 'Bei 12- und 24-Monats-Verträgen mit Karte, Apple Pay oder Banküberweisung. Karte und Apple Pay zieht Stripe zum 1. des Monats ein. Bei der Überweisung stehen die Kontodaten nach dem Vertrag auf der Seite, du überweist selbst. Zahlungspflicht erst ab echter Eröffnung.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Überweisung auf das Konto der KONNI MMA GYM GbR. Die erste Zahlung ist am 1. November 2026 fällig. Vorher geht nichts vom Konto.',
   },
   {
     q: 'Kann ich unter 18 trainieren?',

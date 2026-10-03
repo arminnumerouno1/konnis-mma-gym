@@ -4,7 +4,8 @@ import { randomUUID } from 'node:crypto'
 import { inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 import { createMemberStore, ingestSignup } from './member-store.mjs'
-import { createBankTransferSubscription, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
+import { GYM_BANK } from './gym-bank.mjs'
+import { createCheckoutSession, siteOrigin, PLAN_CENTS } from './stripe-checkout.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
@@ -18,8 +19,8 @@ const PLAN_IDS = ['standard', 'flex', 'daypass', 'first50']
 /** Muss mit src/brand/plans.ts SIGNUP_OPEN zusammenpassen, außer SIGNUP_OPEN=true/false in der Umgebung. */
 export const SIGNUP_OPEN = true
 
-/** Vertragsmail und Brevo-Liste. false: Anmeldung speichert und öffnet Stripe, sendet aber nichts. */
-export const MEMBERSHIP_MAIL = false
+/** Vertragsmail an Mitglied und Gym, inklusive PDF. */
+export const MEMBERSHIP_MAIL = true
 
 export function isSignupOpen(env = {}) {
   const raw = String(env.SIGNUP_OPEN ?? '').trim().toLowerCase()
@@ -417,16 +418,12 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
   }
 
   async function startBankTransfer(record) {
-    const secret = env.STRIPE_SECRET_KEY?.trim() || ''
-    if (!secret) return { payment: 'unlinked' }
-    const result = await createBankTransferSubscription({
-      secret,
-      member: record,
-      fetchImpl,
-    })
-    if (!result.ok || !result.transfer) {
-      console.error('[mitglied] bank transfer failed', result.detail || result.error)
-      return { payment: 'unlinked' }
+    const transfer = {
+      holder: GYM_BANK.holder,
+      iban: GYM_BANK.iban,
+      bic: GYM_BANK.bic,
+      bank: GYM_BANK.bank,
+      amount: PLAN_CENTS[record.plan] ?? Math.round(Number(record.price) * 100),
     }
     try {
       await members.update((db) => {
@@ -434,16 +431,8 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
         if (index < 0) return db
         db.members[index] = {
           ...db.members[index],
-          stripe: {
-            ...(db.members[index].stripe ?? {}),
-            customerId: result.customerId,
-            subscriptionId: result.subscriptionId,
-            billingStart: result.billingStart,
-            chargeNow: Boolean(result.chargeNow),
-            delay: result.delay,
-            payMethod: 'transfer',
-            transfer: result.transfer,
-          },
+          payMethod: 'transfer',
+          transfer,
           updatedAt: new Date().toISOString(),
         }
         return db
@@ -451,11 +440,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     } catch (error) {
       console.error('[mitglied] bank transfer save failed', error)
     }
-    return {
-      payment: 'transfer',
-      billingStart: result.billingStart,
-      transfer: result.transfer,
-    }
+    return { payment: 'transfer', billingStart: '2026-11-01', transfer }
   }
 
   async function runMembership(req, res) {

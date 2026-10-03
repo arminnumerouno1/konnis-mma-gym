@@ -65,7 +65,7 @@ export type MembershipOk = {
   payment?: 'checkout' | 'later' | 'unlinked' | 'transfer'
   checkoutUrl?: string
   billingStart?: string
-  transfer?: { iban: string; bic: string; holder: string; amount: number }
+  transfer?: { iban: string; bic: string; holder: string; bank: string; amount: number }
 }
 
 export type MembershipFail = { ok: false; error: MembershipError }

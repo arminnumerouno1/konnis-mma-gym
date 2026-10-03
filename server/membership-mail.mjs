@@ -1,3 +1,4 @@
+import { GYM_BANK, spacedIban } from './gym-bank.mjs'
 import { membershipPdfAttachments } from './membership-pdf.mjs'
 
 function escapeMail(value) {
@@ -40,17 +41,36 @@ export function membershipMailSubject(record, { forGym = false } = {}) {
   return `Willkommen im KONNI MMA GYM · ${record.planName || record.plan}`
 }
 
+function dueSentence(record) {
+  if (record.payMethod === 'transfer') {
+    return 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.'
+  }
+  if (record.plan === 'daypass') return ''
+  return 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am 1. November 2026, danach immer zum 1.'
+}
+
+function bankBlock(record) {
+  if (record.payMethod !== 'transfer') return ''
+  return `<p><strong>Banküberweisung</strong><br>
+Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.<br>
+Kontoinhaber: ${escapeMail(GYM_BANK.holder)}<br>
+IBAN: ${escapeMail(spacedIban(GYM_BANK.iban))}<br>
+BIC: ${escapeMail(GYM_BANK.bic)}<br>
+Bank: ${escapeMail(GYM_BANK.bank)}</p>`
+}
+
 function memberLead(record, { attached = false } = {}) {
   const first = escapeMail(record.firstName || whoOf(record))
   const files = attached
     ? 'Dein Vertrag und die Widerrufsbelehrung liegen als PDF bei.'
     : 'Unten steht die Kopie deines Vertrags.'
+  const due = dueSentence(record)
 
   if (isFirst50(record)) {
     return `<p>Hi ${first},</p>
 <p><strong>Schön, dass du einer der Ersten bist.</strong> Die ersten 50 bekommen den Preis, den wir dafür gemacht haben: 89,99€ statt 99,99€, 24 Monate.</p>
 <p>Wir freuen uns, dass du von Anfang an dabei bist. Am 2. November geht die Tür auf. Dann sehen wir uns in der Wittenberger Straße.</p>
-<p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. Zahlen tust du erst, wenn das Gym wirklich öffnet. Die erste Abbuchung ist am 1. November 2026, danach immer zum 1.</p>`
+<p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. ${due}</p>`
   }
 
   if (record.plan === 'daypass') {
@@ -61,8 +81,8 @@ function memberLead(record, { attached = false } = {}) {
 
   return `<p>Hi ${first},</p>
 <p>dein Vertrag ist da. Willkommen im KONNI MMA GYM. Wir freuen uns, dass du dabei bist.</p>
-<p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. Zahlen tust du erst, wenn das Gym wirklich öffnet. Die erste Abbuchung ist am 1. November 2026, danach immer zum 1.</p>`
-  }
+<p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. ${due}</p>`
+}
 
 function memberSignoff() {
   return `<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>`
@@ -102,7 +122,8 @@ ${visit}
 ${guardian}
 <p><strong>Unterschrift</strong><br>${escapeMail(record.signature)}, ${escapeMail(record.place)}</p>
 <p><strong>Leistungsbeginn in der Widerrufsfrist</strong><br>${escapeMail(early)}</p>
-<p>Bei 12- und 24-Monats-Verträgen zahlst du mit Karte oder Apple Pay, in der Regel zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung.</p>
+${bankBlock(record)}
+<p>${record.payMethod === 'transfer' ? 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du überweist ihn selbst auf das Konto oben.' : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay. Zahlungspflicht erst ab echter Eröffnung.'}</p>
 <p>AGB Stand 27. September 2026 und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.</p>
 ${forGym ? '' : files}
 <p>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>

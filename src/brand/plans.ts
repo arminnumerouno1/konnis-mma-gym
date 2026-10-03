@@ -108,7 +108,7 @@ export const SIGNUP_FEE = 0
 /** Erste volle Monatsabbuchung. Muss zu server/stripe-checkout.mjs BILLING_START passen. */
 export const FIRST_CHARGE = '2026-11-01'
 export const PAYMENT_NOTE =
-  'Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. Bei der Karte zieht Stripe zum 1. des Monats ein. Bei der Überweisung zeigen wir nach dem Abschluss die Kontodaten, du überweist selbst. Wer vor der Eröffnung abschließt, zahlt erstmals am 1. November 2026. Vorher geht nichts vom Konto.'
+  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR. Wer vor der Eröffnung abschließt, zahlt erstmals am 1. November 2026. Vorher geht nichts vom Konto.'
 
 export function planById(id: string | null | undefined): Plan | undefined {
   return ALL_PLANS.find((plan) => plan.id === id)

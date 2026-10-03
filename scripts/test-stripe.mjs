@@ -3,9 +3,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createMembershipHandler } from '../server/membership.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
+import { GYM_BANK } from '../server/gym-bank.mjs'
 import {
   PLAN_CENTS,
-  PLAN_PRICE_IDS,
   berlinMidnightUnix,
   buildCheckoutFields,
   checkoutSchedule,
@@ -164,27 +164,10 @@ const bankDir = mkdtempSync(join(tmpdir(), 'konni-bank-'))
 const bankCalls = []
 const bankHandle = createMembershipHandler({
   dataDir: bankDir,
-  env: { SIGNUP_OPEN: 'true', STRIPE_SECRET_KEY: 'sk_test_example' },
+  env: { SIGNUP_OPEN: 'true', STRIPE_SECRET_KEY: 'sk_test_example', MEMBERSHIP_MAIL: 'false' },
   fetchImpl: async (url, init) => {
     bankCalls.push({ url: String(url), method: init?.method || 'GET', body: String(init?.body || '') })
-    const path = String(url)
-    const payload = path.endsWith('/customers')
-      ? { id: 'cus_bank' }
-      : path.includes('/funding_instructions')
-        ? {
-            bank_transfer: {
-              financial_addresses: [
-                {
-                  type: 'iban',
-                  iban: { iban: 'DE89370400440532013000', bic: 'CITIDEFFXXX', account_holder_name: 'KONNI MMA GYM GbR' },
-                },
-              ],
-            },
-          }
-        : path.endsWith('/subscriptions')
-          ? { id: 'sub_bank', status: 'trialing' }
-          : { id: 'unused' }
-    return { ok: true, async json() { return payload } }
+    return { ok: true, async json() { return { id: 'unused' } } }
   },
 })
 const bankRes = mockRes()
@@ -214,22 +197,17 @@ await bankHandle(
 )
 const bankJoined = JSON.parse(bankRes.captured.body)
 assert(bankRes.captured.status === 200 && bankJoined.payment === 'transfer', 'signup returns transfer')
-assert(bankJoined.transfer.iban === 'DE89370400440532013000', 'iban returned')
-assert(bankJoined.transfer.bic === 'CITIDEFFXXX', 'bic returned')
+assert(bankJoined.transfer.iban === GYM_BANK.iban, 'gym iban returned')
+assert(bankJoined.transfer.bic === 'WELADE8LXXX', 'sparkasse bic')
+assert(bankJoined.transfer.holder === 'KONNI MMA GYM GbR', 'gym holder')
+assert(bankJoined.transfer.bank === GYM_BANK.bank, 'sparkasse name')
 assert(bankJoined.transfer.amount === 9999, 'monthly cents')
 assert(!bankJoined.checkoutUrl, 'transfer does not open card checkout')
-const subCall = bankCalls.find((call) => call.url.endsWith('/subscriptions'))
-const subBody = new URLSearchParams(subCall?.body || '')
-assert(subBody.get('items[0][price]') === PLAN_PRICE_IDS.standard, 'catalog price')
-assert(subBody.get('collection_method') === 'send_invoice', 'invoice collection')
-assert(subBody.get('trial_end') === String(nov1), 'transfer trial is 1 november')
-assert(subBody.get('payment_settings[payment_method_types][0]') === 'customer_balance', 'bank balance')
-assert(subBody.get('payment_settings[payment_method_options][customer_balance][bank_transfer][type]') === 'eu_bank_transfer', 'eu transfer')
+assert(bankCalls.length === 0, 'transfer does not call stripe')
 const bankDb = await createMemberStore({ dataDir: bankDir, env: {} }).load()
 const bankStored = bankDb.members.find((row) => row.id === bankJoined.id)
 assert(bankStored.payMethod === 'transfer', 'member pay method stored')
-assert(bankStored.stripe.subscriptionId === 'sub_bank' && bankStored.stripe.customerId === 'cus_bank', 'stripe ids stored')
-assert(bankStored.stripe.transfer.iban.endsWith('3000'), 'iban stored for the gym')
-assert(!bankCalls.some((call) => call.url.includes('brevo.com')), 'transfer sends no mail')
+assert(bankStored.transfer.iban === GYM_BANK.iban, 'gym iban stored')
+assert(!bankStored.stripe?.subscriptionId, 'no stripe subscription for transfer')
 
 console.log('stripe tests ok')

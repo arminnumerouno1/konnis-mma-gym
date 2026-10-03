@@ -23,8 +23,8 @@ assert(SIGNUP_OPEN === true, 'signup open')
 assert(isSignupOpen({}) === true, 'open default')
 assert(isSignupOpen({ SIGNUP_OPEN: 'true' }) === true, 'env override open')
 assert(isSignupOpen({ SIGNUP_OPEN: 'false' }) === false, 'env override closed')
-assert(MEMBERSHIP_MAIL === false, 'membership mail stays off')
-assert(isMembershipMailOpen({}) === false, 'no mail by default')
+assert(MEMBERSHIP_MAIL === true, 'signup sends the contract mail')
+assert(isMembershipMailOpen({}) === true, 'mail on by default')
 assert(isMembershipMailOpen({ MEMBERSHIP_MAIL: 'true' }) === true, 'mail env on')
 assert(isMembershipMailOpen({ MEMBERSHIP_MAIL: 'false' }) === false, 'mail env off')
 
@@ -114,6 +114,11 @@ const mailRecord = {
 const mail = membershipCopyHtml(mailRecord)
 assert(mail.includes('First 50') && mail.includes('89,99') && mail.includes('Anna Müller'), 'mail copy')
 assert(mail.includes('einer der Ersten') && mail.includes('freuen') && mail.includes('Konrad und Mehmet'), 'first50 welcome')
+assert(mail.includes('jeweils zum 1. des Monats fällig'), 'fee due on the first')
+const transferMail = membershipCopyHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', payMethod: 'transfer' })
+assert(transferMail.includes('DE77 8605 5592 1090 4292 70'), 'transfer mail has the gym iban')
+assert(transferMail.includes('WELADE8LXXX') && transferMail.includes('Stadt- und Kreissparkasse Leipzig'), 'transfer mail names the bank')
+assert(transferMail.includes('erste Überweisung ist am 1. November 2026'), 'first transfer date')
 assert(!mail.includes('<script') && mail.includes('Wittenberger'), 'mail escaped')
 assert(membershipMailSubject(mailRecord).includes('Ersten'), 'first50 subject')
 assert(!membershipMailSubject({ ...mailRecord, plan: 'standard', planName: 'Standard' }).includes('Ersten'), 'standard subject')
@@ -238,8 +243,8 @@ mkdirSync(dataDir, { recursive: true })
       res,
     )
     const parsed = JSON.parse(captured.body)
-    assert(captured.status === 200 && parsed.ok === true && parsed.confirmation === 'saved', 'signup saves without mail')
-    assert(!calls.some((url) => url.includes('brevo.com')), 'signup does not call brevo')
+    assert(captured.status === 200 && parsed.ok === true && parsed.confirmation === 'listed', 'signup lists the member')
+    assert(calls.filter((url) => url.includes('/smtp/email')).length === 2, 'contract mail goes to member and gym')
   } finally {
     globalThis.fetch = previous
   }

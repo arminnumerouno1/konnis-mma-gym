@@ -72,8 +72,10 @@ type MemberDetail = MemberList & {
     chargeNow?: boolean
     delay?: string
     payMethod?: string
-    transfer?: { iban?: string; bic?: string; holder?: string; amount?: number }
+    transfer?: { iban?: string; bic?: string; holder?: string; bank?: string; amount?: number }
   } | null
+  payMethod?: string
+  transfer?: { iban?: string; bic?: string; holder?: string; bank?: string }
   docs?: { contract?: DocMeta; sepa?: DocMeta }
   history?: { at: string; field: string; from: string; to: string }[]
   inviteSlot?: number | null
@@ -1955,25 +1957,28 @@ function MemberPane({
 
       {member.plan !== 'daypass' ? (
         <section className="admin-block">
-          <h3>Stripe</h3>
+          <h3>{member.payMethod === 'transfer' ? 'Banküberweisung' : 'Stripe'}</h3>
           <p className="admin-muted">
-            {member.stripe?.chargeNow && member.stripe.delay === 'prorate'
-              ? `Anteiliger Beitrag jetzt, volle Monate ab ${deDate(member.stripe.billingStart)}.`
-              : `Erste Abbuchung ${deDate(member.stripe?.billingStart || '2026-11-01')}. Vorher wird nichts eingezogen.`}
-            {member.stripe?.payMethod === 'transfer'
-              ? ' Zahlungsweise: Banküberweisung. Das Mitglied überweist selbst auf die angezeigte IBAN.'
+            {member.payMethod === 'transfer'
+              ? 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.'
+              : member.stripe?.chargeNow && member.stripe.delay === 'prorate'
+                ? `Anteiliger Beitrag jetzt, volle Monate ab ${deDate(member.stripe.billingStart)}.`
+                : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Erste Abbuchung ${deDate(member.stripe?.billingStart || '2026-11-01')}. Vorher wird nichts eingezogen.`}
+            {member.payMethod === 'transfer'
+              ? ' Das Mitglied überweist selbst auf das Konto der KONNI MMA GYM GbR.'
               : member.stripe?.subscriptionId
                 ? ' Das Abo ist verknüpft. Die Monate färben sich, sobald die Rechnung kommt.'
                 : ' Das Mitglied zahlt auf der Stripe-Seite mit Karte oder Apple Pay. Lastschrift wird dort nicht angezeigt. Der Link gilt 24 Stunden.'}
           </p>
-          {member.stripe?.transfer?.iban ? (
+          {member.payMethod === 'transfer' && member.transfer?.iban ? (
             <p className="admin-muted">
-              {member.stripe.transfer.holder ? `${member.stripe.transfer.holder} · ` : ''}
-              {member.stripe.transfer.iban.replace(/(.{4})/g, '$1 ').trim()}
-              {member.stripe.transfer.bic ? ` · ${member.stripe.transfer.bic}` : ''}
+              {member.transfer.holder ? `${member.transfer.holder} · ` : ''}
+              {member.transfer.iban.replace(/(.{4})/g, '$1 ').trim()}
+              {member.transfer.bic ? ` · ${member.transfer.bic}` : ''}
+              {member.transfer.bank ? ` · ${member.transfer.bank}` : ''}
             </p>
           ) : null}
-          {member.stripe?.subscriptionId ? null : (
+          {member.payMethod === 'transfer' || member.stripe?.subscriptionId ? null : (
             <div className="admin-inline">
               <button
                 className="btn btn-solid"

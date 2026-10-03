@@ -154,7 +154,7 @@ function JoinForm({ plan, invite }: JoinProps) {
     id?: string
     at: string
     payment?: 'checkout' | 'later' | 'unlinked' | 'transfer'
-    transfer?: { iban: string; bic: string; holder: string; amount: number }
+    transfer?: { iban: string; bic: string; holder: string; bank: string; amount: number }
   } | null>(null)
   const pageRef = useRef<HTMLElement>(null)
   const stepAnchorRef = useRef<HTMLOListElement>(null)
@@ -340,6 +340,10 @@ function JoinForm({ plan, invite }: JoinProps) {
               <div>
                 <dt>BIC</dt>
                 <dd>{summary.transfer.bic}</dd>
+              </div>
+              <div>
+                <dt>Bank</dt>
+                <dd>{summary.transfer.bank}</dd>
               </div>
             </dl>
           </div>
