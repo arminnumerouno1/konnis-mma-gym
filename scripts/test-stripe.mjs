@@ -33,8 +33,8 @@ assert(!earlyFields.fields['subscription_data[billing_cycle_anchor]'], 'no ancho
 assert(earlyFields.fields['line_items[0][price_data][unit_amount]'] === '9999', 'standard cents')
 assert(earlyFields.fields.mode === 'subscription', 'subscription mode')
 assert(earlyFields.fields['metadata[memberId]'] === 'mem_1', 'member metadata')
-assert(earlyFields.fields['payment_method_types[0]'] === 'sepa_debit', 'sepa only')
-assert(!earlyFields.fields['payment_method_types[1]'], 'no card')
+assert(earlyFields.fields['payment_method_types[0]'] === 'card', 'card enables apple pay')
+assert(earlyFields.fields['payment_method_types[1]'] === 'sepa_debit', 'sepa stays available')
 
 const close = nov1 * 1000 - 47 * 60 * 60 * 1000
 const closePlan = checkoutSchedule(close, { plan: 'flex' })
@@ -78,19 +78,30 @@ const refused = await createCheckoutSession({
   nowMs: early,
   fetchImpl: async (_url, init) => {
     seen.push(String(init.body))
+    const params = new URLSearchParams(String(init.body))
+    if ([...params.values()].includes('sepa_debit')) {
+      return {
+        ok: false,
+        async json() {
+          return { error: { message: 'sepa_debit is not enabled', code: 'payment_method_invalid', param: 'payment_method_types' } }
+        },
+      }
+    }
     return {
-      ok: false,
+      ok: true,
       async json() {
-        return { error: { message: 'sepa_debit is not enabled', code: 'payment_method_invalid', param: 'payment_method_types' } }
+        return { id: 'cs_card', url: 'https://checkout.stripe.com/c/pay/cs_card' }
       },
     }
   },
 })
-assert(refused.ok === false && refused.error === 'stripe', 'no card when sepa is refused')
-assert(seen.length === 1, 'checkout is not retried with a card')
-const only = new URLSearchParams(seen[0] || '')
-assert(only.get('payment_method_types[0]') === 'sepa_debit' && !only.get('payment_method_types[1]'), 'request is sepa only')
-assert(only.get('customer') === 'cus_abc12345' && !only.get('customer_email'), 'existing customer is reused')
+assert(refused.ok && refused.url.includes('checkout.stripe.com'), 'apple pay checkout when sepa is refused')
+assert(seen.length === 2, 'checkout retries with card')
+const first = new URLSearchParams(seen[0] || '')
+const second = new URLSearchParams(seen[1] || '')
+assert(first.get('payment_method_types[0]') === 'card' && first.get('payment_method_types[1]') === 'sepa_debit', 'first try includes both')
+assert(second.get('payment_method_types[0]') === 'card' && !second.get('payment_method_types[1]'), 'second try keeps card for apple pay')
+assert(second.get('customer') === 'cus_abc12345' && !second.get('customer_email'), 'existing customer is reused')
 
 function mockRes() {
   const captured = { status: 0, body: '' }

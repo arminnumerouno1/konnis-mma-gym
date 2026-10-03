@@ -1960,7 +1960,7 @@ function MemberPane({
               : `Erste Abbuchung ${deDate(member.stripe?.billingStart || '2026-11-01')}. Vorher wird nichts eingezogen.`}
             {member.stripe?.subscriptionId
               ? ' Das Abo ist verknüpft. Die Monate färben sich, sobald die Rechnung kommt.'
-              : ' Das Mitglied trägt die IBAN auf der Stripe-Seite ein. Es gibt nur SEPA-Lastschrift. Der Link gilt 24 Stunden.'}
+              : ' Das Mitglied hinterlegt auf der Stripe-Seite die IBAN oder zahlt mit Apple Pay bzw. Karte. Der Link gilt 24 Stunden.'}
           </p>
           {member.stripe?.subscriptionId ? null : (
             <div className="admin-inline">

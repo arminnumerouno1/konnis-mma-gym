@@ -147,7 +147,8 @@ export function buildCheckoutFields({ member, origin, nowMs = Date.now() }) {
     cancel_url: `${origin}/mitglied?zahlung=abgebrochen`,
     'metadata[memberId]': member.id,
     'metadata[plan]': member.plan,
-    'payment_method_types[0]': 'sepa_debit',
+    'payment_method_types[0]': 'card',
+    'payment_method_types[1]': 'sepa_debit',
     'line_items[0][quantity]': '1',
     'line_items[0][price_data][currency]': 'eur',
     'line_items[0][price_data][unit_amount]': String(cents),
@@ -199,7 +200,18 @@ export async function createCheckoutSession({ secret, member, origin, nowMs = Da
   if (built.error) return { ok: false, error: built.error }
   if (built.skip) return { ok: true, skipped: built.skip, billingStart: built.schedule.billingStart, chargeNow: false }
   try {
-    const data = await postSession(fetchImpl, secret, built.fields)
+    let data
+    try {
+      data = await postSession(fetchImpl, secret, built.fields)
+    } catch (error) {
+      const text = `${error.message} ${error.stripeCode} ${error.stripeParam}`
+      if (!/sepa/i.test(text)) throw error
+      const cardOnly = { ...built.fields }
+      delete cardOnly['payment_method_types[0]']
+      delete cardOnly['payment_method_types[1]']
+      cardOnly['payment_method_types[0]'] = 'card'
+      data = await postSession(fetchImpl, secret, cardOnly)
+    }
     if (!data?.url || !data?.id) return { ok: false, error: 'stripe', detail: 'no_url' }
     return {
       ok: true,
