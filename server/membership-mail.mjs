@@ -102,7 +102,7 @@ ${visit}
 ${guardian}
 <p><strong>Unterschrift</strong><br>${escapeMail(record.signature)}, ${escapeMail(record.place)}</p>
 <p><strong>Leistungsbeginn in der Widerrufsfrist</strong><br>${escapeMail(early)}</p>
-<p>Bei 12- und 24-Monats-Verträgen ziehen wir den Monatsbeitrag per SEPA-Lastschrift ein, in der Regel zum 1. des Monats. Mandat und Kontodaten klären wir vor dem ersten Einzug. Zahlungspflicht erst ab echter Eröffnung.</p>
+<p>Bei 12- und 24-Monats-Verträgen zahlst du mit Karte oder Apple Pay, in der Regel zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung.</p>
 <p>AGB Stand 27. September 2026 und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.</p>
 ${forGym ? '' : files}
 <p>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>

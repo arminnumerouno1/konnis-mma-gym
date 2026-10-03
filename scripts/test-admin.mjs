@@ -600,7 +600,7 @@ assert(freshLink.data.member.stripe.chargeNow === false, 'nothing charged now')
 const posted = new URLSearchParams(capturedCheckout.at(-1) || '')
 assert(posted.get('subscription_data[trial_end]'), 'trial until november')
 assert(posted.get('line_items[0][price_data][unit_amount]') === '8999', 'first50 cents')
-assert(posted.get('payment_method_types[0]') === 'card' && posted.get('payment_method_types[1]') === 'sepa_debit', 'card and sepa')
+assert(posted.get('payment_method_types[0]') === 'card' && !posted.get('payment_method_types[1]'), 'card only')
 assert(posted.get('line_items[0][price_data][recurring][interval]') === 'month', 'monthly')
 assert(posted.get('subscription_data[proration_behavior]') == null, 'no proration before november')
 

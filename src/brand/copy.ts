@@ -103,7 +103,7 @@ export const COPY = {
   signupFeePrice: '0€',
   signupFeeLabel: 'Anmeldegebühr\nbis 2. November',
   priceFoot:
-    'SEPA-Lastschrift zum 1. des Monats. Anmeldegebühr 0 € bis zum 2. November. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
+    'Karte oder Apple Pay zum 1. des Monats. Anmeldegebühr 0 € bis zum 2. November. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
   trialTitle: 'Komm vorbei.',
   preregTitle: 'Sei von Anfang an dabei.',
   preregLead:
@@ -236,7 +236,7 @@ export const COPY = {
   consentGuardian: 'Ich bin gesetzliche Vertretung und stimme dem Vertrag zu.',
   consentSign: 'Ich unterschreibe diesen Vertrag elektronisch. Der Text gilt wie auf Papier.',
   payNote:
-    'Monatsbeiträge per SEPA-Lastschrift, in der Regel zum 1. des Monats. Mandat und Kontodaten klären wir vor dem ersten Einzug. Zahlungspflicht erst ab echter Eröffnung.',
+    'Monatsbeiträge mit Karte oder Apple Pay, in der Regel zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung.',
 } as const
 
 export const FAQ = [
@@ -262,7 +262,7 @@ export const FAQ = [
   },
   {
     q: 'Wie wird bezahlt?',
-    a: 'Bei 12- und 24-Monats-Verträgen ziehen wir den Beitrag per SEPA-Lastschrift ein, in der Regel zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung. Mandat und Kontodaten klären wir vor dem ersten Einzug.',
+    a: 'Bei 12- und 24-Monats-Verträgen zahlst du mit Karte oder Apple Pay, in der Regel zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung.',
   },
   {
     q: 'Kann ich unter 18 trainieren?',
