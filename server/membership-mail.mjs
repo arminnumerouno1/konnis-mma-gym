@@ -49,14 +49,26 @@ function dueSentence(record) {
   return 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am 1. November 2026, danach immer zum 1.'
 }
 
-function bankBlock(record) {
-  if (record.payMethod !== 'transfer') return ''
-  return `<p><strong>Banküberweisung</strong><br>
-Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.<br>
-Kontoinhaber: ${escapeMail(GYM_BANK.holder)}<br>
+function accountLines() {
+  return `Kontoinhaber: ${escapeMail(GYM_BANK.holder)}<br>
 IBAN: ${escapeMail(spacedIban(GYM_BANK.iban))}<br>
 BIC: ${escapeMail(GYM_BANK.bic)}<br>
-Bank: ${escapeMail(GYM_BANK.bank)}</p>`
+Bank: ${escapeMail(GYM_BANK.bank)}`
+}
+
+function bankBlock(record) {
+  if (record.plan === 'daypass') return ''
+  if (record.payMethod === 'transfer') {
+    return `<p><strong>Deine Zahlungsart: Banküberweisung</strong><br>
+Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.<br>
+${accountLines()}<br>
+SEPA-Lastschrift kommt später.</p>`
+  }
+  return `<p><strong>Deine Zahlungsart: Karte oder Apple Pay</strong><br>
+Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am 1. November 2026.<br>
+Banküberweisung ist ebenfalls möglich:<br>
+${accountLines()}<br>
+SEPA-Lastschrift kommt später.</p>`
 }
 
 function memberLead(record, { attached = false } = {}) {
@@ -123,7 +135,7 @@ ${guardian}
 <p><strong>Unterschrift</strong><br>${escapeMail(record.signature)}, ${escapeMail(record.place)}</p>
 <p><strong>Leistungsbeginn in der Widerrufsfrist</strong><br>${escapeMail(early)}</p>
 ${bankBlock(record)}
-<p>${record.payMethod === 'transfer' ? 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du überweist ihn selbst auf das Konto oben.' : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay. Zahlungspflicht erst ab echter Eröffnung.'}</p>
+<p>${record.plan === 'daypass' ? 'Der Day Pass wird mit Karte oder Apple Pay bezahlt.' : record.payMethod === 'transfer' ? 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du überweist ihn selbst auf das Konto oben.' : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später. Zahlungspflicht erst ab echter Eröffnung.'}</p>
 <p>AGB Stand 27. September 2026 und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.</p>
 ${forGym ? '' : files}
 <p>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>

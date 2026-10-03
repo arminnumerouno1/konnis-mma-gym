@@ -1,3 +1,4 @@
+import { inflateSync } from 'node:zlib'
 import { mkdirSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -13,10 +14,35 @@ import {
   validateMembership,
 } from '../server/membership.mjs'
 import { membershipCopyHtml, membershipMailSubject } from '../server/membership-mail.mjs'
-import { membershipPdfAttachments } from '../server/membership-pdf.mjs'
+import { buildContractPdf, membershipPdfAttachments } from '../server/membership-pdf.mjs'
+import { createMemberStore } from '../server/member-store.mjs'
 
 function assert(cond, message) {
   if (!cond) throw new Error(message)
+}
+
+function pdfText(bytes) {
+  const raw = Buffer.from(bytes).toString('latin1')
+  const parts = []
+  const re = /stream\r?\n([\s\S]*?)\r?\nendstream/g
+  let match
+  while ((match = re.exec(raw))) {
+    const chunk = Buffer.from(match[1], 'latin1')
+    try {
+      parts.push(inflateSync(chunk).toString('latin1'))
+    } catch {
+      parts.push(match[1])
+    }
+  }
+  return parts
+    .join('\n')
+    .replace(/<([0-9A-Fa-f\s]+)>/g, (_, hex) => {
+      const clean = hex.replace(/\s/g, '')
+      if (!clean || clean.length % 2) return ''
+      let out = ''
+      for (let i = 0; i < clean.length; i += 2) out += String.fromCharCode(Number.parseInt(clean.slice(i, i + 2), 16))
+      return out
+    })
 }
 
 assert(SIGNUP_OPEN === true, 'signup open')
@@ -137,8 +163,11 @@ const attachedMail = membershipCopyHtml(
 assert(attachedMail.includes('Mitgliedsvertrag.pdf') && attachedMail.includes('Widerrufsbelehrung.pdf'), 'mail names pdfs')
 assert(attachedMail.includes('einer der Ersten') && attachedMail.includes('PDF bei'), 'first50 attached welcome')
 
-const standardMail = membershipCopyHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', price: 99.99 })
+const standardMail = membershipCopyHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', price: 99.99, payMethod: 'card' })
 assert(standardMail.includes('Willkommen') && !standardMail.includes('einer der Ersten'), 'standard welcome')
+assert(standardMail.includes('DE77 8605 5592 1090 4292 70'), 'card mail names the transfer account')
+assert(standardMail.includes('SEPA-Lastschrift kommt später'), 'card mail says sepa comes later')
+assert(standardMail.includes('Mitgliedsvertrag') || standardMail.includes('Vertrag'), 'card mail mentions the contract')
 
 const sample = {
   firstName: 'Anna',
@@ -171,6 +200,15 @@ const contractPdf = await PDFDocument.load(contractBytes)
 assert(contractPdf.getPageCount() >= 1, 'contract pages')
 assert(String(contractPdf.getTitle() || '').includes('Mitgliedsvertrag'), 'contract title')
 assert(String(contractPdf.getSubject() || '').includes('Anna Müller'), 'contract subject')
+const contractText = pdfText(contractBytes)
+assert(contractText.includes('DE77 8605 5592 1090 4292 70'), 'card contract contains the gym iban')
+assert(contractText.includes('WELADE8LXXX'), 'card contract contains the bic')
+assert(contractText.includes('SEPA-Lastschrift kommt später'), 'card contract says sepa comes later')
+const transferPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard', planName: 'Standard', payMethod: 'transfer' }))
+const transferText = pdfText(transferPdf)
+assert(transferText.includes('Banküberweisung') && transferText.includes('DE77 8605 5592 1090 4292 70'), 'transfer contract contains the gym account')
+const paperPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard', planName: 'Standard', payMethod: 'transfer' }, { paper: true }))
+assert(pdfText(paperPdf).includes('DE77 8605 5592 1090 4292 70'), 'paper contract contains the gym account')
 
 const withdrawalBytes = Buffer.from(files[1].content, 'base64')
 assert(withdrawalBytes.subarray(0, 5).toString() === '%PDF-', 'withdrawal header')
@@ -222,8 +260,8 @@ mkdirSync(dataDir, { recursive: true })
 {
   const calls = []
   const previous = globalThis.fetch
-  globalThis.fetch = async (url) => {
-    calls.push(String(url))
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: String(url), body: String(init?.body || '') })
     return { ok: true, status: 200, json: async () => ({}), text: async () => '' }
   }
   try {
@@ -244,7 +282,13 @@ mkdirSync(dataDir, { recursive: true })
     )
     const parsed = JSON.parse(captured.body)
     assert(captured.status === 200 && parsed.ok === true && parsed.confirmation === 'listed', 'signup lists the member')
-    assert(calls.filter((url) => url.includes('/smtp/email')).length === 2, 'contract mail goes to member and gym')
+    const mails = calls.filter((call) => call.url.includes('/smtp/email'))
+    assert(mails.length === 2, 'contract mail goes to member and gym')
+    assert(mails.every((call) => call.body.includes('Mitgliedsvertrag.pdf')), 'stripe signup mail attaches the contract')
+    assert(mails.some((call) => call.body.includes('offen@example.com')), 'mail reaches the member')
+    const filed = (await createMemberStore({ dataDir, env: {} }).load()).members.find((row) => row.email === 'offen@example.com')
+    assert(filed?.docs?.contract?.name === 'Mitgliedsvertrag.pdf', 'stripe signup files the contract in admin')
+    assert(filed?.payMethod === 'card', 'stripe signup keeps card')
   } finally {
     globalThis.fetch = previous
   }

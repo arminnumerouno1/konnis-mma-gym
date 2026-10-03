@@ -171,6 +171,35 @@ const created = await call({
 assert(created.status === 200 && created.data.member.plan === 'flex', 'desk create')
 assert(created.data.member.cancel.termEnd === '2027-11-01', 'flex term')
 
+const deskTransfer = await call({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie },
+  socket: { remoteAddress: '10.0.0.3' },
+  body: {
+    action: 'create',
+    plan: 'standard',
+    payMethod: 'transfer',
+    firstName: 'Lina',
+    lastName: 'Berg',
+    birthDate: '1992-08-08',
+    email: 'lina.berg@example.com',
+    phone: '+49 171 3030405',
+    street: 'Wittenberger Straße 15',
+    zip: '04129',
+    city: 'Leipzig',
+    startDate: '2026-11-02',
+  },
+})
+assert(deskTransfer.status === 200 && deskTransfer.data.member.payMethod === 'transfer', 'desk member can pay by transfer')
+assert(deskTransfer.data.member.transfer.iban === 'DE77860555921090429270', 'desk transfer stores the gym iban')
+assert(!deskTransfer.data.member.bank, 'desk transfer does not invent a member iban')
+assert(deskTransfer.data.member.docs.payment.name === 'Banküberweisung.pdf', 'desk transfer files the payment notice')
+assert(!deskTransfer.data.member.docs.contract, 'desk contract stays for the signed paper upload')
+const deskList = await call({ method: 'GET', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' } })
+const lina = deskList.data.members.find((row) => row.email === 'lina.berg@example.com')
+assert(lina && lina.payMethod === 'transfer' && !lina.bankMissing, 'desk transfer is not flagged for missing bank details')
+
 const pay = await call({
   method: 'POST',
   url: '/api/admin',

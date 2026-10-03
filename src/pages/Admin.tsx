@@ -1871,7 +1871,11 @@ function MemberPane({
                   {member.bank.mandateSignedAt ? `unterschrieben ${deDate(member.bank.mandateSignedAt)}` : 'Unterschrift fehlt'}
                 </>
               ) : (
-                'Noch keine Kontodaten'
+                <>
+                  Noch keine Kontodaten
+                  <br />
+                  <small>Banküberweisung ist möglich. SEPA-Lastschrift kommt später.</small>
+                </>
               )}
             </dd>
           </div>
@@ -1988,6 +1992,10 @@ function MemberPane({
       ) : member.plan !== 'daypass' ? (
         <section className={`admin-block ${member.bank?.iban && member.bank.mandateSignedAt ? '' : 'is-alert'}`}>
           <h3>Kontodaten für Lastschrift</h3>
+          <p className="admin-muted">
+            SEPA-Lastschrift kommt später. Bis dahin zahlt das Mitglied mit Karte oder Apple Pay, oder per Banküberweisung
+            auf das Konto der KONNI MMA GYM GbR.
+          </p>
           <BankFields value={bank} onChange={setBank} holderHint={holderHint} />
           <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void save({ bank })}>
             Kontodaten speichern
@@ -2030,7 +2038,7 @@ function MemberPane({
               : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Erste Abbuchung ${deDate(member.stripe?.billingStart || '2026-11-01')}. Vorher wird nichts eingezogen.`}
             {member.stripe?.subscriptionId
               ? ' Das Abo ist verknüpft. Die Monate färben sich, sobald die Rechnung kommt.'
-              : ' Das Mitglied zahlt auf der Stripe-Seite mit Karte oder Apple Pay. Lastschrift wird dort nicht angezeigt. Der Link gilt 24 Stunden.'}
+              : ' Das Mitglied zahlt auf der Stripe-Seite mit Karte oder Apple Pay. Banküberweisung ist die andere Möglichkeit. SEPA-Lastschrift kommt später und wird im Checkout nicht angezeigt. Der Link gilt 24 Stunden.'}
           </p>
           {member.stripe?.subscriptionId ? null : (
             <div className="admin-inline">
@@ -2134,6 +2142,7 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
   const [photoData, setPhotoData] = useState<string | null>(null)
   const [bank, setBank] = useState<BankForm>(EMPTY_BANK)
   const [guardian, setGuardian] = useState<GuardianForm>(EMPTY_GUARDIAN)
+  const [payMethod, setPayMethod] = useState<'card' | 'transfer'>('card')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const age = ageFrom(birthDate)
@@ -2169,7 +2178,8 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
         visitDay,
         startDate,
         photoData,
-        bank: plan === 'daypass' ? undefined : bank,
+        payMethod: plan === 'daypass' ? 'card' : payMethod,
+        bank: plan === 'daypass' || payMethod === 'transfer' ? undefined : bank,
         guardian: minor ? guardian : undefined,
       }),
     })
@@ -2264,13 +2274,49 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
 
       {plan !== 'daypass' ? (
         <section className="admin-block">
-          <h3>Kontodaten für Lastschrift</h3>
+          <h3>Zahlungsweise</h3>
+          <fieldset className="pay-pick">
+            <label className="check">
+              <input
+                type="radio"
+                name="deskPay"
+                checked={payMethod === 'card'}
+                onChange={() => setPayMethod('card')}
+              />
+              <span>Karte oder Apple Pay</span>
+            </label>
+            <label className="check">
+              <input
+                type="radio"
+                name="deskPay"
+                checked={payMethod === 'transfer'}
+                onChange={() => setPayMethod('transfer')}
+              />
+              <span>Banküberweisung, das Mitglied überweist selbst</span>
+            </label>
+          </fieldset>
           <p className="admin-muted">
-            {minor ? 'Bei unter 18 zahlt meist ein Elternteil: dann dessen Namen als Kontoinhaber. ' : ''}
-            Kann auch später nachgetragen werden. Nach dem Anlegen den Vertrag mit SEPA-Mandat drucken und unterschreiben
-            lassen.
+            Banküberweisung ist möglich. SEPA-Lastschrift kommt später. Der Beitrag ist jeweils zum 1. des Monats fällig.
           </p>
-          <BankFields value={bank} onChange={setBank} holderHint={holderHint} />
+          {payMethod === 'transfer' ? (
+            <p>
+              KONNI MMA GYM GbR
+              <br />
+              DE77 8605 5592 1090 4292 70 · WELADE8LXXX · Stadt- und Kreissparkasse Leipzig
+              <br />
+              <span className="admin-muted">Diese Kontodaten stehen im Vertrag.</span>
+            </p>
+          ) : (
+            <>
+              <h3>Kontodaten für Lastschrift</h3>
+              <p className="admin-muted">
+                {minor ? 'Bei unter 18 zahlt meist ein Elternteil: dann dessen Namen als Kontoinhaber. ' : ''}
+                SEPA-Lastschrift kommt später. Die Kontodaten können jetzt schon erfasst werden, oder erst wenn das
+                Mandat extra vereinbart wird. Nach dem Anlegen den Vertrag drucken und unterschreiben lassen.
+              </p>
+              <BankFields value={bank} onChange={setBank} holderHint={holderHint} />
+            </>
+          )}
         </section>
       ) : null}
 

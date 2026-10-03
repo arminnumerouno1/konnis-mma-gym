@@ -201,14 +201,15 @@ function Contract({ months }: { months: 12 | 24 }) {
         gezahlte Beträge werden erstattet.
       </p>
       <p>
-        Die Monatsbeiträge werden per SEPA-Lastschrift eingezogen. Fälligkeit ist der 1. des Monats. Fällt der 1.
-        auf ein Wochenende oder einen Feiertag, gilt der nächste Bankarbeitstag. Der erste angebrochene Monat wird
-        anteilig berechnet. Aufnahmegebühr: 0 €, fällig mit Beginn der Zahlungspflicht.
+        Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe,
+        oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC
+        WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. Die erste Zahlung ist am 1. November 2026 fällig. Aufnahmegebühr:
+        0 €.
       </p>
       <p>
-        Du erteilst uns ein SEPA-Lastschriftmandat. Gläubiger-Identifikationsnummer und Mandatsreferenz teilen wir
-        vor dem ersten Einzug mit. Das Konto muss am Abbuchungstag gedeckt sein. Rücklastschriftkosten, die du zu
-        vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.
+        SEPA-Lastschrift kommt später und ist derzeit nicht eingerichtet. Ein Lastschriftmandat gibt es nur, wenn das
+        extra vereinbart wird. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe
+        berechnet werden.
       </p>
       <h2>3. Laufzeit und Kündigung</h2>
       <p>

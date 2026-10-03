@@ -20,7 +20,8 @@ import {
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
-import { attachSignupDocs } from './signup-docs.mjs'
+import { attachSignupDocs, attachTransferNotice } from './signup-docs.mjs'
+import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
@@ -311,8 +312,10 @@ function createDeskMember(body, today) {
   if (minor && !body.guardian) return { ok: false, error: 'guardian' }
   const guardianRead = readGuardian(body.guardian, null, minor)
   if (!guardianRead.ok) return guardianRead
+  const payMethod = plan !== 'daypass' && body.payMethod === 'transfer' ? 'transfer' : 'card'
   const holderFallback = minor ? guardianRead.guardian.name : `${firstName} ${lastName}`
-  const bankRead = plan === 'daypass' ? { ok: true, bank: null } : readBank(body.bank, null, id, holderFallback)
+  const bankRead =
+    plan === 'daypass' || payMethod === 'transfer' ? { ok: true, bank: null } : readBank(body.bank, null, id, holderFallback)
   if (!bankRead.ok) return bankRead
   const photo = readPhoto(body.photoData)
   if (!photo.ok) return photo
@@ -336,6 +339,17 @@ function createDeskMember(body, today) {
     phone,
     inviteSlot: null,
     guardian: guardianRead.guardian,
+    payMethod,
+    transfer:
+      payMethod === 'transfer'
+        ? {
+            holder: GYM_BANK.holder,
+            iban: GYM_BANK.iban,
+            bic: GYM_BANK.bic,
+            bank: GYM_BANK.bank,
+            amount: Math.round(meta.price * 100),
+          }
+        : null,
     bank: bankRead.bank,
     photoData: photo.photoData,
     visitDay: visitDay || null,
@@ -612,7 +626,15 @@ export function createAdminHandler({ dataDir, env, fetchImpl = fetch }) {
           db.members.push(made.member)
           return db
         })
-        json(res, 200, { ok: true, member: publicMember(made.member, today, true) })
+        let member = made.member
+        if (member.payMethod === 'transfer') {
+          try {
+            member = await attachTransferNotice(store, member)
+          } catch (error) {
+            console.error('[admin] transfer notice skipped', error)
+          }
+        }
+        json(res, 200, { ok: true, member: publicMember(member, today, true) })
         return
       }
 

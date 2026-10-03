@@ -159,6 +159,8 @@ const db = await createMemberStore({ dataDir, env: {} }).load()
 const stored = db.members.find((row) => row.id === joined.id)
 assert(stored.stripe.billingStart === '2026-11-01' && stored.stripe.chargeNow === false, 'member remembers november')
 assert(stored.stripe.checkoutSessionId === 'cs_join', 'session id stored')
+assert(stored.docs?.contract?.name === 'Mitgliedsvertrag.pdf', 'card signup stores the signed contract')
+assert(!stored.docs?.payment, 'card signup does not file a transfer notice')
 
 const bankDir = mkdtempSync(join(tmpdir(), 'konni-bank-'))
 const bankCalls = []

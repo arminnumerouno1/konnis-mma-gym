@@ -103,7 +103,7 @@ export const COPY = {
   signupFeePrice: '0€',
   signupFeeLabel: 'Anmeldegebühr\nbis 2. November',
   priceFoot:
-    'Karte oder Apple Pay zum 1. des Monats. Anmeldegebühr 0 € bis zum 2. November. Laufzeit zählt ab Abschluss. Vor der Eröffnung zahlst du nichts.',
+    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 0 € bis zum 2. November. Vor der Eröffnung zahlst du nichts.',
   trialTitle: 'Komm vorbei.',
   preregTitle: 'Sei von Anfang an dabei.',
   preregLead:
@@ -201,13 +201,13 @@ export const COPY = {
   next: 'Weiter',
   successTitle: 'Anmeldung ist raus.',
   successLead:
-    'Wir haben deinen Vertrag. Die PDF-Kopie und die Widerrufsbelehrung gehen an deine Mail. Unten die Zusammenfassung. Widerruf: 14 Tage.',
+    'Wir haben deinen Vertrag. Die PDF-Kopie und die Widerrufsbelehrung gehen an deine Mail, auch wenn du mit Karte oder Apple Pay über Stripe zahlst. Unten die Zusammenfassung. Widerruf: 14 Tage.',
   payTransfer: 'Banküberweisung',
   payCard: 'Karte oder Apple Pay',
   payTransferNote:
-    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig. Die Kontodaten stehen nach dem Abschluss hier und in der E-Mail mit dem Vertrag.',
+    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig. Die Kontodaten stehen nach dem Abschluss hier, im Vertrag und in der E-Mail. SEPA-Lastschrift kommt später.',
   payTransferDone:
-    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig. Überweise auf das Konto der KONNI MMA GYM GbR. Den Vertrag schicken wir dir per E-Mail.',
+    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig. Überweise auf das Konto der KONNI MMA GYM GbR. Den Vertrag schicken wir dir per E-Mail. SEPA-Lastschrift kommt später.',
   payLater:
     'Deine Anmeldung ist da. Abgebucht wird erstmals am 1. November 2026, danach immer zum 1. Vorher geht nichts vom Konto. Den Link zur Zahlung schicken wir dir.',
   payDayLater:
@@ -215,7 +215,7 @@ export const COPY = {
   payUnlinked:
     'Deine Anmeldung ist da. Der Zahlungslink konnte gerade nicht erzeugt werden. Wir schicken ihn dir.',
   payReturnOk:
-    'Danke. Dein Vertrag ist gespeichert. Die erste Abbuchung ist am 1. November 2026. Vorher wird nichts eingezogen. Danach immer zum 1. des Monats.',
+    'Danke. Dein Vertrag ist gespeichert und liegt in der E-Mail. Die erste Abbuchung ist am 1. November 2026. Vorher wird nichts eingezogen. Danach immer zum 1. des Monats. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später.',
   payReturnOkNow:
     'Danke. Dein Vertrag ist gespeichert. Die Zahlung läuft über Stripe. Den laufenden Monat ziehen wir jetzt ein, danach immer zum 1.',
   payReturnCancel:
@@ -242,7 +242,7 @@ export const COPY = {
   consentGuardian: 'Ich bin gesetzliche Vertretung und stimme dem Vertrag zu.',
   consentSign: 'Ich unterschreibe diesen Vertrag elektronisch. Der Text gilt wie auf Papier.',
   payNote:
-    'Monatsbeiträge mit Karte oder Apple Pay, in der Regel zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung.',
+    'Monatsbeiträge mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Fällig jeweils zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung.',
 } as const
 
 export const FAQ = [
@@ -252,7 +252,7 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Ja. Unter Mitglied werden schließt du Standard, Flex oder den Day Pass online ab. Die erste Monatsabbuchung ist am 1. November 2026. Vorher geht nichts vom Konto.',
+    a: 'Ja. Unter Mitglied werden schließt du Standard, Flex oder den Day Pass online ab. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto.',
   },
   {
     q: 'Gibt es ein Probetraining?',
@@ -268,7 +268,7 @@ export const FAQ = [
   },
   {
     q: 'Wie wird bezahlt?',
-    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Überweisung auf das Konto der KONNI MMA GYM GbR. Die erste Zahlung ist am 1. November 2026 fällig. Vorher geht nichts vom Konto.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026 fällig. Vorher geht nichts vom Konto.',
   },
   {
     q: 'Kann ich unter 18 trainieren?',

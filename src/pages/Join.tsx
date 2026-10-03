@@ -639,7 +639,8 @@ function JoinForm({ plan, invite }: JoinProps) {
                 </label>
               ) : null}
             </fieldset>
-            <p>{chosen !== 'daypass' && payMethod === 'transfer' ? COPY.payTransferNote : PAYMENT_NOTE}</p>
+            <p>{PAYMENT_NOTE}</p>
+            {chosen !== 'daypass' && payMethod === 'transfer' ? <p>{COPY.payTransferNote}</p> : null}
             <label className="check">
               <input type="checkbox" checked={consents.agb} onChange={() => toggleConsent('agb')} />
               <span>

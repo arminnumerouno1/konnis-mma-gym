@@ -234,15 +234,16 @@ function contractParagraphs(record) {
       'AGB Stand 27. September 2026 und Hausordnung sind Teil dieses Vertrags. Widerruf: 14 Tage.',
     ]
   }
+  const account = `Kontoinhaber ${GYM_BANK.holder}, IBAN ${spaceGymIban(GYM_BANK.iban)}, BIC ${GYM_BANK.bic}, ${GYM_BANK.bank}`
   return [
     'Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.',
     'Die Zahlungspflicht beginnt erst mit der tatsächlichen Eröffnung. Verschiebt sich die Eröffnung um mehr als acht Wochen über den geplanten Termin, kannst du vor Leistungsbeginn in Textform zurücktreten. Schon gezahlte Beträge werden erstattet.',
     record.payMethod === 'transfer'
-      ? `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du überweist ihn auf das Konto der ${GYM_BANK.holder}, IBAN ${spaceGymIban(GYM_BANK.iban)}, BIC ${GYM_BANK.bic}, ${GYM_BANK.bank}. Die erste Überweisung ist am 1. November 2026 fällig. Aufnahmegebühr: 0,00 EUR.`
-      : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Monatsbeiträge werden mit Karte oder Apple Pay über Stripe eingezogen. Die erste Abbuchung ist am 1. November 2026 fällig. Der erste angebrochene Monat wird anteilig berechnet. Aufnahmegebühr: 0,00 EUR.',
+      ? `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst per Banküberweisung auf das Konto der ${GYM_BANK.holder}. ${account}. Die erste Überweisung ist am 1. November 2026 fällig. Aufnahmegebühr: 0,00 EUR.`
+      : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Die erste Abbuchung ist am 1. November 2026 fällig. Aufnahmegebühr: 0,00 EUR. Banküberweisung ist ebenfalls möglich: ${account}.`,
     record.payMethod === 'transfer'
-      ? 'Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Kommt eine Überweisung nicht an, gelten die Regeln zum Zahlungsverzug.'
-      : 'Kartenzahlung läuft über Stripe. Ein SEPA-Lastschriftmandat erteilen wir nur, wenn das gesondert vereinbart wird. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.',
+      ? 'Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Karte oder Apple Pay über Stripe ist die andere Zahlungsart. SEPA-Lastschrift kommt später und ist in diesem Vertrag nicht erteilt. Kommt eine Überweisung nicht an, gelten die Regeln zum Zahlungsverzug.'
+      : 'Kartenzahlung läuft über Stripe. Banküberweisung auf das oben genannte Konto ist ebenfalls möglich. SEPA-Lastschrift kommt später. Ein Lastschriftmandat gibt es nur, wenn das extra vereinbart wird. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.',
     `Anfängliche Vertragsdauer: ${months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt.`,
     'Hausordnung gilt. Eigenverantwortliche Gesundheitsprüfung. Haftung nach Gesetz. Minderjährige brauchen die Zustimmung aller erforderlichen gesetzlichen Vertreter. AGB Stand 27.09.2026 und Hausordnung sind Teil des Vertrags.',
   ]
@@ -409,8 +410,21 @@ async function buildPaperContractPdf(record, creditorId) {
   }
   signLine(writer, 'Für KONNI MMA GYM GbR')
 
-  if (record.plan !== 'daypass') {
+  if (record.plan !== 'daypass' && record.payMethod === 'transfer') {
+    writer.heading('5. Zahlungsart Banküberweisung')
+    writer.para(
+      'Das Mitglied überweist den Beitrag selbst. SEPA-Lastschrift kommt später und wird mit diesem Vertrag nicht erteilt.',
+    )
+    writer.kv('Kontoinhaber', GYM_BANK.holder)
+    writer.kv('IBAN', spaceGymIban(GYM_BANK.iban))
+    writer.kv('BIC', GYM_BANK.bic)
+    writer.kv('Bank', GYM_BANK.bank)
+    writer.para('Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.')
+  } else if (record.plan !== 'daypass') {
     writer.heading('5. SEPA-Lastschriftmandat')
+    writer.para(
+      `Banküberweisung ist jetzt möglich auf ${GYM_BANK.holder}, IBAN ${spaceGymIban(GYM_BANK.iban)}, BIC ${GYM_BANK.bic}, ${GYM_BANK.bank}. SEPA-Lastschrift kommt später. Dieses Mandat nur ausfüllen, wenn die Lastschrift extra vereinbart wird.`,
+    )
     writer.kv('Zahlungsempfänger', 'KONNI MMA GYM GbR, Wittenberger Straße 15, 04129 Leipzig')
     writer.kv('Gläubiger-Identifikationsnummer', creditorId || 'wird vor dem ersten Einzug mitgeteilt')
     writer.kv('Mandatsreferenz', bank.mandateRef || blank)
@@ -511,7 +525,7 @@ export async function buildTransferNoticePdf(record) {
   writer.text('Zahlungsart: Banküberweisung', { font: writer.bold, size: 18, leading: 22 })
   writer.gap(8)
   writer.para(
-    `Für ${who || 'dieses Mitglied'} wurde bei der Anmeldung Banküberweisung als Zahlung genommen. Es gibt kein SEPA-Lastschriftmandat und keinen Einzug über Stripe.`,
+    `Für ${who || 'dieses Mitglied'} wurde Banküberweisung als Zahlung genommen. SEPA-Lastschrift kommt später und ist hier nicht erteilt. Es gibt keinen Einzug über Stripe.`,
   )
   writer.heading('Fälligkeit')
   writer.para(
