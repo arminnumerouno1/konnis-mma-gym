@@ -441,15 +441,7 @@ export function Home() {
           </div>
           <div>
             <h3>{COPY.hoursTitle}</h3>
-            <dl className="hours">
-              {GYM.hours.map((row) => (
-                <div key={row.days}>
-                  <dt>{row.days}</dt>
-                  <dd>{row.time}</dd>
-                </div>
-              ))}
-            </dl>
-            <p className="hours-note">{GYM.hoursNote}</p>
+            <p className="hours-soon">{GYM.hoursSoon}</p>
           </div>
         </div>
       </section>

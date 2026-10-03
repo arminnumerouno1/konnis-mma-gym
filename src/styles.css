@@ -1152,21 +1152,9 @@ p,
   max-width: 800px;
 }
 
-.hours {
-  margin: 0;
-}
-
-.hours div {
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--line);
-}
-
-.hours-note {
-  color: var(--muted);
-  font-size: 15px;
+.hours-soon {
+  margin: 8px 0 0;
+  font-size: 18px;
 }
 
 .gym-map iframe {

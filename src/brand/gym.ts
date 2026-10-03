@@ -35,12 +35,7 @@ export const GYM = {
     marks: '/brand/halle/marks.jpg',
     ropes: '/brand/halle/ropes.jpg',
   },
-  hours: [
-    { days: 'Montag–Freitag', time: '15:30–21:30' },
-    { days: 'Samstag', time: '10:00–14:00' },
-    { days: 'Sonntag', time: 'geschlossen' },
-  ],
-  hoursNote: 'Geplante Zeiten zum Start. Kann sich noch verschieben.',
+  hoursSoon: 'Werden demnächst bekannt gegeben.',
   siteBy: {
     name: 'Armin Scholtz',
     url: 'https://energie-berater-plus.de',
