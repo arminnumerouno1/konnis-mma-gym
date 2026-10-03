@@ -300,7 +300,9 @@ export async function buildContractPdf(record, { paper = false, creditorId = '' 
   writer.heading('2. Tarif, Beginn und Preis')
   writer.kv('Tarif', `${record.planName || record.plan}${term ? ` · ${term}` : ''}`)
   writer.kv('Beitrag', `${formatted}${unit ? ` ${unit}` : ''}`)
-  writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.')
+  if (record.plan !== 'daypass') {
+    writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.')
+  }
   writer.kv('Vertragsschluss', formatWhen(record.createdAt))
   if (record.visitDay) writer.kv('Day Pass', formatIsoDate(record.visitDay))
   if (record.inviteSlot) writer.kv('First 50', `Persönlicher Platz ${record.inviteSlot} von 50`)
@@ -388,7 +390,9 @@ async function buildPaperContractPdf(record, creditorId) {
   writer.heading('2. Tarif, Beginn und Preis')
   writer.kv('Tarif', `${record.planName || record.plan}${term ? ` · ${term}` : ''}`)
   writer.kv('Beitrag', `${formatted}${unit ? ` ${unit}` : ''}`)
-  writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.')
+  if (record.plan !== 'daypass') {
+    writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.')
+  }
   writer.kv('Beginn', formatIsoDate(record.startDate))
   if (record.inviteSlot) writer.kv('First 50', `Persönlicher Platz ${record.inviteSlot} von 50`)
   for (const block of contractParagraphs(record)) writer.para(block)

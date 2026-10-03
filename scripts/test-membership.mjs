@@ -170,6 +170,18 @@ assert(standardMail.includes('SEPA-Lastschrift kommt später'), 'card mail says 
 assert(standardMail.includes('nur bis zum 2. November 2026') && standardMail.includes('Danach beträgt sie 49 €'), 'mail states the later signup fee')
 assert(standardMail.includes('Mitgliedsvertrag') || standardMail.includes('Vertrag'), 'card mail mentions the contract')
 
+const dayMail = membershipCopyHtml({
+  ...mailRecord,
+  plan: 'daypass',
+  planName: 'Day Pass',
+  price: 19.99,
+  termMonths: null,
+  visitDay: '2026-11-02',
+  payMethod: 'card',
+})
+assert(!dayMail.includes('Aufnahmegebühr') && !dayMail.includes('49 €'), 'day pass mail has no signup fee')
+assert(dayMail.includes('Day Pass wird mit Karte oder Apple Pay bezahlt'), 'day pass mail names card payment')
+
 const sample = {
   firstName: 'Anna',
   lastName: 'Müller',
@@ -212,6 +224,38 @@ assert(transferText.includes('Banküberweisung') && transferText.includes('DE77 
 const paperPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard', planName: 'Standard', payMethod: 'transfer' }, { paper: true }))
 const paperText = pdfText(paperPdf)
 assert(paperText.includes('DE77 8605') && paperText.includes('4292 70'), 'paper contract contains the gym account')
+assert(paperText.includes('Danach beträgt sie 49,00 EUR'), 'paper membership still states the later signup fee')
+
+const dayPdf = Buffer.from(
+  await buildContractPdf({
+    ...sample,
+    plan: 'daypass',
+    planName: 'Day Pass',
+    price: 19.99,
+    termMonths: null,
+    visitDay: '2026-11-02',
+    payMethod: 'card',
+    inviteSlot: undefined,
+  }),
+)
+const dayText = pdfText(dayPdf)
+assert(dayText.includes('Day Pass') && !dayText.includes('Aufnahmegebühr') && !dayText.includes('49,00 EUR'), 'day pass contract has no signup fee')
+const dayPaper = Buffer.from(
+  await buildContractPdf(
+    {
+      ...sample,
+      plan: 'daypass',
+      planName: 'Day Pass',
+      price: 19.99,
+      termMonths: null,
+      visitDay: '2026-11-02',
+      payMethod: 'card',
+      inviteSlot: undefined,
+    },
+    { paper: true },
+  ),
+)
+assert(!pdfText(dayPaper).includes('Aufnahmegebühr'), 'paper day pass has no signup fee')
 
 const withdrawalBytes = Buffer.from(files[1].content, 'base64')
 assert(withdrawalBytes.subarray(0, 5).toString() === '%PDF-', 'withdrawal header')

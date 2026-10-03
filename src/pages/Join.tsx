@@ -389,10 +389,12 @@ function JoinForm({ plan, invite }: JoinProps) {
                 {summary.plan.name} · {summary.plan.price}€ {summary.plan.unit} · {summary.plan.term}
               </dd>
             </div>
-            <div>
-              <dt>Aufnahmegebühr</dt>
-              <dd>0,00 €, nur bis zum 2. November 2026. Danach beträgt sie 49 €.</dd>
-            </div>
+            {summary.plan.id === 'daypass' ? null : (
+              <div>
+                <dt>Aufnahmegebühr</dt>
+                <dd>0,00 €, nur bis zum 2. November 2026. Danach beträgt sie 49 €.</dd>
+              </div>
+            )}
             <div>
               <dt>Vertragsschluss</dt>
               <dd>{new Date(summary.at).toLocaleString('de-DE')}</dd>
@@ -422,7 +424,7 @@ function JoinForm({ plan, invite }: JoinProps) {
               <dd>{consents.earlyStart ? COPY.earlyStartYes : COPY.earlyStartNo}</dd>
             </div>
           </dl>
-          <p>{PAYMENT_NOTE}</p>
+          <p>{summary.plan.id === 'daypass' ? COPY.payDayNote : PAYMENT_NOTE}</p>
           <p>
             AGB Stand {GYM.agbStand} und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.
           </p>
@@ -497,10 +499,12 @@ function JoinForm({ plan, invite }: JoinProps) {
                     {item.price}€ {item.unit}
                   </em>
                   <small>{item.term}</small>
-                  <small className="price-fee">
-                    <strong>{COPY.signupFeePrice}</strong>
-                    <span>{COPY.signupFeeLabel}</span>
-                  </small>
+                  {item.id === 'daypass' ? null : (
+                    <small className="price-fee">
+                      <strong>{COPY.signupFeePrice}</strong>
+                      <span>{COPY.signupFeeLabel}</span>
+                    </small>
+                  )}
                 </span>
               </label>
             ))}
@@ -649,7 +653,7 @@ function JoinForm({ plan, invite }: JoinProps) {
                 </label>
               ) : null}
             </fieldset>
-            <p>{PAYMENT_NOTE}</p>
+            <p>{chosen === 'daypass' ? COPY.payDayNote : PAYMENT_NOTE}</p>
             {chosen !== 'daypass' && payMethod === 'transfer' ? <p>{COPY.payTransferNote}</p> : null}
             <label className="check">
               <input type="checkbox" checked={consents.agb} onChange={() => toggleConsent('agb')} />

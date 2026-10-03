@@ -128,7 +128,7 @@ ${forGym ? files : ''}
 <p><strong>Anschrift</strong><br>${escapeMail(record.street)}, ${escapeMail(record.zip)} ${escapeMail(record.city)}</p>
 <p><strong>Kontakt</strong><br>${[record.email, record.phone].filter(Boolean).map(escapeMail).join(' · ')}</p>
 <p><strong>Tarif</strong><br>${escapeMail(record.planName || record.plan)} · ${escapeMail(formatted)}€ ${escapeMail(unit)} · ${escapeMail(term)}</p>
-<p><strong>Aufnahmegebühr</strong><br>0,00 €, nur bis zum 2. November 2026. Danach beträgt sie 49 €.</p>
+${record.plan === 'daypass' ? '' : '<p><strong>Aufnahmegebühr</strong><br>0,00 €, nur bis zum 2. November 2026. Danach beträgt sie 49 €.</p>'}
 <p><strong>Vertragsschluss</strong><br>${escapeMail(when)}</p>
 ${visit}
 ${guardian}

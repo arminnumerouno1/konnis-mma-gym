@@ -99,11 +99,12 @@ export const COPY = {
   planSoon: 'Wird bald bekannt gegeben',
   planNote: 'Der konkrete Plan kommt mit dem Start. Hier siehst du nur die Form — die Zeiten sind noch nicht öffentlich.',
   priceTitle: 'Tarife.',
-  priceLead: 'Alle Kurse nutzbar. Anmeldegebühr 0€ nur bis zum 2. November, danach 49€. Standard, Flex oder Day Pass.',
+  priceLead:
+    'Alle Kurse nutzbar. Standard, Flex oder Day Pass. Die Anmeldegebühr von 0€ nur bis zum 2. November, danach 49€, gilt nur für Mitgliedschaften. Der Day Pass hat keine Anmeldegebühr.',
   signupFeePrice: '0€',
   signupFeeLabel: 'Anmeldegebühr\nnur bis 2. November\ndanach 49€',
   priceFoot:
-    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 0 € nur bis zum 2. November 2026, danach 49 €. Vor der Eröffnung zahlst du nichts.',
+    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr bei Mitgliedschaften 0 € nur bis zum 2. November 2026, danach 49 €. Der Day Pass hat keine Anmeldegebühr. Vor der Eröffnung zahlst du nichts.',
   trialTitle: 'Komm vorbei.',
   preregTitle: 'Sei von Anfang an dabei.',
   preregLead:
@@ -212,6 +213,8 @@ export const COPY = {
     'Deine Anmeldung ist da. Abgebucht wird erstmals am 1. November 2026, danach immer zum 1. Vorher geht nichts vom Konto. Den Link zur Zahlung schicken wir dir.',
   payDayLater:
     'Dein Day Pass ist gespeichert. Abgebucht wird er erst ab dem 1. November 2026. Vorher geht nichts vom Konto.',
+  payDayNote:
+    'Der Day Pass ist eine Tageskarte für 19,99 €. Es gibt keine Anmeldegebühr. Du zahlst mit Karte oder Apple Pay. Vor der Eröffnung geht nichts vom Konto.',
   payUnlinked:
     'Deine Anmeldung ist da. Der Zahlungslink konnte gerade nicht erzeugt werden. Wir schicken ihn dir.',
   payReturnOk:
@@ -252,7 +255,7 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Ja. Unter Mitglied werden schließt du Standard, Flex oder den Day Pass online ab. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto. Die Anmeldegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.',
+    a: 'Ja. Unter Mitglied werden schließt du Standard, Flex oder den Day Pass online ab. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto. Bei Standard und Flex gilt die Anmeldegebühr von 0 € nur bis zum 2. November 2026. Danach beträgt sie 49 €. Der Day Pass ist eine Tageskarte ohne Anmeldegebühr.',
   },
   {
     q: 'Gibt es ein Probetraining?',
@@ -268,7 +271,7 @@ export const FAQ = [
   },
   {
     q: 'Wie wird bezahlt?',
-    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026 fällig. Vorher geht nichts vom Konto. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026 fällig. Vorher geht nichts vom Konto. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €. Der Day Pass hat keine Anmeldegebühr.',
   },
   {
     q: 'Kann ich unter 18 trainieren?',
