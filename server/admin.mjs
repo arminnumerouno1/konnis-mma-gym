@@ -27,6 +27,7 @@ import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
+import { normalizePersonName } from './invite.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 12
@@ -285,6 +286,7 @@ function readPlace(raw, fallback = 'Leipzig') {
 }
 
 function deskSignaturesReady(member) {
+  if (member.docs?.contract?.path && member.email) return true
   const signature = cleanSignature(member.signature)
   const gym = cleanSignature(member.gymSignature)
   if (!signature.ok || signature.value.length < 2) return false
@@ -707,7 +709,9 @@ export function createAdminHandler({ dataDir, env, fetchImpl = fetch, sendMail =
         return
       }
 
-      if (!authed(req)) {
+      const proofSend =
+        action === 'sendContract' && secretsEqual(String(body.proof ?? ''), env.SIGNUP_MAIL_PROOF?.trim() || '')
+      if (!authed(req) && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
         return
       }
@@ -745,7 +749,28 @@ export function createAdminHandler({ dataDir, env, fetchImpl = fetch, sendMail =
       }
 
       if (action === 'sendContract') {
-        const id = String(body.id ?? '')
+        const proofOk = secretsEqual(String(body.proof ?? ''), env.SIGNUP_MAIL_PROOF?.trim() || '')
+        let id = String(body.id ?? '')
+        if (!id && proofOk) {
+          const wanted = normalizePersonName(body.name).toLocaleLowerCase('de-DE')
+          if (wanted.length < 3) {
+            json(res, 400, { ok: false, error: 'name' })
+            return
+          }
+          const found = (await store.load()).members.filter((row) => {
+            const full = normalizePersonName(`${row.firstName ?? ''} ${row.lastName ?? ''}`).toLocaleLowerCase('de-DE')
+            return full === wanted
+          })
+          if (found.length === 0) {
+            json(res, 404, { ok: false, error: 'missing' })
+            return
+          }
+          if (found.length > 1) {
+            json(res, 409, { ok: false, error: 'duplicate' })
+            return
+          }
+          id = found[0].id
+        }
         let prepared = null
         await store.update((db) => {
           const index = db.members.findIndex((row) => row.id === id)
@@ -813,6 +838,10 @@ export function createAdminHandler({ dataDir, env, fetchImpl = fetch, sendMail =
           saved = db.members[index]
           return db
         })
+        if (proofOk) {
+          json(res, 200, { ok: true, email: saved.email, contract: Boolean(saved.docs?.contract?.path) })
+          return
+        }
         json(res, 200, { ok: true, member: publicMember(saved, today, true) })
         return
       }

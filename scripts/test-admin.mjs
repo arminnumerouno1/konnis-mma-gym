@@ -863,4 +863,52 @@ assert(sentMail.status === 200 && sentMail.data.member.contractMail === 'sent', 
 assert(sentMail.data.member.contractMailAt, 'manual contract mail records the time')
 assert(contractMails === 1, 'one manual contract mail')
 
+const scanDesk = await post({
+  action: 'create',
+  plan: 'flex',
+  firstName: 'Tom',
+  lastName: 'Scan',
+  birthDate: '1993-03-03',
+  email: 'tom.scan@example.com',
+  phone: '+49 171 9090909',
+  startDate: '2026-11-02',
+})
+assert(scanDesk.status === 200 && !scanDesk.data.member.gymSignature, 'desk member can exist before the gym signature')
+const scanId = scanDesk.data.member.id
+await store.putDoc(`${scanId}/scan.pdf`, Buffer.from('%PDF-1.4 scan'), 'application/pdf')
+await store.update((db) => {
+  const row = db.members.find((item) => item.id === scanId)
+  row.docs = {
+    ...(row.docs ?? {}),
+    contract: { path: `${scanId}/scan.pdf`, name: 'Scan.pdf', type: 'application/pdf', size: 12, uploadedAt: '2026-10-04T13:00:00.000Z' },
+  }
+  return db
+})
+const proof = 'signup-mail-proof-test'
+let proofMails = 0
+const proofHandler = createAdminHandler({
+  dataDir: tmp,
+  env: { ADMIN_SECRET: secret, BREVO_API_KEY: 'xkeysib-test', SIGNUP_MAIL_PROOF: proof },
+  sendMail: async (_env, record, options) => {
+    proofMails += 1
+    assert(record.email === 'tom.scan@example.com', 'proof mail uses the stored member')
+    assert(options.extra?.[0]?.name === 'Scan.pdf', 'uploaded contract is attached without new signatures')
+    return { member: 'sent_with_pdf', gym: 'sent_with_pdf' }
+  },
+})
+async function proofCall(body, cookieHeader = {}) {
+  const { res, captured } = mockRes()
+  await proofHandler(
+    { method: 'POST', url: '/api/admin', headers: cookieHeader, socket: { remoteAddress: '10.0.0.9' }, body },
+    res,
+  )
+  return { status: captured.status, data: captured.body ? JSON.parse(captured.body) : {} }
+}
+const wrongProof = await proofCall({ action: 'sendContract', proof: 'not-the-proof-value', name: 'Tom Scan' })
+assert(wrongProof.status === 401 && proofMails === 0, 'contract mail without the desk login needs the right proof')
+const scanMail = await proofCall({ action: 'sendContract', proof, name: 'Tom Scan' })
+assert(scanMail.status === 200 && scanMail.data.email === 'tom.scan@example.com' && scanMail.data.contract === true, 'uploaded contract mail goes out by name')
+assert(!scanMail.data.member, 'proof response does not return the member record')
+assert(proofMails === 1, 'one uploaded-contract mail')
+
 console.log('admin tests ok')

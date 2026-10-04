@@ -11,6 +11,9 @@
     },
     "api/signup-open-mail.js": {
       "maxDuration": 60
+    },
+    "api/admin.js": {
+      "includeFiles": "public/legal/widerrufsbelehrung.pdf,server/assets/widerrufsbelehrung.pdf"
     }
   },
   "redirects": [
