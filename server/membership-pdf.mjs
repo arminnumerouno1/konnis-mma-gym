@@ -255,9 +255,16 @@ function contractParagraphs(record) {
   ]
 }
 
-function signLine(writer, label) {
-  writer.gap(26)
-  writer.ensure(30)
+function signLine(writer, label, signed = '') {
+  const name = String(signed ?? '').trim()
+  if (name) {
+    writer.gap(8)
+    writer.ensure(36)
+    writer.text(name, { font: writer.italic, size: 14, leading: 18 })
+  } else {
+    writer.gap(26)
+    writer.ensure(30)
+  }
   writer.page.drawLine({
     start: { x: MARGIN, y: writer.y + 2 },
     end: { x: MARGIN + 260, y: writer.y + 2 },
@@ -341,7 +348,7 @@ export async function buildContractPdf(record, { paper = false, creditorId = '' 
   writer.text('Elektronische Unterschrift des Mitglieds', { size: 8, color: MUTED, leading: 11 })
   if (record.guardian) {
     writer.gap(10)
-    writer.text(record.guardian.name, { font: writer.italic, size: 12, leading: 16 })
+    writer.text(record.guardian.signature || record.guardian.name, { font: writer.italic, size: 12, leading: 16 })
     writer.page.drawLine({
       start: { x: MARGIN, y: writer.y + 2 },
       end: { x: MARGIN + 220, y: writer.y + 2 },
@@ -350,6 +357,18 @@ export async function buildContractPdf(record, { paper = false, creditorId = '' 
     })
     writer.gap(6)
     writer.text('Zustimmung der gesetzlichen Vertretung', { size: 8, color: MUTED, leading: 11 })
+  }
+  if (record.gymSignature) {
+    writer.gap(10)
+    writer.text(record.gymSignature, { font: writer.italic, size: 12, leading: 16 })
+    writer.page.drawLine({
+      start: { x: MARGIN, y: writer.y + 2 },
+      end: { x: MARGIN + 220, y: writer.y + 2 },
+      thickness: 0.7,
+      color: INK,
+    })
+    writer.gap(6)
+    writer.text('Für KONNI MMA GYM GbR', { size: 8, color: MUTED, leading: 11 })
   }
 
   writer.gap(14)
@@ -409,18 +428,23 @@ async function buildPaperContractPdf(record, creditorId) {
   writer.para('AGB Stand 27. September 2026, Hausordnung und Datenschutzerklärung habe ich erhalten und gelesen.')
   writer.para('[  ] Freiwillig: Ich willige in Foto- und Videoaufnahmen für die Kanäle des Gyms ein. Widerruf jederzeit mit Wirkung für die Zukunft.')
 
+  const captured = Boolean(String(record.gymSignature ?? '').trim())
   writer.heading('4. Unterschrift')
-  writer.para(`Ort, Datum: ${record.place || 'Leipzig'}, ${blank}`)
-  signLine(writer, `Unterschrift Mitglied (${who})`)
+  writer.para(`Ort, Datum: ${record.place || 'Leipzig'}, ${captured ? formatWhen(record.createdAt) || formatIsoDate(record.createdAt) : blank}`)
+  signLine(writer, `Unterschrift Mitglied (${who})`, captured ? record.signature : '')
   if (record.minor) {
     writer.gap(4)
     writer.para(
       'Das Mitglied ist unter 18. Mit der Unterschrift stimmen die gesetzlichen Vertreter dem Vertrag zu und bestätigen, dass sie zur Vertretung berechtigt sind. Bei gemeinsamem Sorgerecht unterschreiben beide oder die unterschreibende Person bestätigt die Zustimmung der anderen.',
     )
-    signLine(writer, `Unterschrift gesetzliche Vertretung${record.guardian?.name ? ` (${record.guardian.name})` : ''}`)
-    signLine(writer, 'Unterschrift zweite sorgeberechtigte Person (falls gemeinsames Sorgerecht)')
+    signLine(
+      writer,
+      `Unterschrift gesetzliche Vertretung${record.guardian?.name ? ` (${record.guardian.name})` : ''}`,
+      captured ? record.guardian?.signature : '',
+    )
+    signLine(writer, 'Unterschrift zweite sorgeberechtigte Person (falls gemeinsames Sorgerecht)', captured ? record.secondGuardianSignature : '')
   }
-  signLine(writer, 'Für KONNI MMA GYM GbR')
+  signLine(writer, 'Für KONNI MMA GYM GbR', captured ? record.gymSignature : '')
 
   if (record.plan !== 'daypass' && record.payMethod === 'transfer') {
     writer.heading('5. Zahlungsart Banküberweisung')
@@ -446,8 +470,8 @@ async function buildPaperContractPdf(record, creditorId) {
     writer.para(
       'Ich ermächtige die KONNI MMA GYM GbR, Zahlungen von meinem Konto mittels Lastschrift einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von der KONNI MMA GYM GbR auf mein Konto gezogenen Lastschriften einzulösen. Hinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem Kreditinstitut vereinbarten Bedingungen.',
     )
-    writer.para(`Ort, Datum: ${record.place || 'Leipzig'}, ${blank}`)
-    signLine(writer, `Unterschrift Kontoinhaber/in${bank.holder ? ` (${bank.holder})` : ''}`)
+    writer.para(`Ort, Datum: ${record.place || 'Leipzig'}, ${captured && bank.mandateSignature ? formatWhen(record.createdAt) || formatIsoDate(record.createdAt) : blank}`)
+    signLine(writer, `Unterschrift Kontoinhaber/in${bank.holder ? ` (${bank.holder})` : ''}`, captured ? bank.mandateSignature : '')
   }
 
   return writer.bytes()
@@ -557,8 +581,11 @@ export async function buildTransferNoticePdf(record) {
   return writer.bytes()
 }
 
-export async function membershipPdfAttachments(record) {
-  const [contract, withdrawal] = await Promise.all([buildContractPdf(record), loadWithdrawalPdf()])
+export async function membershipPdfAttachments(record, { paper = false, creditorId = '' } = {}) {
+  const [contract, withdrawal] = await Promise.all([
+    buildContractPdf(record, { paper, creditorId }),
+    loadWithdrawalPdf(),
+  ])
   return [
     { name: 'Mitgliedsvertrag.pdf', content: Buffer.from(contract).toString('base64') },
     { name: 'Widerrufsbelehrung.pdf', content: Buffer.from(withdrawal).toString('base64') },

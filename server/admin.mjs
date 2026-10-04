@@ -21,6 +21,7 @@ import {
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
+import { sendMembershipEmails } from './membership-mail.mjs'
 import { attachSignupDocs, attachTransferNotice } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
@@ -252,7 +253,9 @@ function readBank(input, current, id, fallbackHolder) {
   if (bic && !isValidBic(bic)) return { ok: false, error: 'bic' }
   const holder = String(input.holder ?? '').trim() || fallbackHolder
   if (holder.length < 3 || holder.length > 120) return { ok: false, error: 'holder' }
-  const signed = Boolean(input.mandateSigned)
+  const mandate = cleanSignature(input.mandateSignature)
+  if (!mandate.ok) return mandate
+  const signed = Boolean(input.mandateSigned) || Boolean(mandate.value)
   const sameAccount = current?.iban === iban
   return {
     ok: true,
@@ -261,10 +264,83 @@ function readBank(input, current, id, fallbackHolder) {
       iban,
       bic,
       mandateRef: current?.mandateRef || mandateRefFor(id),
+      mandateSignature: mandate.value || current?.mandateSignature || '',
       mandateSignedAt: signed ? (sameAccount && current?.mandateSignedAt) || new Date().toISOString() : null,
       updatedAt: new Date().toISOString(),
     },
   }
+}
+
+function cleanSignature(raw) {
+  const value = String(raw ?? '').trim().replace(/\s+/g, ' ')
+  if (!value) return { ok: true, value: '' }
+  if (value.length < 2 || value.length > 120) return { ok: false, error: 'signature', value: '' }
+  return { ok: true, value }
+}
+
+function readPlace(raw, fallback = 'Leipzig') {
+  const value = String(raw ?? fallback).trim().replace(/\s+/g, ' ') || fallback
+  if (value.length < 2 || value.length > 80) return { ok: false, error: 'place' }
+  return { ok: true, value }
+}
+
+function deskSignaturesReady(member) {
+  const signature = cleanSignature(member.signature)
+  const gym = cleanSignature(member.gymSignature)
+  if (!signature.ok || signature.value.length < 2) return false
+  if (!gym.ok || gym.value.length < 2) return false
+  if (member.minor) {
+    const guardian = cleanSignature(member.guardian?.signature)
+    if (!guardian.ok || guardian.value.length < 2) return false
+  }
+  if (member.bank?.mandateSignedAt) {
+    const mandate = cleanSignature(member.bank.mandateSignature)
+    if (!mandate.ok || mandate.value.length < 2) return false
+  }
+  return true
+}
+
+function applyDeskSignatures(member, input) {
+  if (input == null || typeof input !== 'object') return { ok: true, member }
+  const place = readPlace(input.place, member.place || 'Leipzig')
+  if (!place.ok) return place
+  const signature = cleanSignature(input.signature)
+  if (!signature.ok) return signature
+  const gym = cleanSignature(input.gymSignature)
+  if (!gym.ok) return gym
+  const second = cleanSignature(input.secondGuardianSignature)
+  if (!second.ok) return second
+  const guardianSignature = cleanSignature(input.guardianSignature)
+  if (!guardianSignature.ok) return guardianSignature
+  const mandateSignature = cleanSignature(input.mandateSignature)
+  if (!mandateSignature.ok) return mandateSignature
+  const next = {
+    ...member,
+    place: place.value,
+    signature: signature.value || member.signature,
+    gymSignature: gym.value,
+    secondGuardianSignature: second.value,
+    updatedAt: new Date().toISOString(),
+  }
+  if (next.minor && next.guardian) {
+    const has = Boolean(guardianSignature.value)
+    next.guardian = {
+      ...next.guardian,
+      signature: guardianSignature.value,
+      signedAt: has ? next.guardian.signedAt || new Date().toISOString() : next.guardian.signedAt ?? null,
+      signedVia: has ? next.guardian.signedVia || 'paper' : next.guardian.signedVia ?? null,
+    }
+    if (has && next.status === 'received') next.status = 'active'
+  }
+  if (next.bank) {
+    const has = Boolean(mandateSignature.value)
+    next.bank = {
+      ...next.bank,
+      mandateSignature: mandateSignature.value,
+      mandateSignedAt: has ? next.bank.mandateSignedAt || new Date().toISOString() : next.bank.mandateSignedAt ?? null,
+    }
+  }
+  return { ok: true, member: next }
 }
 
 function readGuardian(input, current, minor) {
@@ -278,11 +354,14 @@ function readGuardian(input, current, minor) {
   }
   if (!isValidName(guardian.name) || !isValidPhone(guardian.phone)) return { ok: false, error: 'guardian' }
   if (guardian.email && !isValidEmail(guardian.email)) return { ok: false, error: 'guardian' }
-  const signed = Boolean(input.signed)
+  const signature = cleanSignature(input.signature)
+  if (!signature.ok) return signature
+  const signed = Boolean(input.signed) || Boolean(signature.value)
   return {
     ok: true,
     guardian: {
       ...guardian,
+      signature: signature.value || current?.signature || '',
       idChecked: Boolean(input.idChecked),
       signedAt: signed ? current?.signedAt || new Date().toISOString() : null,
       signedVia: signed ? current?.signedVia || 'paper' : null,
@@ -354,15 +433,26 @@ function createDeskMember(body, today) {
     bank: bankRead.bank,
     photoData: photo.photoData,
     visitDay: visitDay || null,
-    place: String(body.place ?? 'Leipzig').trim() || 'Leipzig',
+    place: 'Leipzig',
     signature: `${firstName} ${lastName}`,
+    gymSignature: '',
+    secondGuardianSignature: '',
     consents: {},
     notes: String(body.notes ?? '').trim(),
     createdAt: new Date().toISOString(),
     source: 'admin',
   }
   record.startDate = String(body.startDate ?? '').trim() || memberStartDate(record, today)
-  return { ok: true, member: { ...memberFromSignup(record, today), status: record.status } }
+  const signed = applyDeskSignatures(record, {
+    place: body.place,
+    signature: body.signature,
+    gymSignature: body.gymSignature,
+    secondGuardianSignature: body.secondGuardianSignature,
+    guardianSignature: body.guardian?.signature,
+    mandateSignature: body.bank?.mandateSignature,
+  })
+  if (!signed.ok) return signed
+  return { ok: true, member: { ...memberFromSignup(signed.member, today), status: signed.member.status } }
 }
 
 const PROFILE_FIELDS = ['firstName', 'lastName', 'birthDate', 'street', 'zip', 'city', 'email', 'phone']
@@ -467,6 +557,11 @@ function patchMemberFields(current, patch, today) {
     next.guardian = guardianRead.guardian
     if (next.guardian?.signedAt && next.status === 'received' && !patch.status) next.status = 'active'
   }
+  if (patch.signatures && typeof patch.signatures === 'object') {
+    const signed = applyDeskSignatures(next, patch.signatures)
+    if (!signed.ok) return signed
+    Object.assign(next, signed.member)
+  }
   if (typeof patch.stripeCustomerId === 'string') {
     const customerId = patch.stripeCustomerId.trim()
     if (customerId && !/^cus_[A-Za-z0-9]{6,40}$/.test(customerId)) return { ok: false, error: 'stripe' }
@@ -476,7 +571,7 @@ function patchMemberFields(current, patch, today) {
   return { ok: true, member: ensurePayments(next, today) }
 }
 
-export function createAdminHandler({ dataDir, env, fetchImpl = fetch }) {
+export function createAdminHandler({ dataDir, env, fetchImpl = fetch, sendMail = sendMembershipEmails }) {
   const store = createMemberStore({ dataDir, env })
   const preregs = createPreregStore({ dataDir, env })
   const secret = () => adminSecret(env)
@@ -646,6 +741,79 @@ export function createAdminHandler({ dataDir, env, fetchImpl = fetch }) {
           }
         }
         json(res, 200, { ok: true, member: publicMember(member, today, true) })
+        return
+      }
+
+      if (action === 'sendContract') {
+        const id = String(body.id ?? '')
+        let prepared = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          const applied = applyDeskSignatures(db.members[index], body.signatures)
+          if (!applied.ok) {
+            prepared = applied
+            return db
+          }
+          if (!deskSignaturesReady(applied.member)) {
+            prepared = { ok: false, error: 'signature' }
+            return db
+          }
+          db.members[index] = applied.member
+          prepared = { ok: true, member: applied.member }
+          return db
+        })
+        if (!prepared) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (!prepared.ok) {
+          json(res, 400, { ok: false, error: prepared.error })
+          return
+        }
+        const current = prepared.member
+        const extra = []
+        const uploaded = current.docs?.contract
+        if (uploaded?.path) {
+          try {
+            const bytes = await store.getDoc(uploaded.path)
+            if (bytes?.length) {
+              extra.push({
+                name: uploaded.name || 'Unterschriebener-Vertrag.pdf',
+                content: Buffer.from(bytes).toString('base64'),
+              })
+            }
+          } catch (error) {
+            console.error('[admin] signed contract attachment skipped', error)
+          }
+        }
+        const mailRecord = extra.length ? { ...current, signedUploadName: extra[0].name } : current
+        let mailed
+        try {
+          mailed = await sendMail(env, mailRecord, {
+            paper: current.source === 'admin',
+            creditorId: env.SEPA_CREDITOR_ID?.trim() || '',
+            extra,
+          })
+        } catch (error) {
+          console.error('[admin] contract mail failed', error)
+          json(res, 502, { ok: false, error: 'mail' })
+          return
+        }
+        if (!mailed || mailed.member === 'skipped') {
+          json(res, 503, { ok: false, error: 'mail_off' })
+          return
+        }
+        const at = new Date().toISOString()
+        let saved = current
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          db.members[index] = { ...db.members[index], contractMail: 'sent', contractMailAt: at, updatedAt: at }
+          saved = db.members[index]
+          return db
+        })
+        json(res, 200, { ok: true, member: publicMember(saved, today, true) })
         return
       }
 

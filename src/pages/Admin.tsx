@@ -58,6 +58,12 @@ type MemberDetail = MemberList & {
   zip?: string
   city?: string
   notes?: string
+  place?: string
+  signature?: string
+  gymSignature?: string
+  secondGuardianSignature?: string
+  contractMail?: string
+  contractMailAt?: string | null
   photoData?: string | null
   payments?: Payment[]
   termMonths?: number | null
@@ -192,6 +198,7 @@ type Guardian = {
   relation?: string
   email: string
   phone: string
+  signature?: string
   idChecked?: boolean
   signedAt?: string | null
   signedVia?: string | null
@@ -202,6 +209,7 @@ type Bank = {
   iban: string
   bic: string
   mandateRef: string
+  mandateSignature?: string
   mandateSignedAt: string | null
 }
 
@@ -243,6 +251,10 @@ const ERROR_TEXT: Record<string, string> = {
   stripe_early: 'Der Day Pass wird erst ab dem 1. November abgebucht.',
   stripe_fail: 'Stripe hat den Link nicht angenommen. Bitte später noch einmal.',
   address: 'Adresse prüfen. PLZ hat 5 Ziffern.',
+  signature: 'Unterschrift fehlt. Mitglied und Studio müssen unterschreiben, bei unter 18 auch die Eltern.',
+  place: 'Ort der Unterschrift prüfen.',
+  mail: 'Die Mail ist nicht rausgegangen. Bitte noch einmal versuchen.',
+  mail_off: 'Der Mailversand ist nicht eingerichtet.',
 }
 
 function errorText(code?: string) {
@@ -319,6 +331,77 @@ function BankFields({ value, onChange, holderHint }: { value: BankForm; onChange
         />
         SEPA-Mandat auf Papier unterschrieben
       </label>
+    </div>
+  )
+}
+
+type DeskSignatures = {
+  place: string
+  signature: string
+  gymSignature: string
+  guardianSignature: string
+  secondGuardianSignature: string
+  mandateSignature: string
+}
+
+function SignatureFields({
+  value,
+  onChange,
+  minor,
+  mandate,
+  required,
+}: {
+  value: DeskSignatures
+  onChange: (next: DeskSignatures) => void
+  minor: boolean
+  mandate: boolean
+  required?: boolean
+}) {
+  const set = (field: keyof DeskSignatures) => (next: string) => onChange({ ...value, [field]: next })
+  return (
+    <div className="admin-grid">
+      <label>
+        Ort
+        <input value={value.place} onChange={(event) => set('place')(event.target.value)} required={required} />
+      </label>
+      <label>
+        Unterschrift Mitglied
+        <input value={value.signature} onChange={(event) => set('signature')(event.target.value)} required={required} />
+      </label>
+      {minor ? (
+        <label>
+          Unterschrift gesetzliche Vertretung
+          <input
+            value={value.guardianSignature}
+            onChange={(event) => set('guardianSignature')(event.target.value)}
+            required={required}
+          />
+        </label>
+      ) : null}
+      {minor ? (
+        <label>
+          Unterschrift zweite sorgeberechtigte Person
+          <input
+            value={value.secondGuardianSignature}
+            onChange={(event) => set('secondGuardianSignature')(event.target.value)}
+            placeholder="Nur bei gemeinsamem Sorgerecht"
+          />
+        </label>
+      ) : null}
+      <label>
+        Unterschrift für KONNI MMA GYM
+        <input value={value.gymSignature} onChange={(event) => set('gymSignature')(event.target.value)} required={required} />
+      </label>
+      {mandate ? (
+        <label>
+          Unterschrift Kontoinhaber/in
+          <input
+            value={value.mandateSignature}
+            onChange={(event) => set('mandateSignature')(event.target.value)}
+            required={required}
+          />
+        </label>
+      ) : null}
     </div>
   )
 }
@@ -1740,6 +1823,15 @@ function MemberPane({
   const [notes, setNotes] = useState(member.notes ?? '')
   const [bank, setBank] = useState<BankForm>(bankForm(member.bank))
   const [guardian, setGuardian] = useState<GuardianForm>(guardianForm(member.guardian))
+  const [signatures, setSignatures] = useState<DeskSignatures>({
+    place: member.place || 'Leipzig',
+    signature: member.signature || `${member.firstName} ${member.lastName}`.trim(),
+    gymSignature: member.gymSignature || '',
+    guardianSignature: member.guardian?.signature || '',
+    secondGuardianSignature: member.secondGuardianSignature || '',
+    mandateSignature: member.bank?.mandateSignature || '',
+  })
+  const [sending, setSending] = useState(false)
   const [stripeId, setStripeId] = useState(member.stripe?.customerId ?? '')
   const [payLink, setPayLink] = useState('')
   const [paneError, setPaneError] = useState<string | null>(null)
@@ -1749,6 +1841,21 @@ function MemberPane({
     setPaneError(null)
     const error = await onPatch(payload)
     if (error) setPaneError(errorText(error))
+  }
+
+  async function sendContract() {
+    setSending(true)
+    setPaneError(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendContract', id: member.id, signatures }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      setPaneError(errorText(data.error))
+      return
+    }
+    onReplace(data.member)
   }
 
   const holderHint = member.minor && member.guardian?.name ? member.guardian.name : `${member.firstName} ${member.lastName}`
@@ -1947,6 +2054,35 @@ function MemberPane({
           </a>
         ) : null}
       </div>
+
+      <section className="admin-block">
+        <h3>Vertragsmail</h3>
+        <p className="admin-muted">
+          Die Mail mit den Daten und dem Vertrag geht nur raus, wenn du sie hier auslöst. Beim Anlegen passiert das
+          nicht. Das Mitglied bekommt den Vertrag mit diesen Unterschriften und die Widerrufsbelehrung. Eine Kopie geht
+          an das Studio.
+          {member.docs?.contract ? ' Der hochgeladene Scan liegt zusätzlich bei.' : ''}
+        </p>
+        <SignatureFields
+          value={signatures}
+          onChange={setSignatures}
+          minor={member.minor}
+          mandate={Boolean(member.bank?.iban)}
+        />
+        {member.contractMailAt ? (
+          <p className="admin-muted">Zuletzt raus am {new Date(member.contractMailAt).toLocaleString('de-DE')}.</p>
+        ) : (
+          <p className="admin-muted">Noch keine Vertragsmail.</p>
+        )}
+        <div className="admin-inline">
+          <button className="btn btn-ghost" type="button" disabled={busy || sending} onClick={() => void save({ signatures })}>
+            Unterschriften speichern
+          </button>
+          <button className="btn btn-solid" type="button" disabled={busy || sending} onClick={() => void sendContract()}>
+            Mail mit Vertrag senden
+          </button>
+        </div>
+      </section>
 
       <section className="admin-block">
         <h3>Unterlagen</h3>
@@ -2191,6 +2327,14 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
   const [bank, setBank] = useState<BankForm>(EMPTY_BANK)
   const [guardian, setGuardian] = useState<GuardianForm>(EMPTY_GUARDIAN)
   const [payMethod, setPayMethod] = useState<'card' | 'transfer'>('card')
+  const [signatures, setSignatures] = useState<DeskSignatures>({
+    place: 'Leipzig',
+    signature: '',
+    gymSignature: '',
+    guardianSignature: '',
+    secondGuardianSignature: '',
+    mandateSignature: '',
+  })
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const age = ageFrom(birthDate)
@@ -2227,8 +2371,15 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
         startDate,
         photoData,
         payMethod: plan === 'daypass' ? 'card' : payMethod,
-        bank: plan === 'daypass' || payMethod === 'transfer' ? undefined : bank,
-        guardian: minor ? guardian : undefined,
+        place: signatures.place,
+        signature: signatures.signature,
+        gymSignature: signatures.gymSignature,
+        secondGuardianSignature: signatures.secondGuardianSignature,
+        bank:
+          plan === 'daypass' || payMethod === 'transfer'
+            ? undefined
+            : { ...bank, mandateSignature: signatures.mandateSignature },
+        guardian: minor ? { ...guardian, signature: signatures.guardianSignature } : undefined,
       }),
     })
     setBusy(false)
@@ -2367,6 +2518,21 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
           )}
         </section>
       ) : null}
+
+      <section className="admin-block">
+        <h3>Unterschriften auf dem Vertrag</h3>
+        <p className="admin-muted">
+          Diese Namen stehen auf den Unterschriftszeilen des Vertrags. Die Mail mit Vertrag und Daten geht dabei nicht
+          raus. Die schickst du danach extra beim Mitglied.
+        </p>
+        <SignatureFields
+          value={signatures}
+          onChange={setSignatures}
+          minor={minor}
+          mandate={plan !== 'daypass' && payMethod === 'card' && Boolean(bank.iban) && bank.mandateSigned}
+          required
+        />
+      </section>
 
       {error ? <p className="admin-error">{error}</p> : null}
       <button className="btn btn-solid" type="submit" disabled={busy}>

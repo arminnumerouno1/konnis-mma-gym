@@ -255,6 +255,25 @@ const paperPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard
 const paperText = pdfText(paperPdf)
 assert(paperText.includes('DE77 8605') && paperText.includes('4292 70'), 'paper contract contains the gym account')
 assert(paperText.includes('Danach beträgt sie 49,00 EUR'), 'paper membership still states the later signup fee')
+assert(!paperText.includes('Gym-Unterschrift-Test'), 'unsigned paper contract leaves the gym line blank')
+const signedPaper = Buffer.from(
+  await buildContractPdf(
+    {
+      ...sample,
+      plan: 'standard',
+      planName: 'Standard',
+      payMethod: 'card',
+      signature: 'Mitglied-Unterschrift-Test',
+      gymSignature: 'Gym-Unterschrift-Test',
+      bank: { holder: 'Anna Müller', iban: 'DE89370400440532013000', mandateSignature: 'Konto-Unterschrift-Test' },
+    },
+    { paper: true },
+  ),
+)
+const signedPaperText = pdfText(signedPaper)
+assert(signedPaperText.includes('Mitglied-Unterschrift-Test'), 'paper contract shows the member signature')
+assert(signedPaperText.includes('Gym-Unterschrift-Test'), 'paper contract shows the gym signature')
+assert(signedPaperText.includes('Konto-Unterschrift-Test'), 'paper contract shows the account-holder signature')
 
 const dayPdf = Buffer.from(
   await buildContractPdf({

@@ -794,4 +794,73 @@ assert(deniedDelete.status === 401 && deniedDelete.data.error === 'auth', 'delet
 const stillThere = await store.load()
 assert(stillThere.members.some((row) => row.id === 'm1'), 'unauthenticated delete does not remove')
 
+const signedDesk = await post({
+  action: 'create',
+  plan: 'standard',
+  firstName: 'Tom',
+  lastName: 'Dornheim',
+  birthDate: '1991-06-06',
+  email: 'tom.dornheim@example.com',
+  phone: '+49 171 8080808',
+  place: 'Leipzig',
+  signature: 'Tom Dornheim',
+  gymSignature: 'Konrad Dyrschka',
+  startDate: '2026-11-02',
+})
+assert(signedDesk.status === 200 && signedDesk.data.member.signature === 'Tom Dornheim', 'desk stores the member signature')
+assert(signedDesk.data.member.gymSignature === 'Konrad Dyrschka', 'desk stores the gym signature')
+assert(!signedDesk.data.member.contractMail, 'creating a member does not send the contract mail')
+
+let contractMails = 0
+const mailing = createAdminHandler({
+  dataDir: tmp,
+  env: { ADMIN_SECRET: secret, BREVO_API_KEY: 'xkeysib-test' },
+  sendMail: async (_env, record, options) => {
+    contractMails += 1
+    assert(record.email === 'tom.dornheim@example.com', 'contract mail goes to the member')
+    assert(record.signature === 'Tom Dornheim' && record.gymSignature === 'Konrad Dyrschka', 'contract mail carries the signatures')
+    assert(options.paper === true, 'desk contract is the signed paper copy')
+    assert(options.extra?.[0]?.name === 'Tom-Vertrag.pdf', 'uploaded signed contract is attached')
+    return { member: 'sent_with_pdf', gym: 'sent_with_pdf', pdfs: ['Mitgliedsvertrag.pdf'] }
+  },
+})
+async function mailCall(body) {
+  const { res, captured } = mockRes()
+  await mailing(
+    { method: 'POST', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.8' }, body },
+    res,
+  )
+  return { status: captured.status, data: captured.body ? JSON.parse(captured.body) : {} }
+}
+const missingSign = await mailCall({
+  action: 'sendContract',
+  id: created.data.member.id,
+  signatures: { place: 'Leipzig', signature: 'Clara Koch', gymSignature: '' },
+})
+assert(missingSign.status === 400 && missingSign.data.error === 'signature' && contractMails === 0, 'mail waits for both signatures')
+const tomId = signedDesk.data.member.id
+await store.putDoc(`${tomId}/contract-scan.pdf`, Buffer.from('%PDF-1.4 scan'), 'application/pdf')
+await store.update((db) => {
+  const row = db.members.find((item) => item.id === tomId)
+  row.docs = {
+    ...(row.docs ?? {}),
+    contract: {
+      path: `${tomId}/contract-scan.pdf`,
+      name: 'Tom-Vertrag.pdf',
+      type: 'application/pdf',
+      size: 12,
+      uploadedAt: '2026-10-04T12:00:00.000Z',
+    },
+  }
+  return db
+})
+const sentMail = await mailCall({
+  action: 'sendContract',
+  id: tomId,
+  signatures: { place: 'Leipzig', signature: 'Tom Dornheim', gymSignature: 'Konrad Dyrschka' },
+})
+assert(sentMail.status === 200 && sentMail.data.member.contractMail === 'sent', 'manual contract mail is sent')
+assert(sentMail.data.member.contractMailAt, 'manual contract mail records the time')
+assert(contractMails === 1, 'one manual contract mail')
+
 console.log('admin tests ok')
