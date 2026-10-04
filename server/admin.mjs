@@ -27,7 +27,8 @@ import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
-import { normalizePersonName } from './invite.mjs'
+import { INVITE_TTL_HOURS, nextFirst50Slot, normalizePersonName } from './invite.mjs'
+import { deliverFirst50Invite } from './invite-mail.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 12
@@ -573,7 +574,13 @@ function patchMemberFields(current, patch, today) {
   return { ok: true, member: ensurePayments(next, today) }
 }
 
-export function createAdminHandler({ dataDir, env, fetchImpl = fetch, sendMail = sendMembershipEmails }) {
+export function createAdminHandler({
+  dataDir,
+  env,
+  fetchImpl = fetch,
+  sendMail = sendMembershipEmails,
+  deliverInvite = deliverFirst50Invite,
+}) {
   const store = createMemberStore({ dataDir, env })
   const preregs = createPreregStore({ dataDir, env })
   const secret = () => adminSecret(env)
@@ -713,6 +720,54 @@ export function createAdminHandler({ dataDir, env, fetchImpl = fetch, sendMail =
         action === 'sendContract' && secretsEqual(String(body.proof ?? ''), env.SIGNUP_MAIL_PROOF?.trim() || '')
       if (!authed(req) && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
+        return
+      }
+
+      if (action === 'sendFirst50') {
+        const email = normalizeEmail(body.email)
+        const name = normalizePersonName(body.name)
+        if (!isValidEmail(email) || name.length < 3) {
+          json(res, 400, { ok: false, error: name.length < 3 ? 'name' : 'email' })
+          return
+        }
+        if (membershipTaken((await store.load()).members ?? [], email)) {
+          json(res, 409, { ok: false, error: 'duplicate' })
+          return
+        }
+        const now = new Date().toISOString()
+        const freshUntil = Date.now() - INVITE_TTL_HOURS * 60 * 60 * 1000
+        let reserved = null
+        await store.update((db) => {
+          const issued = Array.isArray(db.issuedFirst50) ? db.issuedFirst50 : []
+          db.issuedFirst50 = issued
+          const open = issued.find((row) => row?.email === email && Date.parse(row.at || '') > freshUntil)
+          if (open) {
+            reserved = { ok: false, error: 'invite_open' }
+            return db
+          }
+          const slot = nextFirst50Slot(db.members, issued.map((row) => row?.slot))
+          if (!slot) {
+            reserved = { ok: false, error: 'full' }
+            return db
+          }
+          issued.push({ slot, email, name, at: now })
+          reserved = { ok: true, slot }
+          return db
+        })
+        if (!reserved?.ok) {
+          json(res, 409, { ok: false, error: reserved?.error || 'full' })
+          return
+        }
+        const mailed = await deliverInvite({ env, fetchImpl, email, name, slot: reserved.slot })
+        if (!mailed?.ok) {
+          await store.update((db) => {
+            db.issuedFirst50 = (db.issuedFirst50 ?? []).filter((row) => !(row?.email === email && row?.at === now))
+            return db
+          })
+          json(res, mailed?.error === 'mail_off' ? 503 : 502, { ok: false, error: mailed?.error || 'mail' })
+          return
+        }
+        json(res, 200, { ok: true, email })
         return
       }
 

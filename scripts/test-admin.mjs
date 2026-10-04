@@ -911,4 +911,33 @@ assert(scanMail.status === 200 && scanMail.data.email === 'tom.scan@example.com'
 assert(!scanMail.data.member, 'proof response does not return the member record')
 assert(proofMails === 1, 'one uploaded-contract mail')
 
+let deskInvites = []
+const deskInvite = createAdminHandler({
+  dataDir: tmp,
+  env: { ADMIN_SECRET: secret, INVITE_SECRET: 'test-invite-secret-key', BREVO_API_KEY: 'xkeysib-test' },
+  deliverInvite: async ({ email, name, slot }) => {
+    deskInvites.push({ email, name, slot })
+    return { ok: true, email, slot }
+  },
+})
+async function inviteCall(body, headers = { cookie }) {
+  const { res, captured } = mockRes()
+  await deskInvite(
+    { method: 'POST', url: '/api/admin', headers, socket: { remoteAddress: '10.0.0.11' }, body },
+    res,
+  )
+  return { status: captured.status, data: captured.body ? JSON.parse(captured.body) : {} }
+}
+const inviteDenied = await inviteCall({ action: 'sendFirst50', name: 'Nora Freund', email: 'nora.freund@example.com' }, {})
+assert(inviteDenied.status === 401 && deskInvites.length === 0, 'first50 link from the desk needs login')
+const inviteSent = await inviteCall({ action: 'sendFirst50', name: 'Nora Freund', email: 'nora.freund@example.com' })
+assert(inviteSent.status === 200 && inviteSent.data.email === 'nora.freund@example.com' && !inviteSent.data.url, 'desk sends one first50 link without returning it')
+assert(deskInvites.length === 1 && deskInvites[0].slot === 66 && deskInvites[0].name === 'Nora Freund', 'first desk link uses the next free seat')
+const inviteAgain = await inviteCall({ action: 'sendFirst50', name: 'Nora Freund', email: 'nora.freund@example.com' })
+assert(inviteAgain.status === 409 && inviteAgain.data.error === 'invite_open' && deskInvites.length === 1, 'a fresh first50 link is not sent twice')
+const inviteNext = await inviteCall({ action: 'sendFirst50', name: 'Mila Freund', email: 'mila.freund@example.com' })
+assert(inviteNext.status === 200 && deskInvites[1].slot === 67, 'the next desk link takes the following seat')
+const inviteMember = await inviteCall({ action: 'sendFirst50', name: 'Clara Koch', email: 'clara@example.com' })
+assert(inviteMember.status === 409 && inviteMember.data.error === 'duplicate', 'no first50 link for an email that already has a membership')
+
 console.log('admin tests ok')

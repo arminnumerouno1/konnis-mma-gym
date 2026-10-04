@@ -3,8 +3,28 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 export const FIRST50_ID = 'first50'
 export const FIRST50_LIMIT = 50
 /** Extra personal seats past the original fifty. They stay First 50 in price, without a “Platz N von 50”. */
-export const FIRST50_SLOT_MAX = 80
+export const FIRST50_SLOT_MAX = 400
+/** Slots through this number were already mailed. The desk sender starts after them. */
+export const FIRST50_ISSUED_THROUGH = 65
 export const INVITE_TTL_HOURS = 48
+
+export function nextFirst50Slot(members, issued = []) {
+  const used = new Set()
+  for (let slot = 1; slot <= FIRST50_ISSUED_THROUGH; slot += 1) used.add(slot)
+  for (const slot of issued) {
+    const n = Number(slot)
+    if (Number.isInteger(n) && n >= 1) used.add(n)
+  }
+  for (const row of members ?? []) {
+    if (row?.plan !== FIRST50_ID || row?.status === 'cancelled' || row?.status === 'expired') continue
+    const slot = Number(row?.inviteSlot)
+    if (Number.isInteger(slot) && slot >= 1) used.add(slot)
+  }
+  for (let slot = FIRST50_ISSUED_THROUGH + 1; slot <= FIRST50_SLOT_MAX; slot += 1) {
+    if (!used.has(slot)) return slot
+  }
+  return 0
+}
 
 export function first50SeatLabel(slot) {
   const n = Number(slot)

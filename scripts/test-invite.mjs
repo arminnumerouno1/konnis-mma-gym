@@ -3,6 +3,7 @@ import {
   INVITE_TTL_HOURS,
   first50SeatLabel,
   inviteUsed,
+  nextFirst50Slot,
   makeInvitePayload,
   namesMatch,
   signInvite,
@@ -52,6 +53,11 @@ const tooHigh = signInvite(
 assert(!verifyInvite(secret, tooHigh).ok, 'slot above the extra seats')
 assert(first50SeatLabel(7) === 'Platz 7 von 50', 'numbered seat inside the fifty')
 assert(first50SeatLabel(51) === '', 'friend seat hides the fraction')
+assert(nextFirst50Slot([], []) === 66, 'desk links start after the seats already mailed')
+assert(
+  nextFirst50Slot([{ plan: 'first50', status: 'active', inviteSlot: 66 }], [70]) === 67,
+  'desk links skip a signed-up seat and a reserved seat',
+)
 
 const split = splitPersonName('Joshua Victor Grudzinski')
 assert(split.firstName === 'Joshua Victor' && split.lastName === 'Grudzinski', 'split')

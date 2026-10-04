@@ -145,6 +145,34 @@ async function postInvite({ fetchImpl, apiKey, sender, email, name, subject, htm
   }
 }
 
+export async function deliverFirst50Invite({ env, fetchImpl = fetch, email, name, slot }) {
+  const secret = env.INVITE_SECRET
+  const apiKey = env.BREVO_API_KEY?.trim()
+  const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
+  if (!apiKey || !secret) return { ok: false, error: 'mail_off' }
+  const site = String(env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de').replace(/\/+$/, '')
+  const origin = site.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : site
+  const token = signInvite(secret, makeInvitePayload({ email, name, slot }))
+  const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
+  const first = name.split(' ')[0] || name
+  try {
+    await postInvite({
+      fetchImpl,
+      apiKey,
+      sender,
+      email,
+      name,
+      first,
+      subject: first50InviteSubject({ test: false }),
+      html: first50InviteHtml({ first, name, email, url }),
+    })
+  } catch (error) {
+    console.error('[invite-mail]', String(error?.detail || error?.message || error).slice(0, 180))
+    return { ok: false, error: 'mail' }
+  }
+  return { ok: true, email, slot }
+}
+
 export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = null }) {
   return async function handleInviteMail(req, res) {
     try {
