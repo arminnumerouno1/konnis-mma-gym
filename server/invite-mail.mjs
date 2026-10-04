@@ -1,5 +1,8 @@
 import { timingSafeEqual } from 'node:crypto'
+import { tmpdir } from 'node:os'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
+import { membershipTaken } from './member-model.mjs'
+import { createMemberStore } from './member-store.mjs'
 import { makeInvitePayload, normalizePersonName, signInvite } from './invite.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 
@@ -101,7 +104,48 @@ async function readBody(req) {
   })
 }
 
-export function createInviteMailHandler({ env }) {
+function slotTaken(members, slot) {
+  return (members ?? []).some(
+    (row) =>
+      row?.plan === 'first50' &&
+      row?.status !== 'cancelled' &&
+      row?.status !== 'expired' &&
+      Number(row?.inviteSlot) === slot,
+  )
+}
+
+async function defaultMembers(env) {
+  const store = createMemberStore({ dataDir: tmpdir(), env })
+  if (env.VERCEL && store.kind !== 'blob') {
+    const error = new Error('no-blob')
+    error.code = 'no-blob'
+    throw error
+  }
+  const db = await store.load()
+  return db.members ?? []
+}
+
+async function postInvite({ fetchImpl, apiKey, sender, email, name, subject, html }) {
+  const response = await fetchImpl('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: { 'api-key': apiKey, accept: 'application/json', 'content-type': 'application/json' },
+    body: JSON.stringify({
+      sender: { name: 'KONNI MMA GYM', email: sender },
+      to: [{ email, name }],
+      replyTo: { email: sender, name: 'KONNI MMA GYM' },
+      subject,
+      htmlContent: html,
+    }),
+  })
+  const detail = await response.text()
+  if (!response.ok) {
+    const error = new Error(`brevo_${response.status}`)
+    error.detail = detail.slice(0, 180)
+    throw error
+  }
+}
+
+export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers }) {
   return async function handleInviteMail(req, res) {
     try {
       if (req.method === 'OPTIONS') {
@@ -129,6 +173,54 @@ export function createInviteMailHandler({ env }) {
 
       const secret = env.INVITE_SECRET
       const apiKey = env.BREVO_API_KEY?.trim()
+      const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
+
+      if (body.one === true) {
+        if (!secretsMatch(body.proof, env.SIGNUP_MAIL_PROOF?.trim()) || !apiKey || !secret) {
+          json(res, 403, { ok: false, error: 'invite' })
+          return
+        }
+        const email = normalizeEmail(body.email)
+        const name = normalizePersonName(body.name)
+        const slot = Number(body.slot)
+        if (!isValidEmail(email) || name.length < 3 || !Number.isInteger(slot) || slot < 1 || slot > 50) {
+          json(res, 400, { ok: false, error: 'invalid' })
+          return
+        }
+        const members = await (loadMembers ? loadMembers() : defaultMembers(env))
+        if (membershipTaken(members, email)) {
+          json(res, 409, { ok: false, error: 'duplicate' })
+          return
+        }
+        if (slotTaken(members, slot)) {
+          json(res, 409, { ok: false, error: 'slot' })
+          return
+        }
+        const site = String(env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de').replace(/\/+$/, '')
+        const origin = site.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : site
+        const token = signInvite(secret, makeInvitePayload({ email, name, slot }))
+        const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
+        const first = name.split(' ')[0] || name
+        try {
+          await postInvite({
+            fetchImpl,
+            apiKey,
+            sender,
+            email,
+            name,
+            first,
+            subject: first50InviteSubject({ test: false }),
+            html: first50InviteHtml({ first, name, email, url }),
+          })
+        } catch (error) {
+          console.error('[invite-mail]', String(error?.detail || error?.message || error).slice(0, 180))
+          json(res, 502, { ok: false, error: 'upstream' })
+          return
+        }
+        json(res, 200, { ok: true, email, slot })
+        return
+      }
+
       if (!secretsMatch(body.secret, secret) || !apiKey) {
         json(res, 403, { ok: false, error: 'invite' })
         return
@@ -159,24 +251,22 @@ export function createInviteMailHandler({ env }) {
       const origin = site.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : site
       const token = signInvite(secret, makeInvitePayload({ email, name, slot }))
       const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
-      const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
       const first = name.split(' ')[0] || name
       const test = body.test === true
 
-      const response = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: { 'api-key': apiKey, accept: 'application/json', 'content-type': 'application/json' },
-        body: JSON.stringify({
-          sender: { name: 'KONNI MMA GYM', email: sender },
-          to: [{ email, name }],
-          replyTo: { email: sender, name: 'KONNI MMA GYM' },
+      try {
+        await postInvite({
+          fetchImpl,
+          apiKey,
+          sender,
+          email,
+          name,
+          first,
           subject: first50InviteSubject({ test }),
-          htmlContent: first50InviteHtml({ first, name, email, url }),
-        }),
-      })
-      const detail = await response.text()
-      if (!response.ok) {
-        console.error('[invite-mail]', response.status, detail.slice(0, 240))
+          html: first50InviteHtml({ first, name, email, url }),
+        })
+      } catch (error) {
+        console.error('[invite-mail]', String(error?.detail || error?.message || error).slice(0, 180))
         json(res, 502, { ok: false, error: 'upstream' })
         return
       }

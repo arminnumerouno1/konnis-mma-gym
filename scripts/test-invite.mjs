@@ -7,7 +7,7 @@ import {
   splitPersonName,
   verifyInvite,
 } from '../server/invite.mjs'
-import { first50InviteHtml, first50InviteSubject } from '../server/invite-mail.mjs'
+import { createInviteMailHandler, first50InviteHtml, first50InviteSubject } from '../server/invite-mail.mjs'
 import { validateMembership } from '../server/membership.mjs'
 
 function assert(cond, message) {
@@ -119,5 +119,78 @@ assert(inviteHtml.includes('48 Stunden') && inviteHtml.includes('1. November 202
 assert(inviteHtml.includes('Danach beträgt sie 49 €'), 'invite states the later signup fee')
 assert(inviteHtml.includes('geht dein Platz automatisch an die nächste Person'), 'unused invite passes to the next person')
 assert(!inviteHtml.includes('<script'), 'invite escaped')
+
+function mockRes() {
+  const captured = { status: 0, body: '' }
+  const res = {
+    get headersSent() {
+      return captured.status !== 0
+    },
+    statusCode: 0,
+    setHeader() {},
+    end(payload) {
+      captured.status = this.statusCode
+      captured.body = String(payload ?? '')
+    },
+  }
+  return { res, captured }
+}
+
+{
+  const proof = 'signup-mail-proof-test'
+  let sent = null
+  const handle = createInviteMailHandler({
+    env: { INVITE_SECRET: secret, BREVO_API_KEY: 'xkeysib-test', SIGNUP_MAIL_PROOF: proof },
+    fetchImpl: async (_url, init) => {
+      sent = JSON.parse(init.body)
+      return { ok: true, text: async () => '{}' }
+    },
+    loadMembers: async () => [{ plan: 'first50', status: 'active', email: 'besetzt@example.com', inviteSlot: 7 }],
+  })
+  const blocked = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/invite-mail',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.41' },
+      body: { one: true, proof, email: 'besetzt@example.com', name: 'Besetzt Person', slot: 19 },
+    },
+    blocked.res,
+  )
+  assert(blocked.captured.status === 409 && !sent, 'no invite when the email already has a membership')
+  const takenSlot = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/invite-mail',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.42' },
+      body: { one: true, proof, email: 'neu@example.com', name: 'Neu Person', slot: 7 },
+    },
+    takenSlot.res,
+  )
+  assert(takenSlot.captured.status === 409 && !sent, 'no invite on a used first50 slot')
+  const okMail = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/invite-mail',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.43' },
+      body: { one: true, proof, email: 'neu@example.com', name: 'Neu Person', slot: 19 },
+    },
+    okMail.res,
+  )
+  const parsed = JSON.parse(okMail.captured.body)
+  assert(okMail.captured.status === 200 && parsed.ok && parsed.slot === 19 && !parsed.url, 'one invite sent without returning the link')
+  assert(sent.to[0].email === 'neu@example.com', 'invite recipient')
+  assert(sent.subject === 'Du gehörst zu den ersten 50 · KONNI MMA GYM', 'live subject')
+  assert(sent.htmlContent.includes('Hi Neu,') && sent.htmlContent.includes('89,99'), 'invite body')
+  const href = sent.htmlContent.match(/https:\/\/www\.mma-in-leipzig\.de\/mitglied\?invite=([^"]+)/)
+  assert(href, 'invite link')
+  const checkedLink = verifyInvite(secret, decodeURIComponent(href[1]))
+  assert(checkedLink.ok && checkedLink.payload.email === 'neu@example.com' && checkedLink.payload.slot === 19, 'link matches the person')
+}
 
 console.log('invite tests ok')
