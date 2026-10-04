@@ -234,6 +234,7 @@ const ERROR_TEXT: Record<string, string> = {
   birth: 'Geburtstag prüfen.',
   name: 'Vor- und Nachname prüfen.',
   email: 'E-Mail prüfen.',
+  duplicate: 'Mit dieser E-Mail gibt es schon eine Anmeldung.',
   phone: 'Telefon prüfen.',
   visit: 'Trainingstag fehlt.',
   stripe: 'Stripe-Kunden-ID beginnt mit cus_.',

@@ -3,7 +3,8 @@ import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
-import { createMemberStore, ingestSignup } from './member-store.mjs'
+import { membershipTaken } from './member-model.mjs'
+import { claimSignup, createMemberStore } from './member-store.mjs'
 import { attachSignupDocs } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
 import { createCheckoutSession, siteOrigin, PLAN_CENTS } from './stripe-checkout.mjs'
@@ -211,6 +212,7 @@ export function validateMembership(body, ctx = {}) {
   const phone = String(body.phone ?? '').trim()
   if (!isValidEmail(email)) return { ok: false, error: 'email' }
   if (!isValidPhone(phone)) return { ok: false, error: 'phone' }
+  if (membershipTaken(ctx.memberships ?? [], email)) return { ok: false, error: 'duplicate' }
 
   if (invite) {
     if (normalizeInviteEmail(email) !== invite.email) return { ok: false, error: 'invite' }
@@ -525,7 +527,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
       return
     }
     if (!checked.ok) {
-      json(res, 400, { ok: false, error: checked.error })
+      json(res, checked.error === 'duplicate' ? 409 : 400, { ok: false, error: checked.error })
       return
     }
 
@@ -538,17 +540,24 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     }
 
     const record = checked.record
+    const stored = record.payMethod === 'transfer' ? record : { ...record, contractMail: 'after_payment' }
+    let claimed
+    try {
+      claimed = await claimSignup(members, stored)
+    } catch (error) {
+      console.error('[mitglied] member store failed', error)
+      json(res, 502, { ok: false, error: 'upstream' })
+      return
+    }
+    if (!claimed.ok) {
+      json(res, 409, { ok: false, error: 'duplicate' })
+      return
+    }
     memberships.push(record)
     try {
       await saveMemberships(file, memberships)
     } catch (error) {
       console.error('[mitglied] local save skipped', error)
-    }
-    try {
-      const stored = record.payMethod === 'transfer' ? record : { ...record, contractMail: 'after_payment' }
-      await ingestSignup(members, stored)
-    } catch (error) {
-      console.error('[mitglied] member store skipped', error)
     }
     try {
       await attachSignupDocs(members, record)

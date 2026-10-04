@@ -17,6 +17,7 @@ const ERRORS: Record<MembershipError, string> = {
   birth: 'Bitte ein gültiges Geburtsdatum eintragen.',
   address: 'Bitte Straße, PLZ und Ort prüfen.',
   email: 'Bitte eine gültige E-Mail eintragen.',
+  duplicate: 'Mit dieser E-Mail gibt es schon eine Anmeldung. Eine zweite geht nicht.',
   phone: 'Bitte eine Telefonnummer eintragen.',
   guardian: 'Unter 18 braucht die gesetzliche Vertretung inkl. Zustimmung.',
   consent: 'Bitte alle Pflicht-Häkchen setzen.',

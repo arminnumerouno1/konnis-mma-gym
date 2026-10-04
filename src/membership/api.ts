@@ -9,6 +9,7 @@ export type MembershipError =
   | 'birth'
   | 'address'
   | 'email'
+  | 'duplicate'
   | 'phone'
   | 'guardian'
   | 'consent'

@@ -83,6 +83,21 @@ const base = {
 const ok = validateMembership(base, {})
 assert(ok.ok && ok.record?.plan === 'standard', 'valid standard')
 
+const again = validateMembership(
+  { ...base, plan: 'flex', email: 'Anna@example.com' },
+  { memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'active' }] },
+)
+assert(!again.ok && again.error === 'duplicate', 'same email cannot sign up twice')
+const afterCancel = validateMembership(base, {
+  memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'cancelled' }],
+})
+assert(afterCancel.ok, 'cancelled member can sign up again')
+const other = validateMembership(
+  { ...base, email: 'neu@example.com' },
+  { memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'active' }] },
+)
+assert(other.ok, 'different email still signs up')
+
 const earlyBlocked = validateMembership(
   { ...base, consents: { ...base.consents, earlyStart: true } },
   { now: new Date('2026-10-03T12:00:00Z') },
@@ -353,6 +368,38 @@ mkdirSync(dataDir, { recursive: true })
   } finally {
     globalThis.fetch = previous
   }
+}
+
+{
+  const handle = createMembershipHandler({ dataDir, env: { MEMBERSHIP_MAIL: 'false' } })
+  const first = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/mitglied',
+      headers: { 'content-type': 'application/json' },
+      body: { ...base, email: 'doppelt@example.com', payMethod: 'transfer' },
+      socket: { remoteAddress: '127.0.0.21' },
+    },
+    first.res,
+  )
+  const firstBody = JSON.parse(first.captured.body)
+  assert(first.captured.status === 200 && firstBody.ok === true, 'first signup stored')
+  const second = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/mitglied',
+      headers: { 'content-type': 'application/json' },
+      body: { ...base, plan: 'flex', email: 'Doppelt@example.com', payMethod: 'transfer' },
+      socket: { remoteAddress: '127.0.0.22' },
+    },
+    second.res,
+  )
+  const secondBody = JSON.parse(second.captured.body)
+  assert(second.captured.status === 409 && secondBody.error === 'duplicate', 'second signup refused')
+  const rows = (await createMemberStore({ dataDir, env: {} }).load()).members.filter((row) => row.email === 'doppelt@example.com')
+  assert(rows.length === 1 && rows[0].plan === 'standard', 'first contract stays')
 }
 
 console.log('membership tests ok')

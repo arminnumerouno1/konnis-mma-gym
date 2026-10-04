@@ -54,6 +54,22 @@ export function mandateRefFor(id) {
   return `KONNI-${String(id ?? '').replace(/-/g, '').slice(0, 10).toUpperCase()}`
 }
 
+function emailKey(value) {
+  return String(value ?? '').trim().toLowerCase()
+}
+
+/** Lebende Anmeldung zu dieser E-Mail. Gekündigt oder beendet zählt nicht. */
+export function membershipTaken(members, email, exceptId) {
+  const needle = emailKey(email)
+  if (!needle) return false
+  return (members ?? []).some((row) => {
+    if (!row || emailKey(row.email) !== needle) return false
+    if (exceptId && row.id === exceptId) return false
+    if (row.status === 'cancelled' || row.status === 'expired') return false
+    return true
+  })
+}
+
 export function needsBank(member) {
   return member.plan !== 'daypass' && member.status !== 'cancelled' && member.status !== 'expired'
 }

@@ -1,6 +1,6 @@
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { memberFromSignup } from './member-model.mjs'
+import { memberFromSignup, membershipTaken } from './member-model.mjs'
 
 const FILE_NAME = 'members.json'
 const LEGACY_NAME = 'memberships.json'
@@ -181,24 +181,40 @@ export function createMemberStore({ dataDir, env = process.env }) {
 }
 
 export async function ingestSignup(store, record) {
+  const claimed = await claimSignup(store, record)
+  if (!claimed.ok) {
+    const error = new Error('duplicate')
+    error.code = 'duplicate'
+    throw error
+  }
+  return claimed.member
+}
+
+export async function claimSignup(store, record) {
   const member = memberFromSignup(record)
+  let taken = false
   await store.update((db) => {
+    if (membershipTaken(db.members, member.email, member.id)) {
+      taken = true
+      return db
+    }
     const index = db.members.findIndex((row) => row.id === member.id || normalizeKey(row.email) === normalizeKey(member.email))
     if (index >= 0) {
+      const prev = db.members[index]
       db.members[index] = {
-        ...db.members[index],
+        ...prev,
         ...member,
-        photoData: db.members[index].photoData || member.photoData,
-        notes: db.members[index].notes || member.notes,
-        bank: db.members[index].bank || member.bank,
-        docs: db.members[index].docs || member.docs,
-        stripe: db.members[index].stripe || member.stripe,
+        photoData: prev.photoData || member.photoData,
+        notes: prev.notes || member.notes,
+        bank: prev.bank || member.bank,
+        docs: prev.docs || member.docs,
+        stripe: prev.stripe || member.stripe,
         payments: member.payments,
       }
     } else db.members.push(member)
     return db
   })
-  return member
+  return taken ? { ok: false, error: 'duplicate' } : { ok: true, member }
 }
 
 function normalizeKey(value) {

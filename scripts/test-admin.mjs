@@ -170,6 +170,26 @@ const created = await call({
   },
 })
 assert(created.status === 200 && created.data.member.plan === 'flex', 'desk create')
+const createdAgain = await call({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie },
+  socket: { remoteAddress: '10.0.0.3' },
+  body: {
+    action: 'create',
+    plan: 'standard',
+    firstName: 'Clara',
+    lastName: 'Koch',
+    birthDate: '1990-02-02',
+    email: 'Clara@example.com',
+    phone: '+49 171 1112233',
+    street: 'Wittenberger Straße 15',
+    zip: '04129',
+    city: 'Leipzig',
+    startDate: '2026-11-02',
+  },
+})
+assert(createdAgain.status === 409 && createdAgain.data.error === 'duplicate', 'desk refuses a second signup for the same email')
 assert(created.data.member.cancel.termEnd === '2027-11-01', 'flex term')
 
 const deskTransfer = await call({

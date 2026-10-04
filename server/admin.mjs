@@ -16,6 +16,7 @@ import {
   isValidIban,
   mandateRefFor,
   maskIban,
+  membershipTaken,
   normalizeIban,
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
@@ -622,11 +623,21 @@ export function createAdminHandler({ dataDir, env, fetchImpl = fetch }) {
           json(res, 400, { ok: false, error: made.error })
           return
         }
+        let created = null
         await store.update((db) => {
+          if (membershipTaken(db.members, made.member.email)) {
+            created = { ok: false, error: 'duplicate' }
+            return db
+          }
           db.members.push(made.member)
+          created = { ok: true, member: made.member }
           return db
         })
-        let member = made.member
+        if (!created?.ok) {
+          json(res, 409, { ok: false, error: created?.error || 'duplicate' })
+          return
+        }
+        let member = created.member
         if (member.payMethod === 'transfer') {
           try {
             member = await attachTransferNotice(store, member)
