@@ -2,7 +2,15 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export const FIRST50_ID = 'first50'
 export const FIRST50_LIMIT = 50
+/** Extra personal seats past the original fifty. They stay First 50 in price, without a “Platz N von 50”. */
+export const FIRST50_SLOT_MAX = 80
 export const INVITE_TTL_HOURS = 48
+
+export function first50SeatLabel(slot) {
+  const n = Number(slot)
+  if (!Number.isInteger(n) || n < 1 || n > FIRST50_LIMIT) return ''
+  return `Platz ${n} von 50`
+}
 
 export function normalizeInviteEmail(raw) {
   return String(raw ?? '')
@@ -65,7 +73,7 @@ export function verifyInvite(secret, token) {
   const name = normalizePersonName(payload.n)
   const slot = Number(payload.s)
   const exp = Number(payload.exp)
-  if (!email || !name || !Number.isInteger(slot) || slot < 1 || slot > FIRST50_LIMIT) {
+  if (!email || !name || !Number.isInteger(slot) || slot < 1 || slot > FIRST50_SLOT_MAX) {
     return { ok: false, error: 'invite' }
   }
   if (!Number.isFinite(exp) || exp < Date.now() / 1000) return { ok: false, error: 'expired' }

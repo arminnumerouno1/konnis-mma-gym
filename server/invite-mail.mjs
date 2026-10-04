@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
 import { membershipTaken } from './member-model.mjs'
 import { createMemberStore } from './member-store.mjs'
-import { makeInvitePayload, normalizePersonName, signInvite } from './invite.mjs'
+import { FIRST50_SLOT_MAX, makeInvitePayload, normalizePersonName, signInvite } from './invite.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 
 function escapeMail(value) {
@@ -183,7 +183,7 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
         const email = normalizeEmail(body.email)
         const name = normalizePersonName(body.name)
         const slot = Number(body.slot)
-        if (!isValidEmail(email) || name.length < 3 || !Number.isInteger(slot) || slot < 1 || slot > 50) {
+        if (!isValidEmail(email) || name.length < 3 || !Number.isInteger(slot) || slot < 1 || slot > FIRST50_SLOT_MAX) {
           json(res, 400, { ok: false, error: 'invalid' })
           return
         }
@@ -242,7 +242,7 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
       const email = normalizeEmail(body.email)
       const name = normalizePersonName(body.name)
       const slot = Number(body.slot ?? 19)
-      if (!isValidEmail(email) || name.length < 3 || !Number.isInteger(slot) || slot < 1 || slot > 50) {
+      if (!isValidEmail(email) || name.length < 3 || !Number.isInteger(slot) || slot < 1 || slot > FIRST50_SLOT_MAX) {
         json(res, 400, { ok: false, error: 'invalid' })
         return
       }

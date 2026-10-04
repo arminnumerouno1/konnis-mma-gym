@@ -482,7 +482,7 @@ function JoinForm({ plan, invite }: JoinProps) {
         <div className="invite-banner">
           <strong>
             First 50
-            {inviteSlot != null ? ` · Platz ${inviteSlot} von 50` : ''} · 89,99€
+            {inviteSlot != null && inviteSlot >= 1 && inviteSlot <= 50 ? ` · Platz ${inviteSlot} von 50` : ''} · 89,99€
           </strong>
           <p>{COPY.inviteLockedNote}</p>
         </div>

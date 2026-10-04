@@ -1,5 +1,5 @@
 import { isValidEmail, normalizeEmail } from '../server/membership.mjs'
-import { normalizePersonName } from '../server/invite.mjs'
+import { FIRST50_SLOT_MAX, normalizePersonName } from '../server/invite.mjs'
 
 function arg(name) {
   const i = process.argv.indexOf(`--${name}`)
@@ -14,8 +14,8 @@ const name = normalizePersonName(arg('name'))
 const slot = Number(arg('slot'))
 const proof = process.env.SIGNUP_MAIL_PROOF?.trim()
 
-if (!proof || !isValidEmail(email) || name.length < 3 || !Number.isInteger(slot) || slot < 1 || slot > 50) {
-  console.error('Bitte --email, --name und --slot 1–50. Es geht nur eine Mail raus.')
+if (!proof || !isValidEmail(email) || name.length < 3 || !Number.isInteger(slot) || slot < 1 || slot > FIRST50_SLOT_MAX) {
+  console.error(`Bitte --email, --name und --slot 1–${FIRST50_SLOT_MAX}. Es geht nur eine Mail raus.`)
   process.exit(1)
 }
 

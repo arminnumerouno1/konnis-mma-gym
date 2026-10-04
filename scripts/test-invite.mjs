@@ -1,5 +1,7 @@
 import {
+  FIRST50_SLOT_MAX,
   INVITE_TTL_HOURS,
+  first50SeatLabel,
   inviteUsed,
   makeInvitePayload,
   namesMatch,
@@ -36,6 +38,20 @@ assert(!verifyInvite(secret, 'nopes').ok, 'garbage')
 const expired = signInvite(secret, { ...payload, exp: Math.floor(Date.now() / 1000) - 10 })
 const stale = verifyInvite(secret, expired)
 assert(!stale.ok && stale.error === 'expired', 'expired')
+
+const friendToken = signInvite(
+  secret,
+  makeInvitePayload({ email: 'paul@example.com', name: 'Paul Schneider', slot: 51 }),
+)
+const friendChecked = verifyInvite(secret, friendToken)
+assert(friendChecked.ok && friendChecked.payload.slot === 51, 'friend seat above the original fifty')
+const tooHigh = signInvite(
+  secret,
+  makeInvitePayload({ email: 'paul@example.com', name: 'Paul Schneider', slot: FIRST50_SLOT_MAX + 1 }),
+)
+assert(!verifyInvite(secret, tooHigh).ok, 'slot above the extra seats')
+assert(first50SeatLabel(7) === 'Platz 7 von 50', 'numbered seat inside the fifty')
+assert(first50SeatLabel(51) === '', 'friend seat hides the fraction')
 
 const split = splitPersonName('Joshua Victor Grudzinski')
 assert(split.firstName === 'Joshua Victor' && split.lastName === 'Grudzinski', 'split')
@@ -191,6 +207,35 @@ function mockRes() {
   assert(href, 'invite link')
   const checkedLink = verifyInvite(secret, decodeURIComponent(href[1]))
   assert(checkedLink.ok && checkedLink.payload.email === 'neu@example.com' && checkedLink.payload.slot === 19, 'link matches the person')
+  const friendMail = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/invite-mail',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.44' },
+      body: { one: true, proof, email: 'paul@example.com', name: 'Paul Schneider', slot: 51 },
+    },
+    friendMail.res,
+  )
+  const friendParsed = JSON.parse(friendMail.captured.body)
+  assert(friendMail.captured.status === 200 && friendParsed.ok && friendParsed.slot === 51 && !friendParsed.url, 'friend invite above 50')
+  const friendHref = sent.htmlContent.match(/https:\/\/www\.mma-in-leipzig\.de\/mitglied\?invite=([^"]+)/)
+  const friendLink = verifyInvite(secret, decodeURIComponent(friendHref[1]))
+  assert(friendLink.ok && friendLink.payload.email === 'paul@example.com' && friendLink.payload.slot === 51, 'friend link')
+  assert(!sent.htmlContent.includes('Platz 51'), 'mail does not print the extra seat number')
+  const overMax = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/invite-mail',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.45' },
+      body: { one: true, proof, email: 'paul@example.com', name: 'Paul Schneider', slot: FIRST50_SLOT_MAX + 1 },
+    },
+    overMax.res,
+  )
+  assert(overMax.captured.status === 400, 'slot above the extra seats is refused')
 }
 
 console.log('invite tests ok')

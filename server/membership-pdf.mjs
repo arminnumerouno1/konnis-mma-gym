@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { GYM_BANK, spacedIban as spaceGymIban } from './gym-bank.mjs'
+import { first50SeatLabel } from './invite.mjs'
 import { trainingHasStarted } from './opening.mjs'
 
 const A4 = [595.28, 841.89]
@@ -310,7 +311,8 @@ export async function buildContractPdf(record, { paper = false, creditorId = '' 
   }
   writer.kv('Vertragsschluss', formatWhen(record.createdAt))
   if (record.visitDay) writer.kv('Day Pass', formatIsoDate(record.visitDay))
-  if (record.inviteSlot) writer.kv('First 50', `Persönlicher Platz ${record.inviteSlot} von 50`)
+  const seat = first50SeatLabel(record.inviteSlot)
+  if (seat) writer.kv('First 50', `Persönlicher ${seat}`)
   for (const block of contractParagraphs(record)) writer.para(block)
 
   writer.heading('3. Erklärungen')
@@ -399,7 +401,8 @@ async function buildPaperContractPdf(record, creditorId) {
     writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.')
   }
   writer.kv('Beginn', formatIsoDate(record.startDate))
-  if (record.inviteSlot) writer.kv('First 50', `Persönlicher Platz ${record.inviteSlot} von 50`)
+  const paperSeat = first50SeatLabel(record.inviteSlot)
+  if (paperSeat) writer.kv('First 50', `Persönlicher ${paperSeat}`)
   for (const block of contractParagraphs(record)) writer.para(block)
 
   writer.heading('3. Erklärungen')
