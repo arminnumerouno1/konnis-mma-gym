@@ -145,7 +145,7 @@ async function postInvite({ fetchImpl, apiKey, sender, email, name, subject, htm
   }
 }
 
-export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers }) {
+export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = null }) {
   return async function handleInviteMail(req, res) {
     try {
       if (req.method === 'OPTIONS') {
