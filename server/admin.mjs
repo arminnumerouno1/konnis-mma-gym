@@ -21,7 +21,7 @@ import {
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
-import { sendMembershipEmails } from './membership-mail.mjs'
+import { sendMembershipEmails, sendPayLinkEmail } from './membership-mail.mjs'
 import { attachSignupDocs, attachTransferNotice } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
@@ -579,6 +579,7 @@ export function createAdminHandler({
   env,
   fetchImpl = fetch,
   sendMail = sendMembershipEmails,
+  sendPayLink = sendPayLinkEmail,
   deliverInvite = deliverFirst50Invite,
 }) {
   const store = createMemberStore({ dataDir, env })
@@ -716,8 +717,8 @@ export function createAdminHandler({
         return
       }
 
-      const proofSend =
-        action === 'sendContract' && secretsEqual(String(body.proof ?? ''), env.SIGNUP_MAIL_PROOF?.trim() || '')
+      const proofOk = secretsEqual(String(body.proof ?? ''), env.SIGNUP_MAIL_PROOF?.trim() || '')
+      const proofSend = (action === 'sendContract' || action === 'sendPayLink') && proofOk
       if (!authed(req) && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
         return
@@ -804,7 +805,6 @@ export function createAdminHandler({
       }
 
       if (action === 'sendContract') {
-        const proofOk = secretsEqual(String(body.proof ?? ''), env.SIGNUP_MAIL_PROOF?.trim() || '')
         let id = String(body.id ?? '')
         if (!id && proofOk) {
           const wanted = normalizePersonName(body.name).toLocaleLowerCase('de-DE')
@@ -982,6 +982,102 @@ export function createAdminHandler({
           return
         }
         json(res, 200, { ok: true, checkoutUrl: session.url, member: publicMember(saved, today, true) })
+        return
+      }
+
+      if (action === 'sendPayLink') {
+        let id = String(body.id ?? '')
+        if (!id && proofOk) {
+          const wanted = normalizePersonName(body.name).toLocaleLowerCase('de-DE')
+          if (wanted.length < 3) {
+            json(res, 400, { ok: false, error: 'name' })
+            return
+          }
+          const found = (await store.load()).members.filter((row) => {
+            const full = normalizePersonName(`${row.firstName ?? ''} ${row.lastName ?? ''}`).toLocaleLowerCase('de-DE')
+            return full === wanted && row.status !== 'cancelled' && row.status !== 'expired'
+          })
+          if (found.length === 0) {
+            json(res, 404, { ok: false, error: 'missing' })
+            return
+          }
+          if (found.length > 1) {
+            json(res, 409, { ok: false, error: 'duplicate' })
+            return
+          }
+          id = found[0].id
+        }
+        const current = (await store.load()).members.find((row) => row.id === id)
+        if (!current) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (current.plan === 'daypass' || current.payMethod === 'transfer') {
+          json(res, 400, { ok: false, error: 'pay' })
+          return
+        }
+        if (current.stripe?.subscriptionId) {
+          json(res, 409, { ok: false, error: 'stripe_exists' })
+          return
+        }
+        const secretKey = env.STRIPE_SECRET_KEY?.trim() || ''
+        if (!secretKey) {
+          json(res, 503, { ok: false, error: 'stripe_off' })
+          return
+        }
+        const session = await createCheckoutSession({
+          secret: secretKey,
+          member: current,
+          origin: siteOrigin(req, env),
+          fetchImpl,
+        })
+        if (!session.ok || !session.url) {
+          console.error('[admin] pay link failed', session.detail || session.error)
+          json(res, 502, { ok: false, error: session.skipped ? 'stripe_early' : 'stripe_fail' })
+          return
+        }
+        let saved = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          db.members[index] = {
+            ...db.members[index],
+            stripe: {
+              ...(db.members[index].stripe ?? {}),
+              checkoutSessionId: session.id,
+              billingStart: session.billingStart || BILLING_START,
+              chargeNow: Boolean(session.chargeNow),
+              delay: session.delay,
+            },
+            updatedAt: new Date().toISOString(),
+          }
+          saved = db.members[index]
+          return db
+        })
+        if (!saved) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        let mailed
+        try {
+          mailed = await sendPayLink(env, saved, session.url)
+        } catch (error) {
+          console.error('[admin] pay link mail failed', error)
+          json(res, 502, { ok: false, error: 'mail' })
+          return
+        }
+        if (!mailed || mailed === 'skipped') {
+          json(res, 503, { ok: false, error: 'mail_off' })
+          return
+        }
+        const at = new Date().toISOString()
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          db.members[index] = { ...db.members[index], payLinkAt: at, updatedAt: at }
+          return db
+        })
+        json(res, 200, { ok: true, email: saved.email })
         return
       }
 

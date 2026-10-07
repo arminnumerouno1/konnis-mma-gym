@@ -170,6 +170,35 @@ async function sendSmtp(env, { to, name, subject, html, attachments = [] }) {
   return attachments.length ? 'sent_with_pdf' : 'sent'
 }
 
+export function payLinkMailSubject() {
+  return 'Karte noch einrichten · KONNI MMA GYM'
+}
+
+export function payLinkMailHtml({ first = '', url = '' } = {}) {
+  const who = escapeMail(String(first ?? '').trim() || 'du')
+  const hi = who === 'du' ? 'Hi,' : `Hi ${who},`
+  const link = escapeMail(url)
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>${hi}</p>
+<p>deine Anmeldung ist da. Der Vertrag auch. <strong>Die Karte oder Apple Pay fehlt noch.</strong></p>
+<p>Ohne diesen Schritt wird am 1. November nichts abgebucht. In der Vertragsmail steht die Abbuchung ab diesem Tag. Dafür muss die Karte noch hinterlegt sein.</p>
+<p><a href="${link}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Zahlung einrichten</a></p>
+<p>Der Link gilt 24 Stunden. Danach können wir einen neuen schicken.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+</div>`
+}
+
+export async function sendPayLinkEmail(env, record, url) {
+  const apiKey = env.BREVO_API_KEY?.trim()
+  if (!apiKey || !record?.email || !url) return 'skipped'
+  return sendSmtp(env, {
+    to: record.email,
+    name: whoOf(record),
+    subject: payLinkMailSubject(),
+    html: payLinkMailHtml({ first: record.firstName, url }),
+  })
+}
+
 export async function sendMembershipEmails(env, record, { paper = false, creditorId = '', extra = [] } = {}) {
   const apiKey = env.BREVO_API_KEY?.trim()
   if (!apiKey) return { member: 'skipped', gym: 'skipped' }

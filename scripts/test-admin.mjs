@@ -16,6 +16,7 @@ import {
 } from '../server/member-model.mjs'
 import { createMemberStore, ingestSignup } from '../server/member-store.mjs'
 import { createAdminHandler } from '../server/admin.mjs'
+import { payLinkMailHtml } from '../server/membership-mail.mjs'
 import { createStripeHandler } from '../server/stripe.mjs'
 import { toSuggestions } from '../server/address.mjs'
 import { createMembershipHandler } from '../server/membership.mjs'
@@ -939,5 +940,54 @@ const inviteNext = await inviteCall({ action: 'sendFirst50', name: 'Mila Freund'
 assert(inviteNext.status === 200 && deskInvites[1].slot === 67, 'the next desk link takes the following seat')
 const inviteMember = await inviteCall({ action: 'sendFirst50', name: 'Clara Koch', email: 'clara@example.com' })
 assert(inviteMember.status === 409 && inviteMember.data.error === 'duplicate', 'no first50 link for an email that already has a membership')
+
+const payHtml = payLinkMailHtml({ first: 'Benoah', url: 'https://checkout.stripe.com/c/pay/cs_test_pay' })
+assert(payHtml.includes('Hi Benoah,') && payHtml.includes('https://checkout.stripe.com/c/pay/cs_test_pay'), 'pay link mail names the member and the link')
+assert(payHtml.includes('24 Stunden') && payHtml.includes('nichts abgebucht'), 'pay link mail says the card is still missing')
+assert(!payHtml.includes('IBAN'), 'pay link mail has no bank details')
+
+let payMails = []
+const payHandler = createAdminHandler({
+  dataDir: tmp,
+  env: { ADMIN_SECRET: secret, BREVO_API_KEY: 'xkeysib-test', SIGNUP_MAIL_PROOF: proof, STRIPE_SECRET_KEY: 'sk_test_example' },
+  fetchImpl: async () => ({
+    ok: true,
+    async json() {
+      return { id: 'cs_test_pay', url: 'https://checkout.stripe.com/c/pay/cs_test_pay' }
+    },
+  }),
+  sendPayLink: async (_env, record, url) => {
+    payMails.push({ email: record.email, url })
+    return 'sent'
+  },
+})
+async function payCall(body, headers = {}) {
+  const { res, captured } = mockRes()
+  await payHandler(
+    { method: 'POST', url: '/api/admin', headers, socket: { remoteAddress: '10.0.0.12' }, body },
+    res,
+  )
+  return { status: captured.status, data: captured.body ? JSON.parse(captured.body) : {} }
+}
+const unpaid = await post({
+  action: 'create',
+  plan: 'first50',
+  firstName: 'Benoah',
+  lastName: 'Agbor',
+  birthDate: '1994-04-04',
+  email: 'benoah@example.com',
+  phone: '+49 171 5556677',
+})
+assert(unpaid.status === 200 && !unpaid.data.member.stripe?.subscriptionId, 'card member without a subscription')
+const payDenied = await payCall({ action: 'sendPayLink', name: 'Benoah Agbor' })
+assert(payDenied.status === 401 && payMails.length === 0, 'pay link mail needs the proof')
+const payHasSub = await payCall({ action: 'sendPayLink', proof, name: withBank.data.member.firstName + ' ' + withBank.data.member.lastName })
+assert(payHasSub.status === 409 && payHasSub.data.error === 'stripe_exists' && payMails.length === 0, 'no pay link when a subscription exists')
+const paySent = await payCall({ action: 'sendPayLink', proof, name: 'Benoah Agbor' })
+assert(paySent.status === 200 && paySent.data.email === 'benoah@example.com' && !paySent.data.checkoutUrl, 'pay link mail goes out by name')
+assert(payMails.length === 1 && payMails[0].url.includes('checkout.stripe.com'), 'pay link mail carries the checkout url')
+const payStored = await store.load()
+const benoah = payStored.members.find((row) => row.email === 'benoah@example.com')
+assert(benoah.payLinkAt && benoah.stripe.checkoutSessionId === 'cs_test_pay', 'pay link is stored on the member')
 
 console.log('admin tests ok')
