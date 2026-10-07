@@ -7,7 +7,7 @@ const LEGACY_NAME = 'memberships.json'
 const BLOB_PATH = 'konni/members.json'
 
 function emptyStore() {
-  return { version: 1, members: [], issuedFirst50: [] }
+  return { version: 1, members: [], issuedFirst50: [], revokedInvites: [] }
 }
 
 async function readJsonFile(file) {
@@ -23,9 +23,10 @@ async function readJsonFile(file) {
 function normalizeStore(parsed) {
   if (!parsed || typeof parsed !== 'object') return emptyStore()
   const issuedFirst50 = Array.isArray(parsed.issuedFirst50) ? parsed.issuedFirst50 : []
-  if (Array.isArray(parsed.members)) return { version: 1, members: parsed.members, issuedFirst50 }
+  const revokedInvites = Array.isArray(parsed.revokedInvites) ? parsed.revokedInvites : []
+  if (Array.isArray(parsed.members)) return { version: 1, members: parsed.members, issuedFirst50, revokedInvites }
   if (Array.isArray(parsed.memberships)) {
-    return { version: 1, members: parsed.memberships.map((row) => memberFromSignup(row)), issuedFirst50 }
+    return { version: 1, members: parsed.memberships.map((row) => memberFromSignup(row)), issuedFirst50, revokedInvites }
   }
   return emptyStore()
 }
@@ -77,7 +78,12 @@ export function createMemberStore({ dataDir, env = process.env }) {
   }
 
   async function saveUnlocked(store) {
-    const payload = { version: 1, members: store.members, issuedFirst50: store.issuedFirst50 ?? [] }
+    const payload = {
+      version: 1,
+      members: store.members,
+      issuedFirst50: store.issuedFirst50 ?? [],
+      revokedInvites: store.revokedInvites ?? [],
+    }
     await mkdir(dirname(file), { recursive: true })
     await writeFile(file, `${JSON.stringify(payload)}\n`, 'utf8')
     if (token) await saveBlob(token, payload)

@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
+import { inviteRevoked, inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 import { membershipTaken } from './member-model.mjs'
 import { claimSignup, createMemberStore } from './member-store.mjs'
@@ -189,6 +189,9 @@ export function validateMembership(body, ctx = {}) {
     const checked = verifyInvite(ctx.inviteSecret, body.invite)
     if (!checked.ok) return { ok: false, error: checked.error === 'expired' ? 'expired' : 'invite' }
     if (inviteUsed(ctx.memberships ?? [], checked.payload.email)) {
+      return { ok: false, error: 'invite' }
+    }
+    if (inviteRevoked(ctx.revokedInvites, checked.payload.email, checked.payload.slot)) {
       return { ok: false, error: 'invite' }
     }
     invite = checked.payload
@@ -468,7 +471,12 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
           return
         }
         const memberships = await knownSignups()
-        if (inviteUsed(memberships, checked.payload.email) || (await inviteUsedRemote(env, checked.payload.email))) {
+        const revokedInvites = (await members.load()).revokedInvites
+        if (
+          inviteRevoked(revokedInvites, checked.payload.email, checked.payload.slot) ||
+          inviteUsed(memberships, checked.payload.email) ||
+          (await inviteUsedRemote(env, checked.payload.email))
+        ) {
           json(res, 400, { ok: false, error: 'invite' })
           return
         }
@@ -521,7 +529,12 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     }
 
     const memberships = await loadMemberships(file)
-    const checked = validateMembership(body, { inviteSecret: env.INVITE_SECRET, memberships: await knownSignups(memberships) })
+    const revokedInvites = (await members.load()).revokedInvites
+    const checked = validateMembership(body, {
+      inviteSecret: env.INVITE_SECRET,
+      memberships: await knownSignups(memberships),
+      revokedInvites,
+    })
     if (checked.ok && checked.honey) {
       json(res, 200, { ok: true, confirmation: 'saved', remainingFirst50: 0 })
       return

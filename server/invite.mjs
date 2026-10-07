@@ -100,6 +100,13 @@ export function verifyInvite(secret, token) {
   return { ok: true, payload: { email, name, slot, exp, plan: FIRST50_ID } }
 }
 
+export function inviteRevoked(revoked, email, slot) {
+  const needle = normalizeInviteEmail(email)
+  const n = Number(slot)
+  if (!needle || !Number.isInteger(n)) return false
+  return (revoked ?? []).some((row) => normalizeInviteEmail(row?.email) === needle && Number(row?.slot) === n)
+}
+
 export function inviteUsed(memberships, email) {
   const needle = normalizeInviteEmail(email)
   return memberships.some(

@@ -2,6 +2,7 @@ import {
   FIRST50_SLOT_MAX,
   INVITE_TTL_HOURS,
   first50SeatLabel,
+  inviteRevoked,
   inviteUsed,
   nextFirst50Slot,
   makeInvitePayload,
@@ -76,6 +77,8 @@ assert(
   !inviteUsed([{ plan: 'first50', email: 'anna@example.com', status: 'withdrawn' }], 'anna@example.com'),
   'withdrawal frees the first50 invite',
 )
+assert(inviteRevoked([{ email: 'Dome@example.com', slot: 86 }], 'dome@example.com', 86), 'revoked invite is blocked')
+assert(!inviteRevoked([{ email: 'dome@example.com', slot: 86 }], 'other@example.com', 86), 'another email keeps the seat')
 
 const base = {
   plan: 'first50',

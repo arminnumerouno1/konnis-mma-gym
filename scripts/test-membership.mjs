@@ -16,6 +16,7 @@ import {
 import { membershipCopyHtml, membershipMailSubject } from '../server/membership-mail.mjs'
 import { buildContractPdf, membershipPdfAttachments } from '../server/membership-pdf.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
+import { makeInvitePayload, signInvite } from '../server/invite.mjs'
 
 function assert(cond, message) {
   if (!cond) throw new Error(message)
@@ -423,6 +424,64 @@ mkdirSync(dataDir, { recursive: true })
   assert(second.captured.status === 409 && secondBody.error === 'duplicate', 'second signup refused')
   const rows = (await createMemberStore({ dataDir, env: {} }).load()).members.filter((row) => row.email === 'doppelt@example.com')
   assert(rows.length === 1 && rows[0].plan === 'standard', 'first contract stays')
+}
+
+{
+  const secret = 'test-invite-secret-key'
+  const token = signInvite(secret, makeInvitePayload({ email: 'dome@example.com', name: 'Dominic Jagobert', slot: 86 }))
+  const fresh = signInvite(secret, makeInvitePayload({ email: 'nora@example.com', name: 'Nora Freund', slot: 87 }))
+  const store = createMemberStore({ dataDir, env: {} })
+  await store.update((db) => {
+    db.revokedInvites = [{ email: 'dome@example.com', slot: 86 }]
+    return db
+  })
+  const loaded = await createMemberStore({ dataDir, env: {} }).load()
+  assert(loaded.revokedInvites.length === 1 && loaded.members.length >= 1, 'revoked invites stay next to the members')
+  const handle = createMembershipHandler({ dataDir, env: { INVITE_SECRET: secret, SIGNUP_OPEN: 'true', MEMBERSHIP_MAIL: 'false' } })
+  const blocked = mockRes()
+  await handle(
+    {
+      method: 'GET',
+      url: `/api/mitglied?invite=${encodeURIComponent(token)}`,
+      headers: {},
+      socket: { remoteAddress: '127.0.0.30' },
+    },
+    blocked.res,
+  )
+  const blockedBody = JSON.parse(blocked.captured.body)
+  assert(blocked.captured.status === 400 && blockedBody.error === 'invite', 'revoked first50 link does not open')
+  const open = mockRes()
+  await handle(
+    {
+      method: 'GET',
+      url: `/api/mitglied?invite=${encodeURIComponent(fresh)}`,
+      headers: {},
+      socket: { remoteAddress: '127.0.0.32' },
+    },
+    open.res,
+  )
+  const openBody = JSON.parse(open.captured.body)
+  assert(open.captured.status === 200 && openBody.invite.email === 'nora@example.com', 'another first50 link still opens')
+  const post = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/mitglied',
+      headers: { 'content-type': 'application/json' },
+      body: {
+        ...base,
+        plan: 'first50',
+        firstName: 'Dominic',
+        lastName: 'Jagobert',
+        email: 'dome@example.com',
+        invite: token,
+      },
+      socket: { remoteAddress: '127.0.0.31' },
+    },
+    post.res,
+  )
+  const postBody = JSON.parse(post.captured.body)
+  assert(post.captured.status === 400 && postBody.error === 'invite', 'revoked first50 link cannot sign up')
 }
 
 console.log('membership tests ok')
