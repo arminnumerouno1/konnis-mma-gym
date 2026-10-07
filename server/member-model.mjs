@@ -11,7 +11,12 @@ export const STATUS_LABELS = {
   active: 'Aktiv',
   paused: 'Pausiert',
   cancelled: 'Gekündigt',
+  withdrawn: 'Widerruf',
   expired: 'Beendet',
+}
+
+export function isFormerMember(status) {
+  return status === 'cancelled' || status === 'withdrawn' || status === 'expired'
 }
 export const PAY_LABELS = {
   paid: 'Gezahlt',
@@ -65,13 +70,13 @@ export function membershipTaken(members, email, exceptId) {
   return (members ?? []).some((row) => {
     if (!row || emailKey(row.email) !== needle) return false
     if (exceptId && row.id === exceptId) return false
-    if (row.status === 'cancelled' || row.status === 'expired') return false
+    if (isFormerMember(row.status)) return false
     return true
   })
 }
 
 export function needsBank(member) {
-  return member.plan !== 'daypass' && member.status !== 'cancelled' && member.status !== 'expired'
+  return member.plan !== 'daypass' && !isFormerMember(member.status)
 }
 
 export function bankMissing(member) {
@@ -145,6 +150,16 @@ export function cancelInfo(member, today = isoDate()) {
       termEnd: member.visitDay || member.startDate || null,
       nextEnd: member.visitDay || member.startDate || null,
       hint: 'Tageskarte. Keine Kündigung.',
+    }
+  }
+  if (member.status === 'withdrawn') {
+    return {
+      kind: 'withdrawn',
+      canCancelNow: false,
+      deadline: null,
+      termEnd: member.cancelEffectiveOn || null,
+      nextEnd: member.cancelEffectiveOn || null,
+      hint: 'Widerruf innerhalb der Widerrufsfrist. Kein Mitglied mehr.',
     }
   }
   if (member.status === 'cancelled') {
@@ -264,7 +279,7 @@ export function ensurePayments(member, today = isoDate()) {
 }
 
 export function payStatusThisMonth(member, today = isoDate()) {
-  if (member.status === 'cancelled' || member.status === 'expired') return 'na'
+  if (isFormerMember(member.status)) return 'na'
   if (member.status === 'paused') return 'waived'
   if (member.plan === 'daypass') {
     const row = (member.payments ?? []).find((item) => item.kind === 'day')

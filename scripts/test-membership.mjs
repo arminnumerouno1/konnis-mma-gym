@@ -92,6 +92,10 @@ const afterCancel = validateMembership(base, {
   memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'cancelled' }],
 })
 assert(afterCancel.ok, 'cancelled member can sign up again')
+const afterWithdrawal = validateMembership(base, {
+  memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'withdrawn' }],
+})
+assert(afterWithdrawal.ok, 'withdrawn member can sign up again')
 const other = validateMembership(
   { ...base, email: 'neu@example.com' },
   { memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'active' }] },
@@ -144,7 +148,7 @@ assert(transfer.ok && transfer.record?.payMethod === 'transfer', 'monthly bank t
 const transferDay = validateMembership({ ...base, plan: 'daypass', visitDay: '2026-11-02', payMethod: 'transfer' }, {})
 assert(!transferDay.ok && transferDay.error === 'plan', 'day pass stays closed online')
 
-assert(first50Taken([{ plan: 'first50' }, { plan: 'standard' }, { plan: 'first50', status: 'cancelled' }]) === 1, 'count')
+assert(first50Taken([{ plan: 'first50' }, { plan: 'standard' }, { plan: 'first50', status: 'cancelled' }, { plan: 'first50', status: 'withdrawn' }]) === 1, 'count')
 
 const mailRecord = {
   firstName: 'Anna',

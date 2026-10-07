@@ -72,6 +72,10 @@ assert(
   !inviteUsed([{ plan: 'first50', email: 'anna@example.com', status: 'cancelled' }], 'anna@example.com'),
   'cancelled not used',
 )
+assert(
+  !inviteUsed([{ plan: 'first50', email: 'anna@example.com', status: 'withdrawn' }], 'anna@example.com'),
+  'withdrawal frees the first50 invite',
+)
 
 const base = {
   plan: 'first50',

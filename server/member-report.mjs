@@ -23,6 +23,7 @@ function monthEnd(ym) {
 }
 
 function endedOn(member) {
+  if (member.status === 'withdrawn') return member.cancelEffectiveOn || berlinDate(member.cancelledAt) || null
   if (member.status === 'cancelled') return member.cancelEffectiveOn || member.endDate || null
   if (member.status === 'expired') return member.endDate || berlinDate(member.updatedAt) || null
   return null
@@ -84,7 +85,7 @@ export function buildReport(members, year, today = isoDate()) {
       if (member.plan in joined.byPlan) joined.byPlan[member.plan] += 1
     }
 
-    const cancelled = member.cancelledAt ? byYm.get(berlinYm(member.cancelledAt)) : null
+    const cancelled = member.status !== 'withdrawn' && member.cancelledAt ? byYm.get(berlinYm(member.cancelledAt)) : null
     if (cancelled) cancelled.cancellations += 1
     const end = endedOn(member)
     const ended = end ? byYm.get(String(end).slice(0, 7)) : null

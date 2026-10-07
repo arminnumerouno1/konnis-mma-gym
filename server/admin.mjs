@@ -513,12 +513,17 @@ function patchMember(current, patch, today) {
 
 function patchMemberFields(current, patch, today) {
   const next = { ...current }
-  if (patch.status && ['received', 'active', 'paused', 'cancelled', 'expired'].includes(patch.status)) {
+  if (patch.status && ['received', 'active', 'paused', 'cancelled', 'withdrawn', 'expired'].includes(patch.status)) {
     next.status = patch.status
     if (patch.status === 'cancelled') {
       next.cancelledAt = new Date().toISOString()
       const info = cancelInfo({ ...next, status: 'active' }, today)
       next.cancelEffectiveOn = patch.cancelEffectiveOn || info.nextEnd || today
+    }
+    if (patch.status === 'withdrawn') {
+      next.cancelledAt = next.cancelledAt || new Date().toISOString()
+      next.cancelEffectiveOn = today
+      next.pausedUntil = null
     }
     if (patch.status === 'paused') next.pausedUntil = String(patch.pausedUntil ?? '') || null
     if (patch.status === 'active') {
@@ -995,7 +1000,7 @@ export function createAdminHandler({
           }
           const found = (await store.load()).members.filter((row) => {
             const full = normalizePersonName(`${row.firstName ?? ''} ${row.lastName ?? ''}`).toLocaleLowerCase('de-DE')
-            return full === wanted && row.status !== 'cancelled' && row.status !== 'expired'
+            return full === wanted && row.status !== 'cancelled' && row.status !== 'withdrawn' && row.status !== 'expired'
           })
           if (found.length === 0) {
             json(res, 404, { ok: false, error: 'missing' })

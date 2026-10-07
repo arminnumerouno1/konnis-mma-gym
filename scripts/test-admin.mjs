@@ -8,6 +8,7 @@ import {
   cancelDeadlineDate,
   cancelInfo,
   bankMissing,
+  isoDate,
   isValidIban,
   memberFromSignup,
   payStatusThisMonth,
@@ -686,6 +687,40 @@ assert(snapshotMonth(rep.months, '2026-10-03').ym === '2026-11', 'before opening
 assert(snapshotMonth(rep.months, '2026-12-15').ym === '2026-12', 'in December the book is December')
 assert(rNov.paid === 99.99 && rNov.openCount === 2, 'payments paid and open')
 assert(rep.totals.signups === 3, 'year total')
+const withdrawnReport = buildReport(
+  [
+    {
+      ...memberFromSignup(
+        {
+          id: 'rw',
+          plan: 'first50',
+          planName: 'First 50',
+          price: 89.99,
+          termMonths: 24,
+          firstName: 'M',
+          lastName: 'U',
+          email: 'm.u@example.com',
+          startDate: '2026-11-02',
+          createdAt: '2026-10-04T17:06:43.735Z',
+          source: 'online',
+        },
+        '2026-10-07',
+      ),
+      status: 'withdrawn',
+      cancelledAt: '2026-10-07T06:21:53.048Z',
+      cancelEffectiveOn: '2026-10-07',
+    },
+  ],
+  '2026',
+  '2026-10-07',
+)
+assert(withdrawnReport.months.find((row) => row.ym === '2026-10').cancellations === 0, 'withdrawal is not a cancellation')
+assert(withdrawnReport.months.find((row) => row.ym === '2026-10').endings === 1, 'withdrawal ends in the same month')
+assert(withdrawnReport.months.find((row) => row.ym === '2026-11').stock === 0, 'withdrawal is not a member in November')
+assert(
+  cancelInfo({ status: 'withdrawn', plan: 'first50', cancelEffectiveOn: '2026-10-07' }, '2026-10-07').hint.includes('Widerrufsfrist'),
+  'withdrawal hint',
+)
 
 const suggestions = toSuggestions([
   { properties: { type: 'house', street: 'Wittenberger Straße', housenumber: '15', postcode: '04129', city: 'Leipzig', countrycode: 'DE' } },
@@ -989,5 +1024,22 @@ assert(payMails.length === 1 && payMails[0].url.includes('checkout.stripe.com'),
 const payStored = await store.load()
 const benoah = payStored.members.find((row) => row.email === 'benoah@example.com')
 assert(benoah.payLinkAt && benoah.stripe.checkoutSessionId === 'cs_test_pay', 'pay link is stored on the member')
+
+const mansur = await post({
+  action: 'create',
+  plan: 'first50',
+  payMethod: 'transfer',
+  firstName: 'Mansur',
+  lastName: 'Umarov',
+  birthDate: '1990-02-02',
+  email: 'mansur@example.com',
+  phone: '+49 171 1010101',
+})
+assert(mansur.status === 200, 'transfer member for a withdrawal')
+const marked = await post({ action: 'update', id: mansur.data.member.id, status: 'withdrawn' })
+assert(marked.status === 200 && marked.data.member.status === 'withdrawn', 'desk marks a withdrawal')
+assert(marked.data.member.cancelEffectiveOn === isoDate(), 'withdrawal ends the same day')
+assert(marked.data.member.cancel.hint.includes('Widerrufsfrist'), 'desk shows the withdrawal period')
+assert(marked.data.member.payThisMonth === 'na', 'withdrawal is not billed')
 
 console.log('admin tests ok')

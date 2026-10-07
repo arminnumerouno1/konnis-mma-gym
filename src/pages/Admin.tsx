@@ -3,7 +3,7 @@ import { StreetInput } from '../components/StreetInput'
 import { snapshotMonth } from '../admin/snapshot.ts'
 
 type PayStatus = 'paid' | 'open' | 'failed' | 'waived' | 'upcoming' | 'na'
-type MemberStatus = 'received' | 'active' | 'paused' | 'cancelled' | 'expired'
+type MemberStatus = 'received' | 'active' | 'paused' | 'cancelled' | 'withdrawn' | 'expired'
 type PlanId = 'standard' | 'flex' | 'daypass' | 'first50'
 
 type CancelInfo = {
@@ -468,6 +468,7 @@ const STATUS_LABEL: Record<MemberStatus, string> = {
   active: 'Aktiv',
   paused: 'Pausiert',
   cancelled: 'Gekündigt',
+  withdrawn: 'Widerruf',
   expired: 'Beendet',
 }
 
@@ -1721,6 +1722,7 @@ export function Admin() {
           <option value="received">Angemeldet</option>
           <option value="paused">Pausiert</option>
           <option value="cancelled">Gekündigt</option>
+          <option value="withdrawn">Widerruf</option>
         </select>
         <select value={pay} onChange={(event) => setPay(event.target.value)}>
           <option value="">Zahlung alle</option>
@@ -1899,6 +1901,7 @@ function MemberPane({
           <option value="received">Angemeldet</option>
           <option value="paused">Pausiert</option>
           <option value="cancelled">Gekündigt</option>
+          <option value="withdrawn">Widerruf</option>
           <option value="expired">Beendet</option>
         </select>
       </header>
@@ -1975,7 +1978,7 @@ function MemberPane({
           </dd>
         </div>
         <div>
-          <dt>Kündigung</dt>
+          <dt>{member.status === 'withdrawn' ? 'Widerruf' : 'Kündigung'}</dt>
           <dd>
             {member.cancel?.canCancelNow ? 'Jetzt möglich' : 'Gerade nicht zum Wunschtermin'}
             <br />

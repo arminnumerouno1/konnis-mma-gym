@@ -16,7 +16,7 @@ export function nextFirst50Slot(members, issued = []) {
     if (Number.isInteger(n) && n >= 1) used.add(n)
   }
   for (const row of members ?? []) {
-    if (row?.plan !== FIRST50_ID || row?.status === 'cancelled' || row?.status === 'expired') continue
+    if (row?.plan !== FIRST50_ID || row?.status === 'cancelled' || row?.status === 'withdrawn' || row?.status === 'expired') continue
     const slot = Number(row?.inviteSlot)
     if (Number.isInteger(slot) && slot >= 1) used.add(slot)
   }
@@ -106,6 +106,7 @@ export function inviteUsed(memberships, email) {
     (row) =>
       row?.plan === FIRST50_ID &&
       row?.status !== 'cancelled' &&
+      row?.status !== 'withdrawn' &&
       normalizeInviteEmail(row.email) === needle,
   )
 }

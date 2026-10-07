@@ -166,7 +166,7 @@ async function saveMemberships(file, memberships) {
 }
 
 export function first50Taken(memberships) {
-  return memberships.filter((row) => row.plan === 'first50' && row.status !== 'cancelled').length
+  return memberships.filter((row) => row.plan === 'first50' && row.status !== 'cancelled' && row.status !== 'withdrawn').length
 }
 
 function truthy(value) {

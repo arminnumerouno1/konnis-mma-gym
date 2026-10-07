@@ -109,6 +109,7 @@ function slotTaken(members, slot) {
     (row) =>
       row?.plan === 'first50' &&
       row?.status !== 'cancelled' &&
+      row?.status !== 'withdrawn' &&
       row?.status !== 'expired' &&
       Number(row?.inviteSlot) === slot,
   )
