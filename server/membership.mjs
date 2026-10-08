@@ -1,7 +1,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { inviteRevoked, inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
+import { inviteRevoked, inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, storedContractTerm, verifyInvite } from './invite.mjs'
 import { memberBillingStart, membershipTaken } from './member-model.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 import { claimSignup, createMemberStore } from './member-store.mjs'
@@ -270,7 +270,7 @@ export function validateMembership(body, ctx = {}) {
       plan,
       planName: meta.name,
       price: meta.price,
-      termMonths: meta.months,
+      termMonths: invite?.term === 12 ? 12 : meta.months,
       fee: meta.fee,
       firstName,
       lastName,
@@ -472,7 +472,8 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
           return
         }
         const memberships = await knownSignups()
-        const revokedInvites = (await members.load()).revokedInvites
+        const store = await members.load()
+        const revokedInvites = store.revokedInvites
         if (
           inviteRevoked(revokedInvites, checked.payload.email, checked.payload.slot) ||
           inviteUsed(memberships, checked.payload.email) ||
@@ -481,6 +482,11 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
           json(res, 400, { ok: false, error: 'invite' })
           return
         }
+        const term =
+          checked.payload.term === 12 ||
+          storedContractTerm(store.issuedFirst50, checked.payload.email, checked.payload.slot) === 12
+            ? 12
+            : 0
         json(res, 200, {
           ok: true,
           invite: {
@@ -490,6 +496,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
             plan: 'first50',
             price: 89.99,
             ...(checked.payload.start ? { start: checked.payload.start } : {}),
+            ...(term === 12 ? { term: 12 } : {}),
           },
         })
         return
@@ -531,7 +538,8 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     }
 
     const memberships = await loadMemberships(file)
-    const revokedInvites = (await members.load()).revokedInvites
+    const store = await members.load()
+    const revokedInvites = store.revokedInvites
     const checked = validateMembership(body, {
       inviteSecret: env.INVITE_SECRET,
       memberships: await knownSignups(memberships),
@@ -552,6 +560,14 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     ) {
       json(res, 400, { ok: false, error: 'invite' })
       return
+    }
+
+    if (
+      checked.record.plan === 'first50' &&
+      checked.record.termMonths !== 12 &&
+      storedContractTerm(store.issuedFirst50, checked.record.email, checked.record.inviteSlot) === 12
+    ) {
+      checked.record.termMonths = 12
     }
 
     const record = checked.record

@@ -97,7 +97,28 @@ export function verifyInvite(secret, token) {
     return { ok: false, error: 'invite' }
   }
   if (!Number.isFinite(exp) || exp < Date.now() / 1000) return { ok: false, error: 'expired' }
-  return { ok: true, payload: { email, name, slot, exp, plan: FIRST50_ID, start: contractStart(payload.d) } }
+  return {
+    ok: true,
+    payload: {
+      email,
+      name,
+      slot,
+      exp,
+      plan: FIRST50_ID,
+      start: contractStart(payload.d),
+      term: contractTerm(payload.m) || 24,
+    },
+  }
+}
+
+export function storedContractTerm(issued, email, slot) {
+  const needle = normalizeInviteEmail(email)
+  const n = Number(slot)
+  if (!needle || !Number.isInteger(n)) return 0
+  const hit = (issued ?? []).some(
+    (row) => normalizeInviteEmail(row?.email) === needle && Number(row?.slot) === n && contractTerm(row?.term) === 12,
+  )
+  return hit ? 12 : 0
 }
 
 export function inviteRevoked(revoked, email, slot) {
@@ -126,7 +147,12 @@ export function contractStart(raw) {
   return value
 }
 
-export function makeInvitePayload({ email, name, slot, start = '', ttlHours = INVITE_TTL_HOURS, nowMs = Date.now() }) {
+/** Sonderlaufzeit. 12 Monate statt der üblichen 24. */
+export function contractTerm(raw) {
+  return Number(raw) === 12 ? 12 : 0
+}
+
+export function makeInvitePayload({ email, name, slot, start = '', term = 0, ttlHours = INVITE_TTL_HOURS, nowMs = Date.now() }) {
   const payload = {
     p: FIRST50_ID,
     e: normalizeInviteEmail(email),
@@ -136,5 +162,7 @@ export function makeInvitePayload({ email, name, slot, start = '', ttlHours = IN
   }
   const deferred = contractStart(start)
   if (deferred) payload.d = deferred
+  const months = contractTerm(term)
+  if (months) payload.m = months
   return payload
 }

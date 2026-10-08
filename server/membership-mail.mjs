@@ -91,7 +91,7 @@ function memberLead(record, { attached = false } = {}) {
       ? `Dein Vertrag beginnt am ${dueOn(record)}. Vorher wird nichts berechnet.`
       : 'Wir freuen uns, dass du von Anfang an dabei bist. Am 2. November geht die Tür auf. Dann sehen wir uns in der Wittenberger Straße.'
     return `<p>Hi ${first},</p>
-<p><strong>Schön, dass du einer der Ersten bist.</strong> Die ersten 50 bekommen den Preis, den wir dafür gemacht haben: 89,99€ statt 99,99€, 24 Monate.</p>
+<p><strong>Schön, dass du einer der Ersten bist.</strong> Die ersten 50 bekommen den Preis, den wir dafür gemacht haben: 89,99€ statt 99,99€, ${record.termMonths || 24} Monate.</p>
 <p>${welcome}</p>
 <p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. ${due}</p>`
   }

@@ -167,6 +167,7 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviteSlot, setInviteSlot] = useState<number | null>(null)
   const [contractStart, setContractStart] = useState('')
+  const [contractTerm, setContractTerm] = useState<number | null>(null)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthDate, setBirthDate] = useState('')
@@ -202,6 +203,12 @@ function JoinForm({ plan, invite }: JoinProps) {
   const minor = age != null && age < 18
   const inviteLocked = Boolean(invite) && chosen === 'first50'
   const visiblePlans = inviteLocked ? [FIRST50] : PUBLIC_PLANS
+  const termLabel = (plan: { id: string; term: string }) =>
+    plan.id === 'first50' && contractTerm === 12 ? '12 Monate Laufzeit' : plan.term
+  const inviteLead =
+    contractTerm === 12
+      ? 'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 12 Monate. Das ist ein Sondervertrag. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, geht der Platz an die nächste Person. Nicht weiterleiten.'
+      : COPY.inviteLead
 
   useEffect(() => {
     if (!invite) return
@@ -217,6 +224,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       setChosen('first50')
       setInviteSlot(result.invite.slot)
       setContractStart(result.invite.start ?? '')
+      setContractTerm(result.invite.term === 12 ? 12 : null)
       setEmail(result.invite.email)
       setFirstName(names.firstName)
       setLastName(names.lastName)
@@ -414,7 +422,7 @@ function JoinForm({ plan, invite }: JoinProps) {
             <div>
               <dt>Tarif</dt>
               <dd>
-                {summary.plan.name} · {summary.plan.price}€ {summary.plan.unit} · {summary.plan.term}
+                {summary.plan.name} · {summary.plan.price}€ {summary.plan.unit} · {termLabel(summary.plan)}
               </dd>
             </div>
             {summary.plan.id === 'daypass' ? null : (
@@ -493,7 +501,7 @@ function JoinForm({ plan, invite }: JoinProps) {
     <main className="page join-page" ref={pageRef}>
       <p className="kicker">{COPY.joinPageKicker}</p>
       <h1>{COPY.joinPageTitle}</h1>
-      <p className="lead">{inviteLocked ? COPY.inviteLead : COPY.joinPageLead}</p>
+      <p className="lead">{inviteLocked ? inviteLead : COPY.joinPageLead}</p>
 
       {inviteError ? (
         <p className="form-error" role="alert">
@@ -538,7 +546,7 @@ function JoinForm({ plan, invite }: JoinProps) {
                   <em>
                     {item.price}€ {item.unit}
                   </em>
-                  <small>{item.term}</small>
+                  <small>{termLabel(item)}</small>
                   {item.id === 'daypass' ? null : (
                     <small className="price-fee">
                       <strong>{COPY.signupFeePrice}</strong>
@@ -668,7 +676,7 @@ function JoinForm({ plan, invite }: JoinProps) {
 
         {step === 2 ? (
           <div className="legal-step">
-            <p>{selected ? `${selected.name} · ${selected.price}€ ${selected.unit} · ${selected.term}` : ''}</p>
+            <p>{selected ? `${selected.name} · ${selected.price}€ ${selected.unit} · ${termLabel(selected)}` : ''}</p>
             {minor ? <p>{COPY.minorLegalNote}</p> : null}
             <fieldset className="pay-pick">
               <legend>Zahlungsweise</legend>

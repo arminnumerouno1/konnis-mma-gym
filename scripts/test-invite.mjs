@@ -6,6 +6,8 @@ import {
   inviteUsed,
   nextFirst50Slot,
   contractStart,
+  contractTerm,
+  storedContractTerm,
   makeInvitePayload,
   namesMatch,
   signInvite,
@@ -35,7 +37,26 @@ assert(contractStart('2026-11-01') === '' && contractStart('2027-01-15') === '',
 const laterPayload = makeInvitePayload({ email: 'martin@example.com', name: 'Martin Masurkewicz', slot: 88, start: '2027-01-01' })
 assert(laterPayload.d === '2027-01-01', 'later start is signed into the invite')
 const laterChecked = verifyInvite(secret, signInvite(secret, laterPayload))
-assert(laterChecked.ok && laterChecked.payload.start === '2027-01-01', 'later start comes back out of the token')
+assert(laterChecked.ok && laterChecked.payload.start === '2027-01-01' && laterChecked.payload.term === 24, 'later start comes back out of the token')
+assert(contractTerm(12) === 12 && contractTerm('12') === 12 && contractTerm(6) === 0, 'only a twelve month special term')
+const shortPayload = makeInvitePayload({
+  email: 'm.masurkewicz@gmx.de',
+  name: 'Martin Masurkewicz',
+  slot: 81,
+  start: '2027-01-01',
+  term: 12,
+})
+assert(shortPayload.m === 12 && shortPayload.d === '2027-01-01', 'twelve months are signed into the invite')
+const shortChecked = verifyInvite(secret, signInvite(secret, shortPayload))
+assert(
+  shortChecked.ok && shortChecked.payload.term === 12 && shortChecked.payload.start === '2027-01-01',
+  'twelve month term comes back out',
+)
+assert(
+  storedContractTerm([{ email: 'M.Masurkewicz@gmx.de', slot: 81, term: 12 }], 'm.masurkewicz@gmx.de', 81) === 12,
+  'stored twelve month term',
+)
+assert(storedContractTerm([{ email: 'm.masurkewicz@gmx.de', slot: 81 }], 'm.masurkewicz@gmx.de', 81) === 0, 'missing stored term stays default')
 assert(checked.payload.email === 'anna@example.com', 'email')
 assert(checked.payload.name === 'Anna Müller', 'name')
 assert(checked.payload.slot === 7, 'slot')
@@ -160,7 +181,18 @@ const januaryHtml = first50InviteHtml({
   start: '2027-01-01',
 })
 assert(januaryHtml.includes('1. Januar 2027') && januaryHtml.includes('Vorher wird nichts berechnet'), 'january invite names the later start')
+assert(januaryHtml.includes('24 Monate'), 'january invite stays at 24 months unless asked')
 assert(!januaryHtml.includes('1. November 2026'), 'january invite does not promise a november charge')
+const shortHtml = first50InviteHtml({
+  first: 'Martin',
+  name: 'Martin Masurkewicz',
+  email: 'm.masurkewicz@gmx.de',
+  url: 'https://www.mma-in-leipzig.de/mitglied?invite=abc',
+  start: '2027-01-01',
+  term: 12,
+})
+assert(shortHtml.includes('12 Monate') && shortHtml.includes('Sondervertrag') && shortHtml.includes('89,99€'), 'twelve month invite')
+assert(!shortHtml.includes('24 Monate') && shortHtml.includes('1. Januar 2027'), 'twelve month invite drops the usual term')
 assert(inviteHtml.includes('Danach beträgt sie 49 €'), 'invite states the later signup fee')
 assert(inviteHtml.includes('geht dein Platz automatisch an die nächste Person'), 'unused invite passes to the next person')
 assert(!inviteHtml.includes('<script'), 'invite escaped')
@@ -265,6 +297,35 @@ function mockRes() {
     overMax.res,
   )
   assert(overMax.captured.status === 400, 'slot above the extra seats is refused')
+  const shortMail = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/invite-mail',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.46' },
+      body: { one: true, proof, email: 'm.masurkewicz@gmx.de', name: 'Martin Masurkewicz', slot: 81, start: '2027-01-01', term: 12 },
+    },
+    shortMail.res,
+  )
+  const shortParsed = JSON.parse(shortMail.captured.body)
+  assert(shortMail.captured.status === 200 && shortParsed.ok && shortParsed.slot === 81, 'twelve month invite sent')
+  assert(sent.htmlContent.includes('12 Monate') && sent.htmlContent.includes('1. Januar 2027'), 'twelve month mail text')
+  const shortHref = sent.htmlContent.match(/https:\/\/www\.mma-in-leipzig\.de\/mitglied\?invite=([^"]+)/)
+  const shortLink = verifyInvite(secret, decodeURIComponent(shortHref[1]))
+  assert(shortLink.ok && shortLink.payload.term === 12 && shortLink.payload.start === '2027-01-01', 'twelve month link')
+  const badTerm = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/invite-mail',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.47' },
+      body: { one: true, proof, email: 'm.masurkewicz@gmx.de', name: 'Martin Masurkewicz', slot: 81, term: 6 },
+    },
+    badTerm.res,
+  )
+  assert(badTerm.captured.status === 400, 'other terms are refused')
 }
 
 console.log('invite tests ok')

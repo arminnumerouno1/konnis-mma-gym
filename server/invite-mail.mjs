@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
 import { membershipTaken } from './member-model.mjs'
 import { createMemberStore } from './member-store.mjs'
-import { FIRST50_SLOT_MAX, contractStart, makeInvitePayload, normalizePersonName, signInvite } from './invite.mjs'
+import { FIRST50_SLOT_MAX, contractStart, contractTerm, makeInvitePayload, normalizePersonName, signInvite } from './invite.mjs'
 import { germanDate } from './member-model.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 
@@ -20,12 +20,13 @@ export function first50InviteSubject({ test = false } = {}) {
   return test ? `Test: ${subject}` : subject
 }
 
-export function first50InviteHtml({ first, name, email, url, start = '' }) {
+export function first50InviteHtml({ first, name, email, url, start = '', term = 0 }) {
   const who = escapeMail(first)
   const full = escapeMail(name)
   const mail = escapeMail(email)
   const href = escapeMail(url)
   const deferred = contractStart(start)
+  const months = contractTerm(term) || 24
   const when = deferred ? germanDate(deferred) : ''
   const welcome = deferred
     ? `Dein Vertrag beginnt am <strong>${escapeMail(when)}</strong>. Die erste Zahlung ist an dem Tag. Vorher wird nichts berechnet. Über den Link schließt du den Vertrag ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.`
@@ -33,9 +34,12 @@ export function first50InviteHtml({ first, name, email, url, start = '' }) {
   const payment = deferred
     ? `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Zahlung ist am ${escapeMail(when)}. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die Aufnahmegebühr beträgt 0 €.`
     : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Zahlung ist am 1. November 2026. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.'
+  const offer = months === 12
+    ? `<strong>89,99€ statt 99,99€</strong>, 12 Monate. Das ist ein Sondervertrag über 12 Monate.`
+    : `<strong>89,99€ statt 99,99€</strong>, 24 Monate.`
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 <p>Hi ${who},</p>
-<p><strong>Du gehörst zu den ersten 50.</strong> Deshalb bekommst du den Preis, den wir dafür gemacht haben: <strong>89,99€ statt 99,99€</strong>, 24 Monate.</p>
+<p><strong>Du gehörst zu den ersten 50.</strong> Deshalb bekommst du den Preis, den wir dafür gemacht haben: ${offer}</p>
 <p>${welcome}</p>
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
@@ -155,14 +159,14 @@ async function postInvite({ fetchImpl, apiKey, sender, email, name, subject, htm
   }
 }
 
-export async function deliverFirst50Invite({ env, fetchImpl = fetch, email, name, slot, start = '' }) {
+export async function deliverFirst50Invite({ env, fetchImpl = fetch, email, name, slot, start = '', term = 0 }) {
   const secret = env.INVITE_SECRET
   const apiKey = env.BREVO_API_KEY?.trim()
   const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
   if (!apiKey || !secret) return { ok: false, error: 'mail_off' }
   const site = String(env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de').replace(/\/+$/, '')
   const origin = site.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : site
-  const token = signInvite(secret, makeInvitePayload({ email, name, slot, start }))
+  const token = signInvite(secret, makeInvitePayload({ email, name, slot, start, term }))
   const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
   const first = name.split(' ')[0] || name
   try {
@@ -174,7 +178,7 @@ export async function deliverFirst50Invite({ env, fetchImpl = fetch, email, name
       name,
       first,
       subject: first50InviteSubject({ test: false }),
-      html: first50InviteHtml({ first, name, email, url, start }),
+      html: first50InviteHtml({ first, name, email, url, start, term }),
     })
   } catch (error) {
     console.error('[invite-mail]', String(error?.detail || error?.message || error).slice(0, 180))
@@ -222,7 +226,8 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
         const name = normalizePersonName(body.name)
         const slot = Number(body.slot)
         const start = body.start ? contractStart(body.start) : ''
-        if (!isValidEmail(email) || name.length < 3 || !Number.isInteger(slot) || slot < 1 || slot > FIRST50_SLOT_MAX || (body.start && !start)) {
+        const term = body.term ? contractTerm(body.term) : 0
+        if (!isValidEmail(email) || name.length < 3 || !Number.isInteger(slot) || slot < 1 || slot > FIRST50_SLOT_MAX || (body.start && !start) || (body.term && !term)) {
           json(res, 400, { ok: false, error: 'invalid' })
           return
         }
@@ -235,9 +240,33 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
           json(res, 409, { ok: false, error: 'slot' })
           return
         }
+        if (term === 12) {
+          try {
+            const store = createMemberStore({ dataDir: tmpdir(), env })
+            await store.update((db) => {
+              const issued = Array.isArray(db.issuedFirst50) ? [...db.issuedFirst50] : []
+              const index = issued.findIndex((row) => normalizeEmail(row?.email) === email && Number(row?.slot) === slot)
+              const next = {
+                ...(index >= 0 ? issued[index] : {}),
+                slot,
+                email,
+                name,
+                at: new Date().toISOString(),
+                term: 12,
+                ...(start ? { start } : {}),
+              }
+              if (index >= 0) issued[index] = next
+              else issued.push(next)
+              db.issuedFirst50 = issued
+              return db
+            })
+          } catch (error) {
+            console.error('[invite-mail] term', String(error?.message || error).slice(0, 180))
+          }
+        }
         const site = String(env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de').replace(/\/+$/, '')
         const origin = site.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : site
-        const token = signInvite(secret, makeInvitePayload({ email, name, slot, start }))
+        const token = signInvite(secret, makeInvitePayload({ email, name, slot, start, term }))
         const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
         const first = name.split(' ')[0] || name
         try {
@@ -249,7 +278,7 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
             name,
             first,
             subject: first50InviteSubject({ test: false }),
-            html: first50InviteHtml({ first, name, email, url, start }),
+            html: first50InviteHtml({ first, name, email, url, start, term }),
           })
         } catch (error) {
           console.error('[invite-mail]', String(error?.detail || error?.message || error).slice(0, 180))
