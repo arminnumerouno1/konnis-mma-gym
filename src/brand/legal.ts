@@ -290,6 +290,9 @@ export const AGB: LegalBlock[] = [
       '3. Ob insbesondere eine längerfristige Erkrankung, Verletzung oder sonstige persönliche Veränderung einen wichtigen Grund darstellt, richtet sich nach den Umständen des Einzelfalls und den gesetzlichen Bestimmungen.',
       '4. Die KONNI MMA GYM GbR kann insbesondere bei erheblichen oder wiederholten Verstößen gegen Hausordnung oder Sicherheitsregeln, bei Gewalt außerhalb des zulässigen Trainings- oder Wettkampfgeschehens, Bedrohungen, erheblichen Beleidigungen, Diebstahl, vorsätzlicher Sachbeschädigung oder sonstigen schwerwiegenden Pflichtverletzungen außerordentlich kündigen.',
       '5. Soweit eine Abmahnung rechtlich erforderlich oder zumutbar ist, erfolgt die außerordentliche Kündigung grundsätzlich erst nach vorheriger erfolgloser Abmahnung.',
+      '6. Zusätzlich zum gesetzlichen Kündigungsrecht aus wichtigem Grund kann das Mitglied eine Mitgliedschaft mit Mindestlaufzeit vorzeitig kündigen, wenn es seinen Hauptwohnsitz an eine Anschrift verlegt, die in der Luftlinie mehr als 50 Kilometer vom Studio, Wittenberger Straße 15, 04129 Leipzig, entfernt liegt.',
+      '7. Ein Umzug von 50 Kilometern oder weniger, ein Nebenwohnsitz und ein nur vorübergehender Aufenthalt begründen dieses Recht nicht. Andere Kündigungsrechte bleiben unberührt.',
+      '8. Die Kündigung nach Absatz 6 ist in Textform an info@mma-in-leipzig.de zu erklären. Ihr ist eine amtliche Meldebescheinigung beizufügen, aus der der neue Hauptwohnsitz und der Einzugstag hervorgehen. Fehlt die Bescheinigung, ist sie unverzüglich nachzureichen. Die Kündigung wird mit einer Frist von einem Monat zum Monatsende wirksam, nicht jedoch vor Zugang der Bescheinigung.',
     ],
   },
   {

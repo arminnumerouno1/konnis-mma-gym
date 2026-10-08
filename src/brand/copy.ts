@@ -225,7 +225,7 @@ export const COPY = {
   invalid: 'Bitte alle Pflichtfelder sauber ausfüllen.',
   error: 'Das hat nicht geklappt. Versuch es gleich noch einmal.',
   rate: 'Zu viele Versuche. Warte kurz und versuch es erneut.',
-  consentAgb: 'Ich habe die AGB (Stand 27. September 2026) gelesen und akzeptiere sie.',
+  consentAgb: 'Ich habe die AGB (Stand 8. Oktober 2026) gelesen und akzeptiere sie.',
   consentHouse: 'Ich habe die Hausordnung gelesen. Sie ist Teil des Vertrags.',
   consentWithdraw: 'Ich habe die Widerrufsbelehrung gelesen, inklusive Muster-Formular.',
   consentPrivacy: 'Ich habe die Datenschutzerklärung gelesen.',
@@ -283,6 +283,6 @@ export const FAQ = [
   },
   {
     q: 'Wie kündige ich?',
-    a: 'Per Mail an info@mma-in-leipzig.de. Ein Monat zum Ende der Erstlaufzeit (12 oder 24 Monate). Danach jederzeit mit einem Monat Frist.',
+    a: 'Per Mail an info@mma-in-leipzig.de. Ein Monat zum Ende der Erstlaufzeit (12 oder 24 Monate). Danach jederzeit mit einem Monat Frist. Liegt der neue Hauptwohnsitz mehr als 50 Kilometer Luftlinie vom Studio entfernt, kannst du zusätzlich mit einem Monat zum Monatsende kündigen. Dafür brauchst du die amtliche Meldebescheinigung. Ein näherer Umzug reicht dafür nicht.',
   },
 ] as const

@@ -217,6 +217,9 @@ function Contract({ months }: { months: 12 | 24 }) {
         vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum
         Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit
         einem Monat kündbar. Kündigung in Textform an {GYM.legalEmail}. Außerordentliche Kündigung bleibt.
+        Zusätzlich vorzeitig mit einem Monat zum Monatsende, wenn der Hauptwohnsitz in der Luftlinie mehr als 50
+        Kilometer vom Studio entfernt liegt. Nachweis durch amtliche Meldebescheinigung. Ein näherer Umzug begründet
+        dieses Recht nicht.
       </p>
       <h2>4.–6. Training, Gesundheit, Minderjährige</h2>
       <p>

@@ -245,15 +245,15 @@ function contractParagraphs(record) {
       'Day Pass: einmaliger Zutritt zu den Trainingsflächen am gebuchten Tag, während der veröffentlichten Zeiten.',
       'Der Kursplan kann sich ändern, der wesentliche Charakter bleibt. Kein Anspruch auf eine bestimmte Einheit oder einen bestimmten Trainer.',
       'Hausordnung gilt. Eigenverantwortliche Gesundheitsprüfung. Haftung nach Gesetz.',
-      'AGB Stand 27. September 2026 und Hausordnung sind Teil dieses Vertrags. Widerruf: 14 Tage.',
+      'AGB Stand 8. Oktober 2026 und Hausordnung sind Teil dieses Vertrags. Widerruf: 14 Tage.',
     ]
   }
   const account = `Kontoinhaber ${GYM_BANK.holder}, IBAN ${spaceGymIban(GYM_BANK.iban)}, BIC ${GYM_BANK.bic}, ${GYM_BANK.bank}`
   const when = chargeLabel(record)
   const termLine =
     memberBillingStart(record) > '2026-11-01'
-      ? `Anfängliche Vertragsdauer: ${months} Monate ab ${when}. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt.`
-      : `Anfängliche Vertragsdauer: ${months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt.`
+      ? `Anfängliche Vertragsdauer: ${months} Monate ab ${when}. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt. Zusätzlich vorzeitig mit einem Monat zum Monatsende, wenn der Hauptwohnsitz in der Luftlinie mehr als 50 Kilometer vom Studio entfernt liegt. Nachweis durch amtliche Meldebescheinigung. Ein näherer Umzug begründet dieses Recht nicht.`
+      : `Anfängliche Vertragsdauer: ${months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt. Zusätzlich vorzeitig mit einem Monat zum Monatsende, wenn der Hauptwohnsitz in der Luftlinie mehr als 50 Kilometer vom Studio entfernt liegt. Nachweis durch amtliche Meldebescheinigung. Ein näherer Umzug begründet dieses Recht nicht.`
   return [
     'Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.',
     'Die Zahlungspflicht beginnt erst mit der tatsächlichen Eröffnung. Verschiebt sich die Eröffnung um mehr als acht Wochen über den geplanten Termin, kannst du vor Leistungsbeginn in Textform zurücktreten. Schon gezahlte Beträge werden erstattet.',
@@ -264,7 +264,7 @@ function contractParagraphs(record) {
       ? 'Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Karte oder Apple Pay über Stripe ist die andere Zahlungsart. SEPA-Lastschrift kommt später und ist in diesem Vertrag nicht erteilt. Kommt eine Überweisung nicht an, gelten die Regeln zum Zahlungsverzug.'
       : 'Kartenzahlung läuft über Stripe. Banküberweisung auf das oben genannte Konto ist ebenfalls möglich. SEPA-Lastschrift kommt später. Ein Lastschriftmandat gibt es nur, wenn das extra vereinbart wird. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.',
     termLine,
-    'Hausordnung gilt. Eigenverantwortliche Gesundheitsprüfung. Haftung nach Gesetz. Minderjährige brauchen die Zustimmung aller erforderlichen gesetzlichen Vertreter. AGB Stand 27.09.2026 und Hausordnung sind Teil des Vertrags.',
+    'Hausordnung gilt. Eigenverantwortliche Gesundheitsprüfung. Haftung nach Gesetz. Minderjährige brauchen die Zustimmung aller erforderlichen gesetzlichen Vertreter. AGB Stand 08.10.2026 und Hausordnung sind Teil des Vertrags.',
   ]
 }
 
@@ -302,7 +302,7 @@ export async function buildContractPdf(record, { paper = false, creditorId = '' 
 
   writer.text('KONNI MMA GYM', { font: writer.bold, size: 16, leading: 20, color: RULE })
   writer.text('Mitgliedsvertrag', { font: writer.bold, size: 18, leading: 22 })
-  writer.text(`${record.planName || record.plan} · Stand 27. September 2026`, {
+  writer.text(`${record.planName || record.plan} · Stand 8. Oktober 2026`, {
     size: 10,
     color: MUTED,
     leading: 14,
@@ -336,7 +336,7 @@ export async function buildContractPdf(record, { paper = false, creditorId = '' 
   for (const block of contractParagraphs(record)) writer.para(block)
 
   writer.heading('3. Erklärungen')
-  writer.para('Vor Abschluss zur Verfügung gestellt und bestätigt: AGB Stand 27. September 2026, Hausordnung, Widerrufsbelehrung inklusive Muster-Formular, Datenschutzerklärung.')
+  writer.para('Vor Abschluss zur Verfügung gestellt und bestätigt: AGB Stand 8. Oktober 2026, Hausordnung, Widerrufsbelehrung inklusive Muster-Formular, Datenschutzerklärung.')
   writer.para('Elektronische Unterschrift: Der Text gilt wie auf Papier.')
   writer.para(earlyText(record))
   if (record.consents?.photos) {
@@ -403,7 +403,7 @@ async function buildPaperContractPdf(record, creditorId) {
 
   writer.text('KONNI MMA GYM', { font: writer.bold, size: 16, leading: 20, color: RULE })
   writer.text('Mitgliedsvertrag', { font: writer.bold, size: 18, leading: 22 })
-  writer.text(`${record.planName || record.plan} · Abschluss vor Ort · Stand 27. September 2026`, {
+  writer.text(`${record.planName || record.plan} · Abschluss vor Ort · Stand 8. Oktober 2026`, {
     size: 10,
     color: MUTED,
     leading: 14,
@@ -438,7 +438,7 @@ async function buildPaperContractPdf(record, creditorId) {
   for (const block of contractParagraphs(record)) writer.para(block)
 
   writer.heading('3. Erklärungen')
-  writer.para('AGB Stand 27. September 2026, Hausordnung und Datenschutzerklärung habe ich erhalten und gelesen.')
+  writer.para('AGB Stand 8. Oktober 2026, Hausordnung und Datenschutzerklärung habe ich erhalten und gelesen.')
   writer.para('[  ] Freiwillig: Ich willige in Foto- und Videoaufnahmen für die Kanäle des Gyms ein. Widerruf jederzeit mit Wirkung für die Zukunft.')
 
   const captured = Boolean(String(record.gymSignature ?? '').trim())

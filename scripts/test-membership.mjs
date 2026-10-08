@@ -23,16 +23,18 @@ function assert(cond, message) {
 }
 
 function pdfText(bytes) {
-  const raw = Buffer.from(bytes).toString('latin1')
+  const raw = Buffer.from(bytes)
+  const latin = raw.toString('latin1')
   const parts = []
-  const re = /stream\r?\n([\s\S]*?)\r?\nendstream/g
+  const re = /\/Length\s+(\d+)\s*>>\s*stream\r?\n/g
   let match
-  while ((match = re.exec(raw))) {
-    const chunk = Buffer.from(match[1], 'latin1')
+  while ((match = re.exec(latin))) {
+    const start = match.index + match[0].length
+    const chunk = raw.subarray(start, start + Number(match[1]))
     try {
       parts.push(inflateSync(chunk).toString('latin1'))
     } catch {
-      parts.push(match[1])
+      parts.push(chunk.toString('latin1'))
     }
   }
   return parts
@@ -279,6 +281,7 @@ assert(contractText.includes('WELADE8LXXX'), 'card contract contains the bic')
 assert(contractText.includes('SEPA-Lastschrift kommt später'), 'card contract says sepa comes later')
 assert(contractText.includes('nur bis zum 2. November 2026') && contractText.includes('Danach beträgt sie 49,00 EUR'), 'signup fee is 49 euro after 2 november')
 assert(contractText.includes('Vorher gibt es kein Training'), 'contract refuses training before opening')
+assert(contractText.includes('mehr als 50 Kilometer') && contractText.includes('Meldebescheinigung'), 'contract states the 50 km relocation right')
 const transferPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard', planName: 'Standard', payMethod: 'transfer' }))
 const transferText = pdfText(transferPdf)
 assert(transferText.includes('Banküberweisung') && transferText.includes('DE77 8605') && transferText.includes('4292 70'), 'transfer contract contains the gym account')
