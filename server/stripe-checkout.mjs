@@ -1,4 +1,6 @@
 /** Erste volle Monatsabbuchung. Muss zum Hinweis in src/brand/plans.ts passen. */
+import { memberBillingStart } from './member-model.mjs'
+
 export const BILLING_START = '2026-11-01'
 const TRIAL_LEAD_S = 48 * 60 * 60
 
@@ -136,7 +138,7 @@ export function buildCheckoutFields({ member, origin, nowMs = Date.now() }) {
   const cents = PLAN_CENTS[member?.plan]
   if (!cents || !member?.id) return { error: 'plan' }
   if (!member.email && !member.stripe?.customerId) return { error: 'email' }
-  const schedule = checkoutSchedule(nowMs, { plan: member.plan })
+  const schedule = checkoutSchedule(nowMs, { plan: member.plan, billingStart: memberBillingStart(member) })
   if (schedule.skip) return { skip: schedule.skip, schedule }
   const name = `KONNI MMA GYM · ${member.planName || PLAN_NAMES[member.plan] || member.plan}`
   const fields = {

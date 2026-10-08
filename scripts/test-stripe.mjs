@@ -33,6 +33,13 @@ const earlyFields = buildCheckoutFields({
   nowMs: early,
 })
 assert(earlyFields.fields['subscription_data[trial_end]'] === String(nov1), 'trial_end set')
+const januaryFields = buildCheckoutFields({
+  member: { id: 'mem_jan', plan: 'first50', planName: 'First 50', email: 'martin@example.com', startDate: '2027-01-01' },
+  origin: 'https://www.mma-in-leipzig.de',
+  nowMs: early,
+})
+assert(januaryFields.fields['subscription_data[trial_end]'] === String(berlinMidnightUnix('2027-01-01')), 'january contract trials until january')
+assert(januaryFields.fields['line_items[0][price_data][unit_amount]'] === '8999', 'january first50 stays 89.99')
 assert(!earlyFields.fields['subscription_data[billing_cycle_anchor]'], 'no anchor while trial fits')
 assert(earlyFields.fields['line_items[0][price_data][unit_amount]'] === '9999', 'standard cents')
 assert(earlyFields.fields.mode === 'subscription', 'subscription mode')

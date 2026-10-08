@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib'
 import { GYM_BANK, spacedIban as spaceGymIban } from './gym-bank.mjs'
 import { first50SeatLabel } from './invite.mjs'
+import { germanDate, memberBillingStart } from './member-model.mjs'
 import { trainingHasStarted } from './opening.mjs'
 
 const A4 = [595.28, 841.89]
@@ -104,8 +105,15 @@ function formatWhen(iso) {
   return date.toLocaleString('de-DE', { timeZone: 'Europe/Berlin' })
 }
 
+function chargeLabel(record) {
+  return germanDate(memberBillingStart(record))
+}
+
 function earlyText(record) {
   const at = record.createdAt ? new Date(record.createdAt) : new Date()
+  if (memberBillingStart(record) > '2026-11-01') {
+    return `Der Vertrag beginnt am ${chargeLabel(record)}. Vorher fällt kein Mitgliedsbeitrag an. Der Widerruf von 14 Tagen ändert daran nichts.`
+  }
   if (!trainingHasStarted(at)) {
     return 'Training beginnt frühestens am 2. November 2026. Vorher gibt es kein Training. Der Widerruf von 14 Tagen ändert daran nichts.'
   }
@@ -241,16 +249,21 @@ function contractParagraphs(record) {
     ]
   }
   const account = `Kontoinhaber ${GYM_BANK.holder}, IBAN ${spaceGymIban(GYM_BANK.iban)}, BIC ${GYM_BANK.bic}, ${GYM_BANK.bank}`
+  const when = chargeLabel(record)
+  const termLine =
+    memberBillingStart(record) > '2026-11-01'
+      ? `Anfängliche Vertragsdauer: ${months} Monate ab ${when}. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt.`
+      : `Anfängliche Vertragsdauer: ${months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt.`
   return [
     'Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.',
     'Die Zahlungspflicht beginnt erst mit der tatsächlichen Eröffnung. Verschiebt sich die Eröffnung um mehr als acht Wochen über den geplanten Termin, kannst du vor Leistungsbeginn in Textform zurücktreten. Schon gezahlte Beträge werden erstattet.',
     record.payMethod === 'transfer'
-      ? `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst per Banküberweisung auf das Konto der ${GYM_BANK.holder}. ${account}. Die erste Überweisung ist am 1. November 2026 fällig. Aufnahmegebühr: 0,00 EUR nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.`
-      : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Die erste Abbuchung ist am 1. November 2026 fällig. Aufnahmegebühr: 0,00 EUR nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR. Banküberweisung ist ebenfalls möglich: ${account}.`,
+      ? `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst per Banküberweisung auf das Konto der ${GYM_BANK.holder}. ${account}. Die erste Überweisung ist am ${when} fällig. Aufnahmegebühr: 0,00 EUR nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.`
+      : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Die erste Abbuchung ist am ${when} fällig. Aufnahmegebühr: 0,00 EUR nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR. Banküberweisung ist ebenfalls möglich: ${account}.`,
     record.payMethod === 'transfer'
       ? 'Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Karte oder Apple Pay über Stripe ist die andere Zahlungsart. SEPA-Lastschrift kommt später und ist in diesem Vertrag nicht erteilt. Kommt eine Überweisung nicht an, gelten die Regeln zum Zahlungsverzug.'
       : 'Kartenzahlung läuft über Stripe. Banküberweisung auf das oben genannte Konto ist ebenfalls möglich. SEPA-Lastschrift kommt später. Ein Lastschriftmandat gibt es nur, wenn das extra vereinbart wird. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.',
-    `Anfängliche Vertragsdauer: ${months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt.`,
+    termLine,
     'Hausordnung gilt. Eigenverantwortliche Gesundheitsprüfung. Haftung nach Gesetz. Minderjährige brauchen die Zustimmung aller erforderlichen gesetzlichen Vertreter. AGB Stand 27.09.2026 und Hausordnung sind Teil des Vertrags.',
   ]
 }
@@ -455,7 +468,7 @@ async function buildPaperContractPdf(record, creditorId) {
     writer.kv('IBAN', spaceGymIban(GYM_BANK.iban))
     writer.kv('BIC', GYM_BANK.bic)
     writer.kv('Bank', GYM_BANK.bank)
-    writer.para('Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.')
+    writer.para(`Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am ${chargeLabel(record)} fällig.`)
   } else if (record.plan !== 'daypass') {
     writer.heading('5. SEPA-Lastschriftmandat')
     writer.para(
@@ -565,7 +578,7 @@ export async function buildTransferNoticePdf(record) {
   )
   writer.heading('Fälligkeit')
   writer.para(
-    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.',
+    `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am ${chargeLabel(record)} fällig.`,
   )
   if (amount) writer.kv('Monatsbeitrag', amount)
   writer.kv('Mitglied', who)

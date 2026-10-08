@@ -1,4 +1,35 @@
 export const OPENING_DATE = '2026-11-02'
+export const DEFAULT_BILLING_START = '2026-11-01'
+
+const GERMAN_MONTHS = [
+  'Januar',
+  'Februar',
+  'März',
+  'April',
+  'Mai',
+  'Juni',
+  'Juli',
+  'August',
+  'September',
+  'Oktober',
+  'November',
+  'Dezember',
+]
+
+export function germanDate(iso) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso ?? ''))
+  if (!match) return ''
+  const month = GERMAN_MONTHS[Number(match[2]) - 1]
+  if (!month) return ''
+  return `${Number(match[3])}. ${month} ${match[1]}`
+}
+
+/** Erste Beitragsfälligkeit. Ein späterer Vertragsbeginn am 1. eines Monats verschiebt sie. */
+export function memberBillingStart(member) {
+  const start = String(member?.startDate ?? '')
+  if (/^\d{4}-\d{2}-01$/.test(start) && start > DEFAULT_BILLING_START) return start
+  return DEFAULT_BILLING_START
+}
 export const ADMIN_COOKIE = 'konni_admin'
 export const PLAN_LABELS = {
   standard: 'Standard',

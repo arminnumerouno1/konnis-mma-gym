@@ -124,6 +124,15 @@ assert(!emptySign.ok && emptySign.error === 'signature', 'signature still requir
 
 const gone = validateMembership({ ...base, plan: 'first50' }, {})
 assert(!gone.ok && gone.error === 'invite', 'first50 needs invite')
+const januaryToken = signInvite(
+  'test-invite-secret-key',
+  makeInvitePayload({ email: 'anna@example.com', name: 'Anna Müller', slot: 12, start: '2027-01-01' }),
+)
+const januarySignup = validateMembership(
+  { ...base, plan: 'first50', invite: januaryToken },
+  { inviteSecret: 'test-invite-secret-key' },
+)
+assert(januarySignup.ok && januarySignup.record?.startDate === '2027-01-01', 'january invite stores the contract start')
 
 const kid = validateMembership(
   {
@@ -172,6 +181,9 @@ const mailRecord = {
 const mail = membershipCopyHtml(mailRecord)
 assert(mail.includes('First 50') && mail.includes('89,99') && mail.includes('Anna Müller'), 'mail copy')
 assert(mail.includes('einer der Ersten') && mail.includes('freuen') && mail.includes('Konrad und Mehmet'), 'first50 welcome')
+const januaryMail = membershipCopyHtml({ ...mailRecord, startDate: '2027-01-01' })
+assert(januaryMail.includes('1. Januar 2027') && januaryMail.includes('Vorher wird nichts berechnet'), 'january contract mail')
+assert(!januaryMail.includes('1. November 2026'), 'january contract mail has no november charge')
 assert(mail.includes('jeweils zum 1. des Monats fällig'), 'fee due on the first')
 assert(mail.includes('Vorher gibt es kein Training'), 'mail says training starts at opening')
 assert(!mail.includes('Vorzeitiger Leistungsbeginn ausdrücklich verlangt'), 'pre-opening mail drops the early-start demand')

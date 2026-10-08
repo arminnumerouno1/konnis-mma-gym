@@ -1,5 +1,6 @@
 import { GYM_BANK, spacedIban } from './gym-bank.mjs'
 import { membershipPdfAttachments } from './membership-pdf.mjs'
+import { germanDate, memberBillingStart } from './member-model.mjs'
 import { trainingHasStarted } from './opening.mjs'
 
 function escapeMail(value) {
@@ -42,12 +43,17 @@ export function membershipMailSubject(record, { forGym = false } = {}) {
   return `Willkommen im KONNI MMA GYM · ${record.planName || record.plan}`
 }
 
+function dueOn(record) {
+  return germanDate(memberBillingStart(record))
+}
+
 function dueSentence(record) {
+  const when = dueOn(record)
   if (record.payMethod === 'transfer') {
-    return 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.'
+    return `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am ${when} fällig.`
   }
   if (record.plan === 'daypass') return ''
-  return 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am 1. November 2026, danach immer zum 1.'
+  return `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am ${when}, danach immer zum 1.`
 }
 
 function accountLines() {
@@ -61,12 +67,12 @@ function bankBlock(record) {
   if (record.plan === 'daypass') return ''
   if (record.payMethod === 'transfer') {
     return `<p><strong>Deine Zahlungsart: Banküberweisung</strong><br>
-Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.<br>
+Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am ${dueOn(record)} fällig.<br>
 ${accountLines()}<br>
 SEPA-Lastschrift kommt später.</p>`
   }
   return `<p><strong>Deine Zahlungsart: Karte oder Apple Pay</strong><br>
-Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am 1. November 2026.<br>
+Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am ${dueOn(record)}.<br>
 Banküberweisung ist ebenfalls möglich:<br>
 ${accountLines()}<br>
 SEPA-Lastschrift kommt später.</p>`
@@ -80,9 +86,13 @@ function memberLead(record, { attached = false } = {}) {
   const due = dueSentence(record)
 
   if (isFirst50(record)) {
+    const later = memberBillingStart(record) > '2026-11-01'
+    const welcome = later
+      ? `Dein Vertrag beginnt am ${dueOn(record)}. Vorher wird nichts berechnet.`
+      : 'Wir freuen uns, dass du von Anfang an dabei bist. Am 2. November geht die Tür auf. Dann sehen wir uns in der Wittenberger Straße.'
     return `<p>Hi ${first},</p>
 <p><strong>Schön, dass du einer der Ersten bist.</strong> Die ersten 50 bekommen den Preis, den wir dafür gemacht haben: 89,99€ statt 99,99€, 24 Monate.</p>
-<p>Wir freuen uns, dass du von Anfang an dabei bist. Am 2. November geht die Tür auf. Dann sehen wir uns in der Wittenberger Straße.</p>
+<p>${welcome}</p>
 <p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. ${due}</p>`
   }
 
@@ -106,7 +116,10 @@ export function membershipCopyHtml(record, { forGym = false, attached = false } 
   const { formatted, unit, term } = money(record)
   const when = record.createdAt ? new Date(record.createdAt).toLocaleString('de-DE') : ''
   const beforeOpening = !trainingHasStarted(record.createdAt ? new Date(record.createdAt) : new Date())
-  const early = beforeOpening
+  const laterStart = memberBillingStart(record) > '2026-11-01'
+  const early = laterStart
+    ? `Der Vertrag beginnt am ${dueOn(record)}. Vorher fällt kein Mitgliedsbeitrag an.`
+    : beforeOpening
     ? 'Training beginnt frühestens am 2. November 2026. Vorher gibt es kein Training.'
     : record.consents?.earlyStart
       ? 'Vorzeitiger Leistungsbeginn ausdrücklich verlangt. Widerruf bleibt. Schon genutzte Tage können berechnet werden.'
@@ -174,14 +187,15 @@ export function payLinkMailSubject() {
   return 'Karte noch einrichten · KONNI MMA GYM'
 }
 
-export function payLinkMailHtml({ first = '', url = '' } = {}) {
+export function payLinkMailHtml({ first = '', url = '', when = '' } = {}) {
   const who = escapeMail(String(first ?? '').trim() || 'du')
   const hi = who === 'du' ? 'Hi,' : `Hi ${who},`
   const link = escapeMail(url)
+  const due = escapeMail(when || '1. November 2026')
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>${hi}</p>
 <p>deine Anmeldung ist da. Der Vertrag auch. <strong>Die Karte oder Apple Pay fehlt noch.</strong></p>
-<p>Ohne diesen Schritt wird am 1. November nichts abgebucht. In der Vertragsmail steht die Abbuchung ab diesem Tag. Dafür muss die Karte noch hinterlegt sein.</p>
+<p>Ohne diesen Schritt wird am ${due} nichts abgebucht. In der Vertragsmail steht die Abbuchung ab diesem Tag. Dafür muss die Karte noch hinterlegt sein.</p>
 <p><a href="${link}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Zahlung einrichten</a></p>
 <p>Der Link gilt 24 Stunden. Danach können wir einen neuen schicken.</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
@@ -195,7 +209,7 @@ export async function sendPayLinkEmail(env, record, url) {
     to: record.email,
     name: whoOf(record),
     subject: payLinkMailSubject(),
-    html: payLinkMailHtml({ first: record.firstName, url }),
+    html: payLinkMailHtml({ first: record.firstName, url, when: germanDate(memberBillingStart(record)) }),
   })
 }
 

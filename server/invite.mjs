@@ -97,7 +97,7 @@ export function verifyInvite(secret, token) {
     return { ok: false, error: 'invite' }
   }
   if (!Number.isFinite(exp) || exp < Date.now() / 1000) return { ok: false, error: 'expired' }
-  return { ok: true, payload: { email, name, slot, exp, plan: FIRST50_ID } }
+  return { ok: true, payload: { email, name, slot, exp, plan: FIRST50_ID, start: contractStart(payload.d) } }
 }
 
 export function inviteRevoked(revoked, email, slot) {
@@ -118,12 +118,23 @@ export function inviteUsed(memberships, email) {
   )
 }
 
-export function makeInvitePayload({ email, name, slot, ttlHours = INVITE_TTL_HOURS, nowMs = Date.now() }) {
-  return {
+/** Späterer Vertragsbeginn, nur am 1. eines Monats nach der ersten normalen Fälligkeit. */
+export function contractStart(raw) {
+  const value = String(raw ?? '').trim()
+  if (!/^\d{4}-\d{2}-01$/.test(value)) return ''
+  if (value <= '2026-11-01' || value > '2027-12-01') return ''
+  return value
+}
+
+export function makeInvitePayload({ email, name, slot, start = '', ttlHours = INVITE_TTL_HOURS, nowMs = Date.now() }) {
+  const payload = {
     p: FIRST50_ID,
     e: normalizeInviteEmail(email),
     n: normalizePersonName(name),
     s: Number(slot),
     exp: Math.floor(nowMs / 1000) + ttlHours * 60 * 60,
   }
+  const deferred = contractStart(start)
+  if (deferred) payload.d = deferred
+  return payload
 }

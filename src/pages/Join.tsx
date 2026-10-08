@@ -144,6 +144,21 @@ export function Join({ plan, invite }: JoinProps) {
   return <JoinForm plan={plan} invite={invite} />
 }
 
+function germanStart(iso: string) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso)
+  if (!match) return ''
+  const months = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
+  const month = months[Number(match[2]) - 1]
+  if (!month) return ''
+  return `${Number(match[3])}. ${month} ${match[1]}`
+}
+
+function deferredPaymentNote(start: string) {
+  const when = germanStart(start)
+  if (!when) return ''
+  return `Dein Vertrag beginnt am ${when}. Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Zahlung ist an dem Tag. Vorher wird nichts berechnet.`
+}
+
 function JoinForm({ plan, invite }: JoinProps) {
   const initial = plan && isPublicPlanId(plan) ? plan : 'standard'
   const [step, setStep] = useState(0)
@@ -151,6 +166,7 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [inviteReady, setInviteReady] = useState(!invite)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviteSlot, setInviteSlot] = useState<number | null>(null)
+  const [contractStart, setContractStart] = useState('')
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthDate, setBirthDate] = useState('')
@@ -200,6 +216,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       const names = splitInviteName(result.invite.name)
       setChosen('first50')
       setInviteSlot(result.invite.slot)
+      setContractStart(result.invite.start ?? '')
       setEmail(result.invite.email)
       setFirstName(names.firstName)
       setLastName(names.lastName)
@@ -340,11 +357,11 @@ function JoinForm({ plan, invite }: JoinProps) {
         <h1>{COPY.successTitle}</h1>
         <p className="lead">{COPY.successLead}</p>
         {summary.payment === 'later' ? (
-          <p className="lead">{summary.plan.id === 'daypass' ? COPY.payDayLater : COPY.payLater}</p>
+          <p className="lead">{summary.plan.id === 'daypass' ? COPY.payDayLater : deferredPaymentNote(contractStart) || COPY.payLater}</p>
         ) : null}
         {summary.payment === 'transfer' && summary.transfer ? (
           <div className="transfer-box">
-            <p className="lead">{COPY.payTransferDone}</p>
+            <p className="lead">{deferredPaymentNote(contractStart) || COPY.payTransferDone}</p>
             <dl>
               <div>
                 <dt>Betrag</dt>
@@ -406,6 +423,12 @@ function JoinForm({ plan, invite }: JoinProps) {
                 <dd>0,00 €, nur bis zum 2. November 2026. Danach beträgt sie 49 €.</dd>
               </div>
             )}
+            {contractStart ? (
+              <div>
+                <dt>Beginn</dt>
+                <dd>{germanStart(contractStart)}</dd>
+              </div>
+            ) : null}
             <div>
               <dt>Vertragsschluss</dt>
               <dd>{new Date(summary.at).toLocaleString('de-DE')}</dd>
@@ -441,7 +464,7 @@ function JoinForm({ plan, invite }: JoinProps) {
               </dd>
             </div>
           </dl>
-          <p>{summary.plan.id === 'daypass' ? COPY.payDayNote : PAYMENT_NOTE}</p>
+          <p>{summary.plan.id === 'daypass' ? COPY.payDayNote : deferredPaymentNote(contractStart) || PAYMENT_NOTE}</p>
           <p>
             AGB Stand {GYM.agbStand} und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.
           </p>
@@ -670,8 +693,9 @@ function JoinForm({ plan, invite }: JoinProps) {
                 </label>
               ) : null}
             </fieldset>
-            <p>{chosen === 'daypass' ? COPY.payDayNote : PAYMENT_NOTE}</p>
-            {chosen !== 'daypass' && payMethod === 'transfer' ? <p>{COPY.payTransferNote}</p> : null}
+            <p>{chosen === 'daypass' ? COPY.payDayNote : deferredPaymentNote(contractStart) || PAYMENT_NOTE}</p>
+            {chosen !== 'daypass' && payMethod === 'transfer' && !contractStart ? <p>{COPY.payTransferNote}</p> : null}
+            {contractStart ? <p>Dein Vertrag beginnt am {germanStart(contractStart)}.</p> : null}
             <label className="check">
               <input type="checkbox" checked={consents.agb} onChange={() => toggleConsent('agb')} />
               <span>

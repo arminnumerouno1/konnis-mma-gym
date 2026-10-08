@@ -2,8 +2,8 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { inviteRevoked, inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, verifyInvite } from './invite.mjs'
+import { memberBillingStart, membershipTaken } from './member-model.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
-import { membershipTaken } from './member-model.mjs'
 import { claimSignup, createMemberStore } from './member-store.mjs'
 import { attachSignupDocs } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
@@ -283,6 +283,7 @@ export function validateMembership(body, ctx = {}) {
       email,
       phone,
       inviteSlot: invite ? invite.slot : null,
+      startDate: invite?.start || undefined,
       guardian: minor ? guardian : null,
       visitDay: visitDay || null,
       payMethod,
@@ -450,7 +451,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     } catch (error) {
       console.error('[mitglied] bank transfer save failed', error)
     }
-    return { payment: 'transfer', billingStart: '2026-11-01', transfer }
+    return { payment: 'transfer', billingStart: memberBillingStart(record), transfer }
   }
 
   async function runMembership(req, res) {
@@ -488,6 +489,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
             slot: checked.payload.slot,
             plan: 'first50',
             price: 89.99,
+            ...(checked.payload.start ? { start: checked.payload.start } : {}),
           },
         })
         return

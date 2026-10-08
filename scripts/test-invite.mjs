@@ -5,6 +5,7 @@ import {
   inviteRevoked,
   inviteUsed,
   nextFirst50Slot,
+  contractStart,
   makeInvitePayload,
   namesMatch,
   signInvite,
@@ -28,7 +29,13 @@ assert(timed.exp === Math.floor(issuedAt / 1000) + 48 * 60 * 60, 'expiry is 48 h
 const payload = makeInvitePayload({ email: 'anna@example.com', name: 'Anna Müller', slot: 7 })
 const token = signInvite(secret, payload)
 const checked = verifyInvite(secret, token)
-assert(checked.ok, 'valid token')
+assert(checked.ok && checked.payload.start === '', 'valid token without a later start')
+assert(contractStart('2027-01-01') === '2027-01-01', 'january start is allowed')
+assert(contractStart('2026-11-01') === '' && contractStart('2027-01-15') === '', 'only a later first of the month')
+const laterPayload = makeInvitePayload({ email: 'martin@example.com', name: 'Martin Masurkewicz', slot: 88, start: '2027-01-01' })
+assert(laterPayload.d === '2027-01-01', 'later start is signed into the invite')
+const laterChecked = verifyInvite(secret, signInvite(secret, laterPayload))
+assert(laterChecked.ok && laterChecked.payload.start === '2027-01-01', 'later start comes back out of the token')
 assert(checked.payload.email === 'anna@example.com', 'email')
 assert(checked.payload.name === 'Anna Müller', 'name')
 assert(checked.payload.slot === 7, 'slot')
@@ -145,6 +152,15 @@ const inviteHtml = first50InviteHtml({
 assert(inviteHtml.includes('ersten 50') && inviteHtml.includes('freuen') && inviteHtml.includes('89,99'), 'invite welcome')
 assert(inviteHtml.includes('Jetzt Vertrag abschließen') && inviteHtml.includes('anna@example.com'), 'invite link')
 assert(inviteHtml.includes('48 Stunden') && inviteHtml.includes('1. November 2026'), 'invite explains the 48 hour link')
+const januaryHtml = first50InviteHtml({
+  first: 'Martin',
+  name: 'Martin Masurkewicz',
+  email: 'm.masurkewicz@gmx.de',
+  url: 'https://www.mma-in-leipzig.de/mitglied?invite=abc',
+  start: '2027-01-01',
+})
+assert(januaryHtml.includes('1. Januar 2027') && januaryHtml.includes('Vorher wird nichts berechnet'), 'january invite names the later start')
+assert(!januaryHtml.includes('1. November 2026'), 'january invite does not promise a november charge')
 assert(inviteHtml.includes('Danach beträgt sie 49 €'), 'invite states the later signup fee')
 assert(inviteHtml.includes('geht dein Platz automatisch an die nächste Person'), 'unused invite passes to the next person')
 assert(!inviteHtml.includes('<script'), 'invite escaped')
