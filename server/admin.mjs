@@ -21,13 +21,13 @@ import {
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
-import { sendMembershipEmails, sendPayLinkEmail, sendPriceChangeEmail } from './membership-mail.mjs'
+import { sendMembershipEmails, sendPaperReturnEmail, sendPayLinkEmail, sendPriceChangeEmail } from './membership-mail.mjs'
 import { attachSignupDocs, attachTransferNotice } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
-import { INVITE_TTL_HOURS, nextFirst50Slot, normalizePersonName } from './invite.mjs'
+import { INVITE_TTL_HOURS, contractStart, contractTerm, nextFirst50Slot, normalizePersonName, splitPersonName } from './invite.mjs'
 import { deliverFirst50Invite } from './invite-mail.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
@@ -458,6 +458,35 @@ function createDeskMember(body, today) {
   return { ok: true, member: { ...memberFromSignup(signed.member, today), status: signed.member.status } }
 }
 
+function paperReturnRecord(issuedRows) {
+  const rows = (issuedRows ?? []).filter((row) => row?.email)
+  const preferred = rows.slice().sort((a, b) => String(a.at || '').localeCompare(String(b.at || '')))[0]
+  if (!preferred) return null
+  const { firstName, lastName } = splitPersonName(preferred.name)
+  if (!isValidName(firstName) || !isValidName(lastName)) return null
+  const slot = Number(preferred.slot)
+  const deferred = contractStart(preferred.start)
+  return {
+    firstName,
+    lastName,
+    email: normalizeEmail(preferred.email),
+    plan: 'first50',
+    planName: 'First 50',
+    price: 89.99,
+    termMonths: contractTerm(preferred.term) || 24,
+    fee: 0,
+    payMethod: 'transfer',
+    startDate: deferred || '2026-11-02',
+    inviteSlot: Number.isInteger(slot) && slot >= 1 ? slot : null,
+    birthDate: '',
+    street: '',
+    zip: '',
+    city: '',
+    phone: '',
+    place: 'Leipzig',
+  }
+}
+
 const PROFILE_FIELDS = ['firstName', 'lastName', 'birthDate', 'street', 'zip', 'city', 'email', 'phone']
 const HISTORY_FIELDS = [...PROFILE_FIELDS, 'status', 'startDate']
 const HISTORY_MAX = 200
@@ -723,7 +752,7 @@ export function createAdminHandler({
       }
 
       const proofOk = secretsEqual(String(body.proof ?? ''), env.SIGNUP_MAIL_PROOF?.trim() || '')
-      const proofSend = (action === 'sendContract' || action === 'sendPayLink' || action === 'sendPriceNote') && proofOk
+      const proofSend = (action === 'sendContract' || action === 'sendPayLink' || action === 'sendPriceNote' || action === 'sendPaperReturn') && proofOk
       if (!authed(req) && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
         return
@@ -1033,6 +1062,47 @@ export function createAdminHandler({
           return db
         })
         json(res, 200, { ok: true, email: current.email, price: current.price })
+        return
+      }
+
+      if (action === 'sendPaperReturn') {
+        const email = normalizeEmail(body.email)
+        if (!isValidEmail(email)) {
+          json(res, 400, { ok: false, error: 'email' })
+          return
+        }
+        const loaded = await store.load()
+        if (membershipTaken(loaded.members, email)) {
+          json(res, 409, { ok: false, error: 'duplicate' })
+          return
+        }
+        const issued = (loaded.issuedFirst50 ?? []).filter((row) => normalizeEmail(row?.email) === email)
+        const record = paperReturnRecord(issued)
+        if (!record) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        let mailed
+        try {
+          mailed = await sendPaperReturnEmail(env, record)
+        } catch (error) {
+          console.error('[admin] paper return failed', error)
+          json(res, 502, { ok: false, error: 'mail' })
+          return
+        }
+        if (!mailed || mailed === 'skipped') {
+          json(res, 503, { ok: false, error: 'mail_off' })
+          return
+        }
+        const at = new Date().toISOString()
+        await store.update((db) => {
+          db.issuedFirst50 = (db.issuedFirst50 ?? []).map((row) => {
+            if (normalizeEmail(row?.email) !== email) return row
+            return { ...row, paperMail: 'sent', paperMailAt: at }
+          })
+          return db
+        })
+        json(res, 200, { ok: true, email: record.email, name: `${record.firstName} ${record.lastName}`, price: record.price })
         return
       }
 

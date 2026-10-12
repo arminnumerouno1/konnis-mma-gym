@@ -1,5 +1,5 @@
 import { GYM_BANK, spacedIban } from './gym-bank.mjs'
-import { membershipPdfAttachments } from './membership-pdf.mjs'
+import { buildContractPdf, loadWithdrawalPdf, membershipPdfAttachments } from './membership-pdf.mjs'
 import { germanDate, memberBillingStart } from './member-model.mjs'
 import { trainingHasStarted } from './opening.mjs'
 
@@ -211,6 +211,47 @@ export async function sendPriceChangeEmail(env, record) {
     name: whoOf(record),
     subject: priceChangeMailSubject(record),
     html: priceChangeMailHtml(record),
+  })
+}
+
+export function paperReturnMailSubject() {
+  return 'Dein Vertrag zum Unterschreiben · KONNI MMA GYM'
+}
+
+export function paperReturnMailHtml(record) {
+  const first = escapeMail(record.firstName || whoOf(record))
+  const price = escapeMail(Number(record.price).toFixed(2).replace('.', ','))
+  const months = escapeMail(String(record.termMonths || 24))
+  const when = escapeMail(dueOn(record))
+  const plan = escapeMail(record.planName || 'First 50')
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>Hi ${first},</p>
+<p>der Anmeldelink hat bei dir nicht funktioniert. Deshalb liegt dein Vertrag als PDF bei.</p>
+<p>Bitte füll die freien Felder aus, unterschreib den Vertrag und schick ihn unterschrieben zurück an <strong>info@mma-in-leipzig.de</strong>.</p>
+<p>Deine Zahlungsart ist <strong>Banküberweisung</strong>. ${plan}: <strong>${price}€</strong> im Monat, ${months} Monate. Die erste Überweisung ist am ${when} fällig. Danach immer zum 1. des Monats.</p>
+<p><strong>Konto</strong><br>
+${accountLines()}</p>
+<p>Angehängt: <strong>Mitgliedsvertrag.pdf</strong> und <strong>Widerrufsbelehrung.pdf</strong>.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+</div>`
+}
+
+export async function sendPaperReturnEmail(env, record) {
+  const apiKey = env.BREVO_API_KEY?.trim()
+  if (!apiKey || !record?.email || record.payMethod !== 'transfer') return 'skipped'
+  const [contract, withdrawal] = await Promise.all([
+    buildContractPdf(record, { paper: true, returnCopy: true }),
+    loadWithdrawalPdf(),
+  ])
+  return sendSmtp(env, {
+    to: record.email,
+    name: whoOf(record),
+    subject: paperReturnMailSubject(),
+    html: paperReturnMailHtml(record),
+    attachments: [
+      { name: 'Mitgliedsvertrag.pdf', content: Buffer.from(contract).toString('base64') },
+      { name: 'Widerrufsbelehrung.pdf', content: Buffer.from(withdrawal).toString('base64') },
+    ],
   })
 }
 

@@ -13,7 +13,7 @@ import {
   SIGNUP_OPEN,
   validateMembership,
 } from '../server/membership.mjs'
-import { membershipCopyHtml, membershipMailSubject, priceChangeMailHtml, priceChangeMailSubject } from '../server/membership-mail.mjs'
+import { membershipCopyHtml, membershipMailSubject, paperReturnMailHtml, paperReturnMailSubject, priceChangeMailHtml, priceChangeMailSubject } from '../server/membership-mail.mjs'
 import { buildContractPdf, membershipPdfAttachments } from '../server/membership-pdf.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
 import { makeInvitePayload, signInvite } from '../server/invite.mjs'
@@ -212,6 +212,10 @@ assert(membershipMailSubject(mailRecord).includes('Ersten'), 'first50 subject')
 const priceNote = priceChangeMailHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', payMethod: 'transfer', price: 89.99, startDate: '2026-11-02' })
 assert(priceNote.includes('89,99€') && priceNote.includes('DE77 8605 5592 1090 4292 70') && priceNote.includes('1. November 2026'), 'price note names the new amount and the account')
 assert(priceChangeMailSubject({ price: 89.99 }).includes('89,99€'), 'price note subject')
+const paperReturn = paperReturnMailHtml({ ...mailRecord, payMethod: 'transfer', startDate: '2026-11-02' })
+assert(paperReturn.includes('89,99€') && paperReturn.includes('Banküberweisung') && paperReturn.includes('DE77 8605 5592 1090 4292 70'), 'paper return mail names price and account')
+assert(paperReturn.includes('unterschrieben zurück') && paperReturn.includes('info@mma-in-leipzig.de') && paperReturn.includes('1. November 2026'), 'paper return mail asks for the signed contract')
+assert(paperReturnMailSubject().includes('Unterschreiben'), 'paper return subject')
 assert(!membershipMailSubject({ ...mailRecord, plan: 'standard', planName: 'Standard' }).includes('Ersten'), 'standard subject')
 
 const attachedMail = membershipCopyHtml(
@@ -293,6 +297,26 @@ const paperText = pdfText(paperPdf)
 assert(paperText.includes('DE77 8605') && paperText.includes('4292 70'), 'paper contract contains the gym account')
 assert(paperText.includes('Danach beträgt sie 49,00 EUR'), 'paper membership still states the later signup fee')
 assert(!paperText.includes('Gym-Unterschrift-Test'), 'unsigned paper contract leaves the gym line blank')
+const openPaper = Buffer.from(
+  await buildContractPdf(
+    {
+      firstName: 'Kevin',
+      lastName: 'Müller',
+      email: 'muellerkevin237@gmail.com',
+      plan: 'first50',
+      planName: 'First 50',
+      price: 89.99,
+      termMonths: 24,
+      payMethod: 'transfer',
+      startDate: '2026-11-02',
+    },
+    { paper: true, returnCopy: true },
+  ),
+)
+const openPaperText = pdfText(openPaper)
+assert(openPaperText.includes('geboren ______________________________'), 'open paper contract leaves the birth date blank')
+assert(openPaperText.includes('Telefon: ______________________________'), 'open paper contract leaves the phone blank')
+assert(openPaperText.includes('zurücksenden') && openPaperText.includes('89,99 EUR') && openPaperText.includes('Banküberweisung'), 'open paper contract is the transfer copy')
 const signedPaper = Buffer.from(
   await buildContractPdf(
     {

@@ -292,8 +292,8 @@ function spacedIban(iban) {
   return String(iban ?? '').replace(/(.{4})/g, '$1 ').trim()
 }
 
-export async function buildContractPdf(record, { paper = false, creditorId = '' } = {}) {
-  if (paper) return buildPaperContractPdf(record, creditorId)
+export async function buildContractPdf(record, { paper = false, creditorId = '', returnCopy = false } = {}) {
+  if (paper) return buildPaperContractPdf(record, creditorId, { returnCopy })
   const who = whoOf(record)
   const { formatted, unit, term } = moneyOf(record)
   const writer = new PdfWriter(`Mitgliedsvertrag ${who}`.trim(), 'Mitgliedsvertrag KONNI MMA GYM')
@@ -392,7 +392,7 @@ export async function buildContractPdf(record, { paper = false, creditorId = '' 
   return writer.bytes()
 }
 
-async function buildPaperContractPdf(record, creditorId) {
+async function buildPaperContractPdf(record, creditorId, { returnCopy = false } = {}) {
   const who = whoOf(record)
   const { formatted, unit, term } = moneyOf(record)
   const writer = new PdfWriter(`Mitgliedsvertrag ${who}`.trim(), 'Mitgliedsvertrag KONNI MMA GYM')
@@ -400,6 +400,7 @@ async function buildPaperContractPdf(record, creditorId) {
   writer.doc.setSubject(`${record.planName || record.plan} · ${who}`)
   const blank = '______________________________'
   const bank = record.bank ?? {}
+  const birth = formatIsoDate(record.birthDate)
 
   writer.text('KONNI MMA GYM', { font: writer.bold, size: 16, leading: 20, color: RULE })
   writer.text('Mitgliedsvertrag', { font: writer.bold, size: 18, leading: 22 })
@@ -409,14 +410,17 @@ async function buildPaperContractPdf(record, creditorId) {
     leading: 14,
   })
   writer.gap(10)
+  if (returnCopy) {
+    writer.para('Bitte die freien Felder ausfüllen, unterschreiben und den Vertrag an info@mma-in-leipzig.de zurücksenden.')
+  }
 
   writer.heading('1. Vertragsparteien')
   writer.para(
     'Anbieter: KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig. E-Mail: info@mma-in-leipzig.de. Telefon: +49 1522 1872354.',
   )
-  writer.kv('Mitglied', `${who}, geboren ${formatIsoDate(record.birthDate)}`)
+  writer.kv('Mitglied', birth ? `${who}, geboren ${birth}` : `${who || blank}, geboren ${blank}`)
   writer.kv('Anschrift', [record.street, [record.zip, record.city].filter(Boolean).join(' ')].filter(Boolean).join(', ') || blank)
-  writer.kv('Kontakt', [record.email, record.phone].filter(Boolean).join(' · '))
+  writer.kv('Kontakt', [record.email || `E-Mail: ${blank}`, record.phone || `Telefon: ${blank}`].join(' · '))
   if (record.guardian) {
     writer.kv(
       'Gesetzliche Vertretung',
