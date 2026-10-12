@@ -13,7 +13,7 @@ import {
   SIGNUP_OPEN,
   validateMembership,
 } from '../server/membership.mjs'
-import { membershipCopyHtml, membershipMailSubject } from '../server/membership-mail.mjs'
+import { membershipCopyHtml, membershipMailSubject, priceChangeMailHtml, priceChangeMailSubject } from '../server/membership-mail.mjs'
 import { buildContractPdf, membershipPdfAttachments } from '../server/membership-pdf.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
 import { makeInvitePayload, signInvite } from '../server/invite.mjs'
@@ -209,6 +209,9 @@ assert(transferMail.includes('WELADE8LXXX') && transferMail.includes('Stadt- und
 assert(transferMail.includes('erste Überweisung ist am 1. November 2026'), 'first transfer date')
 assert(!mail.includes('<script') && mail.includes('Wittenberger'), 'mail escaped')
 assert(membershipMailSubject(mailRecord).includes('Ersten'), 'first50 subject')
+const priceNote = priceChangeMailHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', payMethod: 'transfer', price: 89.99, startDate: '2026-11-02' })
+assert(priceNote.includes('89,99€') && priceNote.includes('DE77 8605 5592 1090 4292 70') && priceNote.includes('1. November 2026'), 'price note names the new amount and the account')
+assert(priceChangeMailSubject({ price: 89.99 }).includes('89,99€'), 'price note subject')
 assert(!membershipMailSubject({ ...mailRecord, plan: 'standard', planName: 'Standard' }).includes('Ersten'), 'standard subject')
 
 const attachedMail = membershipCopyHtml(

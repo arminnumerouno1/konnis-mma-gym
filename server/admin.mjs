@@ -21,7 +21,7 @@ import {
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
-import { sendMembershipEmails, sendPayLinkEmail } from './membership-mail.mjs'
+import { sendMembershipEmails, sendPayLinkEmail, sendPriceChangeEmail } from './membership-mail.mjs'
 import { attachSignupDocs, attachTransferNotice } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
@@ -723,7 +723,7 @@ export function createAdminHandler({
       }
 
       const proofOk = secretsEqual(String(body.proof ?? ''), env.SIGNUP_MAIL_PROOF?.trim() || '')
-      const proofSend = (action === 'sendContract' || action === 'sendPayLink') && proofOk
+      const proofSend = (action === 'sendContract' || action === 'sendPayLink' || action === 'sendPriceNote') && proofOk
       if (!authed(req) && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
         return
@@ -987,6 +987,52 @@ export function createAdminHandler({
           return
         }
         json(res, 200, { ok: true, checkoutUrl: session.url, member: publicMember(saved, today, true) })
+        return
+      }
+
+      if (action === 'sendPriceNote') {
+        const wanted = normalizePersonName(body.name).toLocaleLowerCase('de-DE')
+        if (wanted.length < 3) {
+          json(res, 400, { ok: false, error: 'name' })
+          return
+        }
+        const found = (await store.load()).members.filter((row) => {
+          const full = normalizePersonName(`${row.firstName ?? ''} ${row.lastName ?? ''}`).toLocaleLowerCase('de-DE')
+          return full === wanted && row.status !== 'cancelled' && row.status !== 'withdrawn'
+        })
+        if (found.length === 0) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (found.length > 1) {
+          json(res, 409, { ok: false, error: 'duplicate' })
+          return
+        }
+        const current = found[0]
+        if (current.payMethod !== 'transfer') {
+          json(res, 400, { ok: false, error: 'pay' })
+          return
+        }
+        let mailed
+        try {
+          mailed = await sendPriceChangeEmail(env, current)
+        } catch (error) {
+          console.error('[admin] price note failed', error)
+          json(res, 502, { ok: false, error: 'mail' })
+          return
+        }
+        if (!mailed || mailed === 'skipped') {
+          json(res, 503, { ok: false, error: 'mail_off' })
+          return
+        }
+        const at = new Date().toISOString()
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === current.id)
+          if (index < 0) return db
+          db.members[index] = { ...db.members[index], priceNote: 'sent', priceNoteAt: at, updatedAt: at }
+          return db
+        })
+        json(res, 200, { ok: true, email: current.email, price: current.price })
         return
       }
 

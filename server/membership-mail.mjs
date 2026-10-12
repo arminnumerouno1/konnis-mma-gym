@@ -183,6 +183,37 @@ async function sendSmtp(env, { to, name, subject, html, attachments = [] }) {
   return attachments.length ? 'sent_with_pdf' : 'sent'
 }
 
+export function priceChangeMailSubject(record) {
+  const price = Number(record?.price).toFixed(2).replace('.', ',')
+  return `Dein Beitrag ist jetzt ${price}€ · KONNI MMA GYM`
+}
+
+export function priceChangeMailHtml(record) {
+  const first = escapeMail(record.firstName || whoOf(record))
+  const price = escapeMail(Number(record.price).toFixed(2).replace('.', ','))
+  const when = escapeMail(dueOn(record))
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>Hi ${first},</p>
+<p>dein monatlicher Mitgliedsbeitrag beträgt ab jetzt <strong>${price}€</strong>.</p>
+<p>Du zahlst per Banküberweisung. Die erste Überweisung ist am ${when} fällig. Danach immer zum 1. des Monats. Vorher wird nichts berechnet.</p>
+<p><strong>Konto</strong><br>
+${accountLines()}</p>
+<p>Laufzeit und Vertrag bleiben sonst wie vereinbart.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+</div>`
+}
+
+export async function sendPriceChangeEmail(env, record) {
+  const apiKey = env.BREVO_API_KEY?.trim()
+  if (!apiKey || !record?.email || record.payMethod !== 'transfer') return 'skipped'
+  return sendSmtp(env, {
+    to: record.email,
+    name: whoOf(record),
+    subject: priceChangeMailSubject(record),
+    html: priceChangeMailHtml(record),
+  })
+}
+
 export function payLinkMailSubject() {
   return 'Karte noch einrichten · KONNI MMA GYM'
 }
