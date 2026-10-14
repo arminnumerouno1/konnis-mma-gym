@@ -275,7 +275,7 @@ export const AGB: LegalBlock[] = [
     title: '§ 6 Vertragslaufzeit und ordentliche Kündigung',
     paragraphs: [
       '1. Die vereinbarte Mindestvertragslaufzeit ergibt sich aus dem Mitgliedsvertrag und darf die gesetzlich zulässige Höchstdauer nicht überschreiten.',
-      '2. Bei einer vereinbarten Mindestvertragslaufzeit von 12 Monaten läuft der Vertrag zunächst für 12 Monate; bei 24 Monaten zunächst für 24 Monate.',
+      '2. Bei einer vereinbarten Mindestvertragslaufzeit von 6 Monaten läuft der Vertrag zunächst für 6 Monate; bei 12 Monaten zunächst für 12 Monate; bei 24 Monaten zunächst für 24 Monate.',
       '3. Die Mitgliedschaft kann mit einer Frist von einem Monat zum Ende der vereinbarten Mindestvertragslaufzeit gekündigt werden.',
       '4. Wird die Mitgliedschaft nicht fristgerecht zum Ende der Mindestvertragslaufzeit gekündigt, verlängert sie sich auf unbestimmte Zeit. Danach kann sie jederzeit mit einer Frist von einem Monat gekündigt werden.',
       '5. Die Kündigung kann insbesondere in Textform, beispielsweise per E-Mail an info@mma-in-leipzig.de, erklärt werden. Maßgeblich für die Einhaltung der Kündigungsfrist ist der Zugang der Kündigung.',
@@ -577,6 +577,7 @@ export const HOUSE_RULES: LegalBlock[] = [
 ]
 
 export const CONTRACT_INTRO = {
+  '6': 'Tarif mit 6 Monaten anfänglicher Vertragsdauer. Bitte alle Felder vor der Unterschrift füllen.',
   '12': 'Tarif mit 12 Monaten anfänglicher Vertragsdauer. Bitte alle Felder vor der Unterschrift füllen.',
   '24': 'Tarif mit 24 Monaten anfänglicher Vertragsdauer. Bitte alle Felder vor der Unterschrift füllen.',
 } as const

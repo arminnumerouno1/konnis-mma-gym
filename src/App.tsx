@@ -9,7 +9,7 @@ import { Join } from './pages/Join'
 import { Legal } from './pages/Legal'
 import { Admin } from './pages/Admin'
 
-const LEGAL = new Set(['impressum', 'datenschutz', 'agb', 'widerruf', 'hausordnung', 'vertrag12', 'vertrag24'])
+const LEGAL = new Set(['impressum', 'datenschutz', 'agb', 'widerruf', 'hausordnung', 'vertrag6', 'vertrag12', 'vertrag24'])
 
 export default function App() {
   const route = useRoute()
@@ -42,7 +42,7 @@ export default function App() {
       {route.name === 'join' ? <Join plan={route.plan} invite={route.invite} /> : null}
       {LEGAL.has(route.name) ? (
         <Legal
-          name={route.name as 'impressum' | 'datenschutz' | 'agb' | 'widerruf' | 'hausordnung' | 'vertrag12' | 'vertrag24'}
+          name={route.name as 'impressum' | 'datenschutz' | 'agb' | 'widerruf' | 'hausordnung' | 'vertrag6' | 'vertrag12' | 'vertrag24'}
         />
       ) : null}
       {route.name === 'notfound' ? (

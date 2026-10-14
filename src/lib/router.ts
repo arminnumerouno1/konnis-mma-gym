@@ -7,6 +7,7 @@ export type RouteName =
   | 'agb'
   | 'widerruf'
   | 'hausordnung'
+  | 'vertrag6'
   | 'vertrag12'
   | 'vertrag24'
   | 'admin'
@@ -29,6 +30,7 @@ export const PATHS: Record<Exclude<RouteName, 'notfound'>, string> = {
   agb: '/agb',
   widerruf: '/widerruf',
   hausordnung: '/hausordnung',
+  vertrag6: '/vertrag/6',
   vertrag12: '/vertrag/12',
   vertrag24: '/vertrag/24',
   admin: '/verwaltung',

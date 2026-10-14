@@ -6,7 +6,7 @@ import { Link } from '../lib/Link'
 import { href, type RouteName } from '../lib/router'
 
 type LegalProps = {
-  name: Extract<RouteName, 'impressum' | 'datenschutz' | 'agb' | 'widerruf' | 'hausordnung' | 'vertrag12' | 'vertrag24'>
+  name: Extract<RouteName, 'impressum' | 'datenschutz' | 'agb' | 'widerruf' | 'hausordnung' | 'vertrag6' | 'vertrag12' | 'vertrag24'>
 }
 
 function Blocks({ blocks }: { blocks: { title: string; paragraphs: string[] }[] }) {
@@ -81,6 +81,7 @@ export function Legal({ name }: LegalProps) {
           <Blocks blocks={HOUSE_RULES} />
         </>
       ) : null}
+      {name === 'vertrag6' ? <Contract months={6} /> : null}
       {name === 'vertrag12' ? <Contract months={12} /> : null}
       {name === 'vertrag24' ? <Contract months={24} /> : null}
       <p className="legal-back">
@@ -179,11 +180,11 @@ function Withdrawal() {
   )
 }
 
-function Contract({ months }: { months: 12 | 24 }) {
+function Contract({ months }: { months: 6 | 12 | 24 }) {
   return (
     <>
       <h1>Mitgliedsvertrag · {months} Monate</h1>
-      <p>{CONTRACT_INTRO[String(months) as '12' | '24']}</p>
+      <p>{CONTRACT_INTRO[String(months) as '6' | '12' | '24']}</p>
       <h2>1. Vertragsparteien</h2>
       <p>
         Anbieter: {GYM.legalName}, vertreten durch {GYM.partners.join(' und ')}, {GYM.street}, {GYM.zip} {GYM.city}.
@@ -192,8 +193,8 @@ function Contract({ months }: { months: 12 | 24 }) {
       <p>Mitglied: Vor- und Nachname, Geburtsdatum, Anschrift, E-Mail / Telefon — im Online-Formular.</p>
       <h2>2. Leistungen, Beginn und Preis</h2>
       <p>
-        Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Der
-        Kursplan kann sich ändern, der wesentliche Charakter bleibt.
+        Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Alle Kurse
+        und Einheiten sind inklusive. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.
       </p>
       <p>
         Die Zahlungspflicht beginnt erst mit der tatsächlichen Eröffnung. Verschiebt sich die Eröffnung um mehr als

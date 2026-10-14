@@ -207,6 +207,7 @@ p,
 .route-agb .nav,
 .route-widerruf .nav,
 .route-hausordnung .nav,
+.route-vertrag6 .nav,
 .route-vertrag12 .nav,
 .route-vertrag24 .nav,
 .route-notfound .nav {
@@ -1553,9 +1554,27 @@ p,
   font-size: 28px;
 }
 
+.plan-option .plan-includes {
+  margin-top: 4px;
+  color: rgba(236, 232, 225, 0.82);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
 .plan-option .price-fee {
   display: flex;
   margin-top: 6px;
+}
+
+.plan-option.accent-pink input[type='radio']:checked {
+  border-color: var(--pink, #e8a0b0);
+  background: radial-gradient(circle at center, var(--pink, #e8a0b0) 0 4px, transparent 4.5px);
+}
+
+.price-card .plan-includes {
+  margin: 0 0 8px;
+  color: rgba(236, 232, 225, 0.82);
+  font-size: 13px;
 }
 
 .plan-option .price-fee strong {
@@ -2150,6 +2169,7 @@ p,
   .route-agb .nav,
   .route-widerruf .nav,
   .route-hausordnung .nav,
+  .route-vertrag6 .nav,
   .route-vertrag12 .nav,
   .route-vertrag24 .nav,
   .route-notfound .nav {

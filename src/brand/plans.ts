@@ -1,4 +1,4 @@
-export const PLAN_IDS = ['standard', 'flex', 'daypass', 'first50'] as const
+export const PLAN_IDS = ['standard', 'flex', 'plus', 'daypass', 'first50'] as const
 
 export type PlanId = (typeof PLAN_IDS)[number]
 
@@ -15,7 +15,7 @@ export type Plan = {
   limited?: boolean
   limit?: number
   bullets: string[]
-  contract: '12' | '24' | 'day'
+  contract: '6' | '12' | '24' | 'day'
 }
 
 export const PLANS: Plan[] = [
@@ -30,7 +30,7 @@ export const PLANS: Plan[] = [
     termMonths: 24,
     accent: 'white',
     bullets: [
-      'Alle Kurse nutzbar',
+      'Alle Kurse / Einheiten inklusive',
       'Volle Mitgliedschaft',
       'Zahlung erst ab echter Eröffnung',
       'Kündigung 1 Monat zum Laufzeitende',
@@ -48,12 +48,30 @@ export const PLANS: Plan[] = [
     termMonths: 12,
     accent: 'gold',
     bullets: [
-      'Alle Kurse nutzbar',
+      'Alle Kurse / Einheiten inklusive',
       'Kürzere Erstlaufzeit',
       'Zahlung erst ab echter Eröffnung',
       'Kündigung 1 Monat zum Laufzeitende',
     ],
     contract: '12',
+  },
+  {
+    id: 'plus',
+    name: 'Plus',
+    tag: '6 Monate',
+    price: '119,00',
+    priceValue: 119,
+    unit: '/ Monat',
+    term: '6 Monate Laufzeit',
+    termMonths: 6,
+    accent: 'pink',
+    bullets: [
+      'Alle Kurse / Einheiten inklusive',
+      'Kurze Erstlaufzeit',
+      'Zahlung erst ab echter Eröffnung',
+      'Kündigung 1 Monat zum Laufzeitende',
+    ],
+    contract: '6',
   },
   {
     id: 'daypass',
@@ -66,7 +84,7 @@ export const PLANS: Plan[] = [
     termMonths: null,
     accent: 'pink',
     bullets: [
-      'Alle Kurse nutzbar an diesem Tag',
+      'Alle Kurse / Einheiten inklusive an diesem Tag',
       'Kein Monatsvertrag',
       'Vor Ort oder online vormerken',
       'Hausordnung gilt trotzdem',
@@ -89,7 +107,7 @@ export const FIRST50: Plan = {
   limit: 50,
   bullets: [
     '89,99€ statt 99,99€',
-    'Alle Kurse nutzbar',
+    'Alle Kurse / Einheiten inklusive',
     'Nur für die Voranmeldung, persönlicher Link',
     'Zahlung erst ab echter Eröffnung',
   ],

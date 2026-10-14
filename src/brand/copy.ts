@@ -99,7 +99,8 @@ export const COPY = {
   planSoon: 'Wird bald bekannt gegeben',
   planNote: 'Der konkrete Plan kommt mit dem Start. Hier siehst du nur die Form — die Zeiten sind noch nicht öffentlich.',
   priceTitle: 'Tarife.',
-  priceLead: 'Alle Kurse nutzbar. Standard oder Flex. Die Anmeldegebühr von 0€ nur bis zum 2. November, danach 49€.',
+  priceLead: 'Alle Kurse / Einheiten inklusive. Standard, Flex oder Plus. Die Anmeldegebühr von 0€ nur bis zum 2. November, danach 49€.',
+  planIncludes: 'Alle Kurse / Einheiten inklusive',
   signupFeePrice: '0€',
   signupFeeLabel: 'Anmeldegebühr\nnur bis 2. November\ndanach 49€',
   priceFoot:
@@ -151,6 +152,7 @@ export const COPY = {
   agb: 'AGB',
   withdraw: 'Widerruf',
   house: 'Hausordnung',
+  contract6: 'Vertrag 6 Monate',
   contract12: 'Vertrag 12 Monate',
   contract24: 'Vertrag 24 Monate',
   legalDownload: 'Download',
@@ -255,7 +257,7 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Ja. Unter Mitglied werden schließt du Standard oder Flex online ab. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto. Die Anmeldegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.',
+    a: 'Ja. Unter Mitglied werden schließt du Standard, Flex oder Plus online ab. Alle Kurse und Einheiten sind inklusive. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto. Die Anmeldegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.',
   },
   {
     q: 'Gibt es ein Probetraining?',
@@ -283,6 +285,6 @@ export const FAQ = [
   },
   {
     q: 'Wie kündige ich?',
-    a: 'Per Mail an info@mma-in-leipzig.de. Ein Monat zum Ende der Erstlaufzeit (12 oder 24 Monate). Danach jederzeit mit einem Monat Frist. Liegt der neue Hauptwohnsitz mehr als 50 Kilometer Luftlinie vom Studio entfernt, kannst du zusätzlich mit einem Monat zum Monatsende kündigen. Dafür brauchst du die amtliche Meldebescheinigung. Ein näherer Umzug reicht dafür nicht.',
+    a: 'Per Mail an info@mma-in-leipzig.de. Ein Monat zum Ende der Erstlaufzeit (6, 12 oder 24 Monate). Danach jederzeit mit einem Monat Frist. Liegt der neue Hauptwohnsitz mehr als 50 Kilometer Luftlinie vom Studio entfernt, kannst du zusätzlich mit einem Monat zum Monatsende kündigen. Dafür brauchst du die amtliche Meldebescheinigung. Ein näherer Umzug reicht dafür nicht.',
   },
 ] as const

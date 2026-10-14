@@ -7,6 +7,7 @@ const TRIAL_LEAD_S = 48 * 60 * 60
 export const PLAN_CENTS = {
   standard: 9999,
   flex: 10999,
+  plus: 11900,
   daypass: 1999,
   first50: 8999,
 }
@@ -14,6 +15,7 @@ export const PLAN_CENTS = {
 const PLAN_NAMES = {
   standard: 'Standard',
   flex: 'Flex',
+  plus: 'Plus',
   daypass: 'Day Pass',
   first50: 'First 50',
 }

@@ -22,7 +22,10 @@ function assert(cond, message) {
 const nov1 = berlinMidnightUnix('2026-11-01')
 assert(nov1 === Math.floor(Date.parse('2026-10-31T23:00:00.000Z') / 1000), '1 Nov 2026 is 23:00 UTC')
 assert(berlinMidnightUnix('2026-06-01') === Math.floor(Date.parse('2026-05-31T22:00:00.000Z') / 1000), 'summer offset')
-assert(PLAN_CENTS.standard === 9999 && PLAN_CENTS.flex === 10999 && PLAN_CENTS.daypass === 1999, 'cents')
+assert(
+  PLAN_CENTS.standard === 9999 && PLAN_CENTS.flex === 10999 && PLAN_CENTS.plus === 11900 && PLAN_CENTS.daypass === 1999,
+  'cents',
+)
 
 const early = new Date('2026-10-02T12:00:00.000Z').getTime()
 const earlyPlan = checkoutSchedule(early, { plan: 'standard' })
@@ -58,6 +61,14 @@ const closeFields = buildCheckoutFields({
 assert(closeFields.fields['subscription_data[proration_behavior]'] === 'none', 'no charge in the last 48h')
 assert(!closeFields.fields['subscription_data[trial_end]'], 'trial skipped inside 48h')
 assert(closeFields.fields['line_items[0][price_data][unit_amount]'] === '10999', 'flex cents')
+const plusFields = buildCheckoutFields({
+  member: { id: 'mem_plus', plan: 'plus', planName: 'Plus', email: 'plus@example.com' },
+  origin: 'https://www.mma-in-leipzig.de',
+  nowMs: early,
+})
+assert(plusFields.fields['line_items[0][price_data][unit_amount]'] === '11900', 'plus cents')
+assert(String(plusFields.fields['line_items[0][price_data][product_data][name]'] || '').includes('Plus'), 'plus product name')
+assert(plusFields.fields.mode === 'subscription', 'plus is a monthly subscription')
 
 const opened = new Date('2026-11-02T10:00:00.000Z').getTime()
 const openedPlan = checkoutSchedule(opened, { plan: 'standard' })

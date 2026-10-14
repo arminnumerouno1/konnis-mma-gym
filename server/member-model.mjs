@@ -34,6 +34,7 @@ export const ADMIN_COOKIE = 'konni_admin'
 export const PLAN_LABELS = {
   standard: 'Standard',
   flex: 'Flex',
+  plus: 'Plus',
   daypass: 'Day Pass',
   first50: 'First 50',
 }

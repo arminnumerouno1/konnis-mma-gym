@@ -86,6 +86,9 @@ const base = {
 const ok = validateMembership(base, {})
 assert(ok.ok && ok.record?.plan === 'standard', 'valid standard')
 
+const plusOk = validateMembership({ ...base, plan: 'plus', email: 'plus@example.com' }, {})
+assert(plusOk.ok && plusOk.record?.plan === 'plus' && plusOk.record.price === 119 && plusOk.record.termMonths === 6, 'valid plus')
+
 const again = validateMembership(
   { ...base, plan: 'flex', email: 'Anna@example.com' },
   { memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'active' }] },
@@ -289,6 +292,7 @@ assert(contractText.includes('SEPA-Lastschrift kommt später'), 'card contract s
 assert(contractText.includes('nur bis zum 2. November 2026') && contractText.includes('Danach beträgt sie 49,00 EUR'), 'signup fee is 49 euro after 2 november')
 assert(contractText.includes('Vorher gibt es kein Training'), 'contract refuses training before opening')
 assert(contractText.includes('mehr als 50 Kilometer') && contractText.includes('Meldebescheinigung'), 'contract states the 50 km relocation right')
+assert(contractText.includes('Alle Kurse') && contractText.includes('Einheiten') && contractText.includes('inklusive'), 'contract includes all classes')
 const transferPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard', planName: 'Standard', payMethod: 'transfer' }))
 const transferText = pdfText(transferPdf)
 assert(transferText.includes('Banküberweisung') && transferText.includes('DE77 8605') && transferText.includes('4292 70'), 'transfer contract contains the gym account')
@@ -297,6 +301,20 @@ const paperText = pdfText(paperPdf)
 assert(paperText.includes('DE77 8605') && paperText.includes('4292 70'), 'paper contract contains the gym account')
 assert(paperText.includes('Danach beträgt sie 49,00 EUR'), 'paper membership still states the later signup fee')
 assert(!paperText.includes('Gym-Unterschrift-Test'), 'unsigned paper contract leaves the gym line blank')
+const plusPdf = Buffer.from(
+  await buildContractPdf({
+    ...sample,
+    plan: 'plus',
+    planName: 'Plus',
+    price: 119,
+    termMonths: 6,
+    payMethod: 'card',
+    inviteSlot: undefined,
+  }),
+)
+const plusText = pdfText(plusPdf)
+assert(plusText.includes('Plus') && plusText.includes('119,00 EUR') && plusText.includes('6 Monate'), 'plus contract states price and term')
+assert(plusText.includes('Alle Kurse') && plusText.includes('Einheiten') && plusText.includes('inklusive'), 'plus contract includes all classes')
 const openPaper = Buffer.from(
   await buildContractPdf(
     {

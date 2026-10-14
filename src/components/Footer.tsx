@@ -55,6 +55,9 @@ export function Footer() {
               <Link href={href('hausordnung')}>{COPY.house}</Link>
             </li>
             <li>
+              <Link href={href('vertrag6')}>{COPY.contract6}</Link>
+            </li>
+            <li>
               <Link href={href('vertrag12')}>{COPY.contract12}</Link>
             </li>
             <li>

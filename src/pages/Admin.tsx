@@ -4,7 +4,7 @@ import { snapshotMonth } from '../admin/snapshot.ts'
 
 type PayStatus = 'paid' | 'open' | 'failed' | 'waived' | 'upcoming' | 'na'
 type MemberStatus = 'received' | 'active' | 'paused' | 'cancelled' | 'withdrawn' | 'expired'
-type PlanId = 'standard' | 'flex' | 'daypass' | 'first50'
+type PlanId = 'standard' | 'flex' | 'plus' | 'daypass' | 'first50'
 
 type CancelInfo = {
   kind: string
@@ -690,7 +690,7 @@ type ReportMonth = {
   online: number
   desk: number
   minors: number
-  byPlan: { standard: number; flex: number; first50: number }
+  byPlan: { standard: number; flex: number; plus: number; first50: number }
   daypasses: number
   dayRevenue: number
   cancellations: number
@@ -801,9 +801,9 @@ function Report({ onShowList }: { onShowList: (ym: string) => void }) {
         </article>
         <article>
           <strong>
-            {view.byPlan.standard} · {view.byPlan.flex} · {view.byPlan.first50}
+            {view.byPlan.standard} · {view.byPlan.flex} · {view.byPlan.plus} · {view.byPlan.first50}
           </strong>
-          <span>Standard · Flex · First 50</span>
+          <span>Standard · Flex · Plus · First 50</span>
         </article>
         <article>
           <strong>{view.minors}</strong>
@@ -1713,6 +1713,7 @@ export function Admin() {
           <option value="">Alle Tarife</option>
           <option value="standard">Standard</option>
           <option value="flex">Flex</option>
+          <option value="plus">Plus</option>
           <option value="first50">First 50</option>
           <option value="daypass">Day Pass</option>
         </select>
@@ -2462,6 +2463,7 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
           <select value={plan} onChange={(event) => setPlan(event.target.value as PlanId)}>
             <option value="standard">Standard 24 Monate</option>
             <option value="flex">Flex 12 Monate</option>
+            <option value="plus">Plus 6 Monate</option>
             <option value="first50">First 50</option>
             <option value="daypass">Day Pass</option>
           </select>
