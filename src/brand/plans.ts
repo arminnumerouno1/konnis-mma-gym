@@ -30,7 +30,6 @@ export const PLANS: Plan[] = [
     termMonths: 24,
     accent: 'white',
     bullets: [
-      'Alle Kurse / Einheiten inklusive',
       'Volle Mitgliedschaft',
       'Zahlung erst ab echter Eröffnung',
       'Kündigung 1 Monat zum Laufzeitende',
@@ -48,7 +47,6 @@ export const PLANS: Plan[] = [
     termMonths: 12,
     accent: 'gold',
     bullets: [
-      'Alle Kurse / Einheiten inklusive',
       'Kürzere Erstlaufzeit',
       'Zahlung erst ab echter Eröffnung',
       'Kündigung 1 Monat zum Laufzeitende',
@@ -66,7 +64,6 @@ export const PLANS: Plan[] = [
     termMonths: 6,
     accent: 'pink',
     bullets: [
-      'Alle Kurse / Einheiten inklusive',
       'Kurze Erstlaufzeit',
       'Zahlung erst ab echter Eröffnung',
       'Kündigung 1 Monat zum Laufzeitende',
@@ -84,7 +81,7 @@ export const PLANS: Plan[] = [
     termMonths: null,
     accent: 'pink',
     bullets: [
-      'Alle Kurse / Einheiten inklusive an diesem Tag',
+      'Alle Kurse an diesem Tag: MMA, Boxen, BJJ und mehr',
       'Kein Monatsvertrag',
       'Vor Ort oder online vormerken',
       'Hausordnung gilt trotzdem',
@@ -107,7 +104,6 @@ export const FIRST50: Plan = {
   limit: 50,
   bullets: [
     '89,99€ statt 99,99€',
-    'Alle Kurse / Einheiten inklusive',
     'Nur für die Voranmeldung, persönlicher Link',
     'Zahlung erst ab echter Eröffnung',
   ],

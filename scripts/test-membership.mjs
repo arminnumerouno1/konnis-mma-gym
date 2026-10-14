@@ -292,7 +292,13 @@ assert(contractText.includes('SEPA-Lastschrift kommt später'), 'card contract s
 assert(contractText.includes('nur bis zum 2. November 2026') && contractText.includes('Danach beträgt sie 49,00 EUR'), 'signup fee is 49 euro after 2 november')
 assert(contractText.includes('Vorher gibt es kein Training'), 'contract refuses training before opening')
 assert(contractText.includes('mehr als 50 Kilometer') && contractText.includes('Meldebescheinigung'), 'contract states the 50 km relocation right')
-assert(contractText.includes('Alle Kurse') && contractText.includes('Einheiten') && contractText.includes('inklusive'), 'contract includes all classes')
+assert(
+  contractText.includes('Alle Kurse') &&
+    contractText.includes('Einheiten') &&
+    contractText.includes('inklusive') &&
+    contractText.includes('zwei Einheiten pro Woche'),
+  'contract includes all classes without a weekly limit',
+)
 const transferPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard', planName: 'Standard', payMethod: 'transfer' }))
 const transferText = pdfText(transferPdf)
 assert(transferText.includes('Banküberweisung') && transferText.includes('DE77 8605') && transferText.includes('4292 70'), 'transfer contract contains the gym account')
@@ -314,7 +320,10 @@ const plusPdf = Buffer.from(
 )
 const plusText = pdfText(plusPdf)
 assert(plusText.includes('Plus') && plusText.includes('119,00 EUR') && plusText.includes('6 Monate'), 'plus contract states price and term')
-assert(plusText.includes('Alle Kurse') && plusText.includes('Einheiten') && plusText.includes('inklusive'), 'plus contract includes all classes')
+assert(
+  plusText.includes('Alle Kurse') && plusText.includes('Einheiten') && plusText.includes('zwei Einheiten pro Woche'),
+  'plus contract includes all classes without a weekly limit',
+)
 const openPaper = Buffer.from(
   await buildContractPdf(
     {

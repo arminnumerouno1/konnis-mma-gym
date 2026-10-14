@@ -1555,10 +1555,12 @@ p,
 }
 
 .plan-option .plan-includes {
-  margin-top: 4px;
-  color: rgba(236, 232, 225, 0.82);
+  margin-top: 6px;
+  max-width: 34ch;
+  color: rgba(236, 232, 225, 0.88);
   font-size: 12px;
-  letter-spacing: 0.02em;
+  line-height: 1.35;
+  letter-spacing: 0.01em;
 }
 
 .plan-option .price-fee {
@@ -1572,9 +1574,11 @@ p,
 }
 
 .price-card .plan-includes {
-  margin: 0 0 8px;
-  color: rgba(236, 232, 225, 0.82);
+  margin: 0 0 10px;
+  max-width: 36ch;
+  color: rgba(236, 232, 225, 0.88);
   font-size: 13px;
+  line-height: 1.4;
 }
 
 .plan-option .price-fee strong {

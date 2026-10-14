@@ -99,8 +99,9 @@ export const COPY = {
   planSoon: 'Wird bald bekannt gegeben',
   planNote: 'Der konkrete Plan kommt mit dem Start. Hier siehst du nur die Form — die Zeiten sind noch nicht öffentlich.',
   priceTitle: 'Tarife.',
-  priceLead: 'Alle Kurse / Einheiten inklusive. Standard, Flex oder Plus. Die Anmeldegebühr von 0€ nur bis zum 2. November, danach 49€.',
-  planIncludes: 'Alle Kurse / Einheiten inklusive',
+  priceLead:
+    'Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche. Standard, Flex oder Plus. Die Anmeldegebühr von 0€ nur bis zum 2. November, danach 49€.',
+  planIncludes: 'Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.',
   signupFeePrice: '0€',
   signupFeeLabel: 'Anmeldegebühr\nnur bis 2. November\ndanach 49€',
   priceFoot:
@@ -257,7 +258,7 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Ja. Unter Mitglied werden schließt du Standard, Flex oder Plus online ab. Alle Kurse und Einheiten sind inklusive. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto. Die Anmeldegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.',
+    a: 'Ja. Unter Mitglied werden schließt du Standard, Flex oder Plus online ab. Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto. Die Anmeldegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.',
   },
   {
     q: 'Gibt es ein Probetraining?',

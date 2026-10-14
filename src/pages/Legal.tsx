@@ -194,7 +194,8 @@ function Contract({ months }: { months: 6 | 12 | 24 }) {
       <h2>2. Leistungen, Beginn und Preis</h2>
       <p>
         Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Alle Kurse
-        und Einheiten sind inklusive. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.
+        und Einheiten sind inklusive, etwa MMA, Boxen und BJJ. Die Nutzung ist nicht auf zwei Einheiten pro Woche
+        begrenzt. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.
       </p>
       <p>
         Die Zahlungspflicht beginnt erst mit der tatsächlichen Eröffnung. Verschiebt sich die Eröffnung um mehr als
