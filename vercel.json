@@ -18,6 +18,7 @@
   },
   "redirects": [
     { "source": "/legal/agb.pdf", "destination": "/agb", "permanent": true },
+    { "source": "/legal/mitgliedsvertrag-6-monate.pdf", "destination": "/vertrag/6", "permanent": true },
     { "source": "/legal/mitgliedsvertrag-12-monate.pdf", "destination": "/vertrag/12", "permanent": true },
     { "source": "/legal/mitgliedsvertrag-24-monate.pdf", "destination": "/vertrag/24", "permanent": true },
     { "source": "/voranmeldung", "destination": "/mitglied", "permanent": true }
@@ -30,6 +31,7 @@
     { "source": "/agb", "destination": "/index.html" },
     { "source": "/widerruf", "destination": "/index.html" },
     { "source": "/hausordnung", "destination": "/index.html" },
+    { "source": "/vertrag/6", "destination": "/index.html" },
     { "source": "/vertrag/12", "destination": "/index.html" },
     { "source": "/vertrag/24", "destination": "/index.html" }
   ]
