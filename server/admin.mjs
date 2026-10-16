@@ -753,7 +753,13 @@ export function createAdminHandler({
       }
 
       const proofOk = secretsEqual(String(body.proof ?? ''), env.SIGNUP_MAIL_PROOF?.trim() || '')
-      const proofSend = (action === 'sendContract' || action === 'sendPayLink' || action === 'sendPriceNote' || action === 'sendPaperReturn') && proofOk
+      const proofSend =
+        (action === 'sendContract' ||
+          action === 'sendPayLink' ||
+          action === 'sendPriceNote' ||
+          action === 'sendPaperReturn' ||
+          action === 'sendFirst50') &&
+        proofOk
       if (!authed(req) && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
         return
@@ -794,7 +800,8 @@ export function createAdminHandler({
           json(res, 409, { ok: false, error: reserved?.error || 'full' })
           return
         }
-        const mailed = await deliverInvite({ env, fetchImpl, email, name, slot: reserved.slot })
+        const lastChance = body.lastChance === true
+        const mailed = await deliverInvite({ env, fetchImpl, email, name, slot: reserved.slot, lastChance })
         if (!mailed?.ok) {
           await store.update((db) => {
             db.issuedFirst50 = (db.issuedFirst50 ?? []).filter((row) => !(row?.email === email && row?.at === now))
@@ -803,7 +810,16 @@ export function createAdminHandler({
           json(res, mailed?.error === 'mail_off' ? 503 : 502, { ok: false, error: mailed?.error || 'mail' })
           return
         }
-        json(res, 200, { ok: true, email })
+        if (lastChance) {
+          await store.update((db) => {
+            db.issuedFirst50 = (db.issuedFirst50 ?? []).map((row) => {
+              if (normalizeEmail(row?.email) !== email || Number(row?.slot) !== reserved.slot) return row
+              return { ...row, lastChance: true, lastChanceAt: now }
+            })
+            return db
+          })
+        }
+        json(res, 200, { ok: true, email, slot: reserved.slot, lastChance })
         return
       }
 

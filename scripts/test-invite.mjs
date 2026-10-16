@@ -196,6 +196,16 @@ assert(!shortHtml.includes('24 Monate') && shortHtml.includes('1. Januar 2027'),
 assert(inviteHtml.includes('Danach beträgt sie 49 €'), 'invite states the later signup fee')
 assert(inviteHtml.includes('geht dein Platz automatisch an die nächste Person'), 'unused invite passes to the next person')
 assert(!inviteHtml.includes('<script'), 'invite escaped')
+const lastChanceHtml = first50InviteHtml({
+  first: 'Anna',
+  name: 'Anna Müller',
+  email: 'anna@example.com',
+  url: 'https://www.mma-in-leipzig.de/mitglied?invite=abc',
+  lastChance: true,
+})
+assert(lastChanceHtml.includes('letzte einmalige Chance') && lastChanceHtml.includes('keinen weiteren Link'), 'last chance invite says final offer')
+assert(lastChanceHtml.includes('ist der Platz weg') && !lastChanceHtml.includes('geht dein Platz automatisch an die nächste Person'), 'last chance invite drops the pass-along line')
+assert(first50InviteSubject({ lastChance: true }).includes('Letzte Chance'), 'last chance subject')
 
 function mockRes() {
   const captured = { status: 0, body: '' }

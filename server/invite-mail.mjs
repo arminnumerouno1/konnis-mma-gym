@@ -15,12 +15,14 @@ function escapeMail(value) {
     .replaceAll('"', '&quot;')
 }
 
-export function first50InviteSubject({ test = false } = {}) {
-  const subject = 'Du gehörst zu den ersten 50 · KONNI MMA GYM'
+export function first50InviteSubject({ test = false, lastChance = false } = {}) {
+  const subject = lastChance
+    ? 'Letzte Chance: First 50 · KONNI MMA GYM'
+    : 'Du gehörst zu den ersten 50 · KONNI MMA GYM'
   return test ? `Test: ${subject}` : subject
 }
 
-export function first50InviteHtml({ first, name, email, url, start = '', term = 0 }) {
+export function first50InviteHtml({ first, name, email, url, start = '', term = 0, lastChance = false } = {}) {
   const who = escapeMail(first)
   const full = escapeMail(name)
   const mail = escapeMail(email)
@@ -37,13 +39,20 @@ export function first50InviteHtml({ first, name, email, url, start = '', term = 
   const offer = months === 12
     ? `<strong>89,99€ statt 99,99€</strong>, 12 Monate. Das ist ein Sondervertrag über 12 Monate.`
     : `<strong>89,99€ statt 99,99€</strong>, 24 Monate.`
+  const chance = lastChance
+    ? `<p><strong>Das ist deine letzte einmalige Chance</strong> auf den First-50-Preis. Danach gibt es keinen weiteren Link.</p>`
+    : ''
+  const expiry = lastChance
+    ? 'Weiterleiten bringt den Sonderpreis niemandem sonst. Nach 48 Stunden ist der Link abgelaufen. Nutzt du diese letzte Chance nicht, ist der Platz weg.'
+    : 'Weiterleiten bringt den Sonderpreis niemandem sonst. Nach 48 Stunden ist der Link abgelaufen. Nutzt du die 48 Stunden nicht, geht dein Platz automatisch an die nächste Person.'
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 <p>Hi ${who},</p>
 <p><strong>Du gehörst zu den ersten 50.</strong> Deshalb bekommst du den Preis, den wir dafür gemacht haben: ${offer}</p>
+${chance}
 <p>${welcome}</p>
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
-<p>Weiterleiten bringt den Sonderpreis niemandem sonst. Nach 48 Stunden ist der Link abgelaufen. Nutzt du die 48 Stunden nicht, geht dein Platz automatisch an die nächste Person.</p>
+<p>${expiry}</p>
 <p>${payment}</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>`
@@ -159,7 +168,7 @@ async function postInvite({ fetchImpl, apiKey, sender, email, name, subject, htm
   }
 }
 
-export async function deliverFirst50Invite({ env, fetchImpl = fetch, email, name, slot, start = '', term = 0 }) {
+export async function deliverFirst50Invite({ env, fetchImpl = fetch, email, name, slot, start = '', term = 0, lastChance = false }) {
   const secret = env.INVITE_SECRET
   const apiKey = env.BREVO_API_KEY?.trim()
   const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
@@ -177,8 +186,8 @@ export async function deliverFirst50Invite({ env, fetchImpl = fetch, email, name
       email,
       name,
       first,
-      subject: first50InviteSubject({ test: false }),
-      html: first50InviteHtml({ first, name, email, url, start, term }),
+      subject: first50InviteSubject({ test: false, lastChance }),
+      html: first50InviteHtml({ first, name, email, url, start, term, lastChance }),
     })
   } catch (error) {
     console.error('[invite-mail]', String(error?.detail || error?.message || error).slice(0, 180))
@@ -227,6 +236,7 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
         const slot = Number(body.slot)
         const start = body.start ? contractStart(body.start) : ''
         const term = body.term ? contractTerm(body.term) : 0
+        const lastChance = body.lastChance === true
         if (!isValidEmail(email) || name.length < 3 || !Number.isInteger(slot) || slot < 1 || slot > FIRST50_SLOT_MAX || (body.start && !start) || (body.term && !term)) {
           json(res, 400, { ok: false, error: 'invalid' })
           return
@@ -277,8 +287,8 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
             email,
             name,
             first,
-            subject: first50InviteSubject({ test: false }),
-            html: first50InviteHtml({ first, name, email, url, start, term }),
+            subject: first50InviteSubject({ test: false, lastChance }),
+            html: first50InviteHtml({ first, name, email, url, start, term, lastChance }),
           })
         } catch (error) {
           console.error('[invite-mail]', String(error?.detail || error?.message || error).slice(0, 180))
