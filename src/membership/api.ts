@@ -72,7 +72,18 @@ export type MembershipOk = {
 export type MembershipFail = { ok: false; error: MembershipError }
 
 export type InviteLookup =
-  | { ok: true; invite: { email: string; name: string; slot: number; plan: 'first50'; price: number; start?: string; term?: number } }
+  | {
+      ok: true
+      invite: {
+        email: string
+        name: string
+        slot: number
+        plan: 'first50' | 'plus'
+        price: number
+        start?: string
+        term?: number
+      }
+    }
   | { ok: false; error: MembershipError }
 
 export async function lookupInvite(token: string): Promise<InviteLookup> {

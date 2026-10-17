@@ -186,10 +186,11 @@ export function validateMembership(body, ctx = {}) {
   if (plan === 'daypass' && !DAY_PASS_OPEN) return { ok: false, error: 'plan' }
 
   let invite = null
-  if (plan === 'first50') {
+  if (plan === 'first50' || (plan === 'plus' && body.invite)) {
     const checked = verifyInvite(ctx.inviteSecret, body.invite)
     if (!checked.ok) return { ok: false, error: checked.error === 'expired' ? 'expired' : 'invite' }
-    if (inviteUsed(ctx.memberships ?? [], checked.payload.email)) {
+    if (checked.payload.plan !== plan) return { ok: false, error: 'invite' }
+    if (plan === 'first50' && inviteUsed(ctx.memberships ?? [], checked.payload.email)) {
       return { ok: false, error: 'invite' }
     }
     if (inviteRevoked(ctx.revokedInvites, checked.payload.email, checked.payload.slot)) {
@@ -197,6 +198,7 @@ export function validateMembership(body, ctx = {}) {
     }
     invite = checked.payload
   }
+  if (plan === 'first50' && !invite) return { ok: false, error: 'invite' }
 
   const firstName = String(body.firstName ?? '').trim()
   const lastName = String(body.lastName ?? '').trim()
@@ -271,7 +273,7 @@ export function validateMembership(body, ctx = {}) {
       plan,
       planName: meta.name,
       price: meta.price,
-      termMonths: invite?.term === 12 ? 12 : meta.months,
+      termMonths: invite?.plan === 'plus' ? 6 : invite?.term === 12 ? 12 : meta.months,
       fee: meta.fee,
       firstName,
       lastName,
@@ -475,29 +477,33 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
         const memberships = await knownSignups()
         const store = await members.load()
         const revokedInvites = store.revokedInvites
+        const plan = checked.payload.plan === 'plus' ? 'plus' : 'first50'
         if (
           inviteRevoked(revokedInvites, checked.payload.email, checked.payload.slot) ||
-          inviteUsed(memberships, checked.payload.email) ||
-          (await inviteUsedRemote(env, checked.payload.email))
+          membershipTaken(memberships, checked.payload.email) ||
+          (plan === 'first50' &&
+            (inviteUsed(memberships, checked.payload.email) || (await inviteUsedRemote(env, checked.payload.email))))
         ) {
           json(res, 400, { ok: false, error: 'invite' })
           return
         }
         const term =
-          checked.payload.term === 12 ||
-          storedContractTerm(store.issuedFirst50, checked.payload.email, checked.payload.slot) === 12
-            ? 12
-            : 0
+          plan === 'plus'
+            ? 6
+            : checked.payload.term === 12 ||
+                storedContractTerm(store.issuedFirst50, checked.payload.email, checked.payload.slot) === 12
+              ? 12
+              : 0
         json(res, 200, {
           ok: true,
           invite: {
             email: checked.payload.email,
             name: checked.payload.name,
             slot: checked.payload.slot,
-            plan: 'first50',
-            price: 89.99,
+            plan,
+            price: plan === 'plus' ? 119 : 89.99,
             ...(checked.payload.start ? { start: checked.payload.start } : {}),
-            ...(term === 12 ? { term: 12 } : {}),
+            ...(term ? { term } : {}),
           },
         })
         return

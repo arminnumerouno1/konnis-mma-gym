@@ -27,7 +27,7 @@ import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
-import { INVITE_TTL_HOURS, contractStart, contractTerm, nextFirst50Slot, normalizePersonName, splitPersonName } from './invite.mjs'
+import { FIRST50_ID, INVITE_TTL_HOURS, PLUS_ID, contractStart, contractTerm, nextFirst50Slot, normalizePersonName, splitPersonName } from './invite.mjs'
 import { deliverFirst50Invite } from './invite-mail.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
@@ -758,22 +758,29 @@ export function createAdminHandler({
           action === 'sendPayLink' ||
           action === 'sendPriceNote' ||
           action === 'sendPaperReturn' ||
-          action === 'sendFirst50') &&
+          action === 'sendFirst50' ||
+          action === 'sendPlusInvite' ||
+          action === 'revokeInvite') &&
         proofOk
       if (!authed(req) && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
         return
       }
 
-      if (action === 'sendFirst50') {
+      if (action === 'sendFirst50' || action === 'sendPlusInvite') {
         const email = normalizeEmail(body.email)
         const name = normalizePersonName(body.name)
         const start = body.start ? contractStart(body.start) : ''
+        const plan = action === 'sendPlusInvite' || body.plan === PLUS_ID ? PLUS_ID : FIRST50_ID
         if (!isValidEmail(email) || name.length < 3) {
           json(res, 400, { ok: false, error: name.length < 3 ? 'name' : 'email' })
           return
         }
         if (body.start && !start) {
+          json(res, 400, { ok: false, error: 'start' })
+          return
+        }
+        if (plan === PLUS_ID && !start) {
           json(res, 400, { ok: false, error: 'start' })
           return
         }
@@ -787,7 +794,12 @@ export function createAdminHandler({
         await store.update((db) => {
           const issued = Array.isArray(db.issuedFirst50) ? db.issuedFirst50 : []
           db.issuedFirst50 = issued
-          const open = issued.find((row) => row?.email === email && Date.parse(row.at || '') > freshUntil)
+          const open = issued.find(
+            (row) =>
+              row?.email === email &&
+              Date.parse(row.at || '') > freshUntil &&
+              (row?.plan || FIRST50_ID) === plan,
+          )
           if (open) {
             reserved = { ok: false, error: 'invite_open' }
             return db
@@ -797,7 +809,14 @@ export function createAdminHandler({
             reserved = { ok: false, error: 'full' }
             return db
           }
-          issued.push({ slot, email, name, at: now, ...(start ? { start } : {}) })
+          issued.push({
+            slot,
+            email,
+            name,
+            at: now,
+            plan,
+            ...(start ? { start } : {}),
+          })
           reserved = { ok: true, slot }
           return db
         })
@@ -805,8 +824,17 @@ export function createAdminHandler({
           json(res, 409, { ok: false, error: reserved?.error || 'full' })
           return
         }
-        const lastChance = body.lastChance === true
-        const mailed = await deliverInvite({ env, fetchImpl, email, name, slot: reserved.slot, start, lastChance })
+        const lastChance = plan === FIRST50_ID && body.lastChance === true
+        const mailed = await deliverInvite({
+          env,
+          fetchImpl,
+          email,
+          name,
+          slot: reserved.slot,
+          plan,
+          start,
+          lastChance,
+        })
         if (!mailed?.ok) {
           await store.update((db) => {
             db.issuedFirst50 = (db.issuedFirst50 ?? []).filter((row) => !(row?.email === email && row?.at === now))
@@ -824,7 +852,28 @@ export function createAdminHandler({
             return db
           })
         }
-        json(res, 200, { ok: true, email, slot: reserved.slot, lastChance, ...(start ? { start } : {}) })
+        json(res, 200, { ok: true, email, slot: reserved.slot, plan, lastChance, ...(start ? { start } : {}) })
+        return
+      }
+
+      if (action === 'revokeInvite') {
+        const email = normalizeEmail(body.email)
+        const slot = Number(body.slot)
+        if (!isValidEmail(email) || !Number.isInteger(slot) || slot < 1) {
+          json(res, 400, { ok: false, error: 'invalid' })
+          return
+        }
+        const at = new Date().toISOString()
+        await store.update((db) => {
+          const revoked = Array.isArray(db.revokedInvites) ? db.revokedInvites : []
+          const exists = revoked.some(
+            (row) => normalizeEmail(row?.email) === email && Number(row?.slot) === slot,
+          )
+          if (!exists) revoked.push({ email, slot, at, reason: String(body.reason || 'desk') })
+          db.revokedInvites = revoked
+          return db
+        })
+        json(res, 200, { ok: true, email, slot })
         return
       }
 

@@ -1,6 +1,8 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export const FIRST50_ID = 'first50'
+export const PLUS_ID = 'plus'
+export const INVITE_PLAN_IDS = [FIRST50_ID, PLUS_ID]
 export const FIRST50_LIMIT = 50
 /** Extra personal seats past the original fifty. They stay First 50 in price, without a “Platz N von 50”. */
 export const FIRST50_SLOT_MAX = 400
@@ -88,7 +90,8 @@ export function verifyInvite(secret, token) {
   } catch {
     return { ok: false, error: 'invite' }
   }
-  if (payload?.p !== FIRST50_ID) return { ok: false, error: 'invite' }
+  const plan = String(payload?.p ?? '')
+  if (!INVITE_PLAN_IDS.includes(plan)) return { ok: false, error: 'invite' }
   const email = normalizeInviteEmail(payload.e)
   const name = normalizePersonName(payload.n)
   const slot = Number(payload.s)
@@ -104,9 +107,9 @@ export function verifyInvite(secret, token) {
       name,
       slot,
       exp,
-      plan: FIRST50_ID,
+      plan,
       start: contractStart(payload.d),
-      term: contractTerm(payload.m) || 24,
+      term: plan === PLUS_ID ? 6 : contractTerm(payload.m) || 24,
     },
   }
 }
@@ -152,9 +155,19 @@ export function contractTerm(raw) {
   return Number(raw) === 12 ? 12 : 0
 }
 
-export function makeInvitePayload({ email, name, slot, start = '', term = 0, ttlHours = INVITE_TTL_HOURS, nowMs = Date.now() }) {
+export function makeInvitePayload({
+  email,
+  name,
+  slot,
+  plan = FIRST50_ID,
+  start = '',
+  term = 0,
+  ttlHours = INVITE_TTL_HOURS,
+  nowMs = Date.now(),
+}) {
+  const planId = INVITE_PLAN_IDS.includes(plan) ? plan : FIRST50_ID
   const payload = {
-    p: FIRST50_ID,
+    p: planId,
     e: normalizeInviteEmail(email),
     n: normalizePersonName(name),
     s: Number(slot),
@@ -162,7 +175,9 @@ export function makeInvitePayload({ email, name, slot, start = '', term = 0, ttl
   }
   const deferred = contractStart(start)
   if (deferred) payload.d = deferred
-  const months = contractTerm(term)
-  if (months) payload.m = months
+  if (planId === FIRST50_ID) {
+    const months = contractTerm(term)
+    if (months) payload.m = months
+  }
   return payload
 }

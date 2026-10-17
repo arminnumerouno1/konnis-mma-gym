@@ -1,6 +1,7 @@
 import {
   FIRST50_SLOT_MAX,
   INVITE_TTL_HOURS,
+  PLUS_ID,
   first50SeatLabel,
   inviteRevoked,
   inviteUsed,
@@ -14,7 +15,13 @@ import {
   splitPersonName,
   verifyInvite,
 } from '../server/invite.mjs'
-import { createInviteMailHandler, first50InviteHtml, first50InviteSubject } from '../server/invite-mail.mjs'
+import {
+  createInviteMailHandler,
+  first50InviteHtml,
+  first50InviteSubject,
+  plusInviteHtml,
+  plusInviteSubject,
+} from '../server/invite-mail.mjs'
 import { validateMembership } from '../server/membership.mjs'
 
 function assert(cond, message) {
@@ -206,6 +213,47 @@ const lastChanceHtml = first50InviteHtml({
 assert(lastChanceHtml.includes('letzte einmalige Chance') && lastChanceHtml.includes('keinen weiteren Link'), 'last chance invite says final offer')
 assert(lastChanceHtml.includes('ist der Platz weg') && !lastChanceHtml.includes('geht dein Platz automatisch an die nächste Person'), 'last chance invite drops the pass-along line')
 assert(first50InviteSubject({ lastChance: true }).includes('Letzte Chance'), 'last chance subject')
+
+const plusPayload = makeInvitePayload({
+  email: 'benjaminpitzinger@icloud.com',
+  name: 'Benjamin Pitzinger',
+  slot: 120,
+  plan: PLUS_ID,
+  start: '2026-12-01',
+})
+assert(plusPayload.p === PLUS_ID && plusPayload.d === '2026-12-01' && plusPayload.m == null, 'plus invite has no first50 term field')
+const plusToken = signInvite(secret, plusPayload)
+const plusChecked = verifyInvite(secret, plusToken)
+assert(
+  plusChecked.ok && plusChecked.payload.plan === PLUS_ID && plusChecked.payload.term === 6 && plusChecked.payload.start === '2026-12-01',
+  'plus invite verifies with six months and december start',
+)
+const plusOk = validateMembership(
+  {
+    ...base,
+    plan: 'plus',
+    email: 'benjaminpitzinger@icloud.com',
+    firstName: 'Benjamin',
+    lastName: 'Pitzinger',
+    signature: 'Benjamin Pitzinger',
+    invite: plusToken,
+  },
+  ctx,
+)
+assert(plusOk.ok && plusOk.record?.plan === 'plus' && plusOk.record?.price === 119 && plusOk.record?.termMonths === 6, 'plus invite signup')
+assert(plusOk.record?.startDate === '2026-12-01', 'plus invite keeps december start')
+const plusWrongPlan = validateMembership({ ...base, plan: 'first50', invite: plusToken }, ctx)
+assert(!plusWrongPlan.ok && plusWrongPlan.error === 'invite', 'plus token cannot book first50')
+assert(plusInviteSubject().includes('Plus'), 'plus invite subject')
+const plusHtml = plusInviteHtml({
+  first: 'Benjamin',
+  name: 'Benjamin Pitzinger',
+  email: 'benjaminpitzinger@icloud.com',
+  url: 'https://www.mma-in-leipzig.de/mitglied?invite=abc',
+  start: '2026-12-01',
+})
+assert(plusHtml.includes('119€') && plusHtml.includes('6 Monate') && plusHtml.includes('1. Dezember 2026'), 'plus invite body')
+assert(plusHtml.includes('Vorher wird nichts berechnet') && plusHtml.includes('Jetzt Vertrag abschließen'), 'plus invite payment timing')
 
 function mockRes() {
   const captured = { status: 0, body: '' }

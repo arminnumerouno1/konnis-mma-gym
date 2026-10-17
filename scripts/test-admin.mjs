@@ -951,9 +951,9 @@ let deskInvites = []
 const deskInvite = createAdminHandler({
   dataDir: tmp,
   env: { ADMIN_SECRET: secret, INVITE_SECRET: 'test-invite-secret-key', BREVO_API_KEY: 'xkeysib-test', SIGNUP_MAIL_PROOF: proof },
-  deliverInvite: async ({ email, name, slot, start = '' }) => {
-    deskInvites.push({ email, name, slot, start })
-    return { ok: true, email, slot }
+  deliverInvite: async ({ email, name, slot, start = '', plan = 'first50' }) => {
+    deskInvites.push({ email, name, slot, start, plan })
+    return { ok: true, email, slot, plan }
   },
 })
 async function inviteCall(body, headers = { cookie }) {
@@ -986,6 +986,30 @@ assert(inviteDecember.status === 200 && inviteDecember.data.start === '2026-12-0
 assert(deskInvites.at(-1).start === '2026-12-01' && deskInvites.at(-1).email === 'benjaminpitzinger@icloud.com', 'december start reaches the invite mailer')
 const badStart = await inviteCall({ action: 'sendFirst50', name: 'Bad Start', email: 'bad.start@example.com', start: '2026-11-15', proof }, {})
 assert(badStart.status === 400 && badStart.data.error === 'start', 'only the first of a later month is a valid deferred start')
+const plusNoStart = await inviteCall(
+  { action: 'sendPlusInvite', name: 'Plus Ohne', email: 'plus.ohne@example.com', proof },
+  {},
+)
+assert(plusNoStart.status === 400 && plusNoStart.data.error === 'start', 'plus invite needs a deferred start')
+const plusSent = await inviteCall(
+  {
+    action: 'sendPlusInvite',
+    name: 'Benjamin Pitzinger',
+    email: 'benjaminpitzinger@icloud.com',
+    start: '2026-12-01',
+    proof,
+  },
+  {},
+)
+assert(plusSent.status === 200 && plusSent.data.plan === 'plus' && plusSent.data.start === '2026-12-01', 'desk can mail a plus invite with proof')
+assert(deskInvites.at(-1).plan === 'plus' && deskInvites.at(-1).email === 'benjaminpitzinger@icloud.com', 'plus invite reaches the mailer')
+const revokeDenied = await inviteCall({ action: 'revokeInvite', email: 'benjaminpitzinger@icloud.com', slot: 119 }, {})
+assert(revokeDenied.status === 401, 'revoke needs login or proof')
+const revoked = await inviteCall(
+  { action: 'revokeInvite', email: 'benjaminpitzinger@icloud.com', slot: 119, proof, reason: 'wrong plan' },
+  {},
+)
+assert(revoked.status === 200 && revoked.data.slot === 119, 'desk can revoke a mistaken first50 invite')
 
 const payHtml = payLinkMailHtml({ first: 'Benoah', url: 'https://checkout.stripe.com/c/pay/cs_test_pay' })
 assert(payHtml.includes('Hi Benoah,') && payHtml.includes('https://checkout.stripe.com/c/pay/cs_test_pay'), 'pay link mail names the member and the link')

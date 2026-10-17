@@ -172,10 +172,13 @@ export const COPY = {
   joinClosedError: 'Anmeldung ist noch nicht offen.',
   inviteLead:
     'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 24 Monate. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, geht der Platz an die nächste Person. Nicht weiterleiten.',
+  invitePlusLead:
+    'Dein Plus-Vertrag: 119€ im Monat, 6 Monate. Der Link gilt 48 Stunden und nur für deine E-Mail. Name und E-Mail sind fest. Nicht weiterleiten.',
   inviteBad: 'Dieser Einladungslink ist ungültig oder schon benutzt.',
   inviteExpired: 'Der Link ist abgelaufen. Schreib uns an info@mma-in-leipzig.de.',
   inviteChecking: 'Link wird geprüft…',
   inviteLockedNote: 'Name und E-Mail kommen aus der Voranmeldung. Der Sonderpreis gilt nur für dich.',
+  invitePlusLockedNote: 'Name und E-Mail sind fest. Der Plus-Tarif gilt nur über diesen Link.',
   stepPlan: 'Tarif',
   stepPerson: 'Daten',
   stepLegal: 'Recht & Unterschrift',

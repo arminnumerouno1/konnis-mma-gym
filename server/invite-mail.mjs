@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
 import { membershipTaken } from './member-model.mjs'
 import { createMemberStore } from './member-store.mjs'
-import { FIRST50_SLOT_MAX, contractStart, contractTerm, makeInvitePayload, normalizePersonName, signInvite } from './invite.mjs'
+import { FIRST50_ID, FIRST50_SLOT_MAX, PLUS_ID, contractStart, contractTerm, makeInvitePayload, normalizePersonName, signInvite } from './invite.mjs'
 import { germanDate } from './member-model.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 
@@ -168,16 +168,56 @@ async function postInvite({ fetchImpl, apiKey, sender, email, name, subject, htm
   }
 }
 
-export async function deliverFirst50Invite({ env, fetchImpl = fetch, email, name, slot, start = '', term = 0, lastChance = false }) {
+export function plusInviteSubject() {
+  return 'Dein Plus-Vertrag ab Dezember · KONNI MMA GYM'
+}
+
+export function plusInviteHtml({ first, name, email, url, start = '' } = {}) {
+  const who = escapeMail(first)
+  const full = escapeMail(name)
+  const mail = escapeMail(email)
+  const href = escapeMail(url)
+  const deferred = contractStart(start)
+  const when = deferred ? germanDate(deferred) : germanDate('2026-12-01')
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
+<p>Hi ${who},</p>
+<p>hier ist dein persönlicher Link für den Tarif <strong>Plus</strong>: <strong>119€</strong> im Monat, <strong>6 Monate</strong>.</p>
+<p>Dein Vertrag beginnt am <strong>${escapeMail(when)}</strong>. Die erste Zahlung ist an dem Tag. Vorher wird nichts berechnet.</p>
+<p>Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.</p>
+<p>${full} · ${mail}</p>
+<p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
+<p>Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.</p>
+<p>Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+</div>`
+}
+
+export async function deliverFirst50Invite({
+  env,
+  fetchImpl = fetch,
+  email,
+  name,
+  slot,
+  plan = FIRST50_ID,
+  start = '',
+  term = 0,
+  lastChance = false,
+}) {
   const secret = env.INVITE_SECRET
   const apiKey = env.BREVO_API_KEY?.trim()
   const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
   if (!apiKey || !secret) return { ok: false, error: 'mail_off' }
   const site = String(env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de').replace(/\/+$/, '')
   const origin = site.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : site
-  const token = signInvite(secret, makeInvitePayload({ email, name, slot, start, term }))
+  const planId = plan === PLUS_ID ? PLUS_ID : FIRST50_ID
+  const token = signInvite(secret, makeInvitePayload({ email, name, slot, plan: planId, start, term }))
   const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
   const first = name.split(' ')[0] || name
+  const subject = planId === PLUS_ID ? plusInviteSubject() : first50InviteSubject({ test: false, lastChance })
+  const html =
+    planId === PLUS_ID
+      ? plusInviteHtml({ first, name, email, url, start })
+      : first50InviteHtml({ first, name, email, url, start, term, lastChance })
   try {
     await postInvite({
       fetchImpl,
@@ -186,14 +226,14 @@ export async function deliverFirst50Invite({ env, fetchImpl = fetch, email, name
       email,
       name,
       first,
-      subject: first50InviteSubject({ test: false, lastChance }),
-      html: first50InviteHtml({ first, name, email, url, start, term, lastChance }),
+      subject,
+      html,
     })
   } catch (error) {
     console.error('[invite-mail]', String(error?.detail || error?.message || error).slice(0, 180))
     return { ok: false, error: 'mail' }
   }
-  return { ok: true, email, slot }
+  return { ok: true, email, slot, plan: planId }
 }
 
 export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = null }) {

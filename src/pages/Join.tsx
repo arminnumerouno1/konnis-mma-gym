@@ -8,6 +8,8 @@ import { ageFromIso } from '../lib/motion'
 import { href } from '../lib/router'
 import { lookupInvite, submitMembership, type MembershipConsents, type MembershipError } from '../membership/api'
 
+const PLUS = planById('plus')!
+
 const ERRORS: Record<MembershipError, string> = {
   plan: 'Bitte einen Tarif wählen.',
   first50: 'Dieser Tarif ist nur mit persönlichem Link buchbar.',
@@ -166,6 +168,7 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [inviteReady, setInviteReady] = useState(!invite)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviteSlot, setInviteSlot] = useState<number | null>(null)
+  const [invitePlan, setInvitePlan] = useState<'first50' | 'plus' | null>(null)
   const [contractStart, setContractStart] = useState('')
   const [contractTerm, setContractTerm] = useState<number | null>(null)
   const [firstName, setFirstName] = useState('')
@@ -201,14 +204,16 @@ function JoinForm({ plan, invite }: JoinProps) {
   const beforeOpening = berlinToday() < GYM.openingDate
   const age = ageFromIso(birthDate)
   const minor = age != null && age < 18
-  const inviteLocked = Boolean(invite) && chosen === 'first50'
-  const visiblePlans = inviteLocked ? [FIRST50] : PUBLIC_PLANS
+  const inviteLocked = Boolean(invite) && (invitePlan === 'first50' || invitePlan === 'plus')
+  const visiblePlans = invitePlan === 'plus' ? [PLUS] : invitePlan === 'first50' ? [FIRST50] : PUBLIC_PLANS
   const termLabel = (plan: { id: string; term: string }) =>
     plan.id === 'first50' && contractTerm === 12 ? '12 Monate Laufzeit' : plan.term
   const inviteLead =
-    contractTerm === 12
-      ? 'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 12 Monate. Das ist ein Sondervertrag. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, geht der Platz an die nächste Person. Nicht weiterleiten.'
-      : COPY.inviteLead
+    invitePlan === 'plus'
+      ? COPY.invitePlusLead
+      : contractTerm === 12
+        ? 'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 12 Monate. Das ist ein Sondervertrag. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, geht der Platz an die nächste Person. Nicht weiterleiten.'
+        : COPY.inviteLead
 
   useEffect(() => {
     if (!invite) return
@@ -221,10 +226,12 @@ function JoinForm({ plan, invite }: JoinProps) {
         return
       }
       const names = splitInviteName(result.invite.name)
-      setChosen('first50')
+      const plan = result.invite.plan === 'plus' ? 'plus' : 'first50'
+      setChosen(plan)
+      setInvitePlan(plan)
       setInviteSlot(result.invite.slot)
       setContractStart(result.invite.start ?? '')
-      setContractTerm(result.invite.term === 12 ? 12 : null)
+      setContractTerm(result.invite.term === 12 || result.invite.term === 6 ? result.invite.term : null)
       setEmail(result.invite.email)
       setFirstName(names.firstName)
       setLastName(names.lastName)
@@ -512,10 +519,11 @@ function JoinForm({ plan, invite }: JoinProps) {
       {inviteLocked ? (
         <div className="invite-banner">
           <strong>
-            First 50
-            {inviteSlot != null && inviteSlot >= 1 && inviteSlot <= 50 ? ` · Platz ${inviteSlot} von 50` : ''} · 89,99€
+            {invitePlan === 'plus'
+              ? 'Plus · 119€ · 6 Monate'
+              : `First 50${inviteSlot != null && inviteSlot >= 1 && inviteSlot <= 50 ? ` · Platz ${inviteSlot} von 50` : ''} · 89,99€`}
           </strong>
-          <p>{COPY.inviteLockedNote}</p>
+          <p>{invitePlan === 'plus' ? COPY.invitePlusLockedNote : COPY.inviteLockedNote}</p>
         </div>
       ) : null}
 
