@@ -950,9 +950,9 @@ assert(proofMails === 1, 'one uploaded-contract mail')
 let deskInvites = []
 const deskInvite = createAdminHandler({
   dataDir: tmp,
-  env: { ADMIN_SECRET: secret, INVITE_SECRET: 'test-invite-secret-key', BREVO_API_KEY: 'xkeysib-test' },
-  deliverInvite: async ({ email, name, slot }) => {
-    deskInvites.push({ email, name, slot })
+  env: { ADMIN_SECRET: secret, INVITE_SECRET: 'test-invite-secret-key', BREVO_API_KEY: 'xkeysib-test', SIGNUP_MAIL_PROOF: proof },
+  deliverInvite: async ({ email, name, slot, start = '' }) => {
+    deskInvites.push({ email, name, slot, start })
     return { ok: true, email, slot }
   },
 })
@@ -975,6 +975,17 @@ const inviteNext = await inviteCall({ action: 'sendFirst50', name: 'Mila Freund'
 assert(inviteNext.status === 200 && deskInvites[1].slot === 67, 'the next desk link takes the following seat')
 const inviteMember = await inviteCall({ action: 'sendFirst50', name: 'Clara Koch', email: 'clara@example.com' })
 assert(inviteMember.status === 409 && inviteMember.data.error === 'duplicate', 'no first50 link for an email that already has a membership')
+const inviteDecember = await inviteCall({
+  action: 'sendFirst50',
+  name: 'Benjamin Pitzinger',
+  email: 'benjaminpitzinger@icloud.com',
+  start: '2026-12-01',
+  proof,
+}, {})
+assert(inviteDecember.status === 200 && inviteDecember.data.start === '2026-12-01', 'desk can mail a december first50 start with proof')
+assert(deskInvites.at(-1).start === '2026-12-01' && deskInvites.at(-1).email === 'benjaminpitzinger@icloud.com', 'december start reaches the invite mailer')
+const badStart = await inviteCall({ action: 'sendFirst50', name: 'Bad Start', email: 'bad.start@example.com', start: '2026-11-15', proof }, {})
+assert(badStart.status === 400 && badStart.data.error === 'start', 'only the first of a later month is a valid deferred start')
 
 const payHtml = payLinkMailHtml({ first: 'Benoah', url: 'https://checkout.stripe.com/c/pay/cs_test_pay' })
 assert(payHtml.includes('Hi Benoah,') && payHtml.includes('https://checkout.stripe.com/c/pay/cs_test_pay'), 'pay link mail names the member and the link')

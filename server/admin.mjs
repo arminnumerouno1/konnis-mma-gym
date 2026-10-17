@@ -768,8 +768,13 @@ export function createAdminHandler({
       if (action === 'sendFirst50') {
         const email = normalizeEmail(body.email)
         const name = normalizePersonName(body.name)
+        const start = body.start ? contractStart(body.start) : ''
         if (!isValidEmail(email) || name.length < 3) {
           json(res, 400, { ok: false, error: name.length < 3 ? 'name' : 'email' })
+          return
+        }
+        if (body.start && !start) {
+          json(res, 400, { ok: false, error: 'start' })
           return
         }
         if (membershipTaken((await store.load()).members ?? [], email)) {
@@ -792,7 +797,7 @@ export function createAdminHandler({
             reserved = { ok: false, error: 'full' }
             return db
           }
-          issued.push({ slot, email, name, at: now })
+          issued.push({ slot, email, name, at: now, ...(start ? { start } : {}) })
           reserved = { ok: true, slot }
           return db
         })
@@ -801,7 +806,7 @@ export function createAdminHandler({
           return
         }
         const lastChance = body.lastChance === true
-        const mailed = await deliverInvite({ env, fetchImpl, email, name, slot: reserved.slot, lastChance })
+        const mailed = await deliverInvite({ env, fetchImpl, email, name, slot: reserved.slot, start, lastChance })
         if (!mailed?.ok) {
           await store.update((db) => {
             db.issuedFirst50 = (db.issuedFirst50 ?? []).filter((row) => !(row?.email === email && row?.at === now))
@@ -819,7 +824,7 @@ export function createAdminHandler({
             return db
           })
         }
-        json(res, 200, { ok: true, email, slot: reserved.slot, lastChance })
+        json(res, 200, { ok: true, email, slot: reserved.slot, lastChance, ...(start ? { start } : {}) })
         return
       }
 
