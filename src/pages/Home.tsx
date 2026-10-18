@@ -7,9 +7,11 @@ import {
   KURSPLAN_TIMES,
   kursLevelLabel,
   kursplanByDay,
+  openingHoursFromKursplan,
 } from '../brand/kursplan'
 
 const KURSPLAN_BY_DAY = kursplanByDay()
+const OPENING_HOURS = openingHoursFromKursplan()
 import { PUBLIC_PLANS, TRIAL_OPEN, type Plan } from '../brand/plans'
 import { submitTrial } from '../contact/api'
 import { hasExtrasConsent, onConsentChange } from '../lib/consent'
@@ -485,7 +487,19 @@ export function Home() {
           </div>
           <div>
             <h3>{COPY.hoursTitle}</h3>
-            <p className="hours-soon">{GYM.hoursSoon}</p>
+            <ul className="hours-list">
+              {OPENING_HOURS.map((row) => (
+                <li key={row.day.id}>
+                  <span>{row.label}</span>
+                  <strong>{row.hours}</strong>
+                </li>
+              ))}
+              <li>
+                <span>Sonntag</span>
+                <strong>geschlossen</strong>
+              </li>
+            </ul>
+            <p className="hours-note">{GYM.hoursNote}</p>
           </div>
         </div>
       </section>

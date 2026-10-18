@@ -1341,9 +1341,36 @@ p,
   max-width: 800px;
 }
 
-.hours-soon {
-  margin: 8px 0 0;
-  font-size: 18px;
+.hours-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  max-width: 420px;
+}
+
+.hours-list li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 12px;
+  align-items: baseline;
+  font-size: 17px;
+}
+
+.hours-list span {
+  color: var(--muted);
+}
+
+.hours-list strong {
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.hours-note {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 14px;
 }
 
 .gym-map iframe {

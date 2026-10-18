@@ -35,7 +35,7 @@ export const GYM = {
     marks: '/brand/halle/marks.jpg',
     ropes: '/brand/halle/ropes.jpg',
   },
-  hoursSoon: 'Werden demnächst bekannt gegeben.',
+  hoursNote: 'Anhand des Kursplans. Feiertage und Änderungen möglich.',
   siteBy: {
     name: 'Armin Scholtz',
     url: 'https://energie-berater-plus.de',

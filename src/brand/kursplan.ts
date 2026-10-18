@@ -87,3 +87,51 @@ export function kursplanByDay(): KursDayPlan[] {
     return { day, entries }
   })
 }
+
+function parseClock(raw: string) {
+  const match = /^(\d{1,2}):(\d{2})$/.exec(raw.trim())
+  if (!match) return null
+  return Number(match[1]) * 60 + Number(match[2])
+}
+
+function formatClock(minutes: number) {
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
+function parseRange(raw: string) {
+  const parts = raw.split('–').map((part) => part.trim())
+  if (parts.length !== 2) return null
+  const start = parseClock(parts[0])
+  const end = parseClock(parts[1])
+  if (start == null || end == null || end <= start) return null
+  return { start, end }
+}
+
+/** Merge course blocks into opening windows; gaps over 90 minutes stay separate. */
+export function openingHoursFromKursplan(gapMinutes = 90) {
+  return kursplanByDay().map(({ day, entries }) => {
+    const ranges = entries
+      .map((entry) => parseRange(entry.time))
+      .filter((range): range is { start: number; end: number } => Boolean(range))
+      .sort((a, b) => a.start - b.start)
+
+    if (!ranges.length) {
+      return { day, label: day.label, hours: 'geschlossen' as const, windows: [] as string[] }
+    }
+
+    const windows: { start: number; end: number }[] = [{ ...ranges[0] }]
+    for (const range of ranges.slice(1)) {
+      const last = windows.at(-1)!
+      if (range.start <= last.end + gapMinutes) {
+        last.end = Math.max(last.end, range.end)
+      } else {
+        windows.push({ ...range })
+      }
+    }
+
+    const labels = windows.map((window) => `${formatClock(window.start)} – ${formatClock(window.end)}`)
+    return { day, label: day.label, hours: labels.join(' · '), windows: labels }
+  })
+}
