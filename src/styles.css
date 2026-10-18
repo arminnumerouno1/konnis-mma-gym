@@ -397,9 +397,10 @@ p,
 }
 
 .hero-name {
-  font-size: clamp(48px, 11vw, 108px);
+  display: block;
+  font-size: clamp(42px, 9.5vw, 96px);
   letter-spacing: 0.02em;
-  line-height: 0.8;
+  line-height: 0.86;
   text-shadow: 6px 0 0 var(--red);
 }
 

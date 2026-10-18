@@ -2,7 +2,7 @@ export const COPY = {
   gymName: 'KONNI MMA GYM',
   city: 'LEIPZIG',
   heroStamp: 'Eröffnung 2. November',
-  heroName: 'DYRSCHKA',
+  heroName: 'KONRAD DYRSCHKA',
   heroMma: 'MMA',
   heroCity: 'in Leipzig',
   heroHit: 'Vom Käfig auf die Matte.',

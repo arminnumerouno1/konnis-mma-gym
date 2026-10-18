@@ -212,7 +212,14 @@ export function Home() {
           <p className="hero-stamp">{COPY.heroStamp}</p>
           <h1>
             <span className="sr-only">MMA Gym in Leipzig. {COPY.gymName}. </span>
-            <span className="hero-name">{COPY.heroName}</span>
+            <span className="hero-name">
+              {COPY.heroName.split(/\s+/).map((part, index) => (
+                <span key={part}>
+                  {index > 0 ? <br /> : null}
+                  {part}
+                </span>
+              ))}
+            </span>
             <span className="hero-mma">
               {COPY.heroMma} <span className="hero-city">{COPY.heroCity}</span>
             </span>
