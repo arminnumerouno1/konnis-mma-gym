@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { COPY, FAQ } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
+import { KURSPLAN, KURSPLAN_DAYS, KURSPLAN_TIMES, kursLevelLabel } from '../brand/kursplan'
 import { PUBLIC_PLANS, TRIAL_OPEN, type Plan } from '../brand/plans'
 import { submitTrial } from '../contact/api'
 import { hasExtrasConsent, onConsentChange } from '../lib/consent'
@@ -9,13 +10,6 @@ import { href } from '../lib/router'
 import { wantsSmoothScroll } from '../lib/motion'
 import { useSiteMotion } from '../lib/useSiteMotion'
 import { InstagramIcon } from '../components/InstagramIcon'
-
-const DAYS = ['Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa']
-const SLOTS = [
-  ['16:00 MMA', '16:00 Ringen', '16:00 Boxen', '16:00 MMA', '16:00 BJJ', '10:00 Open'],
-  ['17:30 BJJ', '17:30 MMA', '17:30 Ringen', '17:30 Thai-Boxen', '17:30 MMA', '11:30 MMA'],
-  ['19:00 Boxen', '19:00 Advanced', '19:00 MMA', '19:00 Ringen', '19:00 Sparring', '—'],
-]
 
 function PlanCard({ plan }: { plan: Plan }) {
   return (
@@ -367,30 +361,50 @@ export function Home() {
       <section className="block schedule" id="plan" data-reveal>
         <h2>{COPY.planTitle}</h2>
         <p className="lead">{COPY.planNote}</p>
+        <div className="kursplan-legend" aria-hidden="true">
+          <span className="kursplan-legend-all">{COPY.planLegendAll}</span>
+          <span className="kursplan-legend-advanced">{COPY.planLegendAdvanced}</span>
+        </div>
         <div className="schedule-frame">
-          <div className="schedule-pixel" aria-hidden="true">
-            <table>
+          <div className="kursplan-scroll">
+            <table className="kursplan-table">
               <thead>
                 <tr>
-                  <th>Zeit</th>
-                  {DAYS.map((day) => (
-                    <th key={day}>{day}</th>
+                  <th scope="col">Zeit</th>
+                  {KURSPLAN_DAYS.map((day) => (
+                    <th key={day.id} scope="col">
+                      <span className="kursplan-day-full">{day.label}</span>
+                      <span className="kursplan-day-short">{day.short}</span>
+                    </th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {SLOTS.map((row, i) => (
-                  <tr key={i}>
-                    <td>{['16:00', '17:30', '19:00'][i]}</td>
-                    {row.map((cell) => (
-                      <td key={cell}>{cell}</td>
-                    ))}
+                {KURSPLAN_TIMES.map((time, rowIndex) => (
+                  <tr key={time}>
+                    <th scope="row">{time}</th>
+                    {KURSPLAN[rowIndex].map((cell, dayIndex) => {
+                      const day = KURSPLAN_DAYS[dayIndex]
+                      if (!cell) {
+                        return (
+                          <td key={day.id} className="kursplan-empty">
+                            <span>{COPY.planEmpty}</span>
+                          </td>
+                        )
+                      }
+                      return (
+                        <td key={day.id} className={`kursplan-slot accent-${cell.accent}`}>
+                          {cell.when ? <span className="kursplan-when">{cell.when}</span> : null}
+                          <strong>{cell.title}</strong>
+                          <span className={`kursplan-level is-${cell.level}`}>{kursLevelLabel(cell.level)}</span>
+                        </td>
+                      )
+                    })}
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          <p className="schedule-soon">{COPY.planSoon}</p>
         </div>
       </section>
 

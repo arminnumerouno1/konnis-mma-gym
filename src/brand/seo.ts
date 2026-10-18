@@ -1,5 +1,6 @@
 import { COPY, FAQ } from './copy.ts'
 import { GYM, GYM_ADDRESS } from './gym.ts'
+import { KURSPLAN, KURSPLAN_DAYS, KURSPLAN_TIMES, kursLevelLabel } from './kursplan.ts'
 import { PUBLIC_PLANS } from './plans.ts'
 
 export const CANONICAL_ORIGIN = 'https://www.mma-in-leipzig.de'
@@ -151,10 +152,26 @@ export function buildSeoBody(): string {
 
   const about = COPY.aboutParas.map((para) => `    <p>${escapeHtml(para)}</p>`).join('\n')
 
+  const kursplanRows = KURSPLAN_TIMES.map((time, rowIndex) => {
+    const slots = KURSPLAN[rowIndex]
+      .map((cell, dayIndex) => {
+        const day = KURSPLAN_DAYS[dayIndex].label
+        if (!cell) return null
+        const when = cell.when || time
+        return `${day}: ${cell.title} (${kursLevelLabel(cell.level)}, ${when})`
+      })
+      .filter(Boolean)
+    if (!slots.length) return ''
+    return `      <p><strong>${escapeHtml(time)}</strong> · ${escapeHtml(slots.join(' · '))}</p>`
+  })
+    .filter(Boolean)
+    .join('\n')
+
   return `<article id="seo-crawl">
     <nav aria-label="Seitenübersicht">
       <a href="/">${escapeHtml(COPY.gymName)}</a>
       <a href="/#training">${escapeHtml(COPY.navTraining)}</a>
+      <a href="/#plan">${escapeHtml(COPY.navPlan)}</a>
       <a href="/#team">${escapeHtml(COPY.navTeam)}</a>
       <a href="/#preise">${escapeHtml(COPY.navPlans)}</a>
       <a href="/#kontakt">${escapeHtml(COPY.navContact)}</a>
@@ -177,6 +194,9 @@ ${disciplines}
     <h2>${escapeHtml(COPY.whoTitle)} ${escapeHtml(COPY.whoKicker)}</h2>
     <p>${escapeHtml(COPY.whoLead)}</p>
 ${people}
+    <h2>${escapeHtml(COPY.planTitle)}</h2>
+    <p>${escapeHtml(COPY.planNote)}</p>
+${kursplanRows}
     <h2>${escapeHtml(COPY.priceTitle)} Mitglied werden</h2>
     <p>${escapeHtml(COPY.priceLead)} ${escapeHtml(COPY.priceFoot)}</p>
 ${plans}
