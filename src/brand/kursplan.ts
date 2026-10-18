@@ -64,3 +64,26 @@ export const KURSPLAN: KursCell[][] = [
 export function kursLevelLabel(level: KursLevel) {
   return level === 'advanced' ? 'Fortgeschrittene' : 'All Levels'
 }
+
+export type KursDayEntry = {
+  time: string
+  slot: KursSlot
+}
+
+export type KursDayPlan = {
+  day: (typeof KURSPLAN_DAYS)[number]
+  entries: KursDayEntry[]
+}
+
+/** Courses grouped by day for the stacked mobile layout. Empty days stay listed. */
+export function kursplanByDay(): KursDayPlan[] {
+  return KURSPLAN_DAYS.map((day, dayIndex) => {
+    const entries: KursDayEntry[] = []
+    for (let rowIndex = 0; rowIndex < KURSPLAN.length; rowIndex += 1) {
+      const slot = KURSPLAN[rowIndex][dayIndex]
+      if (!slot) continue
+      entries.push({ time: slot.when || KURSPLAN_TIMES[rowIndex], slot })
+    }
+    return { day, entries }
+  })
+}

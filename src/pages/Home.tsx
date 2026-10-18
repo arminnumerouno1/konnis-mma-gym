@@ -1,7 +1,15 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { COPY, FAQ } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
-import { KURSPLAN, KURSPLAN_DAYS, KURSPLAN_TIMES, kursLevelLabel } from '../brand/kursplan'
+import {
+  KURSPLAN,
+  KURSPLAN_DAYS,
+  KURSPLAN_TIMES,
+  kursLevelLabel,
+  kursplanByDay,
+} from '../brand/kursplan'
+
+const KURSPLAN_BY_DAY = kursplanByDay()
 import { PUBLIC_PLANS, TRIAL_OPEN, type Plan } from '../brand/plans'
 import { submitTrial } from '../contact/api'
 import { hasExtrasConsent, onConsentChange } from '../lib/consent'
@@ -366,15 +374,14 @@ export function Home() {
           <span className="kursplan-legend-advanced">{COPY.planLegendAdvanced}</span>
         </div>
         <div className="schedule-frame">
-          <div className="kursplan-scroll">
+          <div className="kursplan-scroll kursplan-desktop">
             <table className="kursplan-table">
               <thead>
                 <tr>
                   <th scope="col">Zeit</th>
                   {KURSPLAN_DAYS.map((day) => (
                     <th key={day.id} scope="col">
-                      <span className="kursplan-day-full">{day.label}</span>
-                      <span className="kursplan-day-short">{day.short}</span>
+                      {day.label}
                     </th>
                   ))}
                 </tr>
@@ -404,6 +411,26 @@ export function Home() {
                 ))}
               </tbody>
             </table>
+          </div>
+          <div className="kursplan-mobile">
+            {KURSPLAN_BY_DAY.map(({ day, entries }) => (
+              <article key={day.id} className={`kursplan-day day-${day.id}`}>
+                <h3>{day.label}</h3>
+                {entries.length ? (
+                  <ul>
+                    {entries.map((entry) => (
+                      <li key={`${day.id}-${entry.time}-${entry.slot.title}`} className={`kursplan-slot accent-${entry.slot.accent}`}>
+                        <span className="kursplan-when">{entry.time}</span>
+                        <strong>{entry.slot.title}</strong>
+                        <span className={`kursplan-level is-${entry.slot.level}`}>{kursLevelLabel(entry.slot.level)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="kursplan-empty">{COPY.planEmpty}</p>
+                )}
+              </article>
+            ))}
           </div>
         </div>
       </section>
