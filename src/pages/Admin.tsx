@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { StreetInput } from '../components/StreetInput'
 import { snapshotMonth } from '../admin/snapshot.ts'
 import { compressPhoto } from '../lib/photo'
@@ -2428,6 +2428,17 @@ function MemberPane({
   const [editing, setEditing] = useState(false)
   const [reminderStage, setReminderStage] = useState('reminder')
   const [reminderNote, setReminderNote] = useState<string | null>(null)
+  const [photoOpen, setPhotoOpen] = useState(false)
+  const photoInputRef = useRef<HTMLInputElement | null>(null)
+
+  useEffect(() => {
+    if (!photoOpen) return
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setPhotoOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [photoOpen])
 
   async function save(payload: Record<string, unknown>) {
     setPaneError(null)
@@ -2620,15 +2631,46 @@ function MemberPane({
       </header>
 
       <div className="admin-id">
-        <label className="admin-photo">
-          {member.photoData ? <img src={member.photoData} alt="" /> : <span>Foto</span>}
+        <div className="admin-photo-wrap">
+          {member.photoData ? (
+            <button
+              type="button"
+              className="admin-photo is-view"
+              onClick={() => setPhotoOpen(true)}
+              aria-label={`Portrait von ${member.firstName} ${member.lastName} vergrößern`}
+            >
+              <img src={member.photoData} alt="" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="admin-photo is-upload"
+              disabled={busy}
+              onClick={() => photoInputRef.current?.click()}
+            >
+              <span>Foto</span>
+            </button>
+          )}
           <input
+            ref={photoInputRef}
             type="file"
             accept="image/*"
             capture="user"
-            onChange={(event) => void onPhoto(event.target.files?.[0])}
+            className="admin-photo-file"
+            onChange={(event) => {
+              void onPhoto(event.target.files?.[0])
+              event.target.value = ''
+            }}
           />
-        </label>
+          <button
+            className="btn btn-ghost admin-photo-change"
+            type="button"
+            disabled={busy}
+            onClick={() => photoInputRef.current?.click()}
+          >
+            {member.photoData ? 'Foto ändern' : 'Foto hochladen'}
+          </button>
+        </div>
         <div>
           <h2>
             {member.firstName} {member.lastName}
@@ -2642,6 +2684,28 @@ function MemberPane({
           ) : null}
         </div>
       </div>
+      {photoOpen && member.photoData ? (
+        <div
+          className="admin-photo-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Portrait vergrößert"
+          onClick={() => setPhotoOpen(false)}
+        >
+          <button
+            type="button"
+            className="btn btn-ghost admin-photo-lightbox-close"
+            onClick={() => setPhotoOpen(false)}
+          >
+            Schließen
+          </button>
+          <img
+            src={member.photoData}
+            alt={`${member.firstName} ${member.lastName}`}
+            onClick={(event) => event.stopPropagation()}
+          />
+        </div>
+      ) : null}
       {!member.photoData && member.plan !== 'daypass' ? (
         <section className="admin-block">
           <h3>Portrait anfordern</h3>
