@@ -2546,6 +2546,13 @@ p,
   cursor: pointer;
 }
 
+.admin-pay-wrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
 .admin-warn {
   border: 1px solid var(--warn);
   color: var(--warn);

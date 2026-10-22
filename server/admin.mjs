@@ -11,6 +11,7 @@ import {
   openDuesOf,
   publicMember,
   setPayment,
+  waiveFuturePayments,
   termEndDate,
   cancelDeadlineDate,
   memberStartDate,
@@ -38,6 +39,7 @@ import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
+import { allocateInvoiceNumber, buildReceiptPdf } from './receipt-pdf.mjs'
 import { FIRST50_ID, INVITE_TTL_HOURS, PLUS_ID, contractStart, contractTerm, nextFirst50Slot, normalizePersonName, splitPersonName } from './invite.mjs'
 import { deliverFirst50Invite } from './invite-mail.mjs'
 
@@ -628,7 +630,12 @@ function patchMemberFields(current, patch, today) {
       next.cancelEffectiveOn = today
       next.pausedUntil = null
     }
-    if (patch.status === 'paused') next.pausedUntil = String(patch.pausedUntil ?? '') || null
+    if (patch.status === 'paused') {
+      next.pausedUntil = String(patch.pausedUntil ?? '') || null
+      const waived = waiveFuturePayments(next, today)
+      next.payments = waived.payments
+      next.updatedAt = waived.updatedAt
+    }
     if (patch.status === 'active') {
       next.pausedUntil = null
       next.cancelledAt = null
@@ -1484,10 +1491,52 @@ export function createAdminHandler({
           env,
           today,
           sendReminder,
-          stage: REMINDER_STAGES.includes(body.stage) ? body.stage : 'reminder',
+          stage: REMINDER_STAGES.includes(body.stage) ? body.stage : 'auto',
           payMethod: body.payMethod === 'card' ? 'card' : body.payMethod === '' ? '' : 'transfer',
         })
         json(res, 200, result)
+        return
+      }
+
+      if (action === 'issueReceipt') {
+        const id = String(body.id ?? '')
+        const period = String(body.period ?? '')
+        const kind = body.kind === 'day' ? 'day' : body.kind === 'fee' ? 'fee' : 'month'
+        if (!id || !period) {
+          json(res, 400, { ok: false, error: 'invalid' })
+          return
+        }
+        let number = ''
+        let saved = null
+        let payment = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          const member = ensurePayments(db.members[index], today)
+          const row = (member.payments ?? []).find((item) => item.period === period && item.kind === kind)
+          if (!row || row.status !== 'paid') return db
+          number = allocateInvoiceNumber(db, today)
+          const at = new Date().toISOString()
+          const nextPayments = member.payments.map((item) =>
+            item.period === period && item.kind === kind
+              ? { ...item, receiptNumber: number, receiptAt: at }
+              : item,
+          )
+          db.members[index] = { ...member, payments: nextPayments, updatedAt: at }
+          saved = db.members[index]
+          payment = nextPayments.find((item) => item.period === period && item.kind === kind)
+          return db
+        })
+        if (!saved || !payment || !number) {
+          json(res, 400, { ok: false, error: 'receipt' })
+          return
+        }
+        json(res, 200, {
+          ok: true,
+          number,
+          member: publicMember(saved, today, true),
+          pdfUrl: `/api/admin?id=${encodeURIComponent(id)}&pdf=receipt&period=${encodeURIComponent(period)}&kind=${encodeURIComponent(kind)}`,
+        })
         return
       }
 
@@ -1783,6 +1832,28 @@ export function createAdminHandler({
           creditorId: env.SEPA_CREDITOR_ID?.trim() || '',
         })
         const name = `Vertrag-${row.lastName}-${row.firstName}`.replace(/[^A-Za-z0-9-]+/g, '_')
+        res.statusCode = 200
+        res.setHeader('content-type', 'application/pdf')
+        res.setHeader('cache-control', 'no-store')
+        res.setHeader('content-disposition', `inline; filename="${name}.pdf"`)
+        res.end(Buffer.from(bytes))
+        return
+      }
+      if (url.searchParams.get('pdf') === 'receipt') {
+        const period = String(url.searchParams.get('period') ?? '')
+        const kind =
+          url.searchParams.get('kind') === 'day' ? 'day' : url.searchParams.get('kind') === 'fee' ? 'fee' : 'month'
+        const ready = ensurePayments(row, today)
+        const payment = (ready.payments ?? []).find((item) => item.period === period && item.kind === kind)
+        if (!payment || payment.status !== 'paid' || !payment.receiptNumber) {
+          json(res, 404, { ok: false, error: 'receipt' })
+          return
+        }
+        const bytes = await buildReceiptPdf(ready, payment, {
+          number: payment.receiptNumber,
+          issuedAt: payment.receiptAt || today,
+        })
+        const name = `Quittung-${payment.receiptNumber}`.replace(/[^A-Za-z0-9-]+/g, '_')
         res.statusCode = 200
         res.setHeader('content-type', 'application/pdf')
         res.setHeader('cache-control', 'no-store')

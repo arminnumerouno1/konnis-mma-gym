@@ -277,7 +277,15 @@ export function ensurePayments(member, today = isoDate()) {
   const start = member.startDate || today
   const startYm = ymOf(start)
   const todayYm = ymOf(today)
-  const lastYm = startYm > todayYm ? startYm : todayYm
+  let lastYm = startYm > todayYm ? startYm : todayYm
+  if (member.status === 'paused') {
+    const horizon = addMonthsIso(`${todayYm}-01`, 14)?.slice(0, 7)
+    if (horizon && horizon > lastYm) lastYm = horizon
+    if (member.endDate) {
+      const endYm = ymOf(member.endDate)
+      if (endYm && endYm > lastYm) lastYm = endYm
+    }
+  }
   let cursor = startYm
   let guard = 0
   while (cursor && cursor <= lastYm && guard < 120) {
@@ -288,13 +296,14 @@ export function ensurePayments(member, today = isoDate()) {
       if (prev.status === 'upcoming' && due) rows.push({ ...prev, status: 'open' })
       else rows.push(prev)
     } else {
+      const pausedFuture = member.status === 'paused' && !due
       rows.push({
         kind: 'month',
         period: cursor,
         amount: paymentAmount(member, cursor),
-        status: due ? 'open' : 'upcoming',
+        status: pausedFuture ? 'waived' : due ? 'open' : 'upcoming',
         paidAt: null,
-        note: '',
+        note: pausedFuture ? 'Pausiert' : '',
       })
     }
     cursor = addMonthsIso(`${cursor}-01`, 1)?.slice(0, 7) ?? null
@@ -466,6 +475,24 @@ export function memberFromSignup(record, today = isoDate()) {
     cancelEffectiveOn: record.cancelEffectiveOn ?? null,
   }
   return ensurePayments(base, today)
+}
+
+/** Künftige Monatsbeiträge (noch nicht fällig / zukünftig offen) auf erlassen setzen. */
+export function waiveFuturePayments(member, today = isoDate()) {
+  const ready = ensurePayments(member, today)
+  const todayYm = ymOf(today)
+  const payments = (ready.payments ?? []).map((row) => {
+    if (row.kind !== 'month') return row
+    if (row.period <= todayYm) return row
+    if (row.status !== 'upcoming' && row.status !== 'open') return row
+    return {
+      ...row,
+      status: 'waived',
+      note: row.note || 'Pausiert',
+      paidAt: null,
+    }
+  })
+  return { ...ready, payments, updatedAt: new Date().toISOString() }
 }
 
 export function setPayment(

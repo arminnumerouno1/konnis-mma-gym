@@ -127,19 +127,48 @@ function normName(value) {
 
 function scoreMatch(member, txn) {
   let score = 0
+  const purpose = String(txn.purpose ?? '')
+  const purposeLow = purpose.toLowerCase()
   const hay = normName(`${txn.name} ${txn.purpose}`)
   const email = String(member.email ?? '')
     .toLowerCase()
     .trim()
-  if (email && String(txn.purpose).toLowerCase().includes(email)) score += 60
-  if (member.id && String(txn.purpose).includes(member.id)) score += 80
+  const memberIban = String(member.bank?.iban || '')
+    .replace(/\s/g, '')
+    .toUpperCase()
+  const txnIban = String(txn.iban || '')
+    .replace(/\s/g, '')
+    .toUpperCase()
+
+  // Harte Regeln: IBAN / E-Mail / Mitglieds-ID im Verwendungszweck
+  if (memberIban && txnIban && memberIban === txnIban) score += 100
+  if (email && purposeLow.includes(email)) score += 70
+  if (member.id && purpose.includes(member.id)) score += 90
+
+  // Zweck-Stichworte
+  if (/(beitrag|mitglied|konni|mma|monat)/i.test(purpose)) score += 12
+  for (const period of openPeriodsHint(member)) {
+    if (purpose.includes(period) || purposeLow.includes(period.replace('-', '/'))) score += 18
+    const [y, m] = period.split('-')
+    const months = ['januar', 'februar', 'maerz', 'marz', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'dezember']
+    const name = months[Number(m) - 1]
+    if (name && purposeLow.includes(name) && purpose.includes(y)) score += 15
+  }
+
   const last = normName(member.lastName)
   const first = normName(member.firstName)
-  if (last && hay.includes(last)) score += 30
-  if (first && hay.includes(first)) score += 15
+  if (last && hay.includes(last)) score += 28
+  if (first && hay.includes(first)) score += 12
   const full = `${first} ${last}`.trim()
-  if (full && hay.includes(full)) score += 20
+  if (full && hay.includes(full)) score += 18
   return score
+}
+
+function openPeriodsHint(member) {
+  const rows = Array.isArray(member.payments) ? member.payments : []
+  return rows
+    .filter((row) => (row.status === 'open' || row.status === 'failed') && row.kind === 'month')
+    .map((row) => String(row.period))
 }
 
 /**
@@ -160,8 +189,10 @@ export function matchBankTransactions(members, transactions, today) {
       if (!dues.openCount) continue
       const row = dues.openRows.find((item) => Math.abs(Number(item.amount) - txn.amount) < 0.02)
       if (!row) continue
-      const score = scoreMatch(member, txn)
-      if (score < 30) continue
+      const score = scoreMatch({ ...member, payments: dues.openRows }, txn)
+      // IBAN-Treffer oder starke Zweck/Name-Treffer
+      const minScore = txn.iban && member.bank?.iban ? 40 : 35
+      if (score < minScore) continue
       candidates.push({ txn, member, row, score })
     }
   }
@@ -178,12 +209,14 @@ export function matchBankTransactions(members, transactions, today) {
       amount: hit.txn.amount,
       name: hit.txn.name,
       purpose: hit.txn.purpose,
+      iban: hit.txn.iban || '',
       memberId: hit.member.id,
       memberName: `${hit.member.firstName} ${hit.member.lastName}`.trim(),
       email: hit.member.email,
       period: hit.row.period,
       kind: hit.row.kind,
       score: hit.score,
+      selected: true,
     })
   }
 

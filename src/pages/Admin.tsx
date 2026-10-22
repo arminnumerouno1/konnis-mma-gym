@@ -17,13 +17,15 @@ type CancelInfo = {
 }
 
 type Payment = {
-  kind: 'month' | 'day' | string
+  kind: 'month' | 'day' | 'fee' | string
   period: string
   amount: number
   status: PayStatus
   paidAt: string | null
   note?: string
   source?: string
+  receiptNumber?: string
+  receiptAt?: string
 }
 
 type MemberList = {
@@ -271,6 +273,7 @@ const ERROR_TEXT: Record<string, string> = {
   missing: 'Mitglied nicht gefunden.',
   columns: 'CSV braucht eine Betrag-Spalte (Sparkasse-Export).',
   empty: 'Keine Treffer oder leere Datei.',
+  receipt: 'Quittung nur für bezahlte Beiträge. Bitte erst als gezahlt markieren.',
 }
 
 function errorText(code?: string) {
@@ -762,12 +765,14 @@ function DuesPanel({
       amount: number
       name: string
       purpose: string
+      iban?: string
       memberId: string
       memberName: string
       email: string
       period: string
       kind: string
       score: number
+      selected?: boolean
     }[]
   >([])
   const [bankUnmatched, setBankUnmatched] = useState<{ txnIndex: number; amount: number; name: string; purpose: string }[]>(
@@ -892,19 +897,23 @@ function DuesPanel({
       setBankUnmatched([])
       return
     }
-    setBankMatches(data.matches ?? [])
+    setBankMatches((data.matches ?? []).map((row: { selected?: boolean }) => ({ ...row, selected: row.selected !== false })))
     setBankUnmatched(data.unmatched ?? [])
     setNote(`${data.parsed ?? 0} Eingänge gelesen · ${data.matches?.length ?? 0} Treffer · ${data.unmatched?.length ?? 0} offen`)
   }
 
   async function applyBankMatches() {
-    if (!bankMatches.length) return
-    if (!window.confirm(`${bankMatches.length} Treffer als gezahlt verbuchen?`)) return
+    const picked = bankMatches.filter((row) => row.selected)
+    if (!picked.length) {
+      setError('Bitte mindestens einen Treffer anwählen.')
+      return
+    }
+    if (!window.confirm(`${picked.length} ausgewählte Treffer als gezahlt verbuchen?`)) return
     setBankBusy(true)
     setError(null)
     const { data } = await api('/api/admin', {
       method: 'POST',
-      body: JSON.stringify({ action: 'bankImportApply', matches: bankMatches }),
+      body: JSON.stringify({ action: 'bankImportApply', matches: picked }),
     })
     setBankBusy(false)
     if (!data.ok) {
@@ -918,13 +927,19 @@ function DuesPanel({
   }
 
   async function runReminders() {
-    if (!window.confirm('Erinnerungsmails an Überweiser mit offenen Beiträgen senden (Cooldown 5 Tage)?')) return
+    if (
+      !window.confirm(
+        'Mahnungen an Überweiser mit offenen Beiträgen senden? Die Stufe steigt automatisch (Erinnerung → 1. → 2.), Cooldown 5 Tage.',
+      )
+    ) {
+      return
+    }
     setBulkBusy(true)
     setError(null)
     setNote(null)
     const { data } = await api('/api/admin', {
       method: 'POST',
-      body: JSON.stringify({ action: 'runDueReminders', stage: 'reminder', payMethod: 'transfer' }),
+      body: JSON.stringify({ action: 'runDueReminders', stage: 'auto', payMethod: 'transfer' }),
     })
     setBulkBusy(false)
     if (!data.ok) {
@@ -935,7 +950,10 @@ function DuesPanel({
       setNote('Noch vor dem ersten Abbuchungstag — keine Erinnerungen.')
       return
     }
-    setNote(`Fälligkeits-Lauf: ${data.sent ?? 0} von ${data.candidates ?? 0} Mails raus.`)
+    const stages = data.byStage || {}
+    setNote(
+      `Fälligkeits-Lauf: ${data.sent ?? 0} von ${data.candidates ?? 0} · Erinnerung ${stages.reminder ?? 0} · 1. Mahnung ${stages.mahnung1 ?? 0} · 2. Mahnung ${stages.mahnung2 ?? 0}`,
+    )
     await refresh()
   }
 
@@ -943,7 +961,7 @@ function DuesPanel({
     <section className="admin-dues">
       <p className="admin-muted">
         Alle offenen und nicht erhaltenen Beiträge. Mahnung geht per Mail raus und wird beim Mitglied gespeichert.
-        Täglich um 8 Uhr (Berlin) läuft zusätzlich die automatische Erinnerung für Überweiser.
+        Täglich um 8 Uhr (Berlin) laufen Mahnungen für Überweiser mit automatischer Stufen-Erhöhung.
       </p>
       <div className="admin-stats">
         <article className={totals.people ? 'is-alert' : ''}>
@@ -1001,23 +1019,56 @@ function DuesPanel({
       {bankMatches.length ? (
         <div className="admin-block">
           <h3>Kontoauszug-Treffer</h3>
-          <p className="admin-muted">Name/Verwendungszweck und Betrag passen zu offenen Überweisungen.</p>
+          <p className="admin-muted">
+            Treffer über IBAN, E-Mail/ID im Verwendungszweck, Name und Betrag. Einzelne Zeilen an- oder abwählen.
+          </p>
+          <div className="admin-inline" style={{ marginBottom: 8 }}>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              onClick={() => setBankMatches((rows) => rows.map((row) => ({ ...row, selected: true })))}
+            >
+              Alle an
+            </button>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              onClick={() => setBankMatches((rows) => rows.map((row) => ({ ...row, selected: false })))}
+            >
+              Alle aus
+            </button>
+          </div>
           <div className="admin-table-wrap">
             <table className="admin-table">
               <thead>
                 <tr>
+                  <th></th>
                   <th>Buchung</th>
                   <th>Mitglied</th>
                   <th>Posten</th>
                   <th>Betrag</th>
+                  <th>Score</th>
                 </tr>
               </thead>
               <tbody>
-                {bankMatches.map((row) => (
+                {bankMatches.map((row, index) => (
                   <tr key={`${row.txnIndex}-${row.memberId}-${row.period}`}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={Boolean(row.selected)}
+                        onChange={(event) => {
+                          const checked = event.target.checked
+                          setBankMatches((rows) =>
+                            rows.map((item, i) => (i === index ? { ...item, selected: checked } : item)),
+                          )
+                        }}
+                      />
+                    </td>
                     <td>
                       <small>
                         {row.date || '—'} · {row.name || row.purpose || '—'}
+                        {row.iban ? ` · ${row.iban}` : ''}
                       </small>
                     </td>
                     <td>
@@ -1027,13 +1078,16 @@ function DuesPanel({
                     </td>
                     <td>{periodLabel(row.period)}</td>
                     <td>{euro(row.amount)}</td>
+                    <td>
+                      <small>{row.score}</small>
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
           <button className="btn btn-solid" type="button" disabled={bankBusy} onClick={() => void applyBankMatches()}>
-            Treffer als gezahlt verbuchen
+            Ausgewählte als gezahlt verbuchen
           </button>
           {bankUnmatched.length ? (
             <p className="admin-muted">{bankUnmatched.length} Eingänge ohne sicheren Treffer — manuell prüfen.</p>
@@ -2400,6 +2454,29 @@ function MemberPane({
     onReplace(data.member)
   }
 
+  async function issueReceipt(payment: Payment) {
+    setSending(true)
+    setPaneError(null)
+    setReminderNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'issueReceipt',
+        id: member.id,
+        period: payment.period,
+        kind: payment.kind,
+      }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      setPaneError(errorText(String(data.error ?? 'receipt')))
+      return
+    }
+    if (data.member) onReplace(data.member)
+    setReminderNote(`Quittung ${data.number} erstellt.`)
+    if (data.pdfUrl) window.open(data.pdfUrl, '_blank', 'noopener,noreferrer')
+  }
+
   async function sendPriceNote() {
     setSending(true)
     setPaneError(null)
@@ -2466,7 +2543,19 @@ function MemberPane({
         <select
           value={member.status}
           disabled={busy}
-          onChange={(event) => void onPatch({ status: event.target.value })}
+          onChange={(event) => {
+            const next = event.target.value
+            if (
+              next === 'paused' &&
+              !window.confirm(
+                'Mitglied pausieren? Alle künftigen Monatsbeiträge (noch nicht fällig) werden auf „erlassen“ gesetzt. Bereits offene Monate bleiben offen.',
+              )
+            ) {
+              event.target.value = member.status
+              return
+            }
+            void onPatch({ status: next })
+          }}
         >
           <option value="active">Aktiv</option>
           <option value="received">Angemeldet</option>
@@ -2767,27 +2856,50 @@ function MemberPane({
       <p className="admin-muted">Grün = abgebucht / da. Rot = offen oder nicht erhalten. Klick setzt den Status.</p>
       <div className="admin-pays">
         {(member.payments ?? []).map((row) => (
-          <button
-            key={`${row.kind}-${row.period}`}
-            type="button"
-            className={`admin-pay pay-${row.status}`}
-            disabled={busy}
-            onClick={() => {
-              const order: PayStatus[] = ['open', 'paid', 'failed', 'waived']
-              const current = order.includes(row.status) ? row.status : 'open'
-              const next = order[(order.indexOf(current) + 1) % order.length]
-              void onPay(row, next)
-            }}
-          >
-            <strong>
-              {row.kind === 'fee' ? 'Aufnahmegebühr' : row.kind === 'day' ? deDate(row.period) : row.period}
-            </strong>
-            <span>{PAY_LABEL[row.status]}</span>
-            <small>
-              {euro(row.amount)}
-              {row.source === 'stripe' ? ' · Stripe' : row.source === 'bank_csv' ? ' · Kontoauszug' : ''}
-            </small>
-          </button>
+          <div key={`${row.kind}-${row.period}`} className="admin-pay-wrap">
+            <button
+              type="button"
+              className={`admin-pay pay-${row.status}`}
+              disabled={busy}
+              onClick={() => {
+                const order: PayStatus[] = ['open', 'paid', 'failed', 'waived']
+                const current = order.includes(row.status) ? row.status : 'open'
+                const next = order[(order.indexOf(current) + 1) % order.length]
+                void onPay(row, next)
+              }}
+            >
+              <strong>
+                {row.kind === 'fee' ? 'Aufnahmegebühr' : row.kind === 'day' ? deDate(row.period) : row.period}
+              </strong>
+              <span>{PAY_LABEL[row.status]}</span>
+              <small>
+                {euro(row.amount)}
+                {row.source === 'stripe' ? ' · Stripe' : row.source === 'bank_csv' ? ' · Kontoauszug' : ''}
+                {row.receiptNumber ? ` · ${row.receiptNumber}` : ''}
+              </small>
+            </button>
+            {row.status === 'paid' ? (
+              row.receiptNumber ? (
+                <a
+                  className="btn btn-ghost"
+                  href={`/api/admin?id=${encodeURIComponent(member.id)}&pdf=receipt&period=${encodeURIComponent(row.period)}&kind=${encodeURIComponent(row.kind)}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Quittung
+                </a>
+              ) : (
+                <button
+                  className="btn btn-ghost"
+                  type="button"
+                  disabled={busy || sending}
+                  onClick={() => void issueReceipt(row)}
+                >
+                  Quittung erstellen
+                </button>
+              )
+            ) : null}
+          </div>
         ))}
       </div>
 

@@ -3,6 +3,7 @@ import { checkoutSettled, sendContractMailOnce } from './contract-mail.mjs'
 import { isoDate, setPayment } from './member-model.mjs'
 import { createMemberStore } from './member-store.mjs'
 import { sendPaymentFailedEmail } from './membership-mail.mjs'
+import { createPaymentRetryUrl, siteOrigin } from './stripe-checkout.mjs'
 
 const TOLERANCE_S = 300
 const MAX_BODY = 1_000_000
@@ -229,11 +230,32 @@ export function createStripeHandler({
       const age = Date.now() - Date.parse(member.stripeFailMailAt)
       if (Number.isFinite(age) && age < FAIL_MAIL_COOLDOWN_MS) return { ...result, failMail: 'cooldown' }
     }
+    let retryUrl = ''
+    let retryKind = ''
+    const secret = env.STRIPE_SECRET_KEY?.trim() || ''
+    if (secret) {
+      try {
+        const retry = await createPaymentRetryUrl({
+          secret,
+          member,
+          origin: siteOrigin({ headers: {} }, env),
+          fetchImpl,
+        })
+        if (retry.ok) {
+          retryUrl = retry.url
+          retryKind = retry.kind
+        }
+      } catch (error) {
+        console.error('[stripe] retry url', error)
+      }
+    }
     let mailed = 'skipped'
     try {
       mailed = await sendFailMail(env, member, {
         period: result.period,
         amount: member.price,
+        retryUrl,
+        retryKind,
       })
     } catch (error) {
       console.error('[stripe] fail mail', error)

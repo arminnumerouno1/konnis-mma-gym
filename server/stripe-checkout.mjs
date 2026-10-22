@@ -226,3 +226,50 @@ export async function createCheckoutSession({ secret, member, origin, nowMs = Da
     return { ok: false, error: 'stripe', detail: error instanceof Error ? error.message : 'stripe' }
   }
 }
+
+/** Stripe Customer Portal — Karte ändern / offene Rechnungen. */
+export async function createBillingPortalSession({
+  secret,
+  customerId,
+  returnUrl,
+  fetchImpl = fetch,
+} = {}) {
+  if (!secret || !customerId) return { ok: false, error: 'stripe' }
+  try {
+    const body = new URLSearchParams()
+    body.set('customer', customerId)
+    body.set('return_url', returnUrl || 'https://www.mma-in-leipzig.de/mitglied')
+    const response = await fetchImpl('https://api.stripe.com/v1/billing_portal/sessions', {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${secret}`,
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      body,
+    })
+    const data = await response.json().catch(() => ({}))
+    if (!response.ok || !data?.url) {
+      return { ok: false, error: 'stripe', detail: data?.error?.message || `stripe_${response.status}` }
+    }
+    return { ok: true, url: data.url }
+  } catch (error) {
+    return { ok: false, error: 'stripe', detail: error instanceof Error ? error.message : 'stripe' }
+  }
+}
+
+/** Preferiert Kundenportal, sonst neuer Checkout-Link. */
+export async function createPaymentRetryUrl({ secret, member, origin, fetchImpl = fetch }) {
+  const customerId = member?.stripe?.customerId
+  if (customerId) {
+    const portal = await createBillingPortalSession({
+      secret,
+      customerId,
+      returnUrl: `${origin}/mitglied`,
+      fetchImpl,
+    })
+    if (portal.ok) return { ok: true, url: portal.url, kind: 'portal' }
+  }
+  const checkout = await createCheckoutSession({ secret, member, origin, fetchImpl })
+  if (checkout.ok && checkout.url) return { ok: true, url: checkout.url, kind: 'checkout' }
+  return { ok: false, error: checkout.error || 'stripe', detail: checkout.detail }
+}

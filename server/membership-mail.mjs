@@ -362,28 +362,35 @@ export function paymentFailedMailSubject() {
   return 'Zahlung fehlgeschlagen · KONNI MMA GYM'
 }
 
-export function paymentFailedMailHtml(record, { period = '', amount = 0 } = {}) {
+export function paymentFailedMailHtml(record, { period = '', amount = 0, retryUrl = '', retryKind = '' } = {}) {
   const first = escapeMail(record.firstName || whoOf(record))
   const when = escapeMail(periodMailLabel(period) || period || 'dieser Monat')
   const total = escapeMail(Number(amount || record.price || 0).toFixed(2).replace('.', ','))
+  const link = String(retryUrl || '').trim()
+  const ctaLabel = retryKind === 'portal' ? 'Karte prüfen / Zahlung nachholen' : 'Zahlung erneut einrichten'
+  const cta = link
+    ? `<p><a href="${escapeMail(link)}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">${ctaLabel}</a></p>
+<p style="color:#666;font-size:13px">Der Link öffnet ${retryKind === 'portal' ? 'dein Stripe-Kundenportal' : 'die Zahlungsseite'}.</p>`
+    : `<p>Bitte prüfe Karte oder Apple Pay und sorge für Deckung. Danach versucht Stripe es erneut.</p>`
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>Hi ${first},</p>
 <p>die Abbuchung für <strong>${when}</strong> (<strong>${total}€</strong>) ist bei Stripe fehlgeschlagen.</p>
-<p>Bitte prüfe Karte oder Apple Pay und sorge für Deckung. Danach versucht Stripe es erneut. Bei Fragen schreib an info@mma-in-leipzig.de.</p>
+${cta}
 <p>Alternativ kannst du auch überweisen:</p>
 <p><strong>Konto</strong><br>${accountLines()}</p>
+<p>Fragen? Schreib an info@mma-in-leipzig.de.</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
 </div>`
 }
 
-export async function sendPaymentFailedEmail(env, record, { period = '', amount = 0 } = {}) {
+export async function sendPaymentFailedEmail(env, record, { period = '', amount = 0, retryUrl = '', retryKind = '' } = {}) {
   const apiKey = env.BREVO_API_KEY?.trim()
   if (!apiKey || !record?.email) return 'skipped'
   return sendSmtp(env, {
     to: record.email,
     name: whoOf(record),
     subject: paymentFailedMailSubject(),
-    html: paymentFailedMailHtml(record, { period, amount }),
+    html: paymentFailedMailHtml(record, { period, amount, retryUrl, retryKind }),
   })
 }
 
