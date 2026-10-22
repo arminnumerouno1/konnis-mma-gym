@@ -9,6 +9,7 @@ import { attachSignupDocs } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
 import { createCheckoutSession, siteOrigin, PLAN_CENTS } from './stripe-checkout.mjs'
 import { trainingHasStarted } from './opening.mjs'
+import { signupFeeFor } from './signup-fee.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
@@ -44,12 +45,12 @@ export function isMembershipMailOpen(env = {}) {
 }
 
 const PLAN_META = {
-  slowstart: { name: 'Slow Start Tarif', price: 79.99, months: 12, fee: 0 },
-  standard: { name: 'Standard', price: 99.99, months: 24, fee: 0 },
-  flex: { name: 'Flex', price: 109.99, months: 12, fee: 0 },
-  plus: { name: 'Plus', price: 119, months: 6, fee: 0 },
-  daypass: { name: 'Day Pass', price: 19.99, months: null, fee: 0 },
-  first50: { name: 'First 50', price: 89.99, months: 24, fee: 0 },
+  slowstart: { name: 'Slow Start Tarif', price: 79.99, months: 12 },
+  standard: { name: 'Standard', price: 99.99, months: 24 },
+  flex: { name: 'Flex', price: 109.99, months: 12 },
+  plus: { name: 'Plus', price: 119, months: 6 },
+  daypass: { name: 'Day Pass', price: 19.99, months: null },
+  first50: { name: 'First 50', price: 89.99, months: 24 },
 }
 
 /** @type {Map<string, number[]>} */
@@ -272,6 +273,7 @@ export function validateMembership(body, ctx = {}) {
   if (payMethod === 'transfer' && plan === 'daypass') return { ok: false, error: 'pay' }
 
   const meta = PLAN_META[plan]
+  const signedDay = new Date().toISOString().slice(0, 10)
   return {
     ok: true,
     honey: false,
@@ -282,7 +284,7 @@ export function validateMembership(body, ctx = {}) {
       planName: meta.name,
       price: meta.price,
       termMonths: invite?.plan === 'plus' ? 6 : invite?.term === 12 ? 12 : meta.months,
-      fee: meta.fee,
+      fee: signupFeeFor(signedDay, plan),
       firstName,
       lastName,
       birthDate: String(body.birthDate),

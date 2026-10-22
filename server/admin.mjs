@@ -30,6 +30,9 @@ import {
   sendPriceChangeEmail,
   sendReminderEmail,
 } from './membership-mail.mjs'
+import { signupFeeFor } from './signup-fee.mjs'
+import { matchBankTransactions, parseBankCsv } from './bank-import.mjs'
+import { runDueReminders } from './dues-cron.mjs'
 import { attachSignupDocs, attachTransferNotice } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
@@ -45,12 +48,12 @@ const SESSION_MS = 12 * 60 * 60 * 1000
 const PHOTO_MAX = 140_000
 const PLAN_IDS = ['slowstart', 'standard', 'flex', 'plus', 'daypass', 'first50']
 const PLAN_META = {
-  slowstart: { name: 'Slow Start Tarif', price: 79.99, months: 12, fee: 0 },
-  standard: { name: 'Standard', price: 99.99, months: 24, fee: 0 },
-  flex: { name: 'Flex', price: 109.99, months: 12, fee: 0 },
-  plus: { name: 'Plus', price: 119, months: 6, fee: 0 },
-  daypass: { name: 'Day Pass', price: 19.99, months: null, fee: 0 },
-  first50: { name: 'First 50', price: 89.99, months: 24, fee: 0 },
+  slowstart: { name: 'Slow Start Tarif', price: 79.99, months: 12 },
+  standard: { name: 'Standard', price: 99.99, months: 24 },
+  flex: { name: 'Flex', price: 109.99, months: 12 },
+  plus: { name: 'Plus', price: 119, months: 6 },
+  daypass: { name: 'Day Pass', price: 19.99, months: null },
+  first50: { name: 'First 50', price: 89.99, months: 24 },
 }
 const hits = new Map()
 
@@ -480,7 +483,7 @@ function createDeskMember(body, today) {
     planName: meta.name,
     price: meta.price,
     termMonths: meta.months,
-    fee: meta.fee,
+    fee: signupFeeFor(today, plan),
     firstName,
     lastName,
     birthDate: String(body.birthDate),
@@ -545,7 +548,7 @@ function paperReturnRecord(issuedRows) {
     planName: 'First 50',
     price: 89.99,
     termMonths: contractTerm(preferred.term) || 24,
-    fee: 0,
+    fee: signupFeeFor(deferred || '2026-11-02', 'first50'),
     payMethod: 'transfer',
     startDate: deferred || '2026-11-02',
     inviteSlot: Number.isInteger(slot) && slot >= 1 ? slot : null,
@@ -1382,7 +1385,7 @@ export function createAdminHandler({
             db.members[index],
             {
               period: String(body.period ?? ''),
-              kind: body.kind === 'day' ? 'day' : 'month',
+              kind: body.kind === 'day' ? 'day' : body.kind === 'fee' ? 'fee' : 'month',
               status,
               note: String(body.note ?? ''),
             },
@@ -1413,7 +1416,7 @@ export function createAdminHandler({
               next,
               {
                 period: row.period,
-                kind: row.kind === 'day' ? 'day' : 'month',
+                kind: row.kind === 'day' ? 'day' : row.kind === 'fee' ? 'fee' : 'month',
                 status: 'paid',
                 note: String(body.note ?? 'Tresen: offene Beiträge ausgeglichen'),
               },
@@ -1458,7 +1461,7 @@ export function createAdminHandler({
                 next,
                 {
                   period: item.period,
-                  kind: item.kind === 'day' ? 'day' : 'month',
+                  kind: item.kind === 'day' ? 'day' : item.kind === 'fee' ? 'fee' : 'month',
                   status: 'paid',
                   note: String(body.note ?? `Tresen: Sammelausgleich ${period}`),
                 },
@@ -1472,6 +1475,73 @@ export function createAdminHandler({
           return db
         })
         json(res, 200, { ok: true, period, payMethod: method || null, marked, people })
+        return
+      }
+
+      if (action === 'runDueReminders') {
+        const result = await runDueReminders({
+          store,
+          env,
+          today,
+          sendReminder,
+          stage: REMINDER_STAGES.includes(body.stage) ? body.stage : 'reminder',
+          payMethod: body.payMethod === 'card' ? 'card' : body.payMethod === '' ? '' : 'transfer',
+        })
+        json(res, 200, result)
+        return
+      }
+
+      if (action === 'bankImportPreview') {
+        const csv = String(body.csv ?? '')
+        const parsed = parseBankCsv(csv)
+        if (!parsed.ok) {
+          json(res, 400, { ok: false, error: parsed.error || 'invalid' })
+          return
+        }
+        const db = await store.load()
+        const matched = matchBankTransactions(db.members, parsed.rows, today)
+        json(res, 200, {
+          ok: true,
+          parsed: parsed.rows.length,
+          matches: matched.matches,
+          unmatched: matched.unmatched,
+        })
+        return
+      }
+
+      if (action === 'bankImportApply') {
+        const picks = Array.isArray(body.matches) ? body.matches : []
+        if (!picks.length) {
+          json(res, 400, { ok: false, error: 'empty' })
+          return
+        }
+        let applied = 0
+        await store.update((db) => {
+          for (const pick of picks) {
+            const id = String(pick.memberId ?? '')
+            const period = String(pick.period ?? '')
+            const kind = pick.kind === 'day' ? 'day' : pick.kind === 'fee' ? 'fee' : 'month'
+            if (!id || !period) continue
+            const index = db.members.findIndex((row) => row.id === id)
+            if (index < 0) continue
+            db.members[index] = setPayment(
+              db.members[index],
+              {
+                period,
+                kind,
+                status: 'paid',
+                note: `Kontoauszug ${pick.date || today}`,
+                source: 'bank_csv',
+                ref: `csv:${pick.txnIndex ?? applied}`,
+                amount: typeof pick.amount === 'number' ? pick.amount : null,
+              },
+              today,
+            )
+            applied += 1
+          }
+          return db
+        })
+        json(res, 200, { ok: true, applied })
         return
       }
 

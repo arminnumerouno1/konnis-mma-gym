@@ -301,6 +301,23 @@ export function ensurePayments(member, today = isoDate()) {
     guard += 1
   }
 
+  const feeAmount = Number(member.fee) || 0
+  if (feeAmount > 0) {
+    const feeKey = 'fee:fee'
+    const prevFee = byKey.get(feeKey)
+    if (prevFee) rows.push(prevFee)
+    else {
+      rows.push({
+        kind: 'fee',
+        period: 'fee',
+        amount: feeAmount,
+        status: 'open',
+        paidAt: null,
+        note: 'Aufnahmegebühr',
+      })
+    }
+  }
+
   const seen = new Set(rows.map((row) => `${row.kind}:${row.period}`))
   for (const row of existing) {
     const key = `${row.kind}:${row.period}`
@@ -324,11 +341,13 @@ export function payStatusThisMonth(member, today = isoDate()) {
   return today < (member.startDate || today) ? 'upcoming' : 'open'
 }
 
-/** Offene oder nicht erhaltene Beiträge (Monate und Day Pass). */
+/** Offene oder nicht erhaltene Beiträge (Monate, Day Pass, Aufnahmegebühr). */
 export function openPaymentRows(member, today = isoDate()) {
   const ready = ensurePayments(member, today)
   return (ready.payments ?? []).filter(
-    (row) => (row.kind === 'month' || row.kind === 'day') && (row.status === 'open' || row.status === 'failed'),
+    (row) =>
+      (row.kind === 'month' || row.kind === 'day' || row.kind === 'fee') &&
+      (row.status === 'open' || row.status === 'failed'),
   )
 }
 

@@ -153,7 +153,10 @@ export const SIGNUP_OPEN = true
 /** Probetraining-Anfrage. Auf true, wenn Einheiten wieder angefragt werden können. */
 export const TRIAL_OPEN = false
 
+/** Bis einschließlich Eröffnungstag 0 €; danach 49 €. Server: server/signup-fee.mjs */
 export const SIGNUP_FEE = 0
+export const SIGNUP_FEE_AFTER = 49
+export const SIGNUP_FEE_FREE_UNTIL = '2026-11-02'
 /** Erste volle Monatsabbuchung. Muss zu server/stripe-checkout.mjs BILLING_START passen. */
 export const FIRST_CHARGE = '2026-11-01'
 export const PAYMENT_NOTE =

@@ -269,6 +269,8 @@ const ERROR_TEXT: Record<string, string> = {
   period: 'Bitte einen Monat wählen (JJJJ-MM).',
   pay: 'Passt nicht zur Zahlungsart dieses Mitglieds.',
   missing: 'Mitglied nicht gefunden.',
+  columns: 'CSV braucht eine Betrag-Spalte (Sparkasse-Export).',
+  empty: 'Keine Treffer oder leere Datei.',
 }
 
 function errorText(code?: string) {
@@ -731,6 +733,7 @@ const REMINDER_STAGE_LABEL: Record<string, string> = {
 }
 
 function periodLabel(period: string) {
+  if (period === 'fee') return 'Aufnahmegebühr'
   if (/^\d{4}-\d{2}$/.test(period)) return monthLabel(period)
   return deDate(period)
 }
@@ -752,6 +755,25 @@ function DuesPanel({
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [stageById, setStageById] = useState<Record<string, string>>({})
+  const [bankMatches, setBankMatches] = useState<
+    {
+      txnIndex: number
+      date: string
+      amount: number
+      name: string
+      purpose: string
+      memberId: string
+      memberName: string
+      email: string
+      period: string
+      kind: string
+      score: number
+    }[]
+  >([])
+  const [bankUnmatched, setBankUnmatched] = useState<{ txnIndex: number; amount: number; name: string; purpose: string }[]>(
+    [],
+  )
+  const [bankBusy, setBankBusy] = useState(false)
 
   useEffect(() => {
     setPeriod(initialPeriod)
@@ -853,10 +875,75 @@ function DuesPanel({
     await refresh()
   }
 
+  async function onBankFile(file: File | undefined) {
+    if (!file) return
+    setBankBusy(true)
+    setError(null)
+    setNote(null)
+    const csv = await file.text()
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'bankImportPreview', csv }),
+    })
+    setBankBusy(false)
+    if (!data.ok) {
+      setError(errorText(String(data.error ?? '')))
+      setBankMatches([])
+      setBankUnmatched([])
+      return
+    }
+    setBankMatches(data.matches ?? [])
+    setBankUnmatched(data.unmatched ?? [])
+    setNote(`${data.parsed ?? 0} Eingänge gelesen · ${data.matches?.length ?? 0} Treffer · ${data.unmatched?.length ?? 0} offen`)
+  }
+
+  async function applyBankMatches() {
+    if (!bankMatches.length) return
+    if (!window.confirm(`${bankMatches.length} Treffer als gezahlt verbuchen?`)) return
+    setBankBusy(true)
+    setError(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'bankImportApply', matches: bankMatches }),
+    })
+    setBankBusy(false)
+    if (!data.ok) {
+      setError(errorText(String(data.error ?? '')))
+      return
+    }
+    setNote(`${data.applied ?? 0} Buchungen übernommen.`)
+    setBankMatches([])
+    setBankUnmatched([])
+    await refresh()
+  }
+
+  async function runReminders() {
+    if (!window.confirm('Erinnerungsmails an Überweiser mit offenen Beiträgen senden (Cooldown 5 Tage)?')) return
+    setBulkBusy(true)
+    setError(null)
+    setNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'runDueReminders', stage: 'reminder', payMethod: 'transfer' }),
+    })
+    setBulkBusy(false)
+    if (!data.ok) {
+      setError(errorText(String(data.error ?? 'mail')))
+      return
+    }
+    if (data.skipped) {
+      setNote('Noch vor dem ersten Abbuchungstag — keine Erinnerungen.')
+      return
+    }
+    setNote(`Fälligkeits-Lauf: ${data.sent ?? 0} von ${data.candidates ?? 0} Mails raus.`)
+    await refresh()
+  }
+
   return (
     <section className="admin-dues">
       <p className="admin-muted">
         Alle offenen und nicht erhaltenen Beiträge. Mahnung geht per Mail raus und wird beim Mitglied gespeichert.
+        Täglich um 8 Uhr (Berlin) läuft zusätzlich die automatische Erinnerung für Überweiser.
       </p>
       <div className="admin-stats">
         <article className={totals.people ? 'is-alert' : ''}>
@@ -891,9 +978,68 @@ function DuesPanel({
         <button className="btn btn-solid" type="button" disabled={bulkBusy || !period || !totals.people} onClick={() => void bulkPay()}>
           Monat als gezahlt (Sammel)
         </button>
+        <button className="btn btn-ghost" type="button" disabled={bulkBusy} onClick={() => void runReminders()}>
+          Fälligkeits-Mails jetzt
+        </button>
+        <label className="btn btn-ghost admin-file-btn">
+          Kontoauszug CSV
+          <input
+            type="file"
+            accept=".csv,text/csv,text/plain"
+            hidden
+            disabled={bankBusy}
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              event.target.value = ''
+              void onBankFile(file)
+            }}
+          />
+        </label>
       </div>
       {note ? <p className="admin-ok">{note}</p> : null}
       {error ? <p className="admin-error">{error}</p> : null}
+      {bankMatches.length ? (
+        <div className="admin-block">
+          <h3>Kontoauszug-Treffer</h3>
+          <p className="admin-muted">Name/Verwendungszweck und Betrag passen zu offenen Überweisungen.</p>
+          <div className="admin-table-wrap">
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Buchung</th>
+                  <th>Mitglied</th>
+                  <th>Posten</th>
+                  <th>Betrag</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bankMatches.map((row) => (
+                  <tr key={`${row.txnIndex}-${row.memberId}-${row.period}`}>
+                    <td>
+                      <small>
+                        {row.date || '—'} · {row.name || row.purpose || '—'}
+                      </small>
+                    </td>
+                    <td>
+                      <button type="button" className="admin-linkish" onClick={() => onOpenMember(row.memberId)}>
+                        <strong>{row.memberName}</strong>
+                      </button>
+                    </td>
+                    <td>{periodLabel(row.period)}</td>
+                    <td>{euro(row.amount)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <button className="btn btn-solid" type="button" disabled={bankBusy} onClick={() => void applyBankMatches()}>
+            Treffer als gezahlt verbuchen
+          </button>
+          {bankUnmatched.length ? (
+            <p className="admin-muted">{bankUnmatched.length} Eingänge ohne sicheren Treffer — manuell prüfen.</p>
+          ) : null}
+        </div>
+      ) : null}
       {dues.length === 0 ? <p className="admin-muted">Gerade nichts offen.</p> : null}
       <div className="admin-table-wrap">
         <table className="admin-table">
@@ -2633,11 +2779,13 @@ function MemberPane({
               void onPay(row, next)
             }}
           >
-            <strong>{row.kind === 'day' ? deDate(row.period) : row.period}</strong>
+            <strong>
+              {row.kind === 'fee' ? 'Aufnahmegebühr' : row.kind === 'day' ? deDate(row.period) : row.period}
+            </strong>
             <span>{PAY_LABEL[row.status]}</span>
             <small>
               {euro(row.amount)}
-              {row.source === 'stripe' ? ' · Stripe' : ''}
+              {row.source === 'stripe' ? ' · Stripe' : row.source === 'bank_csv' ? ' · Kontoauszug' : ''}
             </small>
           </button>
         ))}

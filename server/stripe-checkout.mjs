@@ -170,6 +170,13 @@ export function buildCheckoutFields({ member, origin, nowMs = Date.now() }) {
     }
     if (schedule.delay === 'anchor') fields['subscription_data[proration_behavior]'] = 'none'
   }
+  const feeCents = Math.round((Number(member.fee) || 0) * 100)
+  if (feeCents > 0 && member.plan !== 'daypass') {
+    fields['line_items[1][quantity]'] = '1'
+    fields['line_items[1][price_data][currency]'] = 'eur'
+    fields['line_items[1][price_data][unit_amount]'] = String(feeCents)
+    fields['line_items[1][price_data][product_data][name]'] = 'KONNI MMA GYM · Aufnahmegebühr'
+  }
   return { fields, schedule }
 }
 

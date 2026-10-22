@@ -2,6 +2,7 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { checkoutSettled, sendContractMailOnce } from './contract-mail.mjs'
 import { isoDate, setPayment } from './member-model.mjs'
 import { createMemberStore } from './member-store.mjs'
+import { sendPaymentFailedEmail } from './membership-mail.mjs'
 
 const TOLERANCE_S = 300
 const MAX_BODY = 1_000_000
@@ -99,10 +100,11 @@ function applyCheckoutCompleted(db, event, today) {
   }
   const paidDay =
     session.mode === 'payment' && session.payment_status === 'paid' && member.plan === 'daypass'
+  let next = linked
   if (paidDay) {
     const amount = Number.isFinite(session.amount_total) ? Math.round(session.amount_total) / 100 : null
-    db.members[index] = setPayment(
-      linked,
+    next = setPayment(
+      next,
       {
         period: member.visitDay || member.startDate || today,
         kind: 'day',
@@ -114,9 +116,23 @@ function applyCheckoutCompleted(db, event, today) {
       },
       today,
     )
-  } else {
-    db.members[index] = linked
   }
+  if ((Number(member.fee) || 0) > 0 && session.payment_status === 'paid') {
+    next = setPayment(
+      next,
+      {
+        period: 'fee',
+        kind: 'fee',
+        status: 'paid',
+        note: `Aufnahmegebühr Stripe ${session.id}`,
+        source: 'stripe',
+        ref: `${session.id}:fee`,
+        amount: Number(member.fee) || null,
+      },
+      today,
+    )
+  }
+  db.members[index] = next
   return { handled: true, memberId: member.id, linked: true, charged: Boolean(paidDay) }
 }
 
@@ -186,8 +202,54 @@ async function deliverSettledMail(store, env, result, session) {
   return { ...result, mail: mail.sent ? 'sent' : mail.reason }
 }
 
-export function createStripeHandler({ dataDir, env, fetchImpl = fetch }) {
+const FAIL_MAIL_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000
+
+/**
+ * @param {{
+ *   dataDir?: string
+ *   env?: Record<string, string | undefined>
+ *   fetchImpl?: typeof fetch
+ *   sendFailMail?: typeof sendPaymentFailedEmail
+ * }} [opts]
+ */
+export function createStripeHandler({
+  dataDir,
+  env,
+  fetchImpl = fetch,
+  sendFailMail = sendPaymentFailedEmail,
+} = {}) {
   const store = createMemberStore({ dataDir, env })
+
+  async function notifyPaymentFailed(result) {
+    if (!result?.handled || result.status !== 'failed' || !result.memberId) return result
+    const db = await store.load()
+    const member = db.members.find((row) => row.id === result.memberId)
+    if (!member?.email) return result
+    if (member.stripeFailMailAt) {
+      const age = Date.now() - Date.parse(member.stripeFailMailAt)
+      if (Number.isFinite(age) && age < FAIL_MAIL_COOLDOWN_MS) return { ...result, failMail: 'cooldown' }
+    }
+    let mailed = 'skipped'
+    try {
+      mailed = await sendFailMail(env, member, {
+        period: result.period,
+        amount: member.price,
+      })
+    } catch (error) {
+      console.error('[stripe] fail mail', error)
+      return { ...result, failMail: 'error' }
+    }
+    if (mailed && mailed !== 'skipped') {
+      const at = new Date().toISOString()
+      await store.update((fresh) => {
+        const index = fresh.members.findIndex((row) => row.id === member.id)
+        if (index < 0) return fresh
+        fresh.members[index] = { ...fresh.members[index], stripeFailMailAt: at, updatedAt: at }
+        return fresh
+      })
+    }
+    return { ...result, failMail: mailed }
+  }
 
   async function confirmSession(raw, res) {
     let body
@@ -287,6 +349,13 @@ export function createStripeHandler({ dataDir, env, fetchImpl = fetch }) {
         console.error('[stripe] contract mail failed', error)
         reply(res, 500, { ok: false, error: 'mail' })
         return
+      }
+    }
+    if (result?.status === 'failed') {
+      try {
+        result = await notifyPaymentFailed(result)
+      } catch (error) {
+        console.error('[stripe] fail mail hook', error)
       }
     }
     reply(res, 200, { ok: true, ...result })

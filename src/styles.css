@@ -2540,6 +2540,12 @@ p,
   cursor: pointer;
 }
 
+.admin-file-btn {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
 .admin-warn {
   border: 1px solid var(--warn);
   color: var(--warn);
