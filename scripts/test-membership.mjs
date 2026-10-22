@@ -61,6 +61,8 @@ assert(ageOn('2000-01-15') !== null, 'age parses')
 assert(ageOn('1990-13-01') === null, 'bad month')
 assert(ageOn('2099-01-01') === null, 'future')
 
+const SAMPLE_PHOTO = `data:image/jpeg;base64,${'A'.repeat(80)}`
+
 const base = {
   plan: 'standard',
   firstName: 'Anna',
@@ -73,6 +75,7 @@ const base = {
   phone: '+49 171 1234567',
   place: 'Leipzig',
   signature: 'Anna Müller',
+  photoData: SAMPLE_PHOTO,
   consents: {
     agb: true,
     hausordnung: true,
@@ -84,7 +87,11 @@ const base = {
 }
 
 const ok = validateMembership(base, {})
-assert(ok.ok && ok.record?.plan === 'standard', 'valid standard')
+assert(ok.ok && ok.record?.plan === 'standard' && ok.record.photoData === SAMPLE_PHOTO, 'valid standard with portrait')
+const noPhoto = validateMembership({ ...base, photoData: '' }, {})
+assert(!noPhoto.ok && noPhoto.error === 'photo', 'portrait is required')
+const badPhoto = validateMembership({ ...base, photoData: 'not-an-image' }, {})
+assert(!badPhoto.ok && badPhoto.error === 'photo', 'portrait must be a data image')
 
 const plusOk = validateMembership({ ...base, plan: 'plus', email: 'plus@example.com' }, {})
 assert(plusOk.ok && plusOk.record?.plan === 'plus' && plusOk.record.price === 119 && plusOk.record.termMonths === 6, 'valid plus')

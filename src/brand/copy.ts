@@ -193,6 +193,11 @@ export const COPY = {
   cityLabel: 'Ort',
   email: 'E-Mail',
   phone: 'Telefon',
+  portraitLabel: 'Portraitfoto',
+  portraitHint:
+    'Pflicht. Lade ein aktuelles Foto von dir hoch, auf dem dein Gesicht klar zu erkennen ist. So wissen wir später, dass wirklich du zum Training kommst. Am besten frontal, gut beleuchtet, ohne Sonnenbrille.',
+  portraitEmpty: 'Foto aufnehmen oder wählen',
+  portraitChange: 'Anderes Foto wählen',
   place: 'Ort der Unterschrift',
   signature: 'Digitale Unterschrift',
   minorTitle: 'Unter 18',

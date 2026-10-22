@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { StreetInput } from '../components/StreetInput'
 import { snapshotMonth } from '../admin/snapshot.ts'
+import { compressPhoto } from '../lib/photo'
 
 type PayStatus = 'paid' | 'open' | 'failed' | 'waived' | 'upcoming' | 'na'
 type MemberStatus = 'received' | 'active' | 'paused' | 'cancelled' | 'withdrawn' | 'expired'
@@ -238,7 +239,7 @@ const ERROR_TEXT: Record<string, string> = {
   bic: 'BIC stimmt nicht. Bei deutscher IBAN einfach leer lassen.',
   holder: 'Kontoinhaber fehlt.',
   guardian: 'Unter 18: Name und Telefon der Erziehungsberechtigten fehlen.',
-  photo: 'Foto ist zu groß oder kein Bild.',
+  photo: 'Portraitfoto fehlt oder ist ungültig. Gesicht muss klar zu erkennen sein.',
   birth: 'Geburtstag prüfen.',
   name: 'Vor- und Nachname prüfen.',
   email: 'E-Mail prüfen.',
@@ -649,32 +650,6 @@ function DocSlot({
       {error ? <p className="admin-error">{error}</p> : null}
     </div>
   )
-}
-
-function compressPhoto(file: File) {
-  return new Promise<string>((resolve, reject) => {
-    const image = new Image()
-    const url = URL.createObjectURL(file)
-    image.onload = () => {
-      const scale = Math.min(1, 420 / Math.max(image.width, image.height))
-      const canvas = document.createElement('canvas')
-      canvas.width = Math.max(1, Math.round(image.width * scale))
-      canvas.height = Math.max(1, Math.round(image.height * scale))
-      const ctx = canvas.getContext('2d')
-      if (!ctx) {
-        reject(new Error('canvas'))
-        return
-      }
-      ctx.drawImage(image, 0, 0, canvas.width, canvas.height)
-      URL.revokeObjectURL(url)
-      resolve(canvas.toDataURL('image/jpeg', 0.7))
-    }
-    image.onerror = () => {
-      URL.revokeObjectURL(url)
-      reject(new Error('image'))
-    }
-    image.src = url
-  })
 }
 
 const MONTH_NAMES = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember']
@@ -2414,6 +2389,10 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
+    if (!photoData) {
+      setError(errorText('photo'))
+      return
+    }
     setBusy(true)
     setError(null)
     const { data } = await api('/api/admin', {
@@ -2456,9 +2435,10 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
     <form className="admin-card admin-create" onSubmit={(event) => void onSubmit(event)}>
       <h2>Neues Mitglied</h2>
       <label className="admin-photo admin-photo-create">
-        {photoData ? <img src={photoData} alt="" /> : <span>Foto aufnehmen</span>}
+        {photoData ? <img src={photoData} alt="" /> : <span>Portraitfoto · Pflicht</span>}
         <input type="file" accept="image/*" capture="user" onChange={(event) => void onPhoto(event.target.files?.[0])} />
       </label>
+      <p className="field-hint">Portrait mit klarem Gesicht. So erkennt ihr später, wer zum Training kommt.</p>
       <div className="admin-grid">
         <label>
           Tarif

@@ -934,6 +934,53 @@ p,
 }
 
 .join-page,
+.join-portrait {
+  display: grid;
+  gap: 8px;
+}
+
+.join-portrait-label {
+  margin: 0;
+  font-weight: 600;
+}
+
+.join-portrait-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: min(100%, 220px);
+  aspect-ratio: 3 / 4;
+  border: 1px solid var(--line);
+  background: #0a0a0a;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.join-portrait-frame.has-photo {
+  border-color: var(--red);
+}
+
+.join-portrait-frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.join-portrait-frame span {
+  padding: 16px;
+  text-align: center;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.join-portrait-frame input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .join-form {
   overflow-anchor: none;
 }

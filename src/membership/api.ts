@@ -15,6 +15,7 @@ export type MembershipError =
   | 'consent'
   | 'place'
   | 'signature'
+  | 'photo'
   | 'visit'
   | 'pay'
   | 'rate'
@@ -47,6 +48,8 @@ export type MembershipInput = {
   phone: string
   place: string
   signature: string
+  /** Compressed portrait data-URL (data:image/jpeg;base64,…). Required for identification. */
+  photoData: string
   visitDay?: string
   guardianName?: string
   guardianEmail?: string

@@ -152,6 +152,28 @@ const list = await call({
 assert(list.status === 200 && list.data.members.length === 1, 'lists ingested member')
 assert(list.data.members[0].cancel.deadline === '2028-10-01', 'list has cancel date')
 
+const DESK_PHOTO = `data:image/jpeg;base64,${'E'.repeat(80)}`
+const noPhoto = await call({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie },
+  socket: { remoteAddress: '10.0.0.3' },
+  body: {
+    action: 'create',
+    plan: 'flex',
+    firstName: 'Ohne',
+    lastName: 'Foto',
+    birthDate: '1990-02-02',
+    email: 'ohne.foto@example.com',
+    phone: '+49 171 0000001',
+    street: 'Wittenberger Straße 15',
+    zip: '04129',
+    city: 'Leipzig',
+    startDate: '2026-11-02',
+  },
+})
+assert(noPhoto.status === 400 && noPhoto.data.error === 'photo', 'desk create requires a portrait')
+
 const created = await call({
   method: 'POST',
   url: '/api/admin',
@@ -169,9 +191,11 @@ const created = await call({
     zip: '04129',
     city: 'Leipzig',
     startDate: '2026-11-02',
+    photoData: DESK_PHOTO,
   },
 })
 assert(created.status === 200 && created.data.member.plan === 'flex', 'desk create')
+assert(created.data.member.photoData?.startsWith('data:image/'), 'desk create stores the portrait')
 const createdAgain = await call({
   method: 'POST',
   url: '/api/admin',
@@ -189,6 +213,7 @@ const createdAgain = await call({
     zip: '04129',
     city: 'Leipzig',
     startDate: '2026-11-02',
+    photoData: DESK_PHOTO,
   },
 })
 assert(createdAgain.status === 409 && createdAgain.data.error === 'duplicate', 'desk refuses a second signup for the same email')
@@ -212,6 +237,7 @@ const deskTransfer = await call({
     zip: '04129',
     city: 'Leipzig',
     startDate: '2026-11-02',
+    photoData: DESK_PHOTO,
   },
 })
 assert(deskTransfer.status === 200 && deskTransfer.data.member.payMethod === 'transfer', 'desk member can pay by transfer')
@@ -244,7 +270,8 @@ assert(!isValidIban('DE89 3704 0044 0532 0130 01'), 'checksum iban')
 assert(!isValidIban('DE89370400440532'), 'short iban')
 
 async function post(body) {
-  return await call({ method: 'POST', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' }, body })
+  const next = body?.action === 'create' && !body.photoData ? { ...body, photoData: DESK_PHOTO } : body
+  return await call({ method: 'POST', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' }, body: next })
 }
 
 const badIban = await post({
@@ -546,6 +573,7 @@ await signupHandle(
       phone: '+49 171 4445566',
       place: 'Leipzig',
       signature: 'Olga Online',
+      photoData: DESK_PHOTO,
       consents: { agb: true, hausordnung: true, widerruf: true, privacy: true, health: true, sign: true },
     },
   },
@@ -556,7 +584,9 @@ const afterSignup = await call({ method: 'GET', url: '/api/admin', headers: { co
 const olga = afterSignup.data.members.find((row) => row.email === 'olga.online@example.com')
 assert(olga && olga.isNew && olga.planName === 'Flex', 'online signup shows up as new in admin')
 assert(olga.payMethod === 'card' && !olga.bankMissing, 'card signup is marked as card, not missing bank details')
+assert(olga.hasPhoto, 'online signup stores the portrait for admin')
 const olgaStored = (await store.load()).members.find((row) => row.id === olga.id)
+assert(olgaStored.photoData?.startsWith('data:image/'), 'online portrait kept on the member record')
 assert(olgaStored.docs?.contract?.name === 'Mitgliedsvertrag.pdf', 'online card signup stores the contract')
 assert(!olgaStored.docs?.payment, 'card signup has no transfer notice')
 
@@ -580,6 +610,7 @@ await signupHandle(
       phone: '+49 171 7778899',
       place: 'Leipzig',
       signature: 'Heiko Hahn',
+      photoData: DESK_PHOTO,
       consents: { agb: true, hausordnung: true, widerruf: true, privacy: true, health: true, sign: true },
     },
   },

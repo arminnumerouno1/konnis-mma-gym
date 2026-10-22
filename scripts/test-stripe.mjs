@@ -172,6 +172,7 @@ await handle(
       phone: '+49 171 1234567',
       place: 'Leipzig',
       signature: 'Anna Müller',
+      photoData: `data:image/jpeg;base64,${'C'.repeat(80)}`,
       consents: { agb: true, hausordnung: true, widerruf: true, privacy: true, health: true, sign: true },
     },
   },
@@ -220,6 +221,7 @@ await bankHandle(
       phone: '+49 171 1234567',
       place: 'Leipzig',
       signature: 'Anna Müller',
+      photoData: `data:image/jpeg;base64,${'D'.repeat(80)}`,
       consents: { agb: true, hausordnung: true, widerruf: true, privacy: true, health: true, sign: true },
     },
   },
@@ -314,6 +316,7 @@ const person = {
   phone: '+49 171 1234567',
   place: 'Leipzig',
   signature: 'Anna Müller',
+  photoData: `data:image/jpeg;base64,${'F'.repeat(80)}`,
   consents: { agb: true, hausordnung: true, widerruf: true, privacy: true, health: true, sign: true },
 }
 

@@ -6,6 +6,7 @@ import { FIRST50, PAYMENT_NOTE, PUBLIC_PLANS, SIGNUP_OPEN, isPublicPlanId, planB
 import { Link } from '../lib/Link'
 import { ageFromIso } from '../lib/motion'
 import { href } from '../lib/router'
+import { compressPhoto } from '../lib/photo'
 import { lookupInvite, submitMembership, type MembershipConsents, type MembershipError } from '../membership/api'
 
 const PLUS = planById('plus')!
@@ -25,6 +26,7 @@ const ERRORS: Record<MembershipError, string> = {
   consent: 'Bitte alle Pflicht-Häkchen setzen.',
   place: 'Bitte den Ort der Unterschrift eintragen.',
   signature: 'Bitte die Unterschrift eintragen.',
+  photo: 'Bitte ein Portraitfoto hochladen, auf dem dein Gesicht klar zu erkennen ist.',
   visit: 'Bitte einen Tag für den Day Pass wählen.',
   pay: 'Banküberweisung gibt es für den Day Pass nicht. Bitte Karte oder Apple Pay wählen.',
   rate: COPY.rate,
@@ -186,6 +188,8 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [guardianConsent, setGuardianConsent] = useState(false)
   const [place, setPlace] = useState('Leipzig')
   const [signature, setSignature] = useState('')
+  const [photoData, setPhotoData] = useState<string | null>(null)
+  const [photoBusy, setPhotoBusy] = useState(false)
   const [consents, setConsents] = useState(emptyConsents)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -307,7 +311,25 @@ function JoinForm({ plan, invite }: JoinProps) {
         setError(ERRORS.guardian)
         return
       }
+      if (!photoData) {
+        setError(ERRORS.photo)
+        return
+      }
       setStep(2)
+    }
+  }
+
+  async function onPortrait(file: File | undefined) {
+    if (!file) return
+    setPhotoBusy(true)
+    setError(null)
+    try {
+      setPhotoData(await compressPhoto(file))
+    } catch {
+      setError(ERRORS.photo)
+      setPhotoData(null)
+    } finally {
+      setPhotoBusy(false)
     }
   }
 
@@ -321,6 +343,11 @@ function JoinForm({ plan, invite }: JoinProps) {
     }
     if (signature.trim().replace(/\s+/g, ' ').length < 2) {
       setError(ERRORS.signature)
+      return
+    }
+    if (!photoData) {
+      setError(ERRORS.photo)
+      setStep(1)
       return
     }
     setPending(true)
@@ -337,6 +364,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       phone,
       place,
       signature,
+      photoData,
       visitDay: chosen === 'daypass' ? visitDay : undefined,
       guardianName: minor ? guardianName : undefined,
       guardianEmail: minor ? guardianEmail : undefined,
@@ -646,6 +674,21 @@ function JoinForm({ plan, invite }: JoinProps) {
               {COPY.phone}
               <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" required />
             </label>
+            <div className="wide join-portrait">
+              <p className="join-portrait-label">{COPY.portraitLabel}</p>
+              <p className="field-hint">{COPY.portraitHint}</p>
+              <label className={`join-portrait-frame${photoData ? ' has-photo' : ''}`}>
+                {photoData ? <img src={photoData} alt="" /> : <span>{photoBusy ? 'Wird geladen…' : COPY.portraitEmpty}</span>}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="user"
+                  disabled={photoBusy}
+                  onChange={(event) => void onPortrait(event.target.files?.[0])}
+                />
+              </label>
+              {photoData ? <p className="field-hint">{COPY.portraitChange}</p> : null}
+            </div>
             {chosen === 'daypass' ? (
               <label>
                 {COPY.visitDay}

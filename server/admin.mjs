@@ -404,6 +404,7 @@ function createDeskMember(body, today) {
   if (!bankRead.ok) return bankRead
   const photo = readPhoto(body.photoData)
   if (!photo.ok) return photo
+  if (!photo.photoData) return { ok: false, error: 'photo' }
   const record = {
     id,
     status: minor && !guardianRead.guardian.signedAt ? 'received' : 'active',

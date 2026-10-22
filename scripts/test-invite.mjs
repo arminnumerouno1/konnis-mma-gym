@@ -127,6 +127,7 @@ const base = {
   phone: '+49 171 1234567',
   place: 'Leipzig',
   signature: 'Anna Müller',
+  photoData: `data:image/jpeg;base64,${'B'.repeat(80)}`,
   invite: token,
   consents: {
     agb: true,

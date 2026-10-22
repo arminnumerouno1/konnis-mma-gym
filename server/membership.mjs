@@ -14,7 +14,9 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
 const NAME_RE = /^[\p{L}][\p{L}\s.'-]{1,79}$/u
 const ZIP_RE = /^\d{5}$/
-const MAX_BODY = 24_576
+/** Membership JSON plus compressed portrait (data-URL). Must stay under PHOTO_MAX + form fields. */
+const MAX_BODY = 220_000
+const PHOTO_MAX = 140_000
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 6
 const PLAN_IDS = ['slowstart', 'standard', 'flex', 'plus', 'daypass', 'first50']
@@ -255,6 +257,11 @@ export function validateMembership(body, ctx = {}) {
   // Nicht mit Vor- und Nachname vergleichen. Vertipper aus der Voranmeldung bleiben sonst hängen.
   if (signature.length < 2 || signature.length > 120) return { ok: false, error: 'signature' }
 
+  const photoData = String(body.photoData ?? '')
+  if (!photoData.startsWith('data:image/') || photoData.length < 64 || photoData.length > PHOTO_MAX) {
+    return { ok: false, error: 'photo' }
+  }
+
   let visitDay = ''
   if (plan === 'daypass') {
     visitDay = String(body.visitDay ?? '').trim()
@@ -293,6 +300,7 @@ export function validateMembership(body, ctx = {}) {
       payMethod,
       place,
       signature,
+      photoData,
       consents: {
         agb: true,
         hausordnung: true,
