@@ -128,7 +128,7 @@ export const PRIVACY: LegalBlock[] = [
     title: '5. Mitgliedschaft und Day Pass',
     paragraphs: [
       'Beim Online-Vertrag verarbeiten wir die angegebenen Vertragsdaten: Name, Geburtsdatum, Anschrift, E-Mail, Telefon, Tarif, Bestätigungen, digitale Unterschrift, ein Portraitfoto zur Identifikation beim Training sowie bei Minderjährigen die Daten der gesetzlichen Vertretung. Das Portraitfoto ist Pflichtbestandteil der Anmeldung und dient ausschließlich der Zuordnung der Person im Studio. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertrag) und Art. 6 Abs. 1 lit. c DSGVO, soweit gesetzliche Aufbewahrung gilt.',
-      'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Monatsbeiträge der 12- und 24-Monats-Verträge werden mit Karte oder Apple Pay über Stripe eingezogen, oder du überweist sie auf das Konto der KONNI MMA GYM GbR bei der Stadt- und Kreissparkasse Leipzig, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX. SEPA-Lastschrift kommt später und ist derzeit nicht eingerichtet. Erstmals am 1. November 2026. Vor diesem Termin wird nichts abgebucht. Kartendaten verarbeitet Stripe zur Zahlung (Art. 6 Abs. 1 lit. b DSGVO).',
+      'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Monatsbeiträge der Mitgliedsverträge (einschließlich Slow Start, Standard, Flex und Plus mit 6-, 12- oder 24-Monats-Laufzeit) werden mit Karte oder Apple Pay über Stripe eingezogen, oder du überweist sie auf das Konto der KONNI MMA GYM GbR bei der Stadt- und Kreissparkasse Leipzig, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX. SEPA-Lastschrift kommt später und ist derzeit nicht eingerichtet. Erstmals am 1. November 2026. Vor diesem Termin wird nichts abgebucht. Kartendaten verarbeitet Stripe zur Zahlung (Art. 6 Abs. 1 lit. b DSGVO).',
       'Die Kartenzahlung läuft über Stripe Payments Europe, Limited, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, D02 H210, Irland. Stripe verarbeitet Name, E-Mail, Tarif und die Kartendaten bei Apple Pay und Karte. Bei uns liegen die Stripe-Kundennummer, die Abo-Nummer und ob ein Monat bezahlt ist. Die Kartennummer aus dem Stripe-Checkout bleibt bei Stripe. Die Überweisung geht auf unser Konto bei der Stadt- und Kreissparkasse Leipzig. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. Hinweise von Stripe: https://stripe.com/de/privacy',
       'Ohne diese Daten kommt kein Online-Vertrag zustande. Die Daten bleiben für die Vertragsdauer und danach so lange, wie handels- und steuerrechtliche Pflichten das verlangen — in der Regel bis zu zehn Jahre nach Vertragsende.',
       `Änderungen von Anschrift, E-Mail, Bankverbindung und Zahlweg bitte zeitnah an ${GYM.legalEmail}.`,
@@ -246,9 +246,11 @@ export const AGB: LegalBlock[] = [
     paragraphs: [
       '1. Die Mitgliedschaft berechtigt das Mitglied im Rahmen des vereinbarten Tarifs zur Nutzung der hierfür vorgesehenen Trainingsflächen, Einrichtungen und Trainingsangebote während der jeweils geltenden Öffnungs- und Kurszeiten.',
       '2. Der konkrete Umfang der Mitgliedschaft richtet sich nach dem abgeschlossenen Tarif beziehungsweise Mitgliedsvertrag.',
-      '3. Die KONNI MMA GYM GbR ist berechtigt, Kursplan, Trainingszeiten, Trainer, Trainingsinhalte sowie die Nutzung einzelner Trainingsbereiche aus sachlichen Gründen anzupassen, soweit der wesentliche Charakter der vereinbarten Mitgliedschaft erhalten bleibt und das Mitglied nicht unangemessen benachteiligt wird.',
-      '4. Ein Anspruch auf die Durchführung eines bestimmten Kurses durch einen bestimmten Trainer besteht nicht, soweit dies nicht ausdrücklich individuell vereinbart wurde.',
-      '5. Vorübergehende Änderungen des Kursplans, insbesondere aufgrund von Krankheit, Urlaub, Wettkämpfen, Veranstaltungen oder sonstigen organisatorischen Gründen, bleiben vorbehalten.',
+      '3. Bei Tarifen mit begrenztem Leistungsumfang, insbesondere dem Slow Start Tarif, sind nur die im Mitgliedsvertrag genannten Kurse beziehungsweise Einheiten pro Woche inklusive. Zusätzliche Einheiten in derselben Woche sind nicht Bestandteil dieses Tarifs, soweit nichts Abweichendes vereinbart wurde.',
+      '4. Bei Vollmitgliedschaften (insbesondere Standard, Flex und Plus) sind die veröffentlichten Kurse und Einheiten im vereinbarten Zeitraum inklusive und nicht auf zwei Einheiten pro Woche begrenzt, soweit der Mitgliedsvertrag nichts anderes bestimmt.',
+      '5. Die KONNI MMA GYM GbR ist berechtigt, Kursplan, Trainingszeiten, Trainer, Trainingsinhalte sowie die Nutzung einzelner Trainingsbereiche aus sachlichen Gründen anzupassen, soweit der wesentliche Charakter der vereinbarten Mitgliedschaft erhalten bleibt und das Mitglied nicht unangemessen benachteiligt wird.',
+      '6. Ein Anspruch auf die Durchführung eines bestimmten Kurses durch einen bestimmten Trainer besteht nicht, soweit dies nicht ausdrücklich individuell vereinbart wurde.',
+      '7. Vorübergehende Änderungen des Kursplans, insbesondere aufgrund von Krankheit, Urlaub, Wettkämpfen, Veranstaltungen oder sonstigen organisatorischen Gründen, bleiben vorbehalten.',
     ],
   },
   {
@@ -577,7 +579,16 @@ export const HOUSE_RULES: LegalBlock[] = [
 ]
 
 export const CONTRACT_INTRO = {
-  '6': 'Tarif mit 6 Monaten anfänglicher Vertragsdauer. Bitte alle Felder vor der Unterschrift füllen.',
-  '12': 'Tarif mit 12 Monaten anfänglicher Vertragsdauer. Bitte alle Felder vor der Unterschrift füllen.',
-  '24': 'Tarif mit 24 Monaten anfänglicher Vertragsdauer. Bitte alle Felder vor der Unterschrift füllen.',
+  '6': 'Tarif mit 6 Monaten anfänglicher Vertragsdauer (Plus). Bitte alle Felder vor der Unterschrift füllen.',
+  '12':
+    'Tarife mit 12 Monaten anfänglicher Vertragsdauer: Slow Start Tarif (2 Kurse/Einheiten pro Woche) oder Flex (volle Nutzung). Der konkrete Umfang steht im Mitgliedsvertrag. Bitte alle Felder vor der Unterschrift füllen.',
+  '24': 'Tarif mit 24 Monaten anfänglicher Vertragsdauer (Standard). Bitte alle Felder vor der Unterschrift füllen.',
+} as const
+
+/** Leistungstext für die öffentlichen Vertragsseiten und die Online-Vorschau. */
+export const CONTRACT_ACCESS = {
+  unlimited:
+    'Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Alle Kurse und Einheiten sind inklusive, etwa MMA, Boxen und BJJ. Die Nutzung ist nicht auf zwei Einheiten pro Woche begrenzt. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.',
+  slowstart:
+    'Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Im Slow Start Tarif sind zwei Kurse beziehungsweise Einheiten pro Woche inklusive, etwa MMA, Boxen und BJJ. Zusätzliche Einheiten in derselben Woche sind nicht Bestandteil dieses Tarifs. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.',
 } as const

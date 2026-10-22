@@ -1,6 +1,16 @@
 import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
-import { AGB, CONTRACT_INTRO, COOKIE_TABLE, HOUSE_RULES, IMPRESSUM, ODR_URL, PRIVACY, WITHDRAWAL } from '../brand/legal'
+import {
+  AGB,
+  CONTRACT_ACCESS,
+  CONTRACT_INTRO,
+  COOKIE_TABLE,
+  HOUSE_RULES,
+  IMPRESSUM,
+  ODR_URL,
+  PRIVACY,
+  WITHDRAWAL,
+} from '../brand/legal'
 import { CookieStatus } from '../components/CookieBanner'
 import { Link } from '../lib/Link'
 import { href, type RouteName } from '../lib/router'
@@ -192,11 +202,18 @@ function Contract({ months }: { months: 6 | 12 | 24 }) {
       </p>
       <p>Mitglied: Vor- und Nachname, Geburtsdatum, Anschrift, E-Mail / Telefon — im Online-Formular.</p>
       <h2>2. Leistungen, Beginn und Preis</h2>
-      <p>
-        Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Alle Kurse
-        und Einheiten sind inklusive, etwa MMA, Boxen und BJJ. Die Nutzung ist nicht auf zwei Einheiten pro Woche
-        begrenzt. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.
-      </p>
+      {months === 12 ? (
+        <>
+          <p>
+            <strong>Slow Start Tarif:</strong> {CONTRACT_ACCESS.slowstart}
+          </p>
+          <p>
+            <strong>Flex:</strong> {CONTRACT_ACCESS.unlimited}
+          </p>
+        </>
+      ) : (
+        <p>{CONTRACT_ACCESS.unlimited}</p>
+      )}
       <p>
         Die Zahlungspflicht beginnt erst mit der tatsächlichen Eröffnung. Verschiebt sich die Eröffnung um mehr als
         acht Wochen über den geplanten Termin, kannst du vor Leistungsbeginn in Textform zurücktreten. Schon

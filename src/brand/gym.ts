@@ -19,8 +19,8 @@ export const GYM = {
   mehmetInstagramHandle: '@memosch__',
   openingDate: '2026-11-02',
   partners: ['Konrad Dyrschka', 'Mehmet-Deniz Celik'] as const,
-  agbStand: '8. Oktober 2026',
-  agbDate: '08.10.2026',
+  agbStand: '22. Oktober 2026',
+  agbDate: '22.10.2026',
   mapsUrl:
     'https://www.openstreetmap.org/search?query=Wittenberger%20Stra%C3%9Fe%2015%2C%2004129%20Leipzig',
   mapsEmbed:

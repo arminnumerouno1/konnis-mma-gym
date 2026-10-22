@@ -32,6 +32,7 @@ export function memberBillingStart(member) {
 }
 export const ADMIN_COOKIE = 'konni_admin'
 export const PLAN_LABELS = {
+  slowstart: 'Slow Start Tarif',
   standard: 'Standard',
   flex: 'Flex',
   plus: 'Plus',

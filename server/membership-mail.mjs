@@ -161,7 +161,7 @@ ${guardian}
 <p><strong>${earlyLabel}</strong><br>${escapeMail(early)}</p>
 ${bankBlock(record)}
 <p>${record.plan === 'daypass' ? 'Der Day Pass wird mit Karte oder Apple Pay bezahlt.' : record.payMethod === 'transfer' ? 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du überweist ihn selbst auf das Konto oben.' : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später. Zahlungspflicht erst ab echter Eröffnung.'}</p>
-<p>AGB Stand 8. Oktober 2026 und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.</p>
+<p>AGB Stand 22. Oktober 2026 und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.</p>
 ${forGym ? '' : files}
 ${record.signedUploadName ? '<p>Zusätzlich liegt der hochgeladene unterschriebene Vertrag bei.</p>' : ''}
 <p>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
