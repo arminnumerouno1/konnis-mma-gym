@@ -292,6 +292,72 @@ export async function sendPayLinkEmail(env, record, url) {
   })
 }
 
+const REMINDER_MONTHS = [
+  'Januar',
+  'Februar',
+  'März',
+  'April',
+  'Mai',
+  'Juni',
+  'Juli',
+  'August',
+  'September',
+  'Oktober',
+  'November',
+  'Dezember',
+]
+
+function periodMailLabel(period) {
+  const month = /^(\d{4})-(\d{2})$/.exec(String(period ?? ''))
+  if (month) {
+    const name = REMINDER_MONTHS[Number(month[2]) - 1]
+    return name ? `${name} ${month[1]}` : period
+  }
+  return germanDate(period) || String(period ?? '')
+}
+
+export function reminderMailSubject(stage = 'reminder') {
+  if (stage === 'mahnung2') return 'Zweite Erinnerung: offener Mitgliedsbeitrag · KONNI MMA GYM'
+  if (stage === 'mahnung1') return 'Erinnerung an offenen Mitgliedsbeitrag · KONNI MMA GYM'
+  return 'Offener Mitgliedsbeitrag · KONNI MMA GYM'
+}
+
+export function reminderMailHtml(record, { stage = 'reminder', periods = [], amount = 0 } = {}) {
+  const first = escapeMail(record.firstName || whoOf(record))
+  const total = escapeMail(Number(amount).toFixed(2).replace('.', ','))
+  const list = (periods.length ? periods : ['—']).map((p) => escapeMail(periodMailLabel(p))).join(', ')
+  const tone =
+    stage === 'mahnung2'
+      ? 'Trotz unserer Erinnerung ist der Beitrag noch offen. Bitte gleiche den Betrag jetzt aus.'
+      : stage === 'mahnung1'
+        ? 'Leider ist dein Mitgliedsbeitrag noch offen. Bitte gleiche ihn zeitnah aus.'
+        : 'Bei dir ist noch ein Mitgliedsbeitrag offen.'
+  const payHint =
+    record.payMethod === 'transfer'
+      ? `<p>Bitte überweise <strong>${total}€</strong> auf unser Konto:</p><p><strong>Konto</strong><br>${accountLines()}</p>`
+      : `<p>Offen sind <strong>${total}€</strong>. Wenn die Karte hinterlegt ist, wird Stripe den Betrag nachziehen. Sonst melde dich kurz bei uns oder überweise:</p><p><strong>Konto</strong><br>${accountLines()}</p>`
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>Hi ${first},</p>
+<p>${tone}</p>
+<p><strong>Offen:</strong> ${list}<br><strong>Summe:</strong> ${total}€</p>
+${payHint}
+<p>Schon gezahlt? Dann ignoriere diese Mail — wir gleichen das ab.</p>
+<p>Fragen? Schreib an info@mma-in-leipzig.de.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+</div>`
+}
+
+export async function sendReminderEmail(env, record, { stage = 'reminder', periods = [], amount = 0 } = {}) {
+  const apiKey = env.BREVO_API_KEY?.trim()
+  if (!apiKey || !record?.email) return 'skipped'
+  return sendSmtp(env, {
+    to: record.email,
+    name: whoOf(record),
+    subject: reminderMailSubject(stage),
+    html: reminderMailHtml(record, { stage, periods, amount }),
+  })
+}
+
 export async function sendMembershipEmails(env, record, { paper = false, creditorId = '', extra = [] } = {}) {
   const apiKey = env.BREVO_API_KEY?.trim()
   if (!apiKey) return { member: 'skipped', gym: 'skipped' }

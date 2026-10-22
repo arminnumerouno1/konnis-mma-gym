@@ -17,7 +17,8 @@ import {
 } from '../server/member-model.mjs'
 import { createMemberStore, ingestSignup } from '../server/member-store.mjs'
 import { createAdminHandler } from '../server/admin.mjs'
-import { payLinkMailHtml } from '../server/membership-mail.mjs'
+import { payLinkMailHtml, reminderMailHtml, reminderMailSubject } from '../server/membership-mail.mjs'
+import { openDuesOf } from '../server/member-model.mjs'
 import { createStripeHandler } from '../server/stripe.mjs'
 import { toSuggestions } from '../server/address.mjs'
 import { createMembershipHandler } from '../server/membership.mjs'
@@ -1107,5 +1108,126 @@ assert(marked.status === 200 && marked.data.member.status === 'withdrawn', 'desk
 assert(marked.data.member.cancelEffectiveOn === isoDate(), 'withdrawal ends the same day')
 assert(marked.data.member.cancel.hint.includes('Widerrufsfrist'), 'desk shows the withdrawal period')
 assert(marked.data.member.payThisMonth === 'na', 'withdrawal is not billed')
+
+assert(reminderMailSubject('mahnung1').includes('Erinnerung'), 'mahnung1 subject')
+assert(reminderMailSubject('mahnung2').includes('Zweite'), 'mahnung2 subject')
+const reminderHtml = reminderMailHtml(
+  { firstName: 'Lena', payMethod: 'transfer', email: 'lena@example.com' },
+  { stage: 'reminder', periods: ['2026-11', '2026-12'], amount: 199.98 },
+)
+assert(
+  reminderHtml.includes('Hi Lena,') &&
+    reminderHtml.includes('199,98') &&
+    reminderHtml.includes('November 2026') &&
+    reminderHtml.includes('IBAN'),
+  'reminder mail lists months, sum and bank',
+)
+
+const debtMember = memberFromSignup(
+  {
+    id: 'debt1',
+    status: 'active',
+    plan: 'standard',
+    planName: 'Standard',
+    price: 99.99,
+    termMonths: 24,
+    fee: 0,
+    firstName: 'Lena',
+    lastName: 'Schulz',
+    birthDate: '1992-01-01',
+    email: 'lena.schuld@example.com',
+    phone: '+49 171 2223344',
+    startDate: '2026-09-01',
+    payMethod: 'transfer',
+    createdAt: '2026-08-01T10:00:00.000Z',
+    source: 'admin',
+  },
+  '2026-11-15',
+)
+const withOpen = setPayment(debtMember, { period: '2026-10', status: 'open' }, '2026-11-15')
+const withFailed = setPayment(withOpen, { period: '2026-11', status: 'failed' }, '2026-11-15')
+const dues = openDuesOf(withFailed, '2026-11-15')
+assert(dues.openCount >= 2 && dues.openAmount >= 199.98, 'open dues sum open and failed months')
+
+let reminderMails = []
+const duesTmp = mkdtempSync(join(tmpdir(), 'konni-dues-'))
+const duesStore = createMemberStore({ dataDir: duesTmp, env: {} })
+await duesStore.update((db) => {
+  db.members.push(withFailed)
+  return db
+})
+const duesHandler = createAdminHandler({
+  dataDir: duesTmp,
+  env: { ADMIN_SECRET: secret, BREVO_API_KEY: 'xkeysib-test', SIGNUP_MAIL_PROOF: proof },
+  sendReminder: async (_env, record, opts) => {
+    reminderMails.push({ email: record.email, ...opts })
+    return 'sent'
+  },
+})
+async function duesCall(req) {
+  const { res, captured } = mockRes()
+  await duesHandler(req, res)
+  return { status: captured.status, data: captured.body ? JSON.parse(captured.body) : {}, headers: captured.headers }
+}
+const duesLogin = await duesCall({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie: '' },
+  socket: { remoteAddress: '10.0.0.20' },
+  body: { action: 'login', password: secret },
+})
+assert(duesLogin.status === 200, 'dues login')
+const duesCookie = String(duesLogin.headers?.['set-cookie'] ?? '').split(';')[0]
+const duesList = await duesCall({
+  method: 'GET',
+  url: '/api/admin?dues=1',
+  headers: { cookie: duesCookie },
+  socket: { remoteAddress: '10.0.0.20' },
+})
+assert(duesList.status === 200 && duesList.data.totals?.people >= 1, 'dues list has people')
+assert(
+  duesList.data.dues.some((row) => row.email === 'lena.schuld@example.com' && row.openCount >= 2),
+  'dues list shows lena',
+)
+assert(duesList.data.stats?.openDebt >= 1, 'stats count open debt')
+
+const reminded = await duesCall({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie: duesCookie },
+  socket: { remoteAddress: '10.0.0.20' },
+  body: { action: 'sendReminder', id: withFailed.id, stage: 'mahnung1' },
+})
+assert(reminded.status === 200 && reminded.data.ok, 'reminder sent')
+assert(reminderMails.length === 1 && reminderMails[0].stage === 'mahnung1', 'reminder mail staged')
+assert(reminded.data.member.reminders?.length === 1, 'reminder stored on member')
+
+const cooldown = await duesCall({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie: duesCookie },
+  socket: { remoteAddress: '10.0.0.20' },
+  body: { action: 'sendReminder', id: withFailed.id, stage: 'mahnung2' },
+})
+assert(cooldown.status === 409 && cooldown.data.error === 'cooldown', 'cooldown blocks second reminder')
+
+const forced = await duesCall({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie: duesCookie },
+  socket: { remoteAddress: '10.0.0.20' },
+  body: { action: 'sendReminder', id: withFailed.id, stage: 'mahnung2', force: true },
+})
+assert(forced.status === 200 && reminderMails.length === 2, 'force bypasses cooldown')
+
+const paidOpen = await duesCall({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie: duesCookie },
+  socket: { remoteAddress: '10.0.0.20' },
+  body: { action: 'payOpen', id: withFailed.id },
+})
+assert(paidOpen.status === 200 && paidOpen.data.marked >= 2, 'payOpen clears open rows')
+assert(openDuesOf(paidOpen.data.member).openCount === 0, 'no open dues after payOpen')
 
 console.log('admin tests ok')

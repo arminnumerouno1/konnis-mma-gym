@@ -47,6 +47,9 @@ type MemberList = {
   isNew: boolean
   stripeLinked: boolean
   payThisMonth: PayStatus
+  openCount?: number
+  openAmount?: number
+  lastReminderAt?: string | null
   cancel: CancelInfo
   createdAt: string
   updatedAt: string
@@ -87,6 +90,7 @@ type MemberDetail = MemberList & {
   transfer?: { iban?: string; bic?: string; holder?: string; bank?: string }
   docs?: { contract?: DocMeta; sepa?: DocMeta; payment?: DocMeta }
   history?: { at: string; field: string; from: string; to: string }[]
+  reminders?: ReminderEntry[]
   inviteSlot?: number | null
   reviewedAt?: string | null
 }
@@ -258,6 +262,8 @@ const ERROR_TEXT: Record<string, string> = {
   mail_off: 'Der Mailversand ist nicht eingerichtet.',
   invite_open: 'An diese E-Mail ist schon ein First-50-Link raus, der noch gilt.',
   full: 'Gerade ist kein weiterer First-50-Platz frei.',
+  no_open: 'Keine offenen Beiträge bei diesem Mitglied.',
+  cooldown: 'In den letzten fünf Tagen ging schon eine Mahnung raus. Mit Bestätigung trotzdem senden.',
 }
 
 function errorText(code?: string) {
@@ -458,10 +464,42 @@ type Stats = {
   total: number
   active: number
   openPay: number
+  openDebt?: number
+  openDebtAmount?: number
   canCancel: number
   daypass: number
   todo: number
   fresh: number
+}
+
+type ReminderEntry = {
+  at: string
+  stage: string
+  periods: string[]
+  amount: number
+  email?: string
+  mail?: string
+}
+
+type DuesRow = {
+  id: string
+  firstName: string
+  lastName: string
+  email: string
+  phone: string
+  plan: PlanId
+  planName: string
+  price: number
+  status: MemberStatus
+  startDate: string
+  payMethod: 'transfer' | 'card' | null
+  openCount: number
+  openAmount: number
+  openPeriods: string[]
+  openRows: { kind: string; period: string; amount: number; status: PayStatus }[]
+  lastReminderAt: string | null
+  reminderCount: number
+  reminders?: ReminderEntry[]
 }
 
 const STATUS_LABEL: Record<MemberStatus, string> = {
@@ -680,6 +718,204 @@ type ReportMonth = {
 }
 
 type Report = { year: number; today: string; months: ReportMonth[]; totals: ReportMonth; years: number[] }
+
+const REMINDER_STAGE_LABEL: Record<string, string> = {
+  reminder: 'Erinnerung',
+  mahnung1: '1. Mahnung',
+  mahnung2: '2. Mahnung',
+}
+
+function periodLabel(period: string) {
+  if (/^\d{4}-\d{2}$/.test(period)) return monthLabel(period)
+  return deDate(period)
+}
+
+function DuesPanel({
+  onOpenMember,
+}: {
+  onOpenMember: (id: string) => void
+}) {
+  const [q, setQ] = useState('')
+  const [payMethod, setPayMethod] = useState('')
+  const [dues, setDues] = useState<DuesRow[]>([])
+  const [totals, setTotals] = useState({ people: 0, amount: 0, count: 0 })
+  const [busyId, setBusyId] = useState<string | null>(null)
+  const [note, setNote] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [stageById, setStageById] = useState<Record<string, string>>({})
+
+  async function refresh() {
+    const query = new URLSearchParams({ dues: '1' })
+    if (q.trim()) query.set('q', q.trim())
+    if (payMethod) query.set('payMethod', payMethod)
+    const { status, data } = await api(`/api/admin?${query}`)
+    if (status === 401) return
+    if (data.ok) {
+      setDues(data.dues ?? [])
+      setTotals(data.totals ?? { people: 0, amount: 0, count: 0 })
+    }
+  }
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      void refresh()
+    }, 180)
+    return () => window.clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [q, payMethod])
+
+  async function sendReminder(id: string, force = false) {
+    setBusyId(id)
+    setError(null)
+    setNote(null)
+    const stage = stageById[id] || 'reminder'
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendReminder', id, stage, force }),
+    })
+    setBusyId(null)
+    if (!data.ok) {
+      if (data.error === 'cooldown') {
+        if (window.confirm('In den letzten fünf Tagen ging schon eine Mahnung raus. Trotzdem noch einmal senden?')) {
+          await sendReminder(id, true)
+        }
+        return
+      }
+      setError(errorText(String(data.error ?? '')))
+      return
+    }
+    setNote(`${REMINDER_STAGE_LABEL[stage] || 'Mahnung'} raus.`)
+    await refresh()
+  }
+
+  async function markPaid(id: string) {
+    if (!window.confirm('Alle offenen Beiträge dieses Mitglieds als gezahlt markieren?')) return
+    setBusyId(id)
+    setError(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'payOpen', id }),
+    })
+    setBusyId(null)
+    if (!data.ok) {
+      setError(errorText(String(data.error ?? '')))
+      return
+    }
+    setNote(`${data.marked ?? 0} Beitrag(e) auf gezahlt gesetzt.`)
+    await refresh()
+  }
+
+  return (
+    <section className="admin-dues">
+      <p className="admin-muted">
+        Alle offenen und nicht erhaltenen Beiträge. Mahnung geht per Mail raus und wird beim Mitglied gespeichert.
+      </p>
+      <div className="admin-stats">
+        <article className={totals.people ? 'is-alert' : ''}>
+          <strong>{totals.people}</strong>
+          <span>Mit offenen Beiträgen</span>
+        </article>
+        <article className={totals.amount ? 'is-alert' : ''}>
+          <strong>{euro(totals.amount)}</strong>
+          <span>Offene Summe</span>
+        </article>
+        <article>
+          <strong>{totals.count}</strong>
+          <span>Offene Monate / Tage</span>
+        </article>
+      </div>
+      <div className="admin-filters">
+        <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Name, Mail, Telefon" />
+        <select value={payMethod} onChange={(event) => setPayMethod(event.target.value)}>
+          <option value="">Alle Zahlungsarten</option>
+          <option value="transfer">Banküberweisung</option>
+          <option value="card">Karte / Apple Pay</option>
+        </select>
+      </div>
+      {note ? <p className="admin-ok">{note}</p> : null}
+      {error ? <p className="admin-error">{error}</p> : null}
+      {dues.length === 0 ? <p className="admin-muted">Gerade nichts offen.</p> : null}
+      <div className="admin-table-wrap">
+        <table className="admin-table">
+          <thead>
+            <tr>
+              <th>Mitglied</th>
+              <th>Offen</th>
+              <th>Summe</th>
+              <th>Zahlung</th>
+              <th>Letzte Mahnung</th>
+              <th>Aktion</th>
+            </tr>
+          </thead>
+          <tbody>
+            {dues.map((row) => (
+              <tr key={row.id}>
+                <td>
+                  <button type="button" className="admin-linkish" onClick={() => onOpenMember(row.id)}>
+                    <strong>
+                      {row.firstName} {row.lastName}
+                    </strong>
+                  </button>
+                  <br />
+                  <small>
+                    {row.planName} · {STATUS_LABEL[row.status]}
+                  </small>
+                </td>
+                <td className="is-bad">
+                  {row.openPeriods.map((period) => periodLabel(period)).join(', ')}
+                </td>
+                <td className="is-bad">{euro(row.openAmount)}</td>
+                <td>
+                  {row.payMethod === 'transfer' ? 'Überweisung' : row.payMethod === 'card' ? 'Karte' : '—'}
+                </td>
+                <td>
+                  {row.lastReminderAt ? (
+                    <>
+                      {new Date(row.lastReminderAt).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}
+                      <br />
+                      <small>{row.reminderCount}×</small>
+                    </>
+                  ) : (
+                    '—'
+                  )}
+                </td>
+                <td>
+                  <div className="admin-inline">
+                    <select
+                      value={stageById[row.id] || 'reminder'}
+                      onChange={(event) => setStageById((prev) => ({ ...prev, [row.id]: event.target.value }))}
+                      disabled={busyId === row.id}
+                    >
+                      <option value="reminder">Erinnerung</option>
+                      <option value="mahnung1">1. Mahnung</option>
+                      <option value="mahnung2">2. Mahnung</option>
+                    </select>
+                    <button
+                      className="btn btn-solid"
+                      type="button"
+                      disabled={busyId === row.id}
+                      onClick={() => void sendReminder(row.id)}
+                    >
+                      Senden
+                    </button>
+                    <button
+                      className="btn btn-ghost"
+                      type="button"
+                      disabled={busyId === row.id}
+                      onClick={() => void markPaid(row.id)}
+                    >
+                      Gezahlt
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  )
+}
 
 function Report({ onShowList }: { onShowList: (ym: string) => void }) {
   const thisYear = new Date().getFullYear()
@@ -1378,13 +1614,14 @@ export function Admin() {
   const [plan, setPlan] = useState('')
   const [status, setStatus] = useState('')
   const [pay, setPay] = useState('')
+  const [payMethod, setPayMethod] = useState('')
   const [stats, setStats] = useState<Stats | null>(null)
   const [members, setMembers] = useState<MemberList[]>([])
   const [openId, setOpenId] = useState<string | null>(null)
   const [detail, setDetail] = useState<MemberDetail | null>(null)
   const [busy, setBusy] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [tab, setTab] = useState<'members' | 'prereg' | 'report'>('members')
+  const [tab, setTab] = useState<'members' | 'dues' | 'prereg' | 'report'>('members')
   const [preregFresh, setPreregFresh] = useState(0)
   const [joined, setJoined] = useState('')
 
@@ -1403,6 +1640,7 @@ export function Admin() {
     if (plan) query.set('plan', plan)
     if (status) query.set('status', status)
     if (pay) query.set('pay', pay)
+    if (payMethod) query.set('payMethod', payMethod)
     if (joined) query.set('joined', joined)
     const suffix = query.toString() ? `?${query}` : ''
     const { status: code, data } = await api(`/api/admin${suffix}`)
@@ -1463,7 +1701,7 @@ export function Admin() {
     }, 180)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, plan, status, pay, joined, authed, tab])
+  }, [q, plan, status, pay, payMethod, joined, authed, tab])
 
   useEffect(() => {
     if (openId) void refreshDetail(openId)
@@ -1596,10 +1834,22 @@ export function Admin() {
       <header className="admin-top">
         <div>
           <p className="admin-kicker">KONNI MMA GYM</p>
-          <h1>{tab === 'report' ? 'Auswertung' : tab === 'prereg' ? 'Voranmeldungen' : 'Mitglieder'}</h1>
+          <h1>
+            {tab === 'report'
+              ? 'Auswertung'
+              : tab === 'prereg'
+                ? 'Voranmeldungen'
+                : tab === 'dues'
+                  ? 'Beiträge'
+                  : 'Mitglieder'}
+          </h1>
           <nav className="admin-tabs" aria-label="Bereiche">
             <button type="button" className={tab === 'members' ? 'is-on' : ''} onClick={() => setTab('members')}>
               Mitglieder
+            </button>
+            <button type="button" className={tab === 'dues' ? 'is-on' : ''} onClick={() => setTab('dues')}>
+              Beiträge
+              {stats?.openDebt ? <span className="admin-tab-count">{stats.openDebt}</span> : null}
             </button>
             <button type="button" className={tab === 'prereg' ? 'is-on' : ''} onClick={() => setTab('prereg')}>
               Voranmeldungen
@@ -1631,6 +1881,15 @@ export function Admin() {
 
       {tab === 'prereg' ? <Preregs onFresh={setPreregFresh} /> : null}
 
+      {tab === 'dues' ? (
+        <DuesPanel
+          onOpenMember={(id) => {
+            setOpenId(id)
+            setTab('members')
+          }}
+        />
+      ) : null}
+
       {tab === 'report' ? (
         <Report
           onShowList={(ym) => {
@@ -1654,9 +1913,20 @@ export function Admin() {
             <strong>{stats.active}</strong>
             <span>Aktiv / angemeldet</span>
           </article>
-          <article>
-            <strong>{stats.openPay}</strong>
-            <span>Zahlung offen / nicht da</span>
+          <article
+            className={stats.openDebt || stats.openPay ? 'is-alert' : ''}
+            role="button"
+            tabIndex={0}
+            onClick={() => setTab('dues')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') setTab('dues')
+            }}
+          >
+            <strong>{stats.openDebt ?? stats.openPay}</strong>
+            <span>
+              Offene Beiträge
+              {stats.openDebtAmount ? ` · ${euro(stats.openDebtAmount)}` : ''}
+            </span>
           </article>
           <article>
             <strong>{stats.canCancel}</strong>
@@ -1709,6 +1979,11 @@ export function Admin() {
           <option value="failed">Nicht erhalten</option>
           <option value="upcoming">Noch nicht fällig</option>
         </select>
+        <select value={payMethod} onChange={(event) => setPayMethod(event.target.value)}>
+          <option value="">Alle Zahlungsarten</option>
+          <option value="transfer">Banküberweisung</option>
+          <option value="card">Karte / Apple Pay</option>
+        </select>
         <label className="admin-month">
           <span>Angemeldet im</span>
           <input type="month" value={joined} onChange={(event) => setJoined(event.target.value)} />
@@ -1737,11 +2012,21 @@ export function Admin() {
                   {row.minor ? <em> U18</em> : null}
                   {row.isNew ? <span className="admin-new">Neu online</span> : null}
                 </strong>
-                {row.payMethod === 'transfer' || row.payMethod === 'card' || row.guardianMissing || row.bankMissing || row.contractMissing ? (
+                {row.payMethod === 'transfer' ||
+                row.payMethod === 'card' ||
+                row.guardianMissing ||
+                row.bankMissing ||
+                row.contractMissing ||
+                (row.openCount ?? 0) > 0 ? (
                   <span className="admin-flags">
                     {row.payMethod === 'transfer' ? <span className="admin-flag is-ok">Banküberweisung</span> : null}
                     {row.payMethod === 'card' && !row.bankMissing ? (
                       <span className="admin-flag is-ok">Karte / Apple Pay</span>
+                    ) : null}
+                    {(row.openCount ?? 0) > 0 ? (
+                      <span className="admin-flag">
+                        {row.openCount} offen · {euro(row.openAmount)}
+                      </span>
                     ) : null}
                     {row.contractMissing ? <span className="admin-flag">Vertrag fehlt</span> : null}
                     {row.guardianMissing ? <span className="admin-flag">Eltern-Unterschrift fehlt</span> : null}
@@ -1820,6 +2105,8 @@ function MemberPane({
   const [payLink, setPayLink] = useState('')
   const [paneError, setPaneError] = useState<string | null>(null)
   const [editing, setEditing] = useState(false)
+  const [reminderStage, setReminderStage] = useState('reminder')
+  const [reminderNote, setReminderNote] = useState<string | null>(null)
 
   async function save(payload: Record<string, unknown>) {
     setPaneError(null)
@@ -1839,6 +2126,46 @@ function MemberPane({
       setPaneError(errorText(data.error))
       return
     }
+    onReplace(data.member)
+  }
+
+  async function sendReminder(force = false) {
+    setSending(true)
+    setPaneError(null)
+    setReminderNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendReminder', id: member.id, stage: reminderStage, force }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      if (data.error === 'cooldown') {
+        if (window.confirm('In den letzten fünf Tagen ging schon eine Mahnung raus. Trotzdem noch einmal senden?')) {
+          await sendReminder(true)
+        }
+        return
+      }
+      setPaneError(errorText(String(data.error ?? '')))
+      return
+    }
+    setReminderNote(`${REMINDER_STAGE_LABEL[reminderStage] || 'Mahnung'} raus an ${member.email}.`)
+    onReplace(data.member)
+  }
+
+  async function markOpenPaid() {
+    if (!window.confirm('Alle offenen Beiträge als gezahlt markieren?')) return
+    setSending(true)
+    setPaneError(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'payOpen', id: member.id }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      setPaneError(errorText(String(data.error ?? '')))
+      return
+    }
+    setReminderNote(`${data.marked ?? 0} Beitrag(e) auf gezahlt gesetzt.`)
     onReplace(data.member)
   }
 
@@ -2184,6 +2511,45 @@ function MemberPane({
           </button>
         ))}
       </div>
+
+      {(member.payments ?? []).some((row) => row.status === 'open' || row.status === 'failed') ? (
+        <section className="admin-block is-alert">
+          <h3>Mahnung / Ausgleich</h3>
+          <p className="admin-muted">
+            Mail mit offenen Monaten und Betrag. Verlauf bleibt beim Mitglied. Fünf Tage Abstand, außer du bestätigst
+            erneut.
+          </p>
+          <div className="admin-inline">
+            <select value={reminderStage} onChange={(event) => setReminderStage(event.target.value)} disabled={sending || busy}>
+              <option value="reminder">Erinnerung</option>
+              <option value="mahnung1">1. Mahnung</option>
+              <option value="mahnung2">2. Mahnung</option>
+            </select>
+            <button className="btn btn-solid" type="button" disabled={sending || busy} onClick={() => void sendReminder()}>
+              Mahnung senden
+            </button>
+            <button className="btn btn-ghost" type="button" disabled={sending || busy} onClick={() => void markOpenPaid()}>
+              Alles offen als gezahlt
+            </button>
+          </div>
+          {reminderNote ? <p className="admin-ok">{reminderNote}</p> : null}
+          {member.reminders?.length ? (
+            <ul className="admin-history">
+              {[...member.reminders].reverse().slice(0, 8).map((row, index) => (
+                <li key={`${row.at}-${index}`}>
+                  <small>{new Date(row.at).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</small>
+                  <span>
+                    <strong>{REMINDER_STAGE_LABEL[row.stage] ?? row.stage}</strong>
+                    {' · '}
+                    {euro(row.amount)} · {(row.periods ?? []).map(periodLabel).join(', ')}
+                    {row.mail ? ` · ${row.mail}` : ''}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </section>
+      ) : null}
 
       {member.plan !== 'daypass' && member.payMethod !== 'transfer' ? (
         <section className="admin-block">

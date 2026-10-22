@@ -5,8 +5,10 @@ import {
   cancelInfo,
   ensurePayments,
   isoDate,
+  duesListItem,
   listMember,
   memberFromSignup,
+  openDuesOf,
   publicMember,
   setPayment,
   termEndDate,
@@ -21,7 +23,13 @@ import {
 } from './member-model.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
-import { sendMembershipEmails, sendPaperReturnEmail, sendPayLinkEmail, sendPriceChangeEmail } from './membership-mail.mjs'
+import {
+  sendMembershipEmails,
+  sendPaperReturnEmail,
+  sendPayLinkEmail,
+  sendPriceChangeEmail,
+  sendReminderEmail,
+} from './membership-mail.mjs'
 import { attachSignupDocs, attachTransferNotice } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
@@ -205,6 +213,8 @@ function applyDocSideEffects(member, kind, at) {
 function statsOf(members, today) {
   let active = 0
   let openPay = 0
+  let openDebt = 0
+  let openDebtAmount = 0
   let canCancel = 0
   let daypass = 0
   let todo = 0
@@ -215,13 +225,27 @@ function statsOf(members, today) {
     if (view.bankMissing || view.guardianMissing || view.contractMissing) todo += 1
     if (row.status === 'active' || row.status === 'received') active += 1
     if (view.payThisMonth === 'open' || view.payThisMonth === 'failed') openPay += 1
+    if (view.openCount > 0) {
+      openDebt += 1
+      openDebtAmount += view.openAmount
+    }
     if (view.cancel?.canCancelNow) canCancel += 1
     if (row.plan === 'daypass') daypass += 1
   }
-  return { total: members.length, active, openPay, canCancel, daypass, todo, fresh }
+  return {
+    total: members.length,
+    active,
+    openPay,
+    openDebt,
+    openDebtAmount: Math.round(openDebtAmount * 100) / 100,
+    canCancel,
+    daypass,
+    todo,
+    fresh,
+  }
 }
 
-function matches(member, { q, plan, status, pay, joined }, today) {
+function matches(member, { q, plan, status, pay, payMethod, joined }, today) {
   const view = listMember(member, today)
   if (joined) {
     const month = member.plan === 'daypass' ? String(member.visitDay ?? '').slice(0, 7) : berlinYm(member.createdAt)
@@ -230,9 +254,38 @@ function matches(member, { q, plan, status, pay, joined }, today) {
   if (plan && member.plan !== plan) return false
   if (status && member.status !== status) return false
   if (pay && view.payThisMonth !== pay) return false
+  if (payMethod === 'transfer' || payMethod === 'card') {
+    if (view.payMethod !== payMethod) return false
+  }
   if (!q) return true
   const hay = `${member.firstName} ${member.lastName} ${member.email} ${member.phone} ${member.planName}`.toLowerCase()
   return hay.includes(q)
+}
+
+const REMINDER_STAGES = ['reminder', 'mahnung1', 'mahnung2']
+const REMINDER_COOLDOWN_MS = 5 * 24 * 60 * 60 * 1000
+
+function buildDues(members, { q, payMethod }, today) {
+  const needle = String(q ?? '')
+    .trim()
+    .toLowerCase()
+  const rows = []
+  for (const member of members) {
+    const item = duesListItem(member, today)
+    if (!item) continue
+    if (payMethod === 'transfer' || payMethod === 'card') {
+      if (item.payMethod !== payMethod) continue
+    }
+    if (needle) {
+      const hay = `${item.firstName} ${item.lastName} ${item.email} ${item.phone} ${item.planName}`.toLowerCase()
+      if (!hay.includes(needle)) continue
+    }
+    rows.push(item)
+  }
+  rows.sort((a, b) => b.openAmount - a.openAmount || String(a.lastName).localeCompare(String(b.lastName), 'de'))
+  const amount = Math.round(rows.reduce((sum, row) => sum + row.openAmount, 0) * 100) / 100
+  const count = rows.reduce((sum, row) => sum + row.openCount, 0)
+  return { dues: rows, totals: { people: rows.length, amount, count } }
 }
 
 function readPhoto(value) {
@@ -617,6 +670,7 @@ export function createAdminHandler({
   fetchImpl = fetch,
   sendMail = sendMembershipEmails,
   sendPayLink = sendPayLinkEmail,
+  sendReminder = sendReminderEmail,
   deliverInvite = deliverFirst50Invite,
 }) {
   const store = createMemberStore({ dataDir, env })
@@ -760,6 +814,7 @@ export function createAdminHandler({
           action === 'sendPayLink' ||
           action === 'sendPriceNote' ||
           action === 'sendPaperReturn' ||
+          action === 'sendReminder' ||
           action === 'sendFirst50' ||
           action === 'sendPlusInvite' ||
           action === 'revokeInvite') &&
@@ -1307,6 +1362,109 @@ export function createAdminHandler({
         return
       }
 
+      if (action === 'payOpen') {
+        const id = String(body.id ?? '')
+        let saved = null
+        let marked = 0
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          let next = db.members[index]
+          const dues = openDuesOf(next, today)
+          for (const row of dues.openRows) {
+            next = setPayment(
+              next,
+              {
+                period: row.period,
+                kind: row.kind === 'day' ? 'day' : 'month',
+                status: 'paid',
+                note: String(body.note ?? 'Tresen: offene Beiträge ausgeglichen'),
+              },
+              today,
+            )
+            marked += 1
+          }
+          db.members[index] = next
+          saved = next
+          return db
+        })
+        if (!saved) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        json(res, 200, { ok: true, marked, member: publicMember(saved, today, true) })
+        return
+      }
+
+      if (action === 'sendReminder') {
+        const id = String(body.id ?? '')
+        const stage = REMINDER_STAGES.includes(body.stage) ? body.stage : 'reminder'
+        const force = Boolean(body.force)
+        const db = await store.load()
+        const current = db.members.find((row) => row.id === id)
+        if (!current) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        const dues = openDuesOf(current, today)
+        if (!dues.openCount) {
+          json(res, 400, { ok: false, error: 'no_open' })
+          return
+        }
+        if (!force && dues.lastReminderAt) {
+          const age = Date.now() - Date.parse(dues.lastReminderAt)
+          if (Number.isFinite(age) && age < REMINDER_COOLDOWN_MS) {
+            json(res, 409, { ok: false, error: 'cooldown', lastReminderAt: dues.lastReminderAt })
+            return
+          }
+        }
+        let mailed = 'skipped'
+        try {
+          mailed = await sendReminder(env, current, {
+            stage,
+            periods: dues.openPeriods,
+            amount: dues.openAmount,
+          })
+        } catch (error) {
+          console.error('[admin] reminder mail', error)
+          json(res, 502, { ok: false, error: 'mail' })
+          return
+        }
+        const at = new Date().toISOString()
+        const entry = {
+          at,
+          stage,
+          periods: dues.openPeriods,
+          amount: dues.openAmount,
+          email: current.email,
+          mail: mailed,
+        }
+        let saved = null
+        await store.update((fresh) => {
+          const index = fresh.members.findIndex((row) => row.id === id)
+          if (index < 0) return fresh
+          const row = fresh.members[index]
+          fresh.members[index] = {
+            ...row,
+            reminders: [...(row.reminders ?? []), entry].slice(-40),
+            updatedAt: at,
+          }
+          saved = fresh.members[index]
+          return fresh
+        })
+        if (!saved) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        json(res, 200, {
+          ok: true,
+          mail: mailed,
+          reminder: entry,
+          member: publicMember(saved, today, true),
+        })
+        return
+      }
+
       if (action === 'delete') {
         const id = String(body.id ?? '')
         if (!id) {
@@ -1487,16 +1645,30 @@ export function createAdminHandler({
       return
     }
 
+    if (url.searchParams.get('dues') === '1') {
+      const q = String(url.searchParams.get('q') ?? '')
+      const payMethod = String(url.searchParams.get('payMethod') ?? '')
+      const built = buildDues(db.members, { q, payMethod }, today)
+      json(res, 200, {
+        ok: true,
+        store: storeKind(env),
+        stats: statsOf(db.members, today),
+        ...built,
+      })
+      return
+    }
+
     const q = String(url.searchParams.get('q') ?? '')
       .trim()
       .toLowerCase()
     const plan = String(url.searchParams.get('plan') ?? '')
     const status = String(url.searchParams.get('status') ?? '')
     const pay = String(url.searchParams.get('pay') ?? '')
+    const payMethod = String(url.searchParams.get('payMethod') ?? '')
     const joinedParam = String(url.searchParams.get('joined') ?? '')
     const joined = /^\d{4}-\d{2}$/.test(joinedParam) ? joinedParam : ''
     const members = db.members
-      .filter((row) => matches(row, { q, plan, status, pay, joined }, today))
+      .filter((row) => matches(row, { q, plan, status, pay, payMethod, joined }, today))
       .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
       .map((row) => listMember(row, today))
     json(res, 200, {

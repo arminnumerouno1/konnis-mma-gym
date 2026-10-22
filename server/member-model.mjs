@@ -324,6 +324,60 @@ export function payStatusThisMonth(member, today = isoDate()) {
   return today < (member.startDate || today) ? 'upcoming' : 'open'
 }
 
+/** Offene oder nicht erhaltene Beiträge (Monate und Day Pass). */
+export function openPaymentRows(member, today = isoDate()) {
+  const ready = ensurePayments(member, today)
+  return (ready.payments ?? []).filter(
+    (row) => (row.kind === 'month' || row.kind === 'day') && (row.status === 'open' || row.status === 'failed'),
+  )
+}
+
+export function openDuesOf(member, today = isoDate()) {
+  const rows = openPaymentRows(member, today)
+  const openAmount = Math.round(rows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0) * 100) / 100
+  const reminders = Array.isArray(member.reminders) ? member.reminders : []
+  const last = reminders.length ? reminders[reminders.length - 1] : null
+  return {
+    openCount: rows.length,
+    openAmount,
+    openPeriods: rows.map((row) => row.period),
+    openRows: rows,
+    lastReminderAt: last?.at ?? null,
+    reminderCount: reminders.length,
+  }
+}
+
+export function duesListItem(member, today = isoDate()) {
+  const ready = ensurePayments(member, today)
+  const dues = openDuesOf(ready, today)
+  if (!dues.openCount) return null
+  return {
+    id: ready.id,
+    firstName: ready.firstName,
+    lastName: ready.lastName,
+    email: ready.email,
+    phone: ready.phone,
+    plan: ready.plan,
+    planName: ready.planName,
+    price: ready.price,
+    status: ready.status,
+    startDate: ready.startDate,
+    payMethod: ready.payMethod === 'transfer' ? 'transfer' : ready.payMethod === 'card' ? 'card' : null,
+    openCount: dues.openCount,
+    openAmount: dues.openAmount,
+    openPeriods: dues.openPeriods,
+    openRows: dues.openRows.map((row) => ({
+      kind: row.kind,
+      period: row.period,
+      amount: row.amount,
+      status: row.status,
+    })),
+    lastReminderAt: dues.lastReminderAt,
+    reminderCount: dues.reminderCount,
+    reminders: (ready.reminders ?? []).slice(-8),
+  }
+}
+
 export function publicMember(member, today = isoDate(), withPhoto = false) {
   const ready = ensurePayments(member, today)
   const cancel = cancelInfo(ready, today)
@@ -339,6 +393,7 @@ export function publicMember(member, today = isoDate(), withPhoto = false) {
 
 export function listMember(member, today = isoDate()) {
   const view = publicMember(member, today)
+  const dues = openDuesOf(view, today)
   return {
     id: view.id,
     firstName: view.firstName,
@@ -360,6 +415,9 @@ export function listMember(member, today = isoDate()) {
     isNew: view.source === 'online' && !view.reviewedAt,
     stripeLinked: Boolean(view.stripe?.customerId),
     payThisMonth: view.payThisMonth,
+    openCount: dues.openCount,
+    openAmount: dues.openAmount,
+    lastReminderAt: dues.lastReminderAt,
     cancel: view.cancel,
     createdAt: view.createdAt,
     updatedAt: view.updatedAt,
