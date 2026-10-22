@@ -1905,7 +1905,7 @@ export function Admin() {
   const [detail, setDetail] = useState<MemberDetail | null>(null)
   const [busy, setBusy] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [tab, setTab] = useState<'members' | 'dues' | 'prereg' | 'report'>('members')
+  const [tab, setTab] = useState<'members' | 'dues' | 'mail' | 'prereg' | 'report'>('members')
   const [preregFresh, setPreregFresh] = useState(0)
   const [joined, setJoined] = useState('')
   const [duesPeriod, setDuesPeriod] = useState('')
@@ -2126,7 +2126,9 @@ export function Admin() {
                 ? 'Voranmeldungen'
                 : tab === 'dues'
                   ? 'Beiträge'
-                  : 'Mitglieder'}
+                  : tab === 'mail'
+                    ? 'Mail'
+                    : 'Mitglieder'}
           </h1>
           <nav className="admin-tabs" aria-label="Bereiche">
             <button type="button" className={tab === 'members' ? 'is-on' : ''} onClick={() => setTab('members')}>
@@ -2135,6 +2137,9 @@ export function Admin() {
             <button type="button" className={tab === 'dues' ? 'is-on' : ''} onClick={() => setTab('dues')}>
               Beiträge
               {stats?.openDebt ? <span className="admin-tab-count">{stats.openDebt}</span> : null}
+            </button>
+            <button type="button" className={tab === 'mail' ? 'is-on' : ''} onClick={() => setTab('mail')}>
+              Mail
             </button>
             <button type="button" className={tab === 'prereg' ? 'is-on' : ''} onClick={() => setTab('prereg')}>
               Voranmeldungen
@@ -2233,7 +2238,7 @@ export function Admin() {
         </section>
       ) : null}
 
-      {tab === 'members' ? <BroadcastMailer /> : null}
+      {tab === 'mail' ? <BroadcastMailer /> : null}
       {tab === 'members' ? <First50Sender /> : null}
 
       {tab === 'members' && creating ? <CreateMember onDone={async (id) => {
@@ -3174,9 +3179,9 @@ function BroadcastMailer() {
 
   return (
     <form className="admin-card" onSubmit={(event) => void onSend(event)}>
-      <h2>Mail an Mitglieder</h2>
+      <h2>Rundmail an den Bestand</h2>
       <p className="admin-muted">
-        Infos an den Bestand. Jede Mail beginnt mit „Hi Vorname,“ und endet mit Konrad und Mehmet. Gekündigte und
+        Infos an Mitglieder. Jede Mail beginnt mit „Hi Vorname,“ und endet mit Konrad und Mehmet. Gekündigte und
         Widerrufe bekommen nichts.
       </p>
       <label>
