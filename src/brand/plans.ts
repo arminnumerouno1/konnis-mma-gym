@@ -23,7 +23,7 @@ export type Plan = {
 const INCLUDES_ALL =
   'Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.'
 const INCLUDES_SLOWSTART =
-  '2 Kurse / Einheiten pro Woche. MMA, Boxen, BJJ und mehr – für alle, die weniger Zeit oder Budget haben.'
+  '2 Kurse / Einheiten pro Woche. MMA, Boxen, BJJ und mehr – für alle, die es erstmal ruhiger angehen wollen.'
 
 export const PLANS: Plan[] = [
   {
