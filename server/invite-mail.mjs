@@ -40,7 +40,7 @@ export function first50InviteHtml({ first, name, email, url, start = '', term = 
     ? `<strong>89,99€ statt 99,99€</strong>, 12 Monate. Das ist ein Sondervertrag über 12 Monate.`
     : `<strong>89,99€ statt 99,99€</strong>, 24 Monate.`
   const chance = lastChance
-    ? `<p><strong>Das ist deine letzte einmalige Chance</strong> auf den First-50-Preis. Danach gibt es keinen weiteren Link.</p>`
+    ? `<p>Uns ist aufgefallen, dass du dich noch nicht angemeldet hast. <strong>Deshalb bekommst du jetzt noch einmalig die Chance</strong> auf den First-50-Sonderpreis. Danach gibt es keinen weiteren Link.</p>`
     : ''
   const expiry = lastChance
     ? 'Weiterleiten bringt den Sonderpreis niemandem sonst. Nach 48 Stunden ist der Link abgelaufen. Nutzt du diese letzte Chance nicht, ist der Platz weg.'

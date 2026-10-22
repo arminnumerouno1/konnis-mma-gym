@@ -211,7 +211,12 @@ const lastChanceHtml = first50InviteHtml({
   url: 'https://www.mma-in-leipzig.de/mitglied?invite=abc',
   lastChance: true,
 })
-assert(lastChanceHtml.includes('letzte einmalige Chance') && lastChanceHtml.includes('keinen weiteren Link'), 'last chance invite says final offer')
+assert(
+  lastChanceHtml.includes('noch nicht angemeldet') &&
+    lastChanceHtml.includes('noch einmalig die Chance') &&
+    lastChanceHtml.includes('keinen weiteren Link'),
+  'last chance invite says final offer',
+)
 assert(lastChanceHtml.includes('ist der Platz weg') && !lastChanceHtml.includes('geht dein Platz automatisch an die nächste Person'), 'last chance invite drops the pass-along line')
 assert(first50InviteSubject({ lastChance: true }).includes('Letzte Chance'), 'last chance subject')
 
