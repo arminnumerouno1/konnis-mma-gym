@@ -2647,6 +2647,64 @@ p,
   }
 }
 
+.portrait-page {
+  max-width: 560px;
+  margin: 0 auto;
+  padding: 48px 20px 80px;
+}
+
+.portrait-kicker {
+  margin: 0 0 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--muted, #888);
+}
+
+.portrait-page h1 {
+  margin: 0 0 20px;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+}
+
+.portrait-card {
+  display: grid;
+  gap: 14px;
+  padding: 20px;
+  background: var(--bg-2, #151515);
+  border: 1px solid var(--line, #2a2a2a);
+}
+
+.portrait-why,
+.portrait-rules {
+  padding: 12px 14px;
+  background: #111;
+  border: 1px solid var(--line, #2a2a2a);
+}
+
+.portrait-why h2,
+.portrait-rules h2 {
+  margin: 0 0 8px;
+  font-size: 1rem;
+}
+
+.portrait-why p,
+.portrait-rules ul {
+  margin: 0;
+}
+
+.portrait-rules ul {
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 6px;
+}
+
+.portrait-picker {
+  width: 100%;
+  max-width: 220px;
+  aspect-ratio: 1;
+  margin: 8px 0;
+}
+
 .admin-top {
   display: flex;
   justify-content: space-between;

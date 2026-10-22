@@ -38,6 +38,12 @@ import {
   normalizeBroadcastPayload,
   runBroadcast,
 } from './broadcast-mail.mjs'
+import {
+  PHOTO_REQUEST_CONFIRM,
+  membersMissingPortrait,
+  needsPortrait,
+  sendPhotoRequestEmail,
+} from './photo-upload.mjs'
 import { signupFeeFor } from './signup-fee.mjs'
 import { matchBankTransactions, parseBankCsv } from './bank-import.mjs'
 import { runDueReminders } from './dues-cron.mjs'
@@ -231,6 +237,7 @@ function statsOf(members, today) {
   let daypass = 0
   let todo = 0
   let fresh = 0
+  let noPhoto = 0
   for (const row of members) {
     const view = listMember(row, today)
     if (view.isNew) fresh += 1
@@ -243,6 +250,7 @@ function statsOf(members, today) {
     }
     if (view.cancel?.canCancelNow) canCancel += 1
     if (row.plan === 'daypass') daypass += 1
+    if (needsPortrait(row)) noPhoto += 1
   }
   return {
     total: members.length,
@@ -254,15 +262,18 @@ function statsOf(members, today) {
     daypass,
     todo,
     fresh,
+    noPhoto,
   }
 }
 
-function matches(member, { q, plan, status, pay, payMethod, joined }, today) {
+function matches(member, { q, plan, status, pay, payMethod, joined, photo }, today) {
   const view = listMember(member, today)
   if (joined) {
     const month = member.plan === 'daypass' ? String(member.visitDay ?? '').slice(0, 7) : berlinYm(member.createdAt)
     if (month !== joined) return false
   }
+  if (photo === 'missing' && !needsPortrait(member)) return false
+  if (photo === 'has' && !member.photoData) return false
   if (plan && member.plan !== plan) return false
   if (status && member.status !== status) return false
   if (pay && view.payThisMonth !== pay) return false
@@ -704,6 +715,7 @@ export function createAdminHandler({
   sendPayLink = sendPayLinkEmail,
   sendReminder = sendReminderEmail,
   sendBroadcast = sendBroadcastEmail,
+  sendPhotoRequest = sendPhotoRequestEmail,
   deliverInvite = deliverFirst50Invite,
 }) {
   const store = createMemberStore({ dataDir, env })
@@ -850,7 +862,9 @@ export function createAdminHandler({
           action === 'sendReminder' ||
           action === 'sendFirst50' ||
           action === 'sendPlusInvite' ||
-          action === 'revokeInvite') &&
+          action === 'revokeInvite' ||
+          action === 'sendPhotoRequest' ||
+          action === 'sendPhotoRequestBulk') &&
         proofOk
       if (!authed(req) && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
@@ -1734,6 +1748,92 @@ export function createAdminHandler({
         return
       }
 
+      if (action === 'sendPhotoRequest') {
+        const id = String(body.id ?? '')
+        const db = await store.load()
+        const current = db.members.find((row) => row.id === id)
+        if (!current) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (!needsPortrait(current)) {
+          json(res, 409, { ok: false, error: current.photoData ? 'has_photo' : 'closed' })
+          return
+        }
+        const mailed = await sendPhotoRequest(env, current, { fetchImpl })
+        if (!mailed?.ok) {
+          json(res, mailed?.error === 'mail_off' ? 503 : 502, { ok: false, error: mailed?.error || 'mail' })
+          return
+        }
+        const at = new Date().toISOString()
+        let saved = null
+        await store.update((fresh) => {
+          const index = fresh.members.findIndex((row) => row.id === id)
+          if (index < 0) return fresh
+          fresh.members[index] = {
+            ...fresh.members[index],
+            photoRequestedAt: at,
+            updatedAt: at,
+          }
+          saved = fresh.members[index]
+          return fresh
+        })
+        json(res, 200, {
+          ok: true,
+          email: current.email,
+          member: saved ? publicMember(saved, today, true) : null,
+        })
+        return
+      }
+
+      if (action === 'sendPhotoRequestBulk') {
+        if (String(body.confirm ?? '').trim() !== PHOTO_REQUEST_CONFIRM) {
+          json(res, 403, { ok: false, error: 'confirm' })
+          return
+        }
+        if (!env.BREVO_API_KEY?.trim()) {
+          json(res, 503, { ok: false, error: 'mail_off' })
+          return
+        }
+        const people = membersMissingPortrait((await store.load()).members ?? [])
+        if (!people.length) {
+          json(res, 409, { ok: false, error: 'no_recipients' })
+          return
+        }
+        let sent = 0
+        let failed = 0
+        const at = new Date().toISOString()
+        for (const person of people) {
+          const mailed = await sendPhotoRequest(env, person, { fetchImpl })
+          if (!mailed?.ok) {
+            failed += 1
+            console.error('[photo-request]', person.email, mailed?.error || 'mail')
+            break
+          }
+          sent += 1
+          await store.update((fresh) => {
+            const index = fresh.members.findIndex((row) => row.id === person.id)
+            if (index < 0) return fresh
+            fresh.members[index] = {
+              ...fresh.members[index],
+              photoRequestedAt: at,
+              updatedAt: at,
+            }
+            return fresh
+          })
+          await new Promise((resolve) => setTimeout(resolve, 250))
+        }
+        json(res, failed ? 502 : 200, {
+          ok: failed === 0,
+          sent,
+          failed,
+          total: people.length,
+          remaining: Math.max(0, people.length - sent - failed),
+          error: failed ? 'mail' : undefined,
+        })
+        return
+      }
+
       if (action === 'delete') {
         const id = String(body.id ?? '')
         if (!id) {
@@ -1959,8 +2059,10 @@ export function createAdminHandler({
     const payMethod = String(url.searchParams.get('payMethod') ?? '')
     const joinedParam = String(url.searchParams.get('joined') ?? '')
     const joined = /^\d{4}-\d{2}$/.test(joinedParam) ? joinedParam : ''
+    const photoRaw = String(url.searchParams.get('photo') ?? '')
+    const photo = photoRaw === 'missing' || photoRaw === 'has' ? photoRaw : ''
     const members = db.members
-      .filter((row) => matches(row, { q, plan, status, pay, payMethod, joined }, today))
+      .filter((row) => matches(row, { q, plan, status, pay, payMethod, joined, photo }, today))
       .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
       .map((row) => listMember(row, today))
     json(res, 200, {

@@ -3,7 +3,9 @@ import { parseLocation, type Route } from './router'
 
 export function useRoute(): Route {
   const [route, setRoute] = useState<Route>(() =>
-    typeof window === 'undefined' ? { name: 'home', path: '/', hash: '', plan: null, invite: null } : parseLocation(),
+    typeof window === 'undefined'
+      ? { name: 'home', path: '/', hash: '', plan: null, invite: null, token: null }
+      : parseLocation(),
   )
 
   useEffect(() => {

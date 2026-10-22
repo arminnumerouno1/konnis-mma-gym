@@ -279,6 +279,8 @@ const ERROR_TEXT: Record<string, string> = {
   audience: 'Empfängerkreis prüfen.',
   confirm: 'Zur Bestätigung bitte genau „an-alle-mitglieder“ tippen.',
   no_recipients: 'Keine Empfänger mit diesem Filter.',
+  has_photo: 'Dieses Mitglied hat schon ein Portraitfoto.',
+  closed: 'Für dieses Mitglied ist kein Foto-Link nötig.',
 }
 
 function errorText(code?: string) {
@@ -485,6 +487,7 @@ type Stats = {
   daypass: number
   todo: number
   fresh: number
+  noPhoto?: number
 }
 
 type ReminderEntry = {
@@ -1899,6 +1902,7 @@ export function Admin() {
   const [status, setStatus] = useState('')
   const [pay, setPay] = useState('')
   const [payMethod, setPayMethod] = useState('')
+  const [photo, setPhoto] = useState('')
   const [stats, setStats] = useState<Stats | null>(null)
   const [members, setMembers] = useState<MemberList[]>([])
   const [openId, setOpenId] = useState<string | null>(null)
@@ -1927,6 +1931,7 @@ export function Admin() {
     if (pay) query.set('pay', pay)
     if (payMethod) query.set('payMethod', payMethod)
     if (joined) query.set('joined', joined)
+    if (photo) query.set('photo', photo)
     const suffix = query.toString() ? `?${query}` : ''
     const { status: code, data } = await api(`/api/admin${suffix}`)
     if (code === 401) {
@@ -1986,7 +1991,7 @@ export function Admin() {
     }, 180)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, plan, status, pay, payMethod, joined, authed, tab])
+  }, [q, plan, status, pay, payMethod, joined, photo, authed, tab])
 
   useEffect(() => {
     if (openId) void refreshDetail(openId)
@@ -2235,10 +2240,23 @@ export function Admin() {
             <strong>{stats.todo}</strong>
             <span>Unterlagen fehlen</span>
           </article>
+          <article
+            className={stats.noPhoto ? 'is-alert' : ''}
+            role="button"
+            tabIndex={0}
+            onClick={() => setPhoto('missing')}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') setPhoto('missing')
+            }}
+          >
+            <strong>{stats.noPhoto ?? 0}</strong>
+            <span>Portrait fehlt</span>
+          </article>
         </section>
       ) : null}
 
       {tab === 'mail' ? <BroadcastMailer /> : null}
+      {tab === 'members' ? <PhotoRequestBulk missing={stats?.noPhoto ?? 0} onDone={() => void refreshList()} /> : null}
       {tab === 'members' ? <First50Sender /> : null}
 
       {tab === 'members' && creating ? <CreateMember onDone={async (id) => {
@@ -2280,6 +2298,11 @@ export function Admin() {
           <option value="transfer">Banküberweisung</option>
           <option value="card">Karte / Apple Pay</option>
         </select>
+        <select value={photo} onChange={(event) => setPhoto(event.target.value)}>
+          <option value="">Foto alle</option>
+          <option value="missing">Portrait fehlt</option>
+          <option value="has">Portrait da</option>
+        </select>
         <label className="admin-month">
           <span>Angemeldet im</span>
           <input type="month" value={joined} onChange={(event) => setJoined(event.target.value)} />
@@ -2313,6 +2336,7 @@ export function Admin() {
                 row.guardianMissing ||
                 row.bankMissing ||
                 row.contractMissing ||
+                (!row.hasPhoto && row.plan !== 'daypass') ||
                 (row.openCount ?? 0) > 0 ? (
                   <span className="admin-flags">
                     {row.payMethod === 'transfer' ? <span className="admin-flag is-ok">Banküberweisung</span> : null}
@@ -2327,6 +2351,7 @@ export function Admin() {
                     {row.contractMissing ? <span className="admin-flag">Vertrag fehlt</span> : null}
                     {row.guardianMissing ? <span className="admin-flag">Eltern-Unterschrift fehlt</span> : null}
                     {row.bankMissing ? <span className="admin-flag">Kontodaten fehlen</span> : null}
+                    {!row.hasPhoto && row.plan !== 'daypass' ? <span className="admin-flag">Portrait fehlt</span> : null}
                   </span>
                 ) : null}
                 <small>
@@ -2531,6 +2556,23 @@ function MemberPane({
     await onPatch({ photoData })
   }
 
+  async function sendPhotoRequest() {
+    setSending(true)
+    setPaneError(null)
+    setReminderNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendPhotoRequest', id: member.id }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      setPaneError(errorText(String(data.error ?? '')))
+      return
+    }
+    setReminderNote(`Foto-Link raus an ${data.email || member.email}.`)
+    if (data.member) onReplace(data.member)
+  }
+
   async function remove() {
     const name = `${member.firstName} ${member.lastName}`.trim()
     const stripe = Boolean(member.stripe?.customerId || member.stripe?.subscriptionId)
@@ -2595,8 +2637,28 @@ function MemberPane({
             {member.planName} · {euro(member.price)} {member.termMonths ? `· ${member.termMonths} Monate` : ''}
           </p>
           <PayPill status={member.payThisMonth} />
+          {!member.photoData && member.plan !== 'daypass' ? (
+            <p className="admin-muted">Portrait fehlt – bitte per Link anfordern oder hier nachpflegen.</p>
+          ) : null}
         </div>
       </div>
+      {!member.photoData && member.plan !== 'daypass' ? (
+        <section className="admin-block">
+          <h3>Portrait anfordern</h3>
+          <p className="admin-muted">
+            Schickt eine Mail mit persönlichem Upload-Link. Darin steht klar, dass es ein Gesichtsbild sein muss und
+            warum.
+          </p>
+          <button
+            className="btn btn-solid"
+            type="button"
+            disabled={busy || sending}
+            onClick={() => void sendPhotoRequest()}
+          >
+            Foto-Link senden
+          </button>
+        </section>
+      ) : null}
 
       {editing ? (
         <>
@@ -3075,6 +3137,76 @@ function MemberPane({
         </button>
       </section>
     </section>
+  )
+}
+
+function PhotoRequestBulk({ missing, onDone }: { missing: number; onDone: () => void }) {
+  const [confirm, setConfirm] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  async function onSend(event: FormEvent) {
+    event.preventDefault()
+    if (
+      !window.confirm(
+        `Foto-Link an ${missing} Mitglied${missing === 1 ? '' : 'er'} ohne Portrait senden? Jede Person bekommt eine persönliche Mail.`,
+      )
+    ) {
+      return
+    }
+    setBusy(true)
+    setError(null)
+    setNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendPhotoRequestBulk', confirm }),
+    })
+    setBusy(false)
+    if (!data.ok) {
+      setError(errorText(String(data.error)))
+      return
+    }
+    setNote(`Raus: ${data.sent ?? 0} von ${data.total ?? 0}.`)
+    setConfirm('')
+    onDone()
+  }
+
+  if (!missing) return null
+
+  return (
+    <form className="admin-card" onSubmit={(event) => void onSend(event)}>
+      <h2>Portraitfotos anfordern</h2>
+      <p className="admin-muted">
+        {missing} Mitglied{missing === 1 ? '' : 'er'} ohne Portrait. Jede Person bekommt einen persönlichen Link und
+        eine klare Erklärung, warum ein Gesichtsbild nötig ist.
+      </p>
+      <label>
+        Bestätigung
+        <input
+          value={confirm}
+          onChange={(event) => setConfirm(event.target.value)}
+          placeholder="foto-anfordern"
+          autoComplete="off"
+          disabled={busy}
+        />
+      </label>
+      {error ? <p className="admin-error">{error}</p> : null}
+      {note ? <p className="admin-muted">{note}</p> : null}
+      {busy ? (
+        <p className="admin-broadcast-loading" role="status">
+          <span className="admin-spinner" aria-hidden="true" />
+          Mails werden gesendet…
+        </p>
+      ) : null}
+      <button
+        className="btn btn-solid"
+        type="submit"
+        disabled={busy || confirm.trim() !== 'foto-anfordern'}
+      >
+        {busy ? 'Sendet…' : `Foto-Links an ${missing} senden`}
+      </button>
+    </form>
   )
 }
 

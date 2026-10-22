@@ -1,6 +1,7 @@
 export type RouteName =
   | 'home'
   | 'join'
+  | 'portrait'
   | 'prereg'
   | 'impressum'
   | 'datenschutz'
@@ -19,11 +20,13 @@ export type Route = {
   hash: string
   plan: string | null
   invite: string | null
+  token: string | null
 }
 
 export const PATHS: Record<Exclude<RouteName, 'notfound'>, string> = {
   home: '/',
   join: '/mitglied',
+  portrait: '/portrait',
   prereg: '/voranmeldung',
   impressum: '/impressum',
   datenschutz: '/datenschutz',
@@ -46,18 +49,19 @@ export function parseLocation(url = window.location.href): Route {
   const path = cleanPath(parsed.pathname)
   const plan = parsed.searchParams.get('plan')
   const invite = parsed.searchParams.get('invite')
+  const token = parsed.searchParams.get('t')
   const hash = parsed.hash
 
   const match = (Object.entries(PATHS) as [Exclude<RouteName, 'notfound'>, string][]).find(
     ([, value]) => value === path,
   )
   if (match) {
-    return { name: match[0], path, hash, plan, invite }
+    return { name: match[0], path, hash, plan, invite, token }
   }
   if (path === '/impressum.html') {
-    return { name: 'impressum', path: PATHS.impressum, hash, plan, invite }
+    return { name: 'impressum', path: PATHS.impressum, hash, plan, invite, token }
   }
-  return { name: 'notfound', path, hash, plan, invite }
+  return { name: 'notfound', path, hash, plan, invite, token }
 }
 
 export function href(name: Exclude<RouteName, 'notfound'>, query?: Record<string, string>) {

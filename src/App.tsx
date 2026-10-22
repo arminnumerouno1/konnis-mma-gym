@@ -8,6 +8,7 @@ import { Home } from './pages/Home'
 import { Join } from './pages/Join'
 import { Legal } from './pages/Legal'
 import { Admin } from './pages/Admin'
+import { PortraitUpload } from './pages/PortraitUpload'
 
 const LEGAL = new Set(['impressum', 'datenschutz', 'agb', 'widerruf', 'hausordnung', 'vertrag6', 'vertrag12', 'vertrag24'])
 
@@ -33,6 +34,14 @@ export default function App() {
 
   if (route.name === 'admin') {
     return <Admin />
+  }
+
+  if (route.name === 'portrait') {
+    return (
+      <div className="shell route-portrait">
+        <PortraitUpload token={route.token} />
+      </div>
+    )
   }
 
   return (

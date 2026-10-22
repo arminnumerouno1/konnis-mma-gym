@@ -9,6 +9,8 @@ import { createOpeningMailHandler } from './opening-mail.mjs'
 import { createSignupOpenMailHandler } from './signup-open-mail.mjs'
 import { createMembershipHandler } from './membership.mjs'
 import { createAdminHandler } from './admin.mjs'
+import { createMemberStore } from './member-store.mjs'
+import { createPhotoUploadHandler } from './photo-upload.mjs'
 import { createWaitlistHandler } from './waitlist.mjs'
 import { createPreregHandler } from './prereg.mjs'
 
@@ -19,6 +21,8 @@ const port = Number(process.env.PORT || 43177)
 const handleWaitlist = createWaitlistHandler({ dataDir, env: process.env })
 const handleMembership = createMembershipHandler({ dataDir, env: process.env })
 const handleAdmin = createAdminHandler({ dataDir, env: process.env })
+const memberStore = createMemberStore({ dataDir, env: process.env })
+const handlePortrait = createPhotoUploadHandler({ env: process.env, store: memberStore })
 const handleContact = createContactHandler({ dataDir, env: process.env })
 const handlePrereg = createPreregHandler({ dataDir, env: process.env })
 const handleInviteMail = createInviteMailHandler({ env: process.env })
@@ -78,6 +82,10 @@ const server = createServer((req, res) => {
   }
   if (path === '/api/admin') {
     void handleAdmin(req, res)
+    return
+  }
+  if (path === '/api/portrait') {
+    void handlePortrait(req, res)
     return
   }
   if (path === '/api/voranmeldung') {
