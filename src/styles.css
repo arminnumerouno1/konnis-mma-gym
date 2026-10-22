@@ -1544,13 +1544,22 @@ p,
 }
 
 .price-tag,
-.price-term,
 .price-limit {
   margin: 0;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  font-size: 13px;
-  color: var(--muted);
+  font-size: 15px;
+  color: rgba(236, 232, 225, 0.78);
+}
+
+.price-term {
+  margin: 4px 0 2px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(26px, 3.2vw, 34px);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--ink);
 }
 
 .price-sum {
@@ -1566,6 +1575,23 @@ p,
 .price-sum span,
 .price-card li {
   color: var(--muted);
+}
+
+.accent-red .price-term,
+.accent-red .price-tag {
+  color: var(--red);
+}
+.accent-gold .price-term,
+.accent-gold .price-tag {
+  color: var(--gold);
+}
+.accent-pink .price-term,
+.accent-pink .price-tag {
+  color: var(--pink);
+}
+.accent-white .price-term,
+.accent-white .price-tag {
+  color: #fff;
 }
 
 .price-fee {
@@ -1820,6 +1846,29 @@ p,
 .plan-option em {
   font-family: 'Bebas Neue', sans-serif;
   font-size: 28px;
+}
+
+.plan-option .plan-term {
+  margin: 4px 0 6px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--ink);
+}
+
+.plan-option.accent-red .plan-term {
+  color: var(--red);
+}
+.plan-option.accent-gold .plan-term {
+  color: var(--gold);
+}
+.plan-option.accent-pink .plan-term {
+  color: var(--pink);
+}
+.plan-option.accent-white .plan-term {
+  color: #fff;
 }
 
 .plan-option .plan-includes {

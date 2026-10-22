@@ -26,11 +26,11 @@ function PlanCard({ plan }: { plan: Plan }) {
     <article className={`price-card accent-${plan.accent}`}>
       <p className="price-tag">{plan.tag}</p>
       <h3>{plan.name}</h3>
+      <p className="price-term">{plan.term}</p>
       <p className="price-sum">
         <strong>{plan.price}€</strong>
         <span>{plan.unit}</span>
       </p>
-      <p className="price-term">{plan.term}</p>
       <p className="plan-includes">{plan.includes}</p>
       {plan.id === 'daypass' ? null : (
         <p className="price-fee">
