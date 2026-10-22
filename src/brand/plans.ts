@@ -35,7 +35,7 @@ export const PLANS: Plan[] = [
     unit: '/ Monat',
     term: '12 Monate Laufzeit',
     termMonths: 12,
-    accent: 'white',
+    accent: 'red',
     includes: INCLUDES_SLOWSTART,
     bullets: [
       '2 Kurse / Einheiten pro Woche',

@@ -1581,6 +1581,11 @@ p,
 .accent-red .price-sum strong,
 .accent-red .price-fee strong,
 .accent-red .price-fee span {
+  color: var(--red-2);
+}
+.accent-white .price-sum strong,
+.accent-white .price-fee strong,
+.accent-white .price-fee span {
   color: #fff;
 }
 
@@ -1787,6 +1792,11 @@ p,
 .plan-option.accent-pink input[type='radio']:checked {
   border-color: var(--pink, #e8a0b0);
   background: radial-gradient(circle at center, var(--pink, #e8a0b0) 0 4px, transparent 4.5px);
+}
+
+.plan-option.accent-white input[type='radio']:checked {
+  border-color: #fff;
+  background: radial-gradient(circle at center, #fff 0 4px, transparent 4.5px);
 }
 
 .price-card .plan-includes {
