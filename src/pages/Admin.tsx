@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Fragment, useEffect, useRef, useState, type FormEvent } from 'react'
 import { StreetInput } from '../components/StreetInput'
 import { snapshotMonth } from '../admin/snapshot.ts'
 import { compressPhoto } from '../lib/photo'
@@ -1999,6 +1999,15 @@ export function Admin() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openId])
 
+  useEffect(() => {
+    if (!openId || !detail || detail.id !== openId) return
+    if (typeof window === 'undefined' || !window.matchMedia('(max-width: 980px)').matches) return
+    const frame = window.requestAnimationFrame(() => {
+      document.getElementById(`member-pane-${detail.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [openId, detail?.id])
+
   async function onLogin(event: FormEvent) {
     event.preventDefault()
     setLoginError(null)
@@ -2315,75 +2324,91 @@ export function Admin() {
       </section>
 
       <div className="admin-split">
-        <section className="admin-list">
-          {members.length === 0 ? <p className="admin-muted">Noch keine Mitglieder.</p> : null}
+        <section className="admin-list" aria-label="Mitgliederliste">
+          {members.length === 0 ? <p className="admin-muted admin-list-empty">Noch keine Mitglieder.</p> : null}
           {members.map((row) => (
-            <button
-              key={row.id}
-              type="button"
-              className={`admin-row ${openId === row.id ? 'is-open' : ''}`}
-              onClick={() => setOpenId(row.id)}
-            >
-              <span className={`admin-face ${row.hasPhoto ? 'has-photo' : ''}`}>{row.firstName[0]}{row.lastName[0]}</span>
-              <span className="admin-row-copy">
-                <strong>
-                  {row.firstName} {row.lastName}
-                  {row.minor ? <em> U18</em> : null}
-                  {row.isNew ? <span className="admin-new">Neu online</span> : null}
-                </strong>
-                {row.payMethod === 'transfer' ||
-                row.payMethod === 'card' ||
-                row.guardianMissing ||
-                row.bankMissing ||
-                row.contractMissing ||
-                (!row.hasPhoto && row.plan !== 'daypass') ||
-                (row.openCount ?? 0) > 0 ? (
-                  <span className="admin-flags">
-                    {row.payMethod === 'transfer' ? <span className="admin-flag is-ok">Banküberweisung</span> : null}
-                    {row.payMethod === 'card' && !row.bankMissing ? (
-                      <span className="admin-flag is-ok">Karte / Apple Pay</span>
-                    ) : null}
-                    {(row.openCount ?? 0) > 0 ? (
-                      <span className="admin-flag">
-                        {row.openCount} offen · {euro(row.openAmount)}
-                      </span>
-                    ) : null}
-                    {row.contractMissing ? <span className="admin-flag">Vertrag fehlt</span> : null}
-                    {row.guardianMissing ? <span className="admin-flag">Eltern-Unterschrift fehlt</span> : null}
-                    {row.bankMissing ? <span className="admin-flag">Kontodaten fehlen</span> : null}
-                    {!row.hasPhoto && row.plan !== 'daypass' ? <span className="admin-flag">Portrait fehlt</span> : null}
-                  </span>
-                ) : null}
-                <small>
-                  {STATUS_LABEL[row.status]} · {row.planName} · {euro(row.price)} · Start {deDate(row.startDate)}
-                </small>
-              </span>
-              <span className="admin-row-meta">
-                <PayPill status={row.payThisMonth} />
-                <small>{row.cancel?.canCancelNow ? `Kündbar zum ${deDate(row.cancel.nextEnd)}` : `Laufzeit bis ${deDate(row.cancel?.termEnd)}`}</small>
-              </span>
-            </button>
+            <Fragment key={row.id}>
+              <button
+                type="button"
+                className={`admin-row ${openId === row.id ? 'is-open' : ''}`}
+                onClick={() => setOpenId((current) => (current === row.id ? null : row.id))}
+              >
+                <span className={`admin-face ${row.hasPhoto ? 'has-photo' : ''}`}>
+                  {row.firstName[0]}
+                  {row.lastName[0]}
+                </span>
+                <span className="admin-row-copy">
+                  <strong>
+                    {row.firstName} {row.lastName}
+                    {row.minor ? <em> U18</em> : null}
+                    {row.isNew ? <span className="admin-new">Neu online</span> : null}
+                  </strong>
+                  {row.payMethod === 'transfer' ||
+                  row.payMethod === 'card' ||
+                  row.guardianMissing ||
+                  row.bankMissing ||
+                  row.contractMissing ||
+                  (!row.hasPhoto && row.plan !== 'daypass') ||
+                  (row.openCount ?? 0) > 0 ? (
+                    <span className="admin-flags">
+                      {row.payMethod === 'transfer' ? <span className="admin-flag is-ok">Banküberweisung</span> : null}
+                      {row.payMethod === 'card' && !row.bankMissing ? (
+                        <span className="admin-flag is-ok">Karte / Apple Pay</span>
+                      ) : null}
+                      {(row.openCount ?? 0) > 0 ? (
+                        <span className="admin-flag">
+                          {row.openCount} offen · {euro(row.openAmount)}
+                        </span>
+                      ) : null}
+                      {row.contractMissing ? <span className="admin-flag">Vertrag fehlt</span> : null}
+                      {row.guardianMissing ? <span className="admin-flag">Eltern-Unterschrift fehlt</span> : null}
+                      {row.bankMissing ? <span className="admin-flag">Kontodaten fehlen</span> : null}
+                      {!row.hasPhoto && row.plan !== 'daypass' ? (
+                        <span className="admin-flag">Portrait fehlt</span>
+                      ) : null}
+                    </span>
+                  ) : null}
+                  <small>
+                    {STATUS_LABEL[row.status]} · {row.planName} · {euro(row.price)} · Start {deDate(row.startDate)}
+                  </small>
+                </span>
+                <span className="admin-row-meta">
+                  <PayPill status={row.payThisMonth} />
+                  <small>
+                    {row.cancel?.canCancelNow
+                      ? `Kündbar zum ${deDate(row.cancel.nextEnd)}`
+                      : `Laufzeit bis ${deDate(row.cancel?.termEnd)}`}
+                  </small>
+                </span>
+              </button>
+              {openId === row.id ? (
+                detail?.id === row.id ? (
+                  <div className="admin-pane-inline" id={`member-pane-${row.id}`}>
+                    <MemberPane
+                      key={`${detail.id}-${detail.updatedAt}`}
+                      member={detail}
+                      busy={busy}
+                      onClose={() => setOpenId(null)}
+                      onPatch={(payload) => patch(detail.id, payload)}
+                      onPay={(payment, next) => markPay(detail.id, payment, next)}
+                      onStripeLink={() => stripeLink(detail.id)}
+                      onDelete={() => removeMember(detail.id)}
+                      onReplace={(next) => {
+                        setDetail(next)
+                        void refreshList()
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <p className="admin-pane-inline admin-muted">Lädt…</p>
+                )
+              ) : null}
+            </Fragment>
           ))}
         </section>
-
-        {detail ? (
-          <MemberPane
-            key={`${detail.id}-${detail.updatedAt}`}
-            member={detail}
-            busy={busy}
-            onClose={() => setOpenId(null)}
-            onPatch={(payload) => patch(detail.id, payload)}
-            onPay={(payment, next) => markPay(detail.id, payment, next)}
-            onStripeLink={() => stripeLink(detail.id)}
-            onDelete={() => removeMember(detail.id)}
-            onReplace={(next) => {
-              setDetail(next)
-              void refreshList()
-            }}
-          />
-        ) : (
-          <p className="admin-muted admin-empty">Mitglied antippen.</p>
-        )}
+        {!detail && members.length > 0 ? (
+          <p className="admin-muted admin-empty admin-empty-side">Mitglied antippen.</p>
+        ) : null}
       </div>
       </>
       ) : null}
