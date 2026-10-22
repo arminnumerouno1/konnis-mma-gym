@@ -31,7 +31,7 @@ function PlanCard({ plan }: { plan: Plan }) {
         <span>{plan.unit}</span>
       </p>
       <p className="price-term">{plan.term}</p>
-      <p className="plan-includes">{COPY.planIncludes}</p>
+      <p className="plan-includes">{plan.includes}</p>
       {plan.id === 'daypass' ? null : (
         <p className="price-fee">
           <strong>{COPY.signupFeePrice}</strong>

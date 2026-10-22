@@ -44,9 +44,13 @@ export function signupOpenMailHtml({ first = '' } = {}) {
 <div style="padding:24px 4px 0">
 <p>${hi}</p>
 <p>du hast dich vorangemeldet. Danke dafür. <strong>Du kannst jetzt online Mitglied werden.</strong></p>
-<p>Standard oder Flex. Alle Kurse sind nutzbar.</p>
+<p>Slow Start, Standard oder Flex. Slow Start Tarif: 2 Kurse/Einheiten pro Woche. Standard und Flex: alle Kurse nutzbar.</p>
 <p style="margin:28px 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#666">Die Tarife</p>
 <table style="width:100%;border-collapse:collapse">
+<tr>
+<td style="padding:12px 0;border-bottom:1px solid #ddd"><strong>Slow Start Tarif</strong><br><span style="color:#666">12 Monate · 2 Kurse/Einheiten pro Woche</span></td>
+<td style="padding:12px 0;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap"><strong>79,99€</strong><br><span style="color:#666">/ Monat</span></td>
+</tr>
 <tr>
 <td style="padding:12px 0;border-bottom:1px solid #ddd"><strong>Standard</strong><br><span style="color:#666">24 Monate · alle Kurse nutzbar</span></td>
 <td style="padding:12px 0;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap"><strong>99,99€</strong><br><span style="color:#666">/ Monat</span></td>

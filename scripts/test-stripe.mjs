@@ -23,7 +23,11 @@ const nov1 = berlinMidnightUnix('2026-11-01')
 assert(nov1 === Math.floor(Date.parse('2026-10-31T23:00:00.000Z') / 1000), '1 Nov 2026 is 23:00 UTC')
 assert(berlinMidnightUnix('2026-06-01') === Math.floor(Date.parse('2026-05-31T22:00:00.000Z') / 1000), 'summer offset')
 assert(
-  PLAN_CENTS.standard === 9999 && PLAN_CENTS.flex === 10999 && PLAN_CENTS.plus === 11900 && PLAN_CENTS.daypass === 1999,
+  PLAN_CENTS.slowstart === 7999 &&
+    PLAN_CENTS.standard === 9999 &&
+    PLAN_CENTS.flex === 10999 &&
+    PLAN_CENTS.plus === 11900 &&
+    PLAN_CENTS.daypass === 1999,
   'cents',
 )
 

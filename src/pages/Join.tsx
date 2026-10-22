@@ -555,7 +555,7 @@ function JoinForm({ plan, invite }: JoinProps) {
                     {item.price}€ {item.unit}
                   </em>
                   <small>{termLabel(item)}</small>
-                  <small className="plan-includes">{COPY.planIncludes}</small>
+                  <small className="plan-includes">{item.includes}</small>
                   {item.id === 'daypass' ? null : (
                     <small className="price-fee">
                       <strong>{COPY.signupFeePrice}</strong>

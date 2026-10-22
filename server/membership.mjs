@@ -17,7 +17,7 @@ const ZIP_RE = /^\d{5}$/
 const MAX_BODY = 24_576
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 6
-const PLAN_IDS = ['standard', 'flex', 'plus', 'daypass', 'first50']
+const PLAN_IDS = ['slowstart', 'standard', 'flex', 'plus', 'daypass', 'first50']
 /** Online-Day-Pass. false lehnt die Tageskarte ab. Muss zu src/brand/plans.ts DAY_PASS_OPEN passen. */
 const DAY_PASS_OPEN = false
 
@@ -42,6 +42,7 @@ export function isMembershipMailOpen(env = {}) {
 }
 
 const PLAN_META = {
+  slowstart: { name: 'Slow Start Tarif', price: 79.99, months: 12, fee: 0 },
   standard: { name: 'Standard', price: 99.99, months: 24, fee: 0 },
   flex: { name: 'Flex', price: 109.99, months: 12, fee: 0 },
   plus: { name: 'Plus', price: 119, months: 6, fee: 0 },

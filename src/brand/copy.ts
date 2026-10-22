@@ -102,7 +102,7 @@ export const COPY = {
   planLegendAdvanced: 'Fortgeschrittene',
   priceTitle: 'Tarife.',
   priceLead:
-    'Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche. Standard, Flex oder Plus. Die Anmeldegebühr von 0€ nur bis zum 2. November, danach 49€.',
+    'Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Die Anmeldegebühr von 0€ nur bis zum 2. November, danach 49€.',
   planIncludes: 'Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.',
   signupFeePrice: '0€',
   signupFeeLabel: 'Anmeldegebühr\nnur bis 2. November\ndanach 49€',
@@ -263,7 +263,7 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Ja. Unter Mitglied werden schließt du Standard, Flex oder Plus online ab. Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto. Die Anmeldegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.',
+    a: 'Ja. Unter Mitglied werden schließt du Slow Start, Standard, Flex oder Plus online ab. Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto. Die Anmeldegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.',
   },
   {
     q: 'Gibt es ein Probetraining?',

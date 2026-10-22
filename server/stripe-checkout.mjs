@@ -5,6 +5,7 @@ export const BILLING_START = '2026-11-01'
 const TRIAL_LEAD_S = 48 * 60 * 60
 
 export const PLAN_CENTS = {
+  slowstart: 7999,
   standard: 9999,
   flex: 10999,
   plus: 11900,
@@ -13,6 +14,7 @@ export const PLAN_CENTS = {
 }
 
 const PLAN_NAMES = {
+  slowstart: 'Slow Start Tarif',
   standard: 'Standard',
   flex: 'Flex',
   plus: 'Plus',

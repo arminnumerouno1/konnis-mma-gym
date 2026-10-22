@@ -324,6 +324,30 @@ assert(
   plusText.includes('Alle Kurse') && plusText.includes('Einheiten') && plusText.includes('zwei Einheiten pro Woche'),
   'plus contract includes all classes without a weekly limit',
 )
+const slowPdf = Buffer.from(
+  await buildContractPdf({
+    ...sample,
+    plan: 'slowstart',
+    planName: 'Slow Start Tarif',
+    price: 79.99,
+    termMonths: 12,
+    payMethod: 'card',
+    inviteSlot: undefined,
+  }),
+)
+const slowText = pdfText(slowPdf)
+assert(
+  slowText.includes('Slow Start Tarif') && slowText.includes('79,99 EUR') && slowText.includes('12 Monate'),
+  'slow start contract states price and term',
+)
+assert(
+  slowText.includes('zwei Kurse') && slowText.includes('Einheiten pro Woche') && !slowText.includes('nicht auf zwei Einheiten'),
+  'slow start contract limits to two units per week',
+)
+assert(
+  slowText.includes('nur bis zum 2. November 2026') && slowText.includes('Danach beträgt sie 49,00 EUR'),
+  'slow start keeps the signup fee window',
+)
 const openPaper = Buffer.from(
   await buildContractPdf(
     {

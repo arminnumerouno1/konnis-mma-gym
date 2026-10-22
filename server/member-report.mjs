@@ -43,7 +43,7 @@ function emptyMonth(ym) {
     online: 0,
     desk: 0,
     minors: 0,
-    byPlan: { standard: 0, flex: 0, plus: 0, first50: 0 },
+    byPlan: { slowstart: 0, standard: 0, flex: 0, plus: 0, first50: 0 },
     daypasses: 0,
     dayRevenue: 0,
     cancellations: 0,
@@ -128,6 +128,7 @@ export function buildReport(members, year, today = isoDate()) {
     desk: sum('desk'),
     minors: sum('minors'),
     byPlan: {
+      slowstart: months.reduce((t, row) => t + row.byPlan.slowstart, 0),
       standard: months.reduce((t, row) => t + row.byPlan.standard, 0),
       flex: months.reduce((t, row) => t + row.byPlan.flex, 0),
       plus: months.reduce((t, row) => t + row.byPlan.plus, 0),

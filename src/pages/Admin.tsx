@@ -4,7 +4,7 @@ import { snapshotMonth } from '../admin/snapshot.ts'
 
 type PayStatus = 'paid' | 'open' | 'failed' | 'waived' | 'upcoming' | 'na'
 type MemberStatus = 'received' | 'active' | 'paused' | 'cancelled' | 'withdrawn' | 'expired'
-type PlanId = 'standard' | 'flex' | 'plus' | 'daypass' | 'first50'
+type PlanId = 'slowstart' | 'standard' | 'flex' | 'plus' | 'daypass' | 'first50'
 
 type CancelInfo = {
   kind: string
@@ -690,7 +690,7 @@ type ReportMonth = {
   online: number
   desk: number
   minors: number
-  byPlan: { standard: number; flex: number; plus: number; first50: number }
+  byPlan: { slowstart: number; standard: number; flex: number; plus: number; first50: number }
   daypasses: number
   dayRevenue: number
   cancellations: number
@@ -801,9 +801,10 @@ function Report({ onShowList }: { onShowList: (ym: string) => void }) {
         </article>
         <article>
           <strong>
-            {view.byPlan.standard} · {view.byPlan.flex} · {view.byPlan.plus} · {view.byPlan.first50}
+            {view.byPlan.slowstart ?? 0} · {view.byPlan.standard} · {view.byPlan.flex} · {view.byPlan.plus} ·{' '}
+            {view.byPlan.first50}
           </strong>
-          <span>Standard · Flex · Plus · First 50</span>
+          <span>Slow Start · Standard · Flex · Plus · First 50</span>
         </article>
         <article>
           <strong>{view.minors}</strong>
@@ -1711,6 +1712,7 @@ export function Admin() {
         <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Name, Mail, Telefon" />
         <select value={plan} onChange={(event) => setPlan(event.target.value)}>
           <option value="">Alle Tarife</option>
+          <option value="slowstart">Slow Start Tarif</option>
           <option value="standard">Standard</option>
           <option value="flex">Flex</option>
           <option value="plus">Plus</option>
@@ -2461,6 +2463,7 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
         <label>
           Tarif
           <select value={plan} onChange={(event) => setPlan(event.target.value as PlanId)}>
+            <option value="slowstart">Slow Start Tarif 12 Monate · 2×/Woche</option>
             <option value="standard">Standard 24 Monate</option>
             <option value="flex">Flex 12 Monate</option>
             <option value="plus">Plus 6 Monate</option>

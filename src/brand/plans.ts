@@ -1,4 +1,4 @@
-export const PLAN_IDS = ['standard', 'flex', 'plus', 'daypass', 'first50'] as const
+export const PLAN_IDS = ['slowstart', 'standard', 'flex', 'plus', 'daypass', 'first50'] as const
 
 export type PlanId = (typeof PLAN_IDS)[number]
 
@@ -14,11 +14,36 @@ export type Plan = {
   accent: 'red' | 'white' | 'gold' | 'pink'
   limited?: boolean
   limit?: number
+  /** Leistungsumfang auf Karten und im Anmeldeformular. */
+  includes: string
   bullets: string[]
   contract: '6' | '12' | '24' | 'day'
 }
 
+const INCLUDES_ALL =
+  'Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.'
+const INCLUDES_SLOWSTART =
+  '2 Kurse / Einheiten pro Woche. MMA, Boxen, BJJ und mehr – für alle, die weniger Zeit oder Budget haben.'
+
 export const PLANS: Plan[] = [
+  {
+    id: 'slowstart',
+    name: 'Slow Start Tarif',
+    tag: '12 Monate',
+    price: '79,99',
+    priceValue: 79.99,
+    unit: '/ Monat',
+    term: '12 Monate Laufzeit',
+    termMonths: 12,
+    accent: 'white',
+    includes: INCLUDES_SLOWSTART,
+    bullets: [
+      '2 Kurse / Einheiten pro Woche',
+      'Zahlung erst ab echter Eröffnung',
+      'Kündigung 1 Monat zum Laufzeitende',
+    ],
+    contract: '12',
+  },
   {
     id: 'standard',
     name: 'Standard',
@@ -29,6 +54,7 @@ export const PLANS: Plan[] = [
     term: '24 Monate Laufzeit',
     termMonths: 24,
     accent: 'white',
+    includes: INCLUDES_ALL,
     bullets: [
       'Volle Mitgliedschaft',
       'Zahlung erst ab echter Eröffnung',
@@ -46,6 +72,7 @@ export const PLANS: Plan[] = [
     term: '12 Monate Laufzeit',
     termMonths: 12,
     accent: 'gold',
+    includes: INCLUDES_ALL,
     bullets: [
       'Kürzere Erstlaufzeit',
       'Zahlung erst ab echter Eröffnung',
@@ -63,6 +90,7 @@ export const PLANS: Plan[] = [
     term: '6 Monate Laufzeit',
     termMonths: 6,
     accent: 'pink',
+    includes: INCLUDES_ALL,
     bullets: [
       'Kurze Erstlaufzeit',
       'Zahlung erst ab echter Eröffnung',
@@ -80,6 +108,7 @@ export const PLANS: Plan[] = [
     term: 'Ein Trainingstag',
     termMonths: null,
     accent: 'pink',
+    includes: 'Alle Kurse an diesem Tag: MMA, Boxen, BJJ und mehr.',
     bullets: [
       'Alle Kurse an diesem Tag: MMA, Boxen, BJJ und mehr',
       'Kein Monatsvertrag',
@@ -102,6 +131,7 @@ export const FIRST50: Plan = {
   accent: 'red',
   limited: true,
   limit: 50,
+  includes: INCLUDES_ALL,
   bullets: [
     '89,99€ statt 99,99€',
     'Nur für die Voranmeldung, persönlicher Link',
