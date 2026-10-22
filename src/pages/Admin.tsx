@@ -3092,23 +3092,27 @@ function BroadcastMailer() {
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [sending, setSending] = useState<'test' | 'all' | null>(null)
 
   async function onPreview() {
     setBusy(true)
     setError(null)
     setNote(null)
-    const { data } = await api('/api/admin', {
-      method: 'POST',
-      body: JSON.stringify({ action: 'broadcastPreview', audience, plan, includeDaypass }),
-    })
-    setBusy(false)
-    if (!data.ok) {
-      setError(errorText(String(data.error)))
-      setPreview(null)
-      return
+    try {
+      const { data } = await api('/api/admin', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'broadcastPreview', audience, plan, includeDaypass }),
+      })
+      if (!data.ok) {
+        setError(errorText(String(data.error)))
+        setPreview(null)
+        return
+      }
+      setPreview({ total: data.total ?? 0, sample: data.sample ?? [] })
+      setNote(`${data.total ?? 0} Empfänger mit diesem Filter.`)
+    } finally {
+      setBusy(false)
     }
-    setPreview({ total: data.total ?? 0, sample: data.sample ?? [] })
-    setNote(`${data.total ?? 0} Empfänger mit diesem Filter.`)
   }
 
   async function onTest() {
@@ -3117,26 +3121,31 @@ function BroadcastMailer() {
       return
     }
     setBusy(true)
+    setSending('test')
     setError(null)
     setNote(null)
-    const { data } = await api('/api/admin', {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'broadcastSend',
-        subject,
-        body,
-        audience,
-        plan,
-        includeDaypass,
-        testEmail: testEmail.trim(),
-      }),
-    })
-    setBusy(false)
-    if (!data.ok) {
-      setError(errorText(String(data.error)))
-      return
+    try {
+      const { data } = await api('/api/admin', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'broadcastSend',
+          subject,
+          body,
+          audience,
+          plan,
+          includeDaypass,
+          testEmail: testEmail.trim(),
+        }),
+      })
+      if (!data.ok) {
+        setError(errorText(String(data.error)))
+        return
+      }
+      setNote(`Testmail raus an ${testEmail.trim()}.`)
+    } finally {
+      setBusy(false)
+      setSending(null)
     }
-    setNote(`Testmail raus an ${testEmail.trim()}.`)
   }
 
   async function onSend(event: FormEvent) {
@@ -3154,31 +3163,36 @@ function BroadcastMailer() {
       return
     }
     setBusy(true)
+    setSending('all')
     setError(null)
     setNote(null)
-    const { data } = await api('/api/admin', {
-      method: 'POST',
-      body: JSON.stringify({
-        action: 'broadcastSend',
-        subject,
-        body,
-        audience,
-        plan,
-        includeDaypass,
-        confirm,
-      }),
-    })
-    setBusy(false)
-    if (!data.ok) {
-      setError(errorText(String(data.error)))
-      return
+    try {
+      const { data } = await api('/api/admin', {
+        method: 'POST',
+        body: JSON.stringify({
+          action: 'broadcastSend',
+          subject,
+          body,
+          audience,
+          plan,
+          includeDaypass,
+          confirm,
+        }),
+      })
+      if (!data.ok) {
+        setError(errorText(String(data.error)))
+        return
+      }
+      setNote(`Raus: ${data.sent ?? 0} von ${data.total ?? 0}${data.failed ? ` · Fehler nach ${data.failed}` : ''}.`)
+      setConfirm('')
+    } finally {
+      setBusy(false)
+      setSending(null)
     }
-    setNote(`Raus: ${data.sent ?? 0} von ${data.total ?? 0}${data.failed ? ` · Fehler nach ${data.failed}` : ''}.`)
-    setConfirm('')
   }
 
   return (
-    <form className="admin-card" onSubmit={(event) => void onSend(event)}>
+    <form className="admin-card" aria-busy={busy} onSubmit={(event) => void onSend(event)}>
       <h2>Rundmail an den Bestand</h2>
       <p className="admin-muted">
         Infos an Mitglieder. Jede Mail beginnt mit „Hi Vorname,“ und endet mit Konrad und Mehmet. Gekündigte und
@@ -3186,7 +3200,13 @@ function BroadcastMailer() {
       </p>
       <label>
         Betreff
-        <input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={140} required />
+        <input
+          value={subject}
+          onChange={(event) => setSubject(event.target.value)}
+          maxLength={140}
+          required
+          disabled={busy}
+        />
       </label>
       <label>
         Text
@@ -3197,6 +3217,7 @@ function BroadcastMailer() {
           rows={8}
           maxLength={8000}
           required
+          disabled={busy}
           placeholder={'z. B.\n\nAm Montag entfällt die 18-Uhr-Einheit.\nStattdessen Open Mat ab 19 Uhr.'}
         />
       </label>
@@ -3205,6 +3226,7 @@ function BroadcastMailer() {
           Empfänger
           <select
             value={audience}
+            disabled={busy}
             onChange={(event) => {
               setAudience(event.target.value as 'active' | 'current' | 'all')
               setPreview(null)
@@ -3219,6 +3241,7 @@ function BroadcastMailer() {
           Tarif (optional)
           <select
             value={plan}
+            disabled={busy}
             onChange={(event) => {
               setPlan(event.target.value)
               setPreview(null)
@@ -3238,6 +3261,7 @@ function BroadcastMailer() {
         <input
           type="checkbox"
           checked={includeDaypass}
+          disabled={busy}
           onChange={(event) => {
             setIncludeDaypass(event.target.checked)
             setPreview(null)
@@ -3267,13 +3291,26 @@ function BroadcastMailer() {
           <input
             type="email"
             value={testEmail}
+            disabled={busy}
             onChange={(event) => setTestEmail(event.target.value)}
             placeholder="deine@mail.de"
           />
         </label>
         <div className="admin-broadcast-test">
-          <button className="btn btn-ghost" type="button" disabled={busy || !subject.trim() || !body.trim()} onClick={() => void onTest()}>
-            Nur Test senden
+          <button
+            className="btn btn-ghost"
+            type="button"
+            disabled={busy || !subject.trim() || !body.trim()}
+            onClick={() => void onTest()}
+          >
+            {sending === 'test' ? (
+              <>
+                <span className="admin-spinner" aria-hidden="true" />
+                Sendet Test…
+              </>
+            ) : (
+              'Nur Test senden'
+            )}
           </button>
         </div>
       </div>
@@ -3281,11 +3318,18 @@ function BroadcastMailer() {
         Bestätigung für den Versand an alle
         <input
           value={confirm}
+          disabled={busy}
           onChange={(event) => setConfirm(event.target.value)}
           placeholder="an-alle-mitglieder"
           autoComplete="off"
         />
       </label>
+      {sending ? (
+        <p className="admin-broadcast-loading" role="status" aria-live="polite">
+          <span className="admin-spinner" aria-hidden="true" />
+          {sending === 'test' ? 'Testmail wird gesendet…' : 'Mails werden gesendet… Bitte warten.'}
+        </p>
+      ) : null}
       {error ? <p className="admin-error">{error}</p> : null}
       {note ? <p className="admin-muted">{note}</p> : null}
       <button
@@ -3293,7 +3337,14 @@ function BroadcastMailer() {
         type="submit"
         disabled={busy || !subject.trim() || !body.trim() || confirm.trim() !== 'an-alle-mitglieder'}
       >
-        An alle Empfänger senden
+        {sending === 'all' ? (
+          <>
+            <span className="admin-spinner" aria-hidden="true" />
+            Sendet…
+          </>
+        ) : (
+          'An alle Empfänger senden'
+        )}
       </button>
     </form>
   )

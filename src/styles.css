@@ -2614,6 +2614,39 @@ p,
   align-items: flex-end;
 }
 
+.admin-broadcast-loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 12px 14px;
+  background: #1a1a1a;
+  border: 1px solid var(--line);
+  color: var(--ink);
+}
+
+.admin-spinner {
+  width: 1.05rem;
+  height: 1.05rem;
+  border: 2px solid color-mix(in srgb, var(--ink) 25%, transparent);
+  border-top-color: var(--accent, #c4121a);
+  border-radius: 50%;
+  animation: admin-spin 0.7s linear infinite;
+  flex: 0 0 auto;
+}
+
+.btn .admin-spinner {
+  display: inline-block;
+  vertical-align: -0.15em;
+  margin-right: 0.45em;
+}
+
+@keyframes admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 .admin-top {
   display: flex;
   justify-content: space-between;
