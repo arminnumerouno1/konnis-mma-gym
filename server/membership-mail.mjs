@@ -394,6 +394,42 @@ export async function sendPaymentFailedEmail(env, record, { period = '', amount 
   })
 }
 
+export function broadcastMailSubject(subject) {
+  return String(subject ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+export function broadcastMailHtml({ first = '', body = '' } = {}) {
+  const who = escapeMail(String(first ?? '').trim() || 'du')
+  const hi = who === 'du' ? 'Hi,' : `Hi ${who},`
+  const text = String(body ?? '')
+    .replace(/\r\n/g, '\n')
+    .trim()
+  const content = text
+    ? text
+        .split(/\n{2,}/)
+        .map((block) => `<p>${escapeMail(block).replaceAll('\n', '<br>\n')}</p>`)
+        .join('\n')
+    : ''
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>${hi}</p>
+${content}
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+</div>`
+}
+
+export async function sendBroadcastEmail(env, { to, name = '', first = '', subject = '', body = '' } = {}) {
+  const apiKey = env.BREVO_API_KEY?.trim()
+  if (!apiKey || !to) return 'skipped'
+  return sendSmtp(env, {
+    to,
+    name: name || to,
+    subject: broadcastMailSubject(subject),
+    html: broadcastMailHtml({ first, body }),
+  })
+}
+
 export async function sendMembershipEmails(env, record, { paper = false, creditorId = '', extra = [] } = {}) {
   const apiKey = env.BREVO_API_KEY?.trim()
   if (!apiKey) return { member: 'skipped', gym: 'skipped' }

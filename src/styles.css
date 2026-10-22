@@ -2582,6 +2582,7 @@ p,
 
 .admin-card input,
 .admin-card select,
+.admin-card textarea,
 .admin-filters input,
 .admin-filters select,
 .admin-pane select,
@@ -2593,6 +2594,24 @@ p,
   border: 1px solid var(--line);
   padding: 10px 12px;
   font: inherit;
+}
+
+.admin-broadcast-body {
+  min-height: 160px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.admin-broadcast-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
+.admin-broadcast-test {
+  display: flex;
+  align-items: flex-end;
 }
 
 .admin-top {

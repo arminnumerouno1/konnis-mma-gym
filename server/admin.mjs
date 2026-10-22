@@ -25,12 +25,19 @@ import {
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
 import {
+  sendBroadcastEmail,
   sendMembershipEmails,
   sendPaperReturnEmail,
   sendPayLinkEmail,
   sendPriceChangeEmail,
   sendReminderEmail,
 } from './membership-mail.mjs'
+import {
+  BROADCAST_CONFIRM,
+  broadcastRecipients,
+  normalizeBroadcastPayload,
+  runBroadcast,
+} from './broadcast-mail.mjs'
 import { signupFeeFor } from './signup-fee.mjs'
 import { matchBankTransactions, parseBankCsv } from './bank-import.mjs'
 import { runDueReminders } from './dues-cron.mjs'
@@ -696,6 +703,7 @@ export function createAdminHandler({
   sendMail = sendMembershipEmails,
   sendPayLink = sendPayLinkEmail,
   sendReminder = sendReminderEmail,
+  sendBroadcast = sendBroadcastEmail,
   deliverInvite = deliverFirst50Invite,
 }) {
   const store = createMemberStore({ dataDir, env })
@@ -1591,6 +1599,69 @@ export function createAdminHandler({
           return db
         })
         json(res, 200, { ok: true, applied })
+        return
+      }
+
+      if (action === 'broadcastPreview') {
+        const audience = String(body.audience ?? 'active').trim()
+        const plan = String(body.plan ?? '').trim()
+        const includeDaypass = body.includeDaypass === true
+        if (!['active', 'current', 'all'].includes(audience)) {
+          json(res, 400, { ok: false, error: 'audience' })
+          return
+        }
+        if (plan && !PLAN_IDS.includes(plan)) {
+          json(res, 400, { ok: false, error: 'plan' })
+          return
+        }
+        const people = broadcastRecipients((await store.load()).members ?? [], {
+          audience,
+          plan,
+          includeDaypass,
+        })
+        json(res, 200, {
+          ok: true,
+          total: people.length,
+          sample: people.slice(0, 8).map((row) => ({ name: row.name, email: row.email, plan: row.plan })),
+        })
+        return
+      }
+
+      if (action === 'broadcastSend') {
+        if (!env.BREVO_API_KEY?.trim()) {
+          json(res, 503, { ok: false, error: 'mail_off' })
+          return
+        }
+        const payload = normalizeBroadcastPayload(body)
+        if (!payload.ok) {
+          json(res, 400, { ok: false, error: payload.error })
+          return
+        }
+        if (!payload.testEmail && payload.confirm !== BROADCAST_CONFIRM) {
+          json(res, 403, { ok: false, error: 'confirm' })
+          return
+        }
+        const result = await runBroadcast({
+          env,
+          members: (await store.load()).members ?? [],
+          payload,
+          sendOne: sendBroadcast,
+        })
+        if (!result.ok) {
+          json(
+            res,
+            result.error === 'confirm' ? 403 : result.error === 'no_recipients' ? 409 : 502,
+            {
+              ok: false,
+              error: result.error || 'mail',
+              sent: result.sent ?? 0,
+              failed: result.failed ?? 0,
+              total: result.total ?? 0,
+            },
+          )
+          return
+        }
+        json(res, 200, result)
         return
       }
 

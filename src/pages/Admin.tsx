@@ -274,6 +274,11 @@ const ERROR_TEXT: Record<string, string> = {
   columns: 'CSV braucht eine Betrag-Spalte (Sparkasse-Export).',
   empty: 'Keine Treffer oder leere Datei.',
   receipt: 'Quittung nur für bezahlte Beiträge. Bitte erst als gezahlt markieren.',
+  subject: 'Betreff fehlt oder ist zu lang (max. 140 Zeichen).',
+  body: 'Text fehlt oder ist zu lang (max. 8000 Zeichen).',
+  audience: 'Empfängerkreis prüfen.',
+  confirm: 'Zur Bestätigung bitte genau „an-alle-mitglieder“ tippen.',
+  no_recipients: 'Keine Empfänger mit diesem Filter.',
 }
 
 function errorText(code?: string) {
@@ -2228,6 +2233,7 @@ export function Admin() {
         </section>
       ) : null}
 
+      {tab === 'members' ? <BroadcastMailer /> : null}
       {tab === 'members' ? <First50Sender /> : null}
 
       {tab === 'members' && creating ? <CreateMember onDone={async (id) => {
@@ -3064,6 +3070,227 @@ function MemberPane({
         </button>
       </section>
     </section>
+  )
+}
+
+function BroadcastMailer() {
+  const [subject, setSubject] = useState('')
+  const [body, setBody] = useState('')
+  const [audience, setAudience] = useState<'active' | 'current' | 'all'>('active')
+  const [plan, setPlan] = useState('')
+  const [includeDaypass, setIncludeDaypass] = useState(false)
+  const [confirm, setConfirm] = useState('')
+  const [testEmail, setTestEmail] = useState('')
+  const [preview, setPreview] = useState<{ total: number; sample: { name: string; email: string; plan: string }[] } | null>(
+    null,
+  )
+  const [note, setNote] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function onPreview() {
+    setBusy(true)
+    setError(null)
+    setNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'broadcastPreview', audience, plan, includeDaypass }),
+    })
+    setBusy(false)
+    if (!data.ok) {
+      setError(errorText(String(data.error)))
+      setPreview(null)
+      return
+    }
+    setPreview({ total: data.total ?? 0, sample: data.sample ?? [] })
+    setNote(`${data.total ?? 0} Empfänger mit diesem Filter.`)
+  }
+
+  async function onTest() {
+    if (!testEmail.trim()) {
+      setError('Für den Test eine E-Mail eintragen.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    setNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'broadcastSend',
+        subject,
+        body,
+        audience,
+        plan,
+        includeDaypass,
+        testEmail: testEmail.trim(),
+      }),
+    })
+    setBusy(false)
+    if (!data.ok) {
+      setError(errorText(String(data.error)))
+      return
+    }
+    setNote(`Testmail raus an ${testEmail.trim()}.`)
+  }
+
+  async function onSend(event: FormEvent) {
+    event.preventDefault()
+    const total = preview?.total
+    if (total == null) {
+      setError('Zuerst Empfänger zählen.')
+      return
+    }
+    if (
+      !window.confirm(
+        `Wirklich an ${total} Mitglied${total === 1 ? '' : 'er'} senden? Das geht nicht zurück.`,
+      )
+    ) {
+      return
+    }
+    setBusy(true)
+    setError(null)
+    setNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'broadcastSend',
+        subject,
+        body,
+        audience,
+        plan,
+        includeDaypass,
+        confirm,
+      }),
+    })
+    setBusy(false)
+    if (!data.ok) {
+      setError(errorText(String(data.error)))
+      return
+    }
+    setNote(`Raus: ${data.sent ?? 0} von ${data.total ?? 0}${data.failed ? ` · Fehler nach ${data.failed}` : ''}.`)
+    setConfirm('')
+  }
+
+  return (
+    <form className="admin-card" onSubmit={(event) => void onSend(event)}>
+      <h2>Mail an Mitglieder</h2>
+      <p className="admin-muted">
+        Infos an den Bestand. Jede Mail beginnt mit „Hi Vorname,“ und endet mit Konrad und Mehmet. Gekündigte und
+        Widerrufe bekommen nichts.
+      </p>
+      <label>
+        Betreff
+        <input value={subject} onChange={(event) => setSubject(event.target.value)} maxLength={140} required />
+      </label>
+      <label>
+        Text
+        <textarea
+          className="admin-broadcast-body"
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+          rows={8}
+          maxLength={8000}
+          required
+          placeholder={'z. B.\n\nAm Montag entfällt die 18-Uhr-Einheit.\nStattdessen Open Mat ab 19 Uhr.'}
+        />
+      </label>
+      <div className="admin-grid">
+        <label>
+          Empfänger
+          <select
+            value={audience}
+            onChange={(event) => {
+              setAudience(event.target.value as 'active' | 'current' | 'all')
+              setPreview(null)
+            }}
+          >
+            <option value="active">Nur aktive</option>
+            <option value="current">Aktiv + pausiert</option>
+            <option value="all">Alle aktuellen (ohne Gekündigte)</option>
+          </select>
+        </label>
+        <label>
+          Tarif (optional)
+          <select
+            value={plan}
+            onChange={(event) => {
+              setPlan(event.target.value)
+              setPreview(null)
+            }}
+          >
+            <option value="">Alle Tarife</option>
+            <option value="slowstart">Slow Start Tarif</option>
+            <option value="standard">Standard</option>
+            <option value="flex">Flex</option>
+            <option value="plus">Plus</option>
+            <option value="first50">First 50</option>
+            <option value="daypass">Day Pass</option>
+          </select>
+        </label>
+      </div>
+      <label className="admin-check">
+        <input
+          type="checkbox"
+          checked={includeDaypass}
+          onChange={(event) => {
+            setIncludeDaypass(event.target.checked)
+            setPreview(null)
+          }}
+        />
+        Day-Pass-Gäste mitnehmen
+      </label>
+      <div className="admin-broadcast-actions">
+        <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => void onPreview()}>
+          Empfänger zählen
+        </button>
+        {preview ? (
+          <span className="admin-muted">
+            {preview.total} Empfänger
+            {preview.sample.length
+              ? ` · z. B. ${preview.sample
+                  .slice(0, 3)
+                  .map((row) => row.name)
+                  .join(', ')}`
+              : ''}
+          </span>
+        ) : null}
+      </div>
+      <div className="admin-grid">
+        <label>
+          Test an eine Adresse
+          <input
+            type="email"
+            value={testEmail}
+            onChange={(event) => setTestEmail(event.target.value)}
+            placeholder="deine@mail.de"
+          />
+        </label>
+        <div className="admin-broadcast-test">
+          <button className="btn btn-ghost" type="button" disabled={busy || !subject.trim() || !body.trim()} onClick={() => void onTest()}>
+            Nur Test senden
+          </button>
+        </div>
+      </div>
+      <label>
+        Bestätigung für den Versand an alle
+        <input
+          value={confirm}
+          onChange={(event) => setConfirm(event.target.value)}
+          placeholder="an-alle-mitglieder"
+          autoComplete="off"
+        />
+      </label>
+      {error ? <p className="admin-error">{error}</p> : null}
+      {note ? <p className="admin-muted">{note}</p> : null}
+      <button
+        className="btn btn-solid"
+        type="submit"
+        disabled={busy || !subject.trim() || !body.trim() || confirm.trim() !== 'an-alle-mitglieder'}
+      >
+        An alle Empfänger senden
+      </button>
+    </form>
   )
 }
 
