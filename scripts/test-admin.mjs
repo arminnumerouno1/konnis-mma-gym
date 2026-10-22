@@ -1086,7 +1086,8 @@ assert(payDenied.status === 401 && payMails.length === 0, 'pay link mail needs t
 const payHasSub = await payCall({ action: 'sendPayLink', proof, name: withBank.data.member.firstName + ' ' + withBank.data.member.lastName })
 assert(payHasSub.status === 409 && payHasSub.data.error === 'stripe_exists' && payMails.length === 0, 'no pay link when a subscription exists')
 const paySent = await payCall({ action: 'sendPayLink', proof, name: 'Benoah Agbor' })
-assert(paySent.status === 200 && paySent.data.email === 'benoah@example.com' && !paySent.data.checkoutUrl, 'pay link mail goes out by name')
+assert(paySent.status === 200 && paySent.data.email === 'benoah@example.com', 'pay link mail goes out by name')
+assert(String(paySent.data.checkoutUrl || '').includes('checkout.stripe.com'), 'pay link response includes checkout url')
 assert(payMails.length === 1 && payMails[0].url.includes('checkout.stripe.com'), 'pay link mail carries the checkout url')
 const payStored = await store.load()
 const benoah = payStored.members.find((row) => row.email === 'benoah@example.com')
@@ -1229,5 +1230,66 @@ const paidOpen = await duesCall({
 })
 assert(paidOpen.status === 200 && paidOpen.data.marked >= 2, 'payOpen clears open rows')
 assert(openDuesOf(paidOpen.data.member).openCount === 0, 'no open dues after payOpen')
+
+const bulkMember = setPayment(
+  memberFromSignup(
+    {
+      id: 'bulk1',
+      status: 'active',
+      plan: 'flex',
+      planName: 'Flex',
+      price: 109.99,
+      termMonths: 12,
+      fee: 0,
+      firstName: 'Tom',
+      lastName: 'Bulk',
+      birthDate: '1991-03-03',
+      email: 'tom.bulk@example.com',
+      phone: '+49 171 3334455',
+      startDate: '2026-09-01',
+      payMethod: 'transfer',
+      createdAt: '2026-08-02T10:00:00.000Z',
+      source: 'admin',
+    },
+    '2026-11-15',
+  ),
+  { period: '2026-11', status: 'open' },
+  '2026-11-15',
+)
+await duesStore.update((db) => {
+  db.members.push(bulkMember)
+  return db
+})
+const duesNov = await duesCall({
+  method: 'GET',
+  url: '/api/admin?dues=1&period=2026-11&payMethod=transfer',
+  headers: { cookie: duesCookie },
+  socket: { remoteAddress: '10.0.0.20' },
+})
+assert(
+  duesNov.status === 200 && duesNov.data.dues.some((row) => row.email === 'tom.bulk@example.com'),
+  'dues filter by period and transfer',
+)
+const bulkPay = await duesCall({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie: duesCookie },
+  socket: { remoteAddress: '10.0.0.20' },
+  body: { action: 'payBulk', period: '2026-11', payMethod: 'transfer' },
+})
+assert(bulkPay.status === 200 && bulkPay.data.people >= 1 && bulkPay.data.marked >= 1, 'payBulk marks transfer month')
+const afterBulk = await duesStore.load()
+const tom = afterBulk.members.find((row) => row.email === 'tom.bulk@example.com')
+const tomNov = (tom.payments ?? []).find((row) => row.kind === 'month' && row.period === '2026-11')
+assert(tomNov?.status === 'paid', 'tom november marked paid by bulk')
+
+const priceById = await duesCall({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie: duesCookie },
+  socket: { remoteAddress: '10.0.0.20' },
+  body: { action: 'sendPriceNote', id: bulkMember.id },
+})
+assert([200, 502, 503].includes(priceById.status), 'price note by id reaches mail layer')
 
 console.log('admin tests ok')

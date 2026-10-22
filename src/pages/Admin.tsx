@@ -93,6 +93,8 @@ type MemberDetail = MemberList & {
   reminders?: ReminderEntry[]
   inviteSlot?: number | null
   reviewedAt?: string | null
+  priceNoteAt?: string | null
+  payLinkAt?: string | null
 }
 
 const FIELD_LABEL: Record<string, string> = {
@@ -264,6 +266,9 @@ const ERROR_TEXT: Record<string, string> = {
   full: 'Gerade ist kein weiterer First-50-Platz frei.',
   no_open: 'Keine offenen Beiträge bei diesem Mitglied.',
   cooldown: 'In den letzten fünf Tagen ging schon eine Mahnung raus. Mit Bestätigung trotzdem senden.',
+  period: 'Bitte einen Monat wählen (JJJJ-MM).',
+  pay: 'Passt nicht zur Zahlungsart dieses Mitglieds.',
+  missing: 'Mitglied nicht gefunden.',
 }
 
 function errorText(code?: string) {
@@ -732,22 +737,31 @@ function periodLabel(period: string) {
 
 function DuesPanel({
   onOpenMember,
+  initialPeriod = '',
 }: {
   onOpenMember: (id: string) => void
+  initialPeriod?: string
 }) {
   const [q, setQ] = useState('')
   const [payMethod, setPayMethod] = useState('')
+  const [period, setPeriod] = useState(initialPeriod)
   const [dues, setDues] = useState<DuesRow[]>([])
   const [totals, setTotals] = useState({ people: 0, amount: 0, count: 0 })
   const [busyId, setBusyId] = useState<string | null>(null)
+  const [bulkBusy, setBulkBusy] = useState(false)
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [stageById, setStageById] = useState<Record<string, string>>({})
+
+  useEffect(() => {
+    setPeriod(initialPeriod)
+  }, [initialPeriod])
 
   async function refresh() {
     const query = new URLSearchParams({ dues: '1' })
     if (q.trim()) query.set('q', q.trim())
     if (payMethod) query.set('payMethod', payMethod)
+    if (period) query.set('period', period)
     const { status, data } = await api(`/api/admin?${query}`)
     if (status === 401) return
     if (data.ok) {
@@ -762,7 +776,7 @@ function DuesPanel({
     }, 180)
     return () => window.clearTimeout(timer)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, payMethod])
+  }, [q, payMethod, period])
 
   async function sendReminder(id: string, force = false) {
     setBusyId(id)
@@ -805,6 +819,40 @@ function DuesPanel({
     await refresh()
   }
 
+  async function bulkPay() {
+    if (!period) {
+      setError(errorText('period'))
+      return
+    }
+    const methodLabel =
+      payMethod === 'transfer' ? 'Überweiser' : payMethod === 'card' ? 'Kartenmitglieder' : 'alle mit offenem Beitrag'
+    if (
+      !window.confirm(
+        `${periodLabel(period)} für ${methodLabel} als gezahlt markieren? Betroffen laut Liste: ${totals.people} · ${euro(totals.amount)}.`,
+      )
+    ) {
+      return
+    }
+    setBulkBusy(true)
+    setError(null)
+    setNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'payBulk',
+        period,
+        payMethod: payMethod || undefined,
+      }),
+    })
+    setBulkBusy(false)
+    if (!data.ok) {
+      setError(errorText(String(data.error ?? '')))
+      return
+    }
+    setNote(`Sammelausgleich ${periodLabel(period)}: ${data.people ?? 0} Personen, ${data.marked ?? 0} Beiträge.`)
+    await refresh()
+  }
+
   return (
     <section className="admin-dues">
       <p className="admin-muted">
@@ -831,6 +879,18 @@ function DuesPanel({
           <option value="transfer">Banküberweisung</option>
           <option value="card">Karte / Apple Pay</option>
         </select>
+        <label className="admin-month">
+          <span>Monat</span>
+          <input type="month" value={period} onChange={(event) => setPeriod(event.target.value)} />
+        </label>
+        {period ? (
+          <button className="btn btn-ghost" type="button" onClick={() => setPeriod('')}>
+            {monthLabel(period)} ✕
+          </button>
+        ) : null}
+        <button className="btn btn-solid" type="button" disabled={bulkBusy || !period || !totals.people} onClick={() => void bulkPay()}>
+          Monat als gezahlt (Sammel)
+        </button>
       </div>
       {note ? <p className="admin-ok">{note}</p> : null}
       {error ? <p className="admin-error">{error}</p> : null}
@@ -917,7 +977,13 @@ function DuesPanel({
   )
 }
 
-function Report({ onShowList }: { onShowList: (ym: string) => void }) {
+function Report({
+  onShowList,
+  onShowDues,
+}: {
+  onShowList: (ym: string) => void
+  onShowDues: (ym: string) => void
+}) {
   const thisYear = new Date().getFullYear()
   const [year, setYear] = useState(thisYear)
   const [month, setMonth] = useState('')
@@ -962,9 +1028,14 @@ function Report({ onShowList }: { onShowList: (ym: string) => void }) {
           ))}
         </select>
         {picked ? (
-          <button className="btn btn-ghost" type="button" onClick={() => onShowList(picked.ym)}>
-            Anmeldungen {monthLabel(picked.ym)} in der Liste
-          </button>
+          <>
+            <button className="btn btn-ghost" type="button" onClick={() => onShowList(picked.ym)}>
+              Anmeldungen {monthLabel(picked.ym)} in der Liste
+            </button>
+            <button className="btn btn-ghost" type="button" onClick={() => onShowDues(picked.ym)}>
+              Offene Beiträge {monthLabel(picked.ym)}
+            </button>
+          </>
         ) : null}
       </div>
 
@@ -1006,7 +1077,15 @@ function Report({ onShowList }: { onShowList: (ym: string) => void }) {
           <strong>{euro(view.paid)}</strong>
           <span>Beiträge eingegangen</span>
         </article>
-        <article className={view.open ? 'is-alert' : ''}>
+        <article
+          className={view.open ? 'is-alert' : ''}
+          role="button"
+          tabIndex={0}
+          onClick={() => onShowDues(picked?.ym || stockRow.ym)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') onShowDues(picked?.ym || stockRow.ym)
+          }}
+        >
           <strong>{euro(view.open)}</strong>
           <span>Offen / nicht erhalten ({view.openCount})</span>
         </article>
@@ -1624,6 +1703,7 @@ export function Admin() {
   const [tab, setTab] = useState<'members' | 'dues' | 'prereg' | 'report'>('members')
   const [preregFresh, setPreregFresh] = useState(0)
   const [joined, setJoined] = useState('')
+  const [duesPeriod, setDuesPeriod] = useState('')
 
   useEffect(() => {
     const robots = document.createElement('meta')
@@ -1883,6 +1963,7 @@ export function Admin() {
 
       {tab === 'dues' ? (
         <DuesPanel
+          initialPeriod={duesPeriod}
           onOpenMember={(id) => {
             setOpenId(id)
             setTab('members')
@@ -1895,6 +1976,10 @@ export function Admin() {
           onShowList={(ym) => {
             setJoined(ym)
             setTab('members')
+          }}
+          onShowDues={(ym) => {
+            setDuesPeriod(ym)
+            setTab('dues')
           }}
         />
       ) : null}
@@ -2167,6 +2252,41 @@ function MemberPane({
     }
     setReminderNote(`${data.marked ?? 0} Beitrag(e) auf gezahlt gesetzt.`)
     onReplace(data.member)
+  }
+
+  async function sendPriceNote() {
+    setSending(true)
+    setPaneError(null)
+    setReminderNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendPriceNote', id: member.id }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      setPaneError(errorText(String(data.error ?? '')))
+      return
+    }
+    setReminderNote(`Preis-Hinweis raus an ${data.email}.`)
+    if (data.member) onReplace(data.member)
+  }
+
+  async function sendPayLinkMail() {
+    setSending(true)
+    setPaneError(null)
+    setReminderNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendPayLink', id: member.id }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      setPaneError(errorText(String(data.error ?? '')))
+      return
+    }
+    setReminderNote(`Zahlungslink-Mail raus an ${data.email || member.email}.`)
+    if (data.member) onReplace(data.member)
+    else if (data.checkoutUrl) setPayLink(String(data.checkoutUrl))
   }
 
   const holderHint = member.minor && member.guardian?.name ? member.guardian.name : `${member.firstName} ${member.lastName}`
@@ -2470,6 +2590,17 @@ function MemberPane({
               {member.transfer.bank ? ` · ${member.transfer.bank}` : ''}
             </p>
           ) : null}
+          <div className="admin-inline">
+            <button className="btn btn-ghost" type="button" disabled={sending || busy} onClick={() => void sendPriceNote()}>
+              Preis-Hinweis per Mail
+            </button>
+          </div>
+          {member.priceNoteAt ? (
+            <p className="admin-muted">
+              Zuletzt Preis-Hinweis am{' '}
+              {new Date(member.priceNoteAt).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}.
+            </p>
+          ) : null}
         </section>
       ) : member.plan !== 'daypass' ? (
         <section className={`admin-block ${member.bank?.iban && !member.bank.mandateSignedAt ? 'is-alert' : ''}`}>
@@ -2567,7 +2698,7 @@ function MemberPane({
               <button
                 className="btn btn-solid"
                 type="button"
-                disabled={busy}
+                disabled={busy || sending}
                 onClick={() => {
                   void (async () => {
                     const result = await onStripeLink()
@@ -2583,8 +2714,22 @@ function MemberPane({
               >
                 Zahlungslink erzeugen
               </button>
+              <button
+                className="btn btn-ghost"
+                type="button"
+                disabled={busy || sending}
+                onClick={() => void sendPayLinkMail()}
+              >
+                Link per Mail senden
+              </button>
             </div>
           )}
+          {member.payLinkAt ? (
+            <p className="admin-muted">
+              Zuletzt Zahlungslink-Mail am{' '}
+              {new Date(member.payLinkAt).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}.
+            </p>
+          ) : null}
           {payLink ? (
             <div className="admin-inline">
               <input readOnly value={payLink} onFocus={(event) => event.currentTarget.select()} />

@@ -265,16 +265,31 @@ function matches(member, { q, plan, status, pay, payMethod, joined }, today) {
 const REMINDER_STAGES = ['reminder', 'mahnung1', 'mahnung2']
 const REMINDER_COOLDOWN_MS = 5 * 24 * 60 * 60 * 1000
 
-function buildDues(members, { q, payMethod }, today) {
+function buildDues(members, { q, payMethod, period }, today) {
   const needle = String(q ?? '')
     .trim()
     .toLowerCase()
+  const month = /^\d{4}-\d{2}$/.test(String(period ?? '')) ? String(period) : ''
   const rows = []
   for (const member of members) {
-    const item = duesListItem(member, today)
+    let item = duesListItem(member, today)
     if (!item) continue
     if (payMethod === 'transfer' || payMethod === 'card') {
       if (item.payMethod !== payMethod) continue
+    }
+    if (month) {
+      const openRows = item.openRows.filter(
+        (row) => row.period === month || (row.kind === 'day' && String(row.period).startsWith(month)),
+      )
+      if (!openRows.length) continue
+      const openAmount = Math.round(openRows.reduce((sum, row) => sum + (Number(row.amount) || 0), 0) * 100) / 100
+      item = {
+        ...item,
+        openRows,
+        openPeriods: openRows.map((row) => row.period),
+        openCount: openRows.length,
+        openAmount,
+      }
     }
     if (needle) {
       const hay = `${item.firstName} ${item.lastName} ${item.email} ${item.phone} ${item.planName}`.toLowerCase()
@@ -285,7 +300,7 @@ function buildDues(members, { q, payMethod }, today) {
   rows.sort((a, b) => b.openAmount - a.openAmount || String(a.lastName).localeCompare(String(b.lastName), 'de'))
   const amount = Math.round(rows.reduce((sum, row) => sum + row.openAmount, 0) * 100) / 100
   const count = rows.reduce((sum, row) => sum + row.openCount, 0)
-  return { dues: rows, totals: { people: rows.length, amount, count } }
+  return { dues: rows, totals: { people: rows.length, amount, count }, period: month || null }
 }
 
 function readPhoto(value) {
@@ -1148,24 +1163,32 @@ export function createAdminHandler({
       }
 
       if (action === 'sendPriceNote') {
-        const wanted = normalizePersonName(body.name).toLocaleLowerCase('de-DE')
-        if (wanted.length < 3) {
-          json(res, 400, { ok: false, error: 'name' })
-          return
+        let id = String(body.id ?? '')
+        if (!id && proofOk) {
+          const wanted = normalizePersonName(body.name).toLocaleLowerCase('de-DE')
+          if (wanted.length < 3) {
+            json(res, 400, { ok: false, error: 'name' })
+            return
+          }
+          const found = (await store.load()).members.filter((row) => {
+            const full = normalizePersonName(`${row.firstName ?? ''} ${row.lastName ?? ''}`).toLocaleLowerCase('de-DE')
+            return full === wanted && row.status !== 'cancelled' && row.status !== 'withdrawn'
+          })
+          if (found.length === 0) {
+            json(res, 404, { ok: false, error: 'missing' })
+            return
+          }
+          if (found.length > 1) {
+            json(res, 409, { ok: false, error: 'duplicate' })
+            return
+          }
+          id = found[0].id
         }
-        const found = (await store.load()).members.filter((row) => {
-          const full = normalizePersonName(`${row.firstName ?? ''} ${row.lastName ?? ''}`).toLocaleLowerCase('de-DE')
-          return full === wanted && row.status !== 'cancelled' && row.status !== 'withdrawn'
-        })
-        if (found.length === 0) {
+        const current = (await store.load()).members.find((row) => row.id === id)
+        if (!current) {
           json(res, 404, { ok: false, error: 'missing' })
           return
         }
-        if (found.length > 1) {
-          json(res, 409, { ok: false, error: 'duplicate' })
-          return
-        }
-        const current = found[0]
         if (current.payMethod !== 'transfer') {
           json(res, 400, { ok: false, error: 'pay' })
           return
@@ -1183,13 +1206,20 @@ export function createAdminHandler({
           return
         }
         const at = new Date().toISOString()
+        let saved = null
         await store.update((db) => {
-          const index = db.members.findIndex((row) => row.id === current.id)
+          const index = db.members.findIndex((row) => row.id === id)
           if (index < 0) return db
           db.members[index] = { ...db.members[index], priceNote: 'sent', priceNoteAt: at, updatedAt: at }
+          saved = db.members[index]
           return db
         })
-        json(res, 200, { ok: true, email: current.email, price: current.price })
+        json(res, 200, {
+          ok: true,
+          email: current.email,
+          price: current.price,
+          member: saved ? publicMember(saved, today, true) : undefined,
+        })
         return
       }
 
@@ -1320,13 +1350,20 @@ export function createAdminHandler({
           return
         }
         const at = new Date().toISOString()
+        let mailedMember = null
         await store.update((db) => {
           const index = db.members.findIndex((row) => row.id === id)
           if (index < 0) return db
           db.members[index] = { ...db.members[index], payLinkAt: at, updatedAt: at }
+          mailedMember = db.members[index]
           return db
         })
-        json(res, 200, { ok: true, email: saved.email })
+        json(res, 200, {
+          ok: true,
+          email: saved.email,
+          checkoutUrl: session.url,
+          member: mailedMember ? publicMember(mailedMember, today, true) : publicMember(saved, today, true),
+        })
         return
       }
 
@@ -1393,6 +1430,48 @@ export function createAdminHandler({
           return
         }
         json(res, 200, { ok: true, marked, member: publicMember(saved, today, true) })
+        return
+      }
+
+      if (action === 'payBulk') {
+        const period = String(body.period ?? '')
+        if (!/^\d{4}-\d{2}$/.test(period)) {
+          json(res, 400, { ok: false, error: 'period' })
+          return
+        }
+        const method =
+          body.payMethod === 'transfer' || body.payMethod === 'card' ? body.payMethod : ''
+        let marked = 0
+        let people = 0
+        await store.update((db) => {
+          for (let index = 0; index < db.members.length; index += 1) {
+            const row = db.members[index]
+            if (method && row.payMethod !== method) continue
+            const dues = openDuesOf(row, today)
+            const rows = dues.openRows.filter(
+              (item) => item.period === period || (item.kind === 'day' && String(item.period).startsWith(period)),
+            )
+            if (!rows.length) continue
+            let next = row
+            for (const item of rows) {
+              next = setPayment(
+                next,
+                {
+                  period: item.period,
+                  kind: item.kind === 'day' ? 'day' : 'month',
+                  status: 'paid',
+                  note: String(body.note ?? `Tresen: Sammelausgleich ${period}`),
+                },
+                today,
+              )
+              marked += 1
+            }
+            db.members[index] = next
+            people += 1
+          }
+          return db
+        })
+        json(res, 200, { ok: true, period, payMethod: method || null, marked, people })
         return
       }
 
@@ -1648,7 +1727,8 @@ export function createAdminHandler({
     if (url.searchParams.get('dues') === '1') {
       const q = String(url.searchParams.get('q') ?? '')
       const payMethod = String(url.searchParams.get('payMethod') ?? '')
-      const built = buildDues(db.members, { q, payMethod }, today)
+      const period = String(url.searchParams.get('period') ?? '')
+      const built = buildDues(db.members, { q, payMethod, period }, today)
       json(res, 200, {
         ok: true,
         store: storeKind(env),
