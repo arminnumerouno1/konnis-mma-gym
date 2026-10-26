@@ -2323,7 +2323,7 @@ export function Admin() {
         ) : null}
       </section>
 
-      <div className="admin-split">
+      <div className={`admin-split${openId ? ' is-detail' : ''}`}>
         <section className="admin-list" aria-label="Mitgliederliste">
           {members.length === 0 ? <p className="admin-muted admin-list-empty">Noch keine Mitglieder.</p> : null}
           {members.map((row) => (
@@ -2817,7 +2817,7 @@ function MemberPane({
           </div>
         ) : null}
         {member.plan !== 'daypass' ? (
-          <div>
+          <div className="admin-dl-wide">
             <dt>Zahlung</dt>
             <dd>
               {member.payMethod === 'transfer' ? (

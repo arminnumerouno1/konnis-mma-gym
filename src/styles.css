@@ -3035,10 +3035,14 @@ p,
 
 .admin-split {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   column-gap: 18px;
   row-gap: 8px;
   align-items: start;
+}
+
+.admin-split.is-detail {
+  grid-template-columns: minmax(240px, 0.72fr) minmax(420px, 1.35fr);
 }
 
 .admin-list {
@@ -3074,6 +3078,10 @@ p,
   top: 12px;
   align-self: start;
   min-width: 0;
+  max-height: calc(100dvh - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-empty-side {
@@ -3142,10 +3150,10 @@ p,
 
 .admin-pane {
   display: grid;
-  gap: 16px;
+  gap: 12px;
   background: var(--bg-2);
   border: 1px solid var(--line);
-  padding: 16px;
+  padding: 14px 16px;
 }
 
 .admin-pane-top {
@@ -3233,13 +3241,19 @@ p,
 
 .admin-dl {
   display: grid;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px 16px;
   margin: 0;
 }
 
 .admin-dl div {
   display: grid;
   gap: 4px;
+  min-width: 0;
+}
+
+.admin-dl .admin-dl-wide {
+  grid-column: 1 / -1;
 }
 
 .admin-dl dt {
@@ -3467,6 +3481,7 @@ p,
   .admin-stats,
   .admin-filters,
   .admin-split,
+  .admin-split.is-detail,
   .admin-grid {
     grid-template-columns: 1fr;
   }
@@ -3484,7 +3499,13 @@ p,
     grid-column: 1;
     grid-row: auto;
     position: static;
+    max-height: none;
+    overflow: visible;
     margin: 0 0 8px;
+  }
+
+  .admin-dl {
+    grid-template-columns: 1fr;
   }
 
   .admin-empty-side {
