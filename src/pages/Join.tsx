@@ -681,16 +681,32 @@ function JoinForm({ plan, invite }: JoinProps) {
             <div className="wide join-portrait">
               <p className="join-portrait-label">{COPY.portraitLabel}</p>
               <p className="field-hint">{COPY.portraitHint}</p>
-              <label className={`join-portrait-frame${photoData ? ' has-photo' : ''}`}>
+              <div className={`join-portrait-frame${photoData ? ' has-photo' : ''}`}>
                 {photoData ? <img src={photoData} alt="" /> : <span>{photoBusy ? 'Wird geladen…' : COPY.portraitEmpty}</span>}
-                <input
-                  type="file"
-                  accept="image/*"
-                  capture="user"
-                  disabled={photoBusy}
-                  onChange={(event) => void onPortrait(event.target.files?.[0])}
-                />
-              </label>
+              </div>
+              <div className="portrait-actions">
+                <label className="btn btn-solid join-portrait-btn">
+                  Aus Galerie wählen
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/*"
+                    disabled={photoBusy}
+                    className="portrait-file-input"
+                    onChange={(event) => void onPortrait(event.target.files?.[0])}
+                  />
+                </label>
+                <label className="btn btn-ghost join-portrait-btn">
+                  Foto aufnehmen
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="user"
+                    disabled={photoBusy}
+                    className="portrait-file-input"
+                    onChange={(event) => void onPortrait(event.target.files?.[0])}
+                  />
+                </label>
+              </div>
               {photoData ? <p className="field-hint">{COPY.portraitChange}</p> : null}
             </div>
             {chosen === 'daypass' ? (
