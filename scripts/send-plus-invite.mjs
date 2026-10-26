@@ -20,7 +20,14 @@ if (!proof || !isValidEmail(email) || name.length < 3 || !start) {
 const response = await fetch(`${site}/api/admin`, {
   method: 'POST',
   headers: { 'content-type': 'application/json', accept: 'application/json' },
-  body: JSON.stringify({ action: 'sendPlusInvite', proof, email, name, start }),
+  body: JSON.stringify({
+    action: 'sendPlusInvite',
+    proof,
+    email,
+    name,
+    start,
+    openUntilSignup: process.argv.includes('--open-until-signup'),
+  }),
 })
 const text = await response.text()
 let data = null

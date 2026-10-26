@@ -172,18 +172,21 @@ export function plusInviteSubject() {
   return 'Dein Plus-Vertrag ab Dezember · KONNI MMA GYM'
 }
 
-export function plusInviteHtml({ first, name, email, url, start = '' } = {}) {
+export function plusInviteHtml({ first, name, email, url, start = '', openUntilSignup = false } = {}) {
   const who = escapeMail(first)
   const full = escapeMail(name)
   const mail = escapeMail(email)
   const href = escapeMail(url)
   const deferred = contractStart(start)
   const when = deferred ? germanDate(deferred) : germanDate('2026-12-01')
+  const validity = openUntilSignup
+    ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong> – kein 48-Stunden-Druck. Nur für dich.'
+    : 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.'
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 <p>Hi ${who},</p>
 <p>hier ist dein persönlicher Link für den Tarif <strong>Plus</strong>: <strong>119€</strong> im Monat, <strong>6 Monate</strong>.</p>
 <p>Dein Vertrag beginnt am <strong>${escapeMail(when)}</strong>. Die erste Zahlung ist an dem Tag. Vorher wird nichts berechnet.</p>
-<p>Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.</p>
+<p>${validity}</p>
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
 <p>Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.</p>
@@ -202,6 +205,7 @@ export async function deliverFirst50Invite({
   start = '',
   term = 0,
   lastChance = false,
+  openUntilSignup = false,
 }) {
   const secret = env.INVITE_SECRET
   const apiKey = env.BREVO_API_KEY?.trim()
@@ -210,13 +214,17 @@ export async function deliverFirst50Invite({
   const site = String(env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de').replace(/\/+$/, '')
   const origin = site.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : site
   const planId = plan === PLUS_ID ? PLUS_ID : FIRST50_ID
-  const token = signInvite(secret, makeInvitePayload({ email, name, slot, plan: planId, start, term }))
+  const keepOpen = planId === PLUS_ID && openUntilSignup === true
+  const token = signInvite(
+    secret,
+    makeInvitePayload({ email, name, slot, plan: planId, start, term, openUntilSignup: keepOpen }),
+  )
   const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
   const first = name.split(' ')[0] || name
   const subject = planId === PLUS_ID ? plusInviteSubject() : first50InviteSubject({ test: false, lastChance })
   const html =
     planId === PLUS_ID
-      ? plusInviteHtml({ first, name, email, url, start })
+      ? plusInviteHtml({ first, name, email, url, start, openUntilSignup: keepOpen })
       : first50InviteHtml({ first, name, email, url, start, term, lastChance })
   try {
     await postInvite({
@@ -233,7 +241,7 @@ export async function deliverFirst50Invite({
     console.error('[invite-mail]', String(error?.detail || error?.message || error).slice(0, 180))
     return { ok: false, error: 'mail' }
   }
-  return { ok: true, email, slot, plan: planId }
+  return { ok: true, email, slot, plan: planId, openUntilSignup: keepOpen }
 }
 
 export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = null }) {

@@ -173,6 +173,7 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [invitePlan, setInvitePlan] = useState<'first50' | 'plus' | null>(null)
   const [contractStart, setContractStart] = useState('')
   const [contractTerm, setContractTerm] = useState<number | null>(null)
+  const [inviteOpenUntilSignup, setInviteOpenUntilSignup] = useState(false)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
   const [birthDate, setBirthDate] = useState('')
@@ -214,7 +215,9 @@ function JoinForm({ plan, invite }: JoinProps) {
     plan.id === 'first50' && contractTerm === 12 ? '12 Monate Laufzeit' : plan.term
   const inviteLead =
     invitePlan === 'plus'
-      ? COPY.invitePlusLead
+      ? inviteOpenUntilSignup
+        ? COPY.invitePlusLeadOpen
+        : COPY.invitePlusLead
       : contractTerm === 12
         ? 'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 12 Monate. Das ist ein Sondervertrag. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, geht der Platz an die nächste Person. Nicht weiterleiten.'
         : COPY.inviteLead
@@ -236,6 +239,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       setInviteSlot(result.invite.slot)
       setContractStart(result.invite.start ?? '')
       setContractTerm(result.invite.term === 12 || result.invite.term === 6 ? result.invite.term : null)
+      setInviteOpenUntilSignup(Boolean(result.invite.openUntilSignup))
       setEmail(result.invite.email)
       setFirstName(names.firstName)
       setLastName(names.lastName)

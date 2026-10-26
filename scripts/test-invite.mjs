@@ -260,6 +260,19 @@ const plusHtml = plusInviteHtml({
 })
 assert(plusHtml.includes('119€') && plusHtml.includes('6 Monate') && plusHtml.includes('1. Dezember 2026'), 'plus invite body')
 assert(plusHtml.includes('Vorher wird nichts berechnet') && plusHtml.includes('Jetzt Vertrag abschließen'), 'plus invite payment timing')
+assert(plusHtml.includes('48 Stunden'), 'default plus invite still mentions 48 hours')
+const plusOpenHtml = plusInviteHtml({
+  first: 'Benjamin',
+  name: 'Benjamin Pitzinger',
+  email: 'benjaminpitzinger@icloud.com',
+  url: 'https://www.mma-in-leipzig.de/mitglied?invite=abc',
+  start: '2026-12-01',
+  openUntilSignup: true,
+})
+assert(
+  plusOpenHtml.includes('bleibt gültig, bis du dich angemeldet hast') && !plusOpenHtml.includes('Der Link gilt <strong>48 Stunden</strong>'),
+  'open-until-signup plus invite drops 48h pressure',
+)
 
 function mockRes() {
   const captured = { status: 0, body: '' }

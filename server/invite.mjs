@@ -9,6 +9,8 @@ export const FIRST50_SLOT_MAX = 400
 /** Slots through this number were already mailed. The desk sender starts after them. */
 export const FIRST50_ISSUED_THROUGH = 65
 export const INVITE_TTL_HOURS = 48
+/** Plus-Links „bis zur Anmeldung“: praktisch ein Jahr, ohne 48-Stunden-Druck. */
+export const INVITE_OPEN_UNTIL_SIGNUP_HOURS = 24 * 365
 
 export function nextFirst50Slot(members, issued = []) {
   const used = new Set()
@@ -108,6 +110,7 @@ export function verifyInvite(secret, token) {
       slot,
       exp,
       plan,
+      openUntilSignup: payload.o === 1,
       start: contractStart(payload.d),
       term: plan === PLUS_ID ? 6 : contractTerm(payload.m) || 24,
     },
@@ -163,16 +166,23 @@ export function makeInvitePayload({
   start = '',
   term = 0,
   ttlHours = INVITE_TTL_HOURS,
+  openUntilSignup = false,
   nowMs = Date.now(),
 }) {
   const planId = INVITE_PLAN_IDS.includes(plan) ? plan : FIRST50_ID
+  const hours = openUntilSignup
+    ? INVITE_OPEN_UNTIL_SIGNUP_HOURS
+    : Number.isFinite(Number(ttlHours)) && Number(ttlHours) > 0
+      ? Number(ttlHours)
+      : INVITE_TTL_HOURS
   const payload = {
     p: planId,
     e: normalizeInviteEmail(email),
     n: normalizePersonName(name),
     s: Number(slot),
-    exp: Math.floor(nowMs / 1000) + ttlHours * 60 * 60,
+    exp: Math.floor(nowMs / 1000) + hours * 60 * 60,
   }
+  if (openUntilSignup) payload.o = 1
   const deferred = contractStart(start)
   if (deferred) payload.d = deferred
   if (planId === FIRST50_ID) {

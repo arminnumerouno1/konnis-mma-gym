@@ -893,20 +893,23 @@ export function createAdminHandler({
           return
         }
         const now = new Date().toISOString()
+        const openUntilSignup = plan === PLUS_ID && body.openUntilSignup === true
         const freshUntil = Date.now() - INVITE_TTL_HOURS * 60 * 60 * 1000
         let reserved = null
         await store.update((db) => {
           const issued = Array.isArray(db.issuedFirst50) ? db.issuedFirst50 : []
           db.issuedFirst50 = issued
-          const open = issued.find(
-            (row) =>
-              row?.email === email &&
-              Date.parse(row.at || '') > freshUntil &&
-              (row?.plan || FIRST50_ID) === plan,
-          )
-          if (open) {
-            reserved = { ok: false, error: 'invite_open' }
-            return db
+          if (!openUntilSignup) {
+            const open = issued.find(
+              (row) =>
+                row?.email === email &&
+                Date.parse(row.at || '') > freshUntil &&
+                (row?.plan || FIRST50_ID) === plan,
+            )
+            if (open) {
+              reserved = { ok: false, error: 'invite_open' }
+              return db
+            }
           }
           const slot = nextFirst50Slot(db.members, issued.map((row) => row?.slot))
           if (!slot) {
@@ -920,6 +923,7 @@ export function createAdminHandler({
             at: now,
             plan,
             ...(start ? { start } : {}),
+            ...(openUntilSignup ? { openUntilSignup: true } : {}),
           })
           reserved = { ok: true, slot }
           return db
@@ -938,6 +942,7 @@ export function createAdminHandler({
           plan,
           start,
           lastChance,
+          openUntilSignup,
         })
         if (!mailed?.ok) {
           await store.update((db) => {
@@ -956,7 +961,15 @@ export function createAdminHandler({
             return db
           })
         }
-        json(res, 200, { ok: true, email, slot: reserved.slot, plan, lastChance, ...(start ? { start } : {}) })
+        json(res, 200, {
+          ok: true,
+          email,
+          slot: reserved.slot,
+          plan,
+          lastChance,
+          openUntilSignup,
+          ...(start ? { start } : {}),
+        })
         return
       }
 

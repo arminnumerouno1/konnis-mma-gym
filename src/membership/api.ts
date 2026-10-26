@@ -85,6 +85,7 @@ export type InviteLookup =
         price: number
         start?: string
         term?: number
+        openUntilSignup?: boolean
       }
     }
   | { ok: false; error: MembershipError }

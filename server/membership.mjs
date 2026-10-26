@@ -515,6 +515,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
             price: plan === 'plus' ? 119 : 89.99,
             ...(checked.payload.start ? { start: checked.payload.start } : {}),
             ...(term ? { term } : {}),
+            ...(checked.payload.openUntilSignup ? { openUntilSignup: true } : {}),
           },
         })
         return
