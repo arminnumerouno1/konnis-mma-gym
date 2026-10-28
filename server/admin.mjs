@@ -864,7 +864,9 @@ export function createAdminHandler({
           action === 'sendPlusInvite' ||
           action === 'revokeInvite' ||
           action === 'sendPhotoRequest' ||
-          action === 'sendPhotoRequestBulk') &&
+          action === 'sendPhotoRequestBulk' ||
+          action === 'broadcastPreview' ||
+          action === 'broadcastSend') &&
         proofOk
       if (!authed(req) && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
