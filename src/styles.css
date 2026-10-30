@@ -821,6 +821,15 @@ p,
     padding: 0;
   }
 
+  .esn-copy {
+    text-align: center;
+  }
+
+  .esn-lead {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
   .esn-deal {
     grid-template-columns: 1fr;
   }
@@ -828,6 +837,19 @@ p,
   .esn-off {
     justify-items: center;
     text-align: center;
+  }
+
+  .esn-code-wrap {
+    justify-items: center;
+    text-align: center;
+  }
+
+  .esn-copy-btn {
+    justify-self: center;
+  }
+
+  .esn-actions {
+    justify-items: center;
   }
 }
 
