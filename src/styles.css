@@ -686,23 +686,22 @@ p,
 .esn-brand {
   display: grid;
   place-items: center;
-  padding: 28px 32px;
-  background: #f4f4f4;
+  padding: 8px 0;
+  background: transparent;
   text-decoration: none;
-  transition: transform 0.35s ease, box-shadow 0.35s ease;
-  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  transition: transform 0.35s ease;
 }
 
 .esn-brand:hover,
 .esn-brand:focus-visible {
-  transform: translateY(-4px) rotate(-1deg);
-  box-shadow: 0 24px 60px rgba(196, 18, 26, 0.25);
+  transform: translateY(-3px);
 }
 
 .esn-brand img {
-  width: min(100%, 280px);
+  width: min(100%, 300px);
   height: auto;
   display: block;
+  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.18)) drop-shadow(0 12px 28px rgba(0, 0, 0, 0.45));
 }
 
 .esn-kicker {
@@ -817,9 +816,9 @@ p,
   }
 
   .esn-brand {
-    max-width: 320px;
+    max-width: 280px;
     margin: 0 auto;
-    padding: 22px 26px;
+    padding: 0;
   }
 
   .esn-deal {
