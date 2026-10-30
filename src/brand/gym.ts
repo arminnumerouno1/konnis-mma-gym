@@ -28,6 +28,13 @@ export const GYM = {
   logo: '/brand/konni-logo-ui.webp',
   konrad: '/brand/konrad.png',
   mehmet: '/brand/mehmet.png',
+  esn: {
+    name: 'ESN',
+    logo: '/brand/esn-logo.png',
+    code: 'KONNI',
+    discount: '10%',
+    url: 'https://www.esn.com/instagram/KONNI/aktion',
+  },
   hall: {
     cage: '/brand/halle/cage.jpg',
     floor: '/brand/halle/floor.jpg',

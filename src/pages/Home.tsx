@@ -161,6 +161,57 @@ function FighterInstagram({ url, handle }: { url: string; handle: string }) {
   )
 }
 
+function EsnPartner() {
+  const [copied, setCopied] = useState(false)
+
+  async function copyCode() {
+    try {
+      await navigator.clipboard.writeText(GYM.esn.code)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <section className="esn" id="esn" data-reveal aria-label="ESN Partner">
+      <div className="esn-glow" aria-hidden="true" />
+      <div className="esn-inner">
+        <a className="esn-brand" href={GYM.esn.url} target="_blank" rel="noopener noreferrer">
+          <img src={GYM.esn.logo} alt="ESN · Elite Sports Nutrients" width={1024} height={724} />
+        </a>
+        <div className="esn-copy">
+          <p className="esn-kicker">{COPY.esnKicker}</p>
+          <h2>{COPY.esnTitle}</h2>
+          <p className="esn-lead">{COPY.esnLead}</p>
+          <div className="esn-deal">
+            <p className="esn-off">
+              <strong>{GYM.esn.discount}</strong>
+              <span>Rabatt</span>
+            </p>
+            <div className="esn-code-wrap">
+              <span className="esn-code-label">{COPY.esnCodeLabel}</span>
+              <p className="esn-code" aria-label={`Rabattcode ${GYM.esn.code}`}>
+                {GYM.esn.code}
+              </p>
+              <button className="btn btn-ghost esn-copy-btn" type="button" onClick={() => void copyCode()}>
+                {copied ? COPY.esnCopied : COPY.esnCopy}
+              </button>
+            </div>
+          </div>
+          <div className="esn-actions">
+            <a className="btn btn-solid btn-xl" href={GYM.esn.url} target="_blank" rel="noopener noreferrer">
+              {COPY.esnCta}
+            </a>
+            <p className="esn-hint">{COPY.esnHint}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  )
+}
+
 function FaqList() {
   const [open, setOpen] = useState<number | null>(0)
   return (
@@ -350,6 +401,8 @@ export function Home() {
           </div>
         </article>
       </section>
+
+      <EsnPartner />
 
       <section className="who" id="wer" data-reveal>
         <p className="who-kicker">{COPY.whoKicker}</p>

@@ -13,10 +13,15 @@ export function Footer() {
           <img src={GYM.logo} alt="" width={1036} height={1125} />
           <p className="footer-tag">{COPY.footerTag}</p>
         </div>
-        <a className="footer-ig" href={GYM.instagram} target="_blank" rel="noreferrer">
-          <InstagramIcon />
-          <span>{COPY.footerFollow}</span>
-        </a>
+        <div className="footer-top-links">
+          <a className="footer-ig" href={GYM.instagram} target="_blank" rel="noreferrer">
+            <InstagramIcon />
+            <span>{COPY.footerFollow}</span>
+          </a>
+          <a className="footer-esn" href={GYM.esn.url} target="_blank" rel="noopener noreferrer">
+            ESN Code {GYM.esn.code} · {GYM.esn.discount}
+          </a>
+        </div>
       </div>
       <div className="footer-grid">
         <div>
