@@ -111,6 +111,17 @@ function memberSignoff() {
   return `<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>`
 }
 
+const ESN_CODE = 'KONNI'
+const ESN_SHOP_URL = 'https://www.esn.com/instagram/KONNI/aktion'
+
+function esnPartnerBlock() {
+  return `<p><strong>Kleine Extra-Info von Konrad</strong><br>
+Konrad wird von ESN gesponsert. Mit seinem Code <strong>${ESN_CODE}</strong> sparst du dauerhaft 10% auf jede Bestellung im ESN Shop.<br>
+Code: <strong>${ESN_CODE}</strong><br>
+Shop: <a href="${ESN_SHOP_URL}">${ESN_SHOP_URL}</a><br>
+Einfach im Checkout einlösen. Fertig.</p>`
+}
+
 export function membershipCopyHtml(record, { forGym = false, attached = false } = {}) {
   const who = whoOf(record)
   const { formatted, unit, term } = money(record)
@@ -134,7 +145,7 @@ export function membershipCopyHtml(record, { forGym = false, attached = false } 
     : '<p><a href="https://www.mma-in-leipzig.de/legal/widerrufsbelehrung.pdf">Widerrufsbelehrung als PDF</a></p>'
   const lead = forGym
     ? `<p>Neue Mitgliedschaft über die Website.${attached ? ' Vertrag und Widerrufsbelehrung liegen als PDF bei.' : ''}${isFirst50(record) ? ' First 50, Sonderpreis 89,99€.' : ''}</p>`
-    : `${memberLead(record, { attached })}${memberSignoff()}`
+    : `${memberLead(record, { attached })}${esnPartnerBlock()}${memberSignoff()}`
 
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 ${lead}

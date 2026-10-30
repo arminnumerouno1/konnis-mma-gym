@@ -248,6 +248,14 @@ assert(standardMail.includes('DE77 8605 5592 1090 4292 70'), 'card mail names th
 assert(standardMail.includes('SEPA-Lastschrift kommt später'), 'card mail says sepa comes later')
 assert(standardMail.includes('nur bis zum 2. November 2026') && standardMail.includes('Danach beträgt sie 49 €'), 'mail states the later signup fee')
 assert(standardMail.includes('Mitgliedsvertrag') || standardMail.includes('Vertrag'), 'card mail mentions the contract')
+assert(
+  standardMail.includes('Kleine Extra-Info von Konrad') &&
+    standardMail.includes('Code: <strong>KONNI</strong>') &&
+    standardMail.includes('https://www.esn.com/instagram/KONNI/aktion') &&
+    standardMail.includes('10%'),
+  'signup mail includes ESN partner code',
+)
+assert(!membershipCopyHtml(mailRecord, { forGym: true }).includes('Kleine Extra-Info von Konrad'), 'gym copy skips ESN pitch')
 
 const dayMail = membershipCopyHtml({
   ...mailRecord,
