@@ -1635,6 +1635,7 @@ export function createAdminHandler({
         const audience = String(body.audience ?? 'active').trim()
         const plan = String(body.plan ?? '').trim()
         const includeDaypass = body.includeDaypass === true
+        const billingUntil = String(body.billingUntil ?? '').trim()
         if (!['active', 'current', 'all'].includes(audience)) {
           json(res, 400, { ok: false, error: 'audience' })
           return
@@ -1643,15 +1644,20 @@ export function createAdminHandler({
           json(res, 400, { ok: false, error: 'plan' })
           return
         }
+        if (billingUntil && !/^\d{4}-\d{2}-\d{2}$/.test(billingUntil)) {
+          json(res, 400, { ok: false, error: 'billingUntil' })
+          return
+        }
         const people = broadcastRecipients((await store.load()).members ?? [], {
           audience,
           plan,
           includeDaypass,
+          billingUntil,
         })
         json(res, 200, {
           ok: true,
           total: people.length,
-          sample: people.slice(0, 8).map((row) => ({ name: row.name, email: row.email, plan: row.plan })),
+          sample: people.slice(0, 8).map((row) => ({ name: row.name, email: row.email, plan: row.plan, billingStart: row.billingStart })),
         })
         return
       }

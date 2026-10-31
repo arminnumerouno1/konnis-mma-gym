@@ -1,5 +1,5 @@
 import { isValidEmail, normalizeEmail } from './membership.mjs'
-import { isFormerMember } from './member-model.mjs'
+import { isFormerMember, memberBillingStart } from './member-model.mjs'
 import { sendBroadcastEmail } from './membership-mail.mjs'
 
 export const BROADCAST_CONFIRM = 'an-alle-mitglieder'
@@ -25,9 +25,13 @@ function whoOf(member) {
  * - current: aktiv + pausiert
  * - all: alle außer gekündigt/widerrufen/abgelaufen
  */
-export function broadcastRecipients(members, { audience = 'active', plan = '', includeDaypass = false } = {}) {
+export function broadcastRecipients(
+  members,
+  { audience = 'active', plan = '', includeDaypass = false, billingUntil = '' } = {},
+) {
   const wantPlan = String(plan || '').trim()
   const mode = ['active', 'current', 'all'].includes(audience) ? audience : 'active'
+  const until = /^\d{4}-\d{2}-\d{2}$/.test(String(billingUntil || '')) ? String(billingUntil) : ''
   const seen = new Set()
   const people = []
 
@@ -38,6 +42,7 @@ export function broadcastRecipients(members, { audience = 'active', plan = '', i
     if (mode === 'active' && member.status !== 'active') continue
     if (mode === 'current' && member.status !== 'active' && member.status !== 'paused') continue
     if (wantPlan && member.plan !== wantPlan) continue
+    if (until && memberBillingStart(member) > until) continue
 
     const email = normalizeEmail(member.email)
     if (!isValidEmail(email) || seen.has(email)) continue
@@ -49,6 +54,7 @@ export function broadcastRecipients(members, { audience = 'active', plan = '', i
       first: firstNameOf(member),
       plan: member.plan,
       status: member.status,
+      billingStart: memberBillingStart(member),
     })
   }
 
@@ -66,6 +72,7 @@ export function normalizeBroadcastPayload(body) {
   const audience = String(body?.audience ?? 'active').trim()
   const plan = String(body?.plan ?? '').trim()
   const includeDaypass = body?.includeDaypass === true
+  const billingUntil = String(body?.billingUntil ?? '').trim()
   const confirm = String(body?.confirm ?? '').trim()
   const testEmail = normalizeEmail(body?.testEmail)
 
@@ -81,6 +88,9 @@ export function normalizeBroadcastPayload(body) {
   if (plan && !['slowstart', 'standard', 'flex', 'plus', 'daypass', 'first50'].includes(plan)) {
     return { ok: false, error: 'plan' }
   }
+  if (billingUntil && !/^\d{4}-\d{2}-\d{2}$/.test(billingUntil)) {
+    return { ok: false, error: 'billingUntil' }
+  }
   if (testEmail && !isValidEmail(testEmail)) {
     return { ok: false, error: 'email' }
   }
@@ -92,6 +102,7 @@ export function normalizeBroadcastPayload(body) {
     audience,
     plan,
     includeDaypass,
+    billingUntil,
     confirm,
     testEmail: isValidEmail(testEmail) ? testEmail : '',
   }
@@ -111,16 +122,23 @@ export async function runBroadcast({
     audience: payload.audience,
     plan: payload.plan,
     includeDaypass: payload.includeDaypass,
+    billingUntil: payload.billingUntil,
   })
 
+  function bodyFor(person) {
+    return String(payload.body || '')
+      .replaceAll('{{name}}', person?.name || 'Vorname Nachname')
+      .replaceAll('{{first}}', person?.first || 'du')
+  }
+
   if (payload.testEmail) {
-    const probe = people[0]
+    const probe = people[0] || { name: 'Max Mustermann', first: 'Max' }
     const mailed = await sendOne(env, {
       to: payload.testEmail,
       name: probe?.name || payload.testEmail,
       first: probe?.first || '',
       subject: `Test: ${payload.subject}`,
-      body: payload.body,
+      body: bodyFor(probe),
     })
     return { ok: true, test: true, sent: mailed === 'skipped' ? 0 : 1, skipped: mailed === 'skipped' ? 1 : 0, failed: 0, total: people.length, mail: mailed }
   }
@@ -142,7 +160,7 @@ export async function runBroadcast({
         name: person.name,
         first: person.first,
         subject: payload.subject,
-        body: payload.body,
+        body: bodyFor(person),
       })
       if (mailed === 'skipped') skipped += 1
       else sent += 1

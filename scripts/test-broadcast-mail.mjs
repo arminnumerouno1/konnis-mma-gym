@@ -86,6 +86,23 @@ assert(broadcastRecipients(members, { audience: 'all' }).length === 2, 'all with
 assert(broadcastRecipients(members, { audience: 'all', includeDaypass: true }).length === 3, 'with daypass')
 assert(broadcastRecipients(members, { audience: 'active', plan: 'flex' }).length === 0, 'plan filter empty')
 assert(broadcastRecipients(members, { audience: 'current', plan: 'flex' }).length === 1, 'plan filter paused')
+const laterStart = [
+  ...members,
+  {
+    id: 'm4',
+    firstName: 'Martin',
+    lastName: 'Later',
+    email: 'martin.later@example.com',
+    plan: 'first50',
+    status: 'active',
+    startDate: '2027-01-01',
+  },
+]
+assert(broadcastRecipients(laterStart, { audience: 'active' }).length === 2, 'later start without filter')
+assert(
+  broadcastRecipients(laterStart, { audience: 'active', billingUntil: '2026-11-01' }).length === 1,
+  'billingUntil drops january start',
+)
 
 const bad = normalizeBroadcastPayload({ subject: '', body: 'x' })
 assert(bad.ok === false && bad.error === 'subject', 'subject required')
