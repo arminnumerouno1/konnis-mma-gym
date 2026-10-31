@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto'
+import { mailProofMatches } from './mail-proof.mjs'
 import { tmpdir } from 'node:os'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
 import { membershipTaken } from './member-model.mjs'
@@ -275,7 +276,7 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
       const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
 
       if (body.one === true) {
-        if (!secretsMatch(body.proof, env.SIGNUP_MAIL_PROOF?.trim()) || !apiKey || !secret) {
+        if (!mailProofMatches(body.proof, env) || !apiKey || !secret) {
           json(res, 403, { ok: false, error: 'invite' })
           return
         }

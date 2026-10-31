@@ -32,4 +32,4 @@ if (!response.ok || !data.ok) {
   console.error(`Zahlungslink nicht raus (${response.status}, ${String(data.error || 'fehler')}).`)
   process.exit(1)
 }
-console.log(`Zahlungslink raus an ${data.email}.`)
+console.log('Zahlungslink raus.')

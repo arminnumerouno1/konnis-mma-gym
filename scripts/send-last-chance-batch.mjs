@@ -2,8 +2,8 @@ import { isValidEmail, normalizeEmail } from '../server/membership.mjs'
 import { normalizePersonName } from '../server/invite.mjs'
 
 const proof = process.env.SIGNUP_MAIL_PROOF?.trim()
-if (!proof || proof.length < 16) {
-  console.error('SIGNUP_MAIL_PROOF fehlt.')
+if (!proof || proof.length < 24) {
+  console.error('SIGNUP_MAIL_PROOF fehlt oder ist kürzer als 24 Zeichen.')
   process.exit(1)
 }
 

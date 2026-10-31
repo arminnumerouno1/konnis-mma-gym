@@ -2,8 +2,10 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 import { isFormerMember } from './member-model.mjs'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
 
-export const PHOTO_TOKEN_TTL_DAYS = 14
-export const PHOTO_MAX = 140_000
+import { PHOTO_MAX, readPhotoData } from './photo-data.mjs'
+
+export const PHOTO_TOKEN_TTL_DAYS = 3
+export { PHOTO_MAX }
 export const PHOTO_REQUEST_CONFIRM = 'foto-anfordern'
 
 function escapeMail(value) {
@@ -202,10 +204,7 @@ async function readBody(req) {
 }
 
 function readPhoto(value) {
-  if (typeof value !== 'string' || !value.startsWith('data:image/') || value.length < 64 || value.length > PHOTO_MAX) {
-    return { ok: false, error: 'photo' }
-  }
-  return { ok: true, photoData: value }
+  return readPhotoData(value, { max: PHOTO_MAX, min: 64 })
 }
 
 export function createPhotoUploadHandler({ env, store }) {

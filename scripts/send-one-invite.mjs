@@ -37,4 +37,4 @@ if (!response.ok || !data.ok) {
   console.error(`Link nicht raus (${response.status}, ${String(data.error || 'fehler')}).`)
   process.exit(1)
 }
-console.log(`First-50-Link raus an ${data.email}, Platz ${data.slot}.`)
+console.log(`First-50-Link raus, Platz ${data.slot}.`)

@@ -32,4 +32,4 @@ if (!response.ok || !data.ok) {
   console.error(`Hinweismail nicht raus (${response.status}, ${String(data.error || 'fehler')}).`)
   process.exit(1)
 }
-console.log(`Hinweismail raus an ${data.email}, Beitrag ${data.price}.`)
+console.log(`Hinweismail raus, Beitrag ${data.price}.`)

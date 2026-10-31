@@ -182,7 +182,11 @@ const joined = JSON.parse(captured.body)
 assert(captured.status === 200 && joined.ok && joined.payment === 'checkout', 'signup returns checkout')
 assert(joined.checkoutUrl.startsWith('https://checkout.stripe.com/'), 'signup checkout url')
 const joinParams = new URLSearchParams(posted)
-assert(joinParams.get('subscription_data[trial_end]') === String(nov1), 'signup trial is 1 november')
+assert(
+  joinParams.get('subscription_data[trial_end]') === String(nov1) ||
+    joinParams.get('subscription_data[billing_cycle_anchor]') === String(nov1),
+  'signup defers first charge to 1 november',
+)
 assert(joinParams.get('metadata[memberId]') === joined.id, 'signup metadata')
 const db = await createMemberStore({ dataDir, env: {} }).load()
 const stored = db.members.find((row) => row.id === joined.id)

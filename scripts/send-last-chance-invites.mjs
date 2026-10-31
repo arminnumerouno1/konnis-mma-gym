@@ -34,4 +34,4 @@ if (!response.ok || !data.ok) {
   console.error(`Last-Chance-Link nicht raus (${response.status}, ${String(data.error || 'fehler')}).`)
   process.exit(1)
 }
-console.log(`Last-Chance-Link raus an ${data.email}, Platz ${data.slot}.`)
+console.log(`Last-Chance-Link raus, Platz ${data.slot}.`)

@@ -291,7 +291,7 @@ function mockRes() {
 }
 
 {
-  const proof = 'signup-mail-proof-test'
+  const proof = 'signup-mail-proof-test-ok24'
   let sent = null
   const handle = createInviteMailHandler({
     env: { INVITE_SECRET: secret, BREVO_API_KEY: 'xkeysib-test', SIGNUP_MAIL_PROOF: proof },

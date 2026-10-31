@@ -113,28 +113,40 @@ export function checkoutSchedule(nowMs, { plan = 'standard', billingStart = BILL
   }
 }
 
+const SITE_HOST_ALLOW = new Set(['www.mma-in-leipzig.de', 'mma-in-leipzig.de', 'konnisstudio.vercel.app'])
+
+function originFromHost(host, proto = 'https') {
+  const clean = String(host || '')
+    .split(',')[0]
+    .trim()
+    .toLowerCase()
+  if (!clean || clean.startsWith('localhost') || clean.startsWith('127.')) return ''
+  if (!SITE_HOST_ALLOW.has(clean) && !clean.endsWith('.vercel.app')) return ''
+  const scheme = String(proto || 'https')
+    .split(',')[0]
+    .trim()
+    .toLowerCase()
+  return `${scheme === 'http' ? 'http' : 'https'}://${clean === 'mma-in-leipzig.de' ? 'www.mma-in-leipzig.de' : clean}`
+}
+
 export function siteOrigin(req, env = {}) {
   const configured = String(env.VITE_SITE_URL || env.SITE_URL || '').trim()
   if (configured) {
     try {
       const url = new URL(configured)
-      if (url.hostname === 'mma-in-leipzig.de' || url.hostname === 'www.mma-in-leipzig.de') {
-        return 'https://www.mma-in-leipzig.de'
-      }
-      return url.origin
+      const pinned = originFromHost(url.hostname, url.protocol.replace(':', ''))
+      if (pinned) return pinned
+      // Non-prod configured origins (e.g. preview) stay as-is when explicit.
+      if (url.protocol === 'https:' || url.protocol === 'http:') return url.origin
     } catch {
       /* weiter mit Host */
     }
   }
-  const host = String(req?.headers?.['x-forwarded-host'] || req?.headers?.host || '')
-    .split(',')[0]
-    .trim()
-  if (host && !host.startsWith('localhost') && !host.startsWith('127.')) {
-    const proto = String(req.headers['x-forwarded-proto'] || 'https')
-      .split(',')[0]
-      .trim()
-    return `${proto}://${host}`
-  }
+  const fromHeader = originFromHost(
+    req?.headers?.['x-forwarded-host'] || req?.headers?.host,
+    req?.headers?.['x-forwarded-proto'] || 'https',
+  )
+  if (fromHeader) return fromHeader
   return 'https://www.mma-in-leipzig.de'
 }
 

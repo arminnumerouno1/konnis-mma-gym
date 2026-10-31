@@ -1,5 +1,12 @@
 import { createStripeHandler } from '../server/stripe.mjs'
 
+// Keep the raw body for Stripe HMAC verification (do not JSON-parse first).
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+}
+
 const handle = createStripeHandler({
   dataDir: '/tmp/konni-memberships',
   env: process.env,

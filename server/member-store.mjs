@@ -1,13 +1,14 @@
-import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
+import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { memberFromSignup, membershipTaken } from './member-model.mjs'
 
 const FILE_NAME = 'members.json'
 const LEGACY_NAME = 'memberships.json'
 const BLOB_PATH = 'konni/members.json'
+const UPDATE_RETRIES = 5
 
 function emptyStore() {
-  return { version: 1, members: [], issuedFirst50: [], revokedInvites: [], invoiceYear: null, invoiceSeq: 0 }
+  return { version: 1, rev: 0, members: [], issuedFirst50: [], revokedInvites: [], invoiceYear: null, invoiceSeq: 0 }
 }
 
 async function readJsonFile(file) {
@@ -26,12 +27,14 @@ function normalizeStore(parsed) {
   const revokedInvites = Array.isArray(parsed.revokedInvites) ? parsed.revokedInvites : []
   const invoiceYear = parsed.invoiceYear || null
   const invoiceSeq = Number(parsed.invoiceSeq) || 0
+  const rev = Number(parsed.rev) || 0
   if (Array.isArray(parsed.members)) {
-    return { version: 1, members: parsed.members, issuedFirst50, revokedInvites, invoiceYear, invoiceSeq }
+    return { version: 1, rev, members: parsed.members, issuedFirst50, revokedInvites, invoiceYear, invoiceSeq }
   }
   if (Array.isArray(parsed.memberships)) {
     return {
       version: 1,
+      rev,
       members: parsed.memberships.map((row) => memberFromSignup(row)),
       issuedFirst50,
       revokedInvites,
@@ -51,13 +54,27 @@ async function loadBlob(token) {
 
 async function saveBlob(token, store) {
   const { put } = await import('@vercel/blob')
-  await put(BLOB_PATH, JSON.stringify(store), {
+  const body = JSON.stringify(store)
+  await put(BLOB_PATH, body, {
     access: 'private',
     token,
     addRandomSuffix: false,
     allowOverwrite: true,
     contentType: 'application/json',
   })
+  // Hourly backup snapshot — best-effort, never blocks the primary write.
+  try {
+    const stamp = new Date().toISOString().slice(0, 13)
+    await put(`konni/backups/members-${stamp}.json`, body, {
+      access: 'private',
+      token,
+      addRandomSuffix: false,
+      allowOverwrite: true,
+      contentType: 'application/json',
+    })
+  } catch (error) {
+    console.warn('[member-store] backup skipped', String(error?.message || error).slice(0, 120))
+  }
 }
 
 export function membersFile(dataDir) {
@@ -91,12 +108,17 @@ export function createMemberStore({ dataDir, env = process.env }) {
   async function saveUnlocked(store) {
     const payload = {
       version: 1,
+      rev: Number(store.rev) || 0,
       members: store.members,
       issuedFirst50: store.issuedFirst50 ?? [],
       revokedInvites: store.revokedInvites ?? [],
+      invoiceYear: store.invoiceYear ?? null,
+      invoiceSeq: Number(store.invoiceSeq) || 0,
     }
     await mkdir(dirname(file), { recursive: true })
-    await writeFile(file, `${JSON.stringify(payload)}\n`, 'utf8')
+    const tmp = `${file}.${process.pid}.${Date.now()}.tmp`
+    await writeFile(tmp, `${JSON.stringify(payload)}\n`, 'utf8')
+    await rename(tmp, file)
     if (token) await saveBlob(token, payload)
   }
 
@@ -188,11 +210,22 @@ export function createMemberStore({ dataDir, env = process.env }) {
     },
     async update(mutator) {
       return withLock(async () => {
-        const store = await loadUnlocked()
-        const next = await mutator(store)
-        const payload = next && typeof next === 'object' ? next : store
-        await saveUnlocked(payload)
-        return payload
+        let lastError = null
+        for (let attempt = 0; attempt < UPDATE_RETRIES; attempt += 1) {
+          const store = await loadUnlocked()
+          const baseRev = Number(store.rev) || 0
+          const next = await mutator(store)
+          const payload = next && typeof next === 'object' ? next : store
+          const recheck = await loadUnlocked()
+          if ((Number(recheck.rev) || 0) !== baseRev) {
+            lastError = new Error('conflict')
+            continue
+          }
+          payload.rev = baseRev + 1
+          await saveUnlocked(payload)
+          return payload
+        }
+        throw lastError || new Error('conflict')
       })
     },
   }

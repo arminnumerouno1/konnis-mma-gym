@@ -32,4 +32,4 @@ if (!response.ok || !data.ok) {
   console.error(`Vertragsmail nicht raus (${response.status}, ${String(data.error || 'fehler')}).`)
   process.exit(1)
 }
-console.log(`Vertragsmail raus an ${data.email}, ${data.name}, Beitrag ${data.price}.`)
+console.log(`Vertragsmail raus, Beitrag ${data.price}.`)

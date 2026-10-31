@@ -68,7 +68,7 @@ function mockRes() {
   return { res, captured }
 }
 
-const proof = 'signup-mail-proof-test'
+const proof = 'signup-mail-proof-test-ok24'
 const env = { SIGNUP_MAIL_PROOF: proof, BREVO_API_KEY: 'xkeysib-test' }
 
 {

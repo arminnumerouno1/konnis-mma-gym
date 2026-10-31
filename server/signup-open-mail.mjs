@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto'
+import { mailProofMatches } from './mail-proof.mjs'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
 
 /** Nur diese Adresse darf die Testmail bekommen. */
@@ -278,9 +279,8 @@ export function createSignupOpenMailHandler({
         return
       }
 
-      const proof = env.SIGNUP_MAIL_PROOF?.trim()
       const apiKey = env.BREVO_API_KEY?.trim()
-      if (!secretsMatch(body.proof, proof) || !apiKey) {
+      if (!mailProofMatches(body.proof, env) || !apiKey) {
         if (rateLimited(clientIp(req))) {
           json(res, 429, { ok: false, error: 'rate' })
           return

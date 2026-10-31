@@ -172,6 +172,22 @@ const preview = await call({
 })
 assert(preview.data.ok && preview.data.total === 1, 'preview active')
 
+const proofBlocked = await call({
+  method: 'POST',
+  url: '/api/admin',
+  headers: {},
+  socket: { remoteAddress: '10.0.0.19' },
+  body: {
+    action: 'broadcastSend',
+    subject: 'Info',
+    body: 'Montag fällt aus.',
+    audience: 'active',
+    confirm: BROADCAST_CONFIRM,
+    proof: 'signup-mail-proof-test-ok24',
+  },
+})
+assert(proofBlocked.status === 401, 'broadcast requires admin session even with proof')
+
 const blocked = await call({
   method: 'POST',
   url: '/api/admin',

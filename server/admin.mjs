@@ -55,12 +55,15 @@ import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-check
 import { allocateInvoiceNumber, buildReceiptPdf } from './receipt-pdf.mjs'
 import { FIRST50_ID, INVITE_TTL_HOURS, PLUS_ID, contractStart, contractTerm, nextFirst50Slot, normalizePersonName, splitPersonName } from './invite.mjs'
 import { deliverFirst50Invite } from './invite-mail.mjs'
+import { mailProofMatches } from './mail-proof.mjs'
+import { PHOTO_MAX, readPhotoData } from './photo-data.mjs'
 
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 12
+/** Separate, slightly higher ceiling for proof-authenticated ops scripts. */
+const PROOF_RATE_MAX = 40
 const MAX_BODY = 420_000
 const SESSION_MS = 12 * 60 * 60 * 1000
-const PHOTO_MAX = 140_000
 const PLAN_IDS = ['slowstart', 'standard', 'flex', 'plus', 'daypass', 'first50']
 const PLAN_META = {
   slowstart: { name: 'Slow Start Tarif', price: 79.99, months: 12 },
@@ -137,10 +140,10 @@ function clientIp(req) {
   return req.socket?.remoteAddress ?? 'unknown'
 }
 
-function rateLimited(ip) {
+function rateLimited(ip, max = RATE_MAX) {
   const now = Date.now()
   const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
-  if (recent.length >= RATE_MAX) {
+  if (recent.length >= max) {
     hits.set(ip, recent)
     return true
   }
@@ -327,11 +330,7 @@ function buildDues(members, { q, payMethod, period }, today) {
 }
 
 function readPhoto(value) {
-  if (value == null || value === '') return { ok: true, photoData: null }
-  if (typeof value !== 'string' || value.length > PHOTO_MAX || !value.startsWith('data:image/')) {
-    return { ok: false, error: 'photo' }
-  }
-  return { ok: true, photoData: value }
+  return readPhotoData(value, { max: PHOTO_MAX })
 }
 
 function readBank(input, current, id, fallbackHolder) {
@@ -853,7 +852,14 @@ export function createAdminHandler({
         return
       }
 
-      const proofOk = secretsEqual(String(body.proof ?? ''), env.SIGNUP_MAIL_PROOF?.trim() || '')
+      const sessionOk = authed(req)
+      const proofOk = mailProofMatches(body.proof, env)
+      // Unauthenticated POSTs are rate-limited (higher ceiling when proof is valid for batch ops).
+      if (!sessionOk && rateLimited(clientIp(req), proofOk ? PROOF_RATE_MAX : RATE_MAX)) {
+        json(res, 429, { ok: false, error: 'rate' })
+        return
+      }
+      // Broadcast stays session-only — proof must not become a phishing / mass-mail relay.
       const proofSend =
         (action === 'sendContract' ||
           action === 'sendPayLink' ||
@@ -864,14 +870,13 @@ export function createAdminHandler({
           action === 'sendPlusInvite' ||
           action === 'revokeInvite' ||
           action === 'sendPhotoRequest' ||
-          action === 'sendPhotoRequestBulk' ||
-          action === 'broadcastPreview' ||
-          action === 'broadcastSend') &&
+          action === 'sendPhotoRequestBulk') &&
         proofOk
-      if (!authed(req) && !proofSend) {
+      if (!sessionOk && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
         return
       }
+      const proofOnly = proofOk && !sessionOk
 
       if (action === 'sendFirst50' || action === 'sendPlusInvite') {
         const email = normalizeEmail(body.email)
@@ -963,6 +968,17 @@ export function createAdminHandler({
             return db
           })
         }
+        if (proofOnly) {
+          json(res, 200, {
+            ok: true,
+            slot: reserved.slot,
+            plan,
+            lastChance,
+            openUntilSignup,
+            ...(start ? { start } : {}),
+          })
+          return
+        }
         json(res, 200, {
           ok: true,
           email,
@@ -992,6 +1008,10 @@ export function createAdminHandler({
           db.revokedInvites = revoked
           return db
         })
+        if (proofOnly) {
+          json(res, 200, { ok: true, slot })
+          return
+        }
         json(res, 200, { ok: true, email, slot })
         return
       }
@@ -1117,8 +1137,8 @@ export function createAdminHandler({
           saved = db.members[index]
           return db
         })
-        if (proofOk) {
-          json(res, 200, { ok: true, email: saved.email, contract: Boolean(saved.docs?.contract?.path) })
+        if (proofOnly) {
+          json(res, 200, { ok: true, contract: Boolean(saved.docs?.contract?.path) })
           return
         }
         json(res, 200, { ok: true, member: publicMember(saved, today, true) })
@@ -1261,6 +1281,10 @@ export function createAdminHandler({
           saved = db.members[index]
           return db
         })
+        if (proofOnly) {
+          json(res, 200, { ok: true, price: current.price })
+          return
+        }
         json(res, 200, {
           ok: true,
           email: current.email,
@@ -1307,6 +1331,10 @@ export function createAdminHandler({
           })
           return db
         })
+        if (proofOnly) {
+          json(res, 200, { ok: true, price: record.price })
+          return
+        }
         json(res, 200, { ok: true, email: record.email, name: `${record.firstName} ${record.lastName}`, price: record.price })
         return
       }
@@ -1405,6 +1433,10 @@ export function createAdminHandler({
           mailedMember = db.members[index]
           return db
         })
+        if (proofOnly) {
+          json(res, 200, { ok: true })
+          return
+        }
         json(res, 200, {
           ok: true,
           email: saved.email,

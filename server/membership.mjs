@@ -10,6 +10,7 @@ import { GYM_BANK } from './gym-bank.mjs'
 import { createCheckoutSession, siteOrigin, PLAN_CENTS } from './stripe-checkout.mjs'
 import { trainingHasStarted } from './opening.mjs'
 import { signupFeeFor } from './signup-fee.mjs'
+import { PHOTO_MAX, PHOTO_MIME_RE } from './photo-data.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
@@ -17,7 +18,6 @@ const NAME_RE = /^[\p{L}][\p{L}\s.'-]{1,79}$/u
 const ZIP_RE = /^\d{5}$/
 /** Membership JSON plus compressed portrait (data-URL). Must stay under PHOTO_MAX + form fields. */
 const MAX_BODY = 220_000
-const PHOTO_MAX = 140_000
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 6
 const PLAN_IDS = ['slowstart', 'standard', 'flex', 'plus', 'daypass', 'first50']
@@ -259,7 +259,7 @@ export function validateMembership(body, ctx = {}) {
   if (signature.length < 2 || signature.length > 120) return { ok: false, error: 'signature' }
 
   const photoData = String(body.photoData ?? '')
-  if (!photoData.startsWith('data:image/') || photoData.length < 64 || photoData.length > PHOTO_MAX) {
+  if (!PHOTO_MIME_RE.test(photoData) || photoData.length < 64 || photoData.length > PHOTO_MAX) {
     return { ok: false, error: 'photo' }
   }
 

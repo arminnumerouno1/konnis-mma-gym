@@ -32,4 +32,4 @@ if (!response.ok || !data.ok) {
   console.error(`Vertragsmail nicht raus (${response.status}, ${String(data.error || 'fehler')}).`)
   process.exit(1)
 }
-console.log(`Vertragsmail raus an ${data.email}. Vertrag dabei: ${data.contract ? 'ja' : 'nein'}.`)
+console.log(`Vertragsmail raus. Vertrag dabei: ${data.contract ? 'ja' : 'nein'}.`)

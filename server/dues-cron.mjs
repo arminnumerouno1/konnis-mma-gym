@@ -25,7 +25,8 @@ function secretsEqual(a, b) {
 }
 
 export function cronAuthorized(req, env) {
-  const secret = env.CRON_SECRET?.trim() || env.SIGNUP_MAIL_PROOF?.trim() || ''
+  // Dedicated cron secret only — never fall back to SIGNUP_MAIL_PROOF.
+  const secret = env.CRON_SECRET?.trim() || ''
   if (!secret) return false
   const auth = String(req.headers?.authorization || '')
   if (auth.toLowerCase().startsWith('bearer ') && secretsEqual(auth.slice(7).trim(), secret)) return true
