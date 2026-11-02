@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useRef, useState, type FormEvent } from 'react'
+import { createPortal } from 'react-dom'
 import { StreetInput } from '../components/StreetInput'
 import { snapshotMonth } from '../admin/snapshot.ts'
 import { compressPhoto } from '../lib/photo'
@@ -2474,8 +2475,13 @@ function MemberPane({
     const onKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setPhotoOpen(false)
     }
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = prevOverflow
+      window.removeEventListener('keydown', onKey)
+    }
   }, [photoOpen])
 
   async function save(payload: Record<string, unknown>) {
@@ -2722,28 +2728,31 @@ function MemberPane({
           ) : null}
         </div>
       </div>
-      {photoOpen && member.photoData ? (
-        <div
-          className="admin-photo-lightbox"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Portrait vergrößert"
-          onClick={() => setPhotoOpen(false)}
-        >
-          <button
-            type="button"
-            className="btn btn-ghost admin-photo-lightbox-close"
-            onClick={() => setPhotoOpen(false)}
-          >
-            Schließen
-          </button>
-          <img
-            src={member.photoData}
-            alt={`${member.firstName} ${member.lastName}`}
-            onClick={(event) => event.stopPropagation()}
-          />
-        </div>
-      ) : null}
+      {photoOpen && member.photoData
+        ? createPortal(
+            <div
+              className="admin-photo-lightbox"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Portrait vergrößert"
+              onClick={() => setPhotoOpen(false)}
+            >
+              <button
+                type="button"
+                className="btn btn-ghost admin-photo-lightbox-close"
+                onClick={() => setPhotoOpen(false)}
+              >
+                Schließen
+              </button>
+              <img
+                src={member.photoData}
+                alt={`${member.firstName} ${member.lastName}`}
+                onClick={(event) => event.stopPropagation()}
+              />
+            </div>,
+            document.body,
+          )
+        : null}
       {!member.photoData && member.plan !== 'daypass' ? (
         <section className="admin-block">
           <h3>Portrait anfordern</h3>
