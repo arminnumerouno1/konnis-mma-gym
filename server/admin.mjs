@@ -49,6 +49,7 @@ import { matchBankTransactions, parseBankCsv } from './bank-import.mjs'
 import { runDueReminders } from './dues-cron.mjs'
 import { attachSignupDocs, attachTransferNotice } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
+import { buildTransferPayload } from './transfer-due.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
@@ -516,16 +517,13 @@ function createDeskMember(body, today) {
     inviteSlot: null,
     guardian: guardianRead.guardian,
     payMethod,
-    transfer:
-      payMethod === 'transfer'
-        ? {
-            holder: GYM_BANK.holder,
-            iban: GYM_BANK.iban,
-            bic: GYM_BANK.bic,
-            bank: GYM_BANK.bank,
-            amount: Math.round(meta.price * 100),
-          }
-        : null,
+    transfer: payMethod === 'transfer' ? buildTransferPayload({
+      id,
+      firstName,
+      lastName,
+      price: meta.price,
+      fee: signupFeeFor(today, plan),
+    }) : null,
     bank: bankRead.bank,
     photoData: photo.photoData,
     visitDay: visitDay || null,
@@ -548,7 +546,20 @@ function createDeskMember(body, today) {
     mandateSignature: body.bank?.mandateSignature,
   })
   if (!signed.ok) return signed
-  return { ok: true, member: { ...memberFromSignup(signed.member, today), status: signed.member.status } }
+  let member = { ...memberFromSignup(signed.member, today), status: signed.member.status }
+  if (member.payMethod === 'transfer' && member.transfer?.prorated && member.transfer.firstDueDate) {
+    const period = member.transfer.firstDueDate.slice(0, 7)
+    const share = Number(member.transfer.prorateAmount) / 100
+    member = {
+      ...member,
+      payments: (member.payments || []).map((row) =>
+        row.kind === 'month' && row.period === period && row.status !== 'paid'
+          ? { ...row, amount: share, note: row.note || 'Anteiliger Erstmonat' }
+          : row,
+      ),
+    }
+  }
+  return { ok: true, member }
 }
 
 function paperReturnRecord(issuedRows) {

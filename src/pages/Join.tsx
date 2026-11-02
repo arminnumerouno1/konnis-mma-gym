@@ -7,7 +7,13 @@ import { Link } from '../lib/Link'
 import { ageFromIso } from '../lib/motion'
 import { href } from '../lib/router'
 import { compressPhoto } from '../lib/photo'
-import { lookupInvite, submitMembership, type MembershipConsents, type MembershipError } from '../membership/api'
+import {
+  lookupInvite,
+  submitMembership,
+  type MembershipConsents,
+  type MembershipError,
+  type MembershipOk,
+} from '../membership/api'
 
 const PLUS = planById('plus')!
 
@@ -198,8 +204,8 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [done, setDone] = useState<{
     id?: string
     at: string
-    payment?: 'checkout' | 'later' | 'unlinked' | 'transfer'
-    transfer?: { iban: string; bic: string; holder: string; bank: string; amount: number }
+    payment?: MembershipOk['payment']
+    transfer?: MembershipOk['transfer']
   } | null>(null)
   const pageRef = useRef<HTMLElement>(null)
   const stepAnchorRef = useRef<HTMLOListElement>(null)
@@ -408,12 +414,66 @@ function JoinForm({ plan, invite }: JoinProps) {
         ) : null}
         {summary.payment === 'transfer' && summary.transfer ? (
           <div className="transfer-box">
-            <p className="lead">{deferredPaymentNote(contractStart) || COPY.payTransferDone}</p>
+            {summary.transfer.prorated ? (
+              <p className="lead">
+                Das ist ein <strong>anteiliger Beitrag</strong> für den Rest dieses Monats — nicht der volle
+                Monatsbeitrag. Überweise jetzt{' '}
+                {(summary.transfer.amount / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                {summary.transfer.nextFullDue
+                  ? `, ab dem ${new Date(`${summary.transfer.nextFullDue}T12:00:00`).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })} dann den vollen Monatsbeitrag.`
+                  : ', danach zum 1. den vollen Monatsbeitrag.'}{' '}
+                Den Vertrag schicken wir dir per E-Mail.
+              </p>
+            ) : (
+              <p className="lead">{deferredPaymentNote(contractStart) || COPY.payTransferDone}</p>
+            )}
             <dl>
               <div>
-                <dt>Betrag</dt>
-                <dd>{(summary.transfer.amount / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} im Monat</dd>
+                <dt>{summary.transfer.prorated ? 'Jetzt überweisen (anteilig)' : 'Betrag'}</dt>
+                <dd>
+                  {(summary.transfer.amount / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
+                  {summary.transfer.prorated ? '' : ' (erste Überweisung)'}
+                </dd>
               </div>
+              {summary.transfer.prorated && summary.transfer.prorateAmount != null ? (
+                <div>
+                  <dt>Anteiliger Beitrag</dt>
+                  <dd>
+                    {(summary.transfer.prorateAmount / 100).toLocaleString('de-DE', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    })}
+                  </dd>
+                </div>
+              ) : null}
+              {summary.transfer.feeAmount ? (
+                <div>
+                  <dt>Aufnahmegebühr</dt>
+                  <dd>
+                    {(summary.transfer.feeAmount / 100).toLocaleString('de-DE', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    })}
+                  </dd>
+                </div>
+              ) : null}
+              {summary.transfer.monthAmount != null ? (
+                <div>
+                  <dt>Voller Monatsbeitrag ab dem nächsten 1.</dt>
+                  <dd>
+                    {(summary.transfer.monthAmount / 100).toLocaleString('de-DE', {
+                      style: 'currency',
+                      currency: 'EUR',
+                    })}
+                  </dd>
+                </div>
+              ) : null}
+              {summary.transfer.purpose ? (
+                <div>
+                  <dt>Verwendungszweck</dt>
+                  <dd>{summary.transfer.purpose}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt>Kontoinhaber</dt>
                 <dd>{summary.transfer.holder}</dd>

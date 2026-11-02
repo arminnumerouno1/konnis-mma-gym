@@ -89,7 +89,20 @@ type MemberDetail = MemberList & {
     transfer?: { iban?: string; bic?: string; holder?: string; bank?: string; amount?: number }
   } | null
   payMethod?: string
-  transfer?: { iban?: string; bic?: string; holder?: string; bank?: string }
+  transfer?: {
+    iban?: string
+    bic?: string
+    holder?: string
+    bank?: string
+    amount?: number
+    monthAmount?: number
+    prorateAmount?: number
+    feeAmount?: number
+    prorated?: boolean
+    firstDueDate?: string
+    nextFullDue?: string
+    purpose?: string
+  }
   docs?: { contract?: DocMeta; sepa?: DocMeta; payment?: DocMeta }
   history?: { at: string; field: string; from: string; to: string }[]
   reminders?: ReminderEntry[]
@@ -2973,11 +2986,39 @@ function MemberPane({
       {member.plan !== 'daypass' && member.payMethod === 'transfer' ? (
         <section className="admin-block is-pay">
           <h3>Zahlung: Banküberweisung</h3>
-          <p className="admin-muted">
-            Bei der Anmeldung wurde Banküberweisung als Zahlung genommen. Es gibt kein SEPA-Lastschriftmandat. Der
-            Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig.
-            Das Mitglied überweist selbst auf das Konto der KONNI MMA GYM GbR.
-          </p>
+          {member.transfer?.prorated ? (
+            <p className="admin-muted">
+              Bei der Anmeldung wurde Banküberweisung gewählt. Die erste Zahlung ist ein{' '}
+              <strong>anteiliger Beitrag</strong> für den Rest des Monats
+              {member.transfer.prorateAmount != null
+                ? ` (${(member.transfer.prorateAmount / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })})`
+                : ''}
+              {member.transfer.amount != null
+                ? ` — jetzt insgesamt ${(member.transfer.amount / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })} überweisen`
+                : ''}
+              {member.transfer.nextFullDue
+                ? `. Ab ${deDate(member.transfer.nextFullDue)} dann der volle Monatsbeitrag.`
+                : '.'}{' '}
+              Kein SEPA-Lastschriftmandat.
+            </p>
+          ) : (
+            <p className="admin-muted">
+              Bei der Anmeldung wurde Banküberweisung als Zahlung genommen. Es gibt kein SEPA-Lastschriftmandat. Der
+              Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig
+              {member.transfer?.firstDueDate
+                ? `. Die erste Überweisung ist am ${deDate(member.transfer.firstDueDate)} fällig`
+                : ''}
+              {member.transfer?.amount != null
+                ? ` (${(member.transfer.amount / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })})`
+                : ''}
+              . Das Mitglied überweist selbst auf das Konto der KONNI MMA GYM GbR.
+            </p>
+          )}
+          {member.transfer?.purpose ? (
+            <p>
+              Verwendungszweck: <strong>{member.transfer.purpose}</strong>
+            </p>
+          ) : null}
           {member.transfer?.iban ? (
             <p>
               {member.transfer.holder || 'KONNI MMA GYM GbR'}

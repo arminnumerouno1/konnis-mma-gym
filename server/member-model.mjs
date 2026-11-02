@@ -249,6 +249,16 @@ export function cancelInfo(member, today = isoDate()) {
 function paymentAmount(member, period) {
   if (member.plan === 'daypass') return member.price
   if (period === 'fee') return member.fee || 0
+  const transfer = member.transfer
+  if (
+    member.payMethod === 'transfer' &&
+    transfer?.prorated &&
+    transfer.firstDueDate &&
+    period === String(transfer.firstDueDate).slice(0, 7) &&
+    Number.isFinite(Number(transfer.prorateAmount))
+  ) {
+    return Number(transfer.prorateAmount) / 100
+  }
   return member.price
 }
 

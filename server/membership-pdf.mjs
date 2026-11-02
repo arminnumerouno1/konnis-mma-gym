@@ -574,7 +574,8 @@ export async function loadWithdrawalPdf() {
 export async function buildTransferNoticePdf(record) {
   const who = whoOf(record)
   const price = Number(record.price)
-  const amount = Number.isFinite(price) ? `${price.toFixed(2).replace('.', ',')} EUR je Monat` : ''
+  const monthLabel = Number.isFinite(price) ? `${price.toFixed(2).replace('.', ',')} EUR je Monat` : ''
+  const t = record.transfer
   const writer = new PdfWriter(`Banküberweisung ${who}`.trim(), 'Zahlungsart Banküberweisung')
   await writer.init()
   writer.doc.setSubject(`Banküberweisung · ${who}`)
@@ -585,19 +586,38 @@ export async function buildTransferNoticePdf(record) {
     `Für ${who || 'dieses Mitglied'} wurde Banküberweisung als Zahlung genommen. SEPA-Lastschrift kommt später und ist hier nicht erteilt. Es gibt keinen Einzug über Stripe.`,
   )
   writer.heading('Fälligkeit')
-  writer.para(
-    `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am ${chargeLabel(record)} fällig.`,
-  )
-  if (amount) writer.kv('Monatsbeitrag', amount)
+  if (t?.prorated) {
+    const share = ((Number(t.prorateAmount) || 0) / 100).toFixed(2).replace('.', ',')
+    const total = ((Number(t.amount) || 0) / 100).toFixed(2).replace('.', ',')
+    const next = germanDate(t.nextFullDue) || chargeLabel(record)
+    writer.para(
+      `Das ist ein anteiliger Beitrag für den Rest des laufenden Monats — nicht der volle Monatsbeitrag. Jetzt überweisen: ${total} EUR (davon anteiliger Beitrag ${share} EUR). Ab dem ${next} dann der volle Monatsbeitrag.`,
+    )
+    writer.kv('Jetzt überweisen (anteilig)', `${total} EUR`)
+    writer.kv('Anteiliger Beitrag', `${share} EUR`)
+    if (Number(t.feeAmount) > 0) {
+      writer.kv('Aufnahmegebühr', `${(Number(t.feeAmount) / 100).toFixed(2).replace('.', ',')} EUR`)
+    }
+    if (monthLabel) writer.kv('Voller Monatsbeitrag ab dem nächsten 1.', monthLabel)
+  } else {
+    writer.para(
+      `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am ${t?.firstDueDate ? germanDate(t.firstDueDate) : chargeLabel(record)} fällig.`,
+    )
+    if (t?.amount != null) {
+      writer.kv('Erste Überweisung', `${(Number(t.amount) / 100).toFixed(2).replace('.', ',')} EUR`)
+    }
+    if (monthLabel) writer.kv('Monatsbeitrag', monthLabel)
+  }
+  if (t?.purpose) writer.kv('Verwendungszweck', t.purpose)
   writer.kv('Mitglied', who)
   writer.kv('Anmeldung', formatWhen(record.createdAt))
   writer.heading('Konto der KONNI MMA GYM GbR')
-  writer.kv('Kontoinhaber', GYM_BANK.holder)
-  writer.kv('IBAN', spaceGymIban(GYM_BANK.iban))
-  writer.kv('BIC', GYM_BANK.bic)
-  writer.kv('Bank', GYM_BANK.bank)
+  writer.kv('Kontoinhaber', t?.holder || GYM_BANK.holder)
+  writer.kv('IBAN', spaceGymIban(t?.iban || GYM_BANK.iban))
+  writer.kv('BIC', t?.bic || GYM_BANK.bic)
+  writer.kv('Bank', t?.bank || GYM_BANK.bank)
   writer.para(
-    'Das Mitglied überweist den Beitrag selbst auf dieses Konto. Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Sobald eine Überweisung da ist, wird der Monat in der Verwaltung als gezahlt markiert.',
+    'Das Mitglied überweist den Beitrag selbst auf dieses Konto. Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate mit dem vollen Monatsbeitrag. Sobald eine Überweisung da ist, wird der Monat in der Verwaltung als gezahlt markiert.',
   )
   return writer.bytes()
 }

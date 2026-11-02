@@ -2,6 +2,7 @@ import { GYM_BANK, spacedIban } from './gym-bank.mjs'
 import { buildContractPdf, loadWithdrawalPdf, membershipPdfAttachments } from './membership-pdf.mjs'
 import { germanDate, memberBillingStart } from './member-model.mjs'
 import { trainingHasStarted } from './opening.mjs'
+import { formatTransferEuro, transferDueLabel, transferNextLabel } from './transfer-due.mjs'
 
 function escapeMail(value) {
   return String(value ?? '')
@@ -47,11 +48,51 @@ function dueOn(record) {
   return germanDate(memberBillingStart(record))
 }
 
+function transferMailLines(record) {
+  const t = record.transfer
+  if (!t) return null
+  const total = formatTransferEuro(t.amount)
+  const month = formatTransferEuro(t.monthAmount ?? Math.round(Number(record.price) * 100))
+  const share = formatTransferEuro(t.prorateAmount ?? t.amount)
+  const fee = Number(t.feeAmount) || 0
+  const next = transferNextLabel(t) || dueOn(record)
+  const due = transferDueLabel(t) || dueOn(record)
+  const purpose = escapeMail(t.purpose || `KONNI Beitrag ${whoOf(record)}`)
+  const feeLine =
+    fee > 0
+      ? `<br>Davon Aufnahmegebühr: <strong>${escapeMail(formatTransferEuro(fee))}€</strong> (einmalig).`
+      : ''
+  if (t.prorated) {
+    return {
+      sentence: `Du zahlst jetzt einen <strong>anteiligen Beitrag</strong> für den Rest dieses Monats: <strong>${escapeMail(share)}€</strong>${fee > 0 ? ` zuzüglich Aufnahmegebühr <strong>${escapeMail(formatTransferEuro(fee))}€</strong>` : ''}. Überweise jetzt insgesamt <strong>${escapeMail(total)}€</strong>. Ab dem ${escapeMail(next)} dann den vollen Monatsbeitrag <strong>${escapeMail(month)}€</strong>.`,
+      block: `<p><strong>Deine Zahlungsart: Banküberweisung</strong><br>
+<strong>Das ist ein anteiliger Beitrag</strong> für den Rest des laufenden Monats — nicht der volle Monatsbeitrag.<br>
+Jetzt überweisen: <strong>${escapeMail(total)}€</strong> (anteiliger Beitrag ${escapeMail(share)}€${fee > 0 ? ` + Aufnahmegebühr ${escapeMail(formatTransferEuro(fee))}€` : ''}).${feeLine}<br>
+Ab dem ${escapeMail(next)}: monatlich <strong>${escapeMail(month)}€</strong> (voller Beitrag).<br>
+Verwendungszweck: <strong>${purpose}</strong><br>
+${accountLines()}<br>
+SEPA-Lastschrift kommt später.</p>`,
+    }
+  }
+  return {
+    sentence: `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung (${escapeMail(total)}€) ist am ${escapeMail(due)} fällig. Danach monatlich ${escapeMail(month)}€.`,
+    block: `<p><strong>Deine Zahlungsart: Banküberweisung</strong><br>
+Erste Überweisung: <strong>${escapeMail(total)}€</strong>${fee > 0 ? ` (Monatsbeitrag ${escapeMail(month)}€ + Aufnahmegebühr ${escapeMail(formatTransferEuro(fee))}€)` : ''} — fällig am ${escapeMail(due)}.<br>
+Danach immer zum 1.: <strong>${escapeMail(month)}€</strong> im Monat.<br>
+Verwendungszweck: <strong>${purpose}</strong><br>
+${accountLines()}<br>
+SEPA-Lastschrift kommt später.</p>`,
+  }
+}
+
 function dueSentence(record) {
-  const when = dueOn(record)
   if (record.payMethod === 'transfer') {
+    const lines = transferMailLines(record)
+    if (lines) return lines.sentence.replace(/<[^>]+>/g, '')
+    const when = dueOn(record)
     return `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am ${when} fällig.`
   }
+  const when = dueOn(record)
   if (record.plan === 'daypass') return ''
   return `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am ${when}, danach immer zum 1.`
 }
@@ -66,6 +107,8 @@ Bank: ${escapeMail(GYM_BANK.bank)}`
 function bankBlock(record) {
   if (record.plan === 'daypass') return ''
   if (record.payMethod === 'transfer') {
+    const lines = transferMailLines(record)
+    if (lines) return lines.block
     return `<p><strong>Deine Zahlungsart: Banküberweisung</strong><br>
 Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am ${dueOn(record)} fällig.<br>
 ${accountLines()}<br>
@@ -171,7 +214,15 @@ ${guardian}
 <p><strong>Unterschrift</strong><br>${escapeMail(record.signature)}, ${escapeMail(record.place)}</p>
 <p><strong>${earlyLabel}</strong><br>${escapeMail(early)}</p>
 ${bankBlock(record)}
-<p>${record.plan === 'daypass' ? 'Der Day Pass wird mit Karte oder Apple Pay bezahlt.' : record.payMethod === 'transfer' ? 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du überweist ihn selbst auf das Konto oben.' : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später. Zahlungspflicht erst ab echter Eröffnung.'}</p>
+<p>${
+  record.plan === 'daypass'
+    ? 'Der Day Pass wird mit Karte oder Apple Pay bezahlt.'
+    : record.payMethod === 'transfer'
+      ? record.transfer?.prorated
+        ? 'Bitte überweise den oben genannten <strong>anteiligen Beitrag</strong> selbst auf das Konto. Ab dem nächsten 1. dann den vollen Monatsbeitrag.'
+        : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du überweist ihn selbst auf das Konto oben.'
+      : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später. Zahlungspflicht erst ab echter Eröffnung.'
+}</p>
 <p>AGB Stand 22. Oktober 2026 und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.</p>
 ${forGym ? '' : files}
 ${record.signedUploadName ? '<p>Zusätzlich liegt der hochgeladene unterschriebene Vertrag bei.</p>' : ''}

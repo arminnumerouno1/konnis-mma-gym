@@ -6,8 +6,8 @@ import { memberBillingStart, membershipTaken } from './member-model.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 import { claimSignup, createMemberStore } from './member-store.mjs'
 import { attachSignupDocs } from './signup-docs.mjs'
-import { GYM_BANK } from './gym-bank.mjs'
-import { createCheckoutSession, siteOrigin, PLAN_CENTS } from './stripe-checkout.mjs'
+import { buildTransferPayload } from './transfer-due.mjs'
+import { createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
 import { trainingHasStarted } from './opening.mjs'
 import { signupFeeFor } from './signup-fee.mjs'
 import { PHOTO_MAX, PHOTO_MIME_RE } from './photo-data.mjs'
@@ -442,22 +442,31 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     return { payment: 'checkout', checkoutUrl: session.url, billingStart: session.billingStart }
   }
 
-  async function startBankTransfer(record) {
-    const transfer = {
-      holder: GYM_BANK.holder,
-      iban: GYM_BANK.iban,
-      bic: GYM_BANK.bic,
-      bank: GYM_BANK.bank,
-      amount: PLAN_CENTS[record.plan] ?? Math.round(Number(record.price) * 100),
-    }
+  async function startBankTransfer(record, nowMs = Date.now()) {
+    const transfer = buildTransferPayload(record, nowMs)
     try {
       await members.update((db) => {
         const index = db.members.findIndex((row) => row.id === record.id)
         if (index < 0) return db
+        const current = db.members[index]
+        let payments = Array.isArray(current.payments) ? current.payments : []
+        if (transfer.prorated && transfer.firstDueDate) {
+          const period = transfer.firstDueDate.slice(0, 7)
+          payments = payments.map((row) =>
+            row.kind === 'month' && row.period === period && row.status !== 'paid'
+              ? {
+                  ...row,
+                  amount: transfer.prorateAmount / 100,
+                  note: row.note || 'Anteiliger Erstmonat',
+                }
+              : row,
+          )
+        }
         db.members[index] = {
-          ...db.members[index],
+          ...current,
           payMethod: 'transfer',
           transfer,
+          payments,
           updatedAt: new Date().toISOString(),
         }
         return db
@@ -465,7 +474,8 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     } catch (error) {
       console.error('[mitglied] bank transfer save failed', error)
     }
-    return { payment: 'transfer', billingStart: memberBillingStart(record), transfer }
+    const billingStart = transfer.prorated ? transfer.nextFullDue : transfer.firstDueDate
+    return { payment: 'transfer', billingStart, transfer }
   }
 
   async function runMembership(req, res) {
@@ -634,11 +644,16 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
 
     }
 
-    const payment = record.payMethod === 'transfer' ? await startBankTransfer(record) : await startStripeCheckout(req, record)
+    const payment =
+      record.payMethod === 'transfer' ? await startBankTransfer(record) : await startStripeCheckout(req, record)
+    const mailRecord =
+      record.payMethod === 'transfer' && payment.transfer
+        ? { ...record, payMethod: 'transfer', transfer: payment.transfer }
+        : record
 
     if (isMembershipMailOpen(env) && record.payMethod === 'transfer') {
       try {
-        const mailed = await sendMembershipEmails(env, record)
+        const mailed = await sendMembershipEmails(env, mailRecord)
         if (mailed.member !== 'skipped') {
           await members.update((db) => {
             const index = db.members.findIndex((row) => row.id === record.id)

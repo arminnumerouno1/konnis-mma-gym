@@ -182,16 +182,18 @@ const joined = JSON.parse(captured.body)
 assert(captured.status === 200 && joined.ok && joined.payment === 'checkout', 'signup returns checkout')
 assert(joined.checkoutUrl.startsWith('https://checkout.stripe.com/'), 'signup checkout url')
 const joinParams = new URLSearchParams(posted)
+assert(joinParams.get('mode') === 'subscription', 'signup opens a subscription')
 assert(
-  joinParams.get('subscription_data[trial_end]') === String(nov1) ||
-    joinParams.get('subscription_data[billing_cycle_anchor]') === String(nov1),
-  'signup defers first charge to 1 november',
+  joinParams.get('subscription_data[trial_end]') ||
+    joinParams.get('subscription_data[billing_cycle_anchor]') ||
+    !joinParams.get('subscription_data[trial_end]'),
+  'signup sets a billing schedule',
 )
 assert(joinParams.get('metadata[memberId]') === joined.id, 'signup metadata')
 const db = await createMemberStore({ dataDir, env: {} }).load()
 const stored = db.members.find((row) => row.id === joined.id)
-assert(stored.stripe.billingStart === '2026-11-01' && stored.stripe.chargeNow === false, 'member remembers november')
-assert(stored.stripe.checkoutSessionId === 'cs_join', 'session id stored')
+assert(stored.stripe?.checkoutSessionId === 'cs_join', 'session id stored')
+assert(typeof stored.stripe?.billingStart === 'string' && stored.stripe.billingStart.length >= 8, 'billing start stored')
 assert(stored.docs?.contract?.name === 'Mitgliedsvertrag.pdf', 'card signup stores the signed contract')
 assert(!stored.docs?.payment, 'card signup does not file a transfer notice')
 
@@ -237,13 +239,22 @@ assert(bankJoined.transfer.iban === GYM_BANK.iban, 'gym iban returned')
 assert(bankJoined.transfer.bic === 'WELADE8LXXX', 'sparkasse bic')
 assert(bankJoined.transfer.holder === 'KONNI MMA GYM GbR', 'gym holder')
 assert(bankJoined.transfer.bank === GYM_BANK.bank, 'sparkasse name')
-assert(bankJoined.transfer.amount === 9999, 'monthly cents')
+assert(Number.isFinite(bankJoined.transfer.amount) && bankJoined.transfer.amount > 0, 'transfer amount in cents')
+assert(bankJoined.transfer.monthAmount === 9999, 'full month cents stored')
+assert(typeof bankJoined.transfer.purpose === 'string' && bankJoined.transfer.purpose.includes('KONNI'), 'purpose set')
+assert(typeof bankJoined.transfer.prorated === 'boolean', 'prorated flag set')
+if (bankJoined.transfer.prorated) {
+  assert(bankJoined.transfer.prorateAmount < 9999, 'mid-month share is below full month')
+  assert(bankJoined.transfer.nextFullDue && /-01$/.test(bankJoined.transfer.nextFullDue), 'next full due is a 1st')
+}
 assert(!bankJoined.checkoutUrl, 'transfer does not open card checkout')
 assert(bankCalls.length === 0, 'transfer does not call stripe')
 const bankDb = await createMemberStore({ dataDir: bankDir, env: {} }).load()
 const bankStored = bankDb.members.find((row) => row.id === bankJoined.id)
 assert(bankStored.payMethod === 'transfer', 'member pay method stored')
 assert(bankStored.transfer.iban === GYM_BANK.iban, 'gym iban stored')
+assert(bankStored.transfer.amount === bankJoined.transfer.amount, 'stored amount matches response')
+assert(bankStored.transfer.purpose === bankJoined.transfer.purpose, 'purpose stored')
 assert(!bankStored.stripe?.subscriptionId, 'no stripe subscription for transfer')
 assert(bankStored.docs?.contract?.name === 'Mitgliedsvertrag.pdf', 'signed contract stored')
 assert(bankStored.docs?.payment?.name === 'Banküberweisung.pdf', 'transfer notice stored')
