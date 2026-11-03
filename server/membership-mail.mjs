@@ -494,6 +494,34 @@ export async function sendPaymentFailedEmail(env, record, { period = '', amount 
   })
 }
 
+export function cardUpdateMailSubject() {
+  return 'Neue Karte hinterlegen · KONNI MMA GYM'
+}
+
+export function cardUpdateMailHtml(record, { url = '' } = {}) {
+  const first = escapeMail(record.firstName || whoOf(record))
+  const link = escapeMail(url)
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>Hi ${first},</p>
+<p>du möchtest eine <strong>neue Karte</strong> für die Mitgliedschaft hinterlegen. Über den Link kannst du die Zahlungsart in Stripe aktualisieren. Danach zieht Stripe den offenen Beitrag nach.</p>
+<p><a href="${link}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Karte aktualisieren</a></p>
+<p style="color:#666;font-size:13px">Der Link öffnet dein Stripe-Kundenportal. Bitte die neue Karte speichern und offene Zahlung bestätigen.</p>
+<p>Fragen? Schreib an info@mma-in-leipzig.de.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+</div>`
+}
+
+export async function sendCardUpdateEmail(env, record, url) {
+  const apiKey = env.BREVO_API_KEY?.trim()
+  if (!apiKey || !record?.email || !url) return 'skipped'
+  return sendSmtp(env, {
+    to: record.email,
+    name: whoOf(record),
+    subject: cardUpdateMailSubject(),
+    html: cardUpdateMailHtml(record, { url }),
+  })
+}
+
 export function broadcastMailSubject(subject) {
   return String(subject ?? '')
     .replace(/\s+/g, ' ')
