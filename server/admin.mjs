@@ -31,6 +31,7 @@ import {
   sendPayLinkEmail,
   sendPriceChangeEmail,
   sendReminderEmail,
+  sendTransferSwitchEmail,
 } from './membership-mail.mjs'
 import {
   BROADCAST_CONFIRM,
@@ -875,6 +876,7 @@ export function createAdminHandler({
         (action === 'sendContract' ||
           action === 'sendPayLink' ||
           action === 'sendPriceNote' ||
+          action === 'sendTransferSwitch' ||
           action === 'sendPaperReturn' ||
           action === 'sendReminder' ||
           action === 'sendFirst50' ||
@@ -1289,6 +1291,76 @@ export function createAdminHandler({
           const index = db.members.findIndex((row) => row.id === id)
           if (index < 0) return db
           db.members[index] = { ...db.members[index], priceNote: 'sent', priceNoteAt: at, updatedAt: at }
+          saved = db.members[index]
+          return db
+        })
+        if (proofOnly) {
+          json(res, 200, { ok: true, price: current.price })
+          return
+        }
+        json(res, 200, {
+          ok: true,
+          email: current.email,
+          price: current.price,
+          member: saved ? publicMember(saved, today, true) : undefined,
+        })
+        return
+      }
+
+      if (action === 'sendTransferSwitch') {
+        let id = String(body.id ?? '')
+        if (!id && proofOk) {
+          const wanted = normalizePersonName(body.name).toLocaleLowerCase('de-DE')
+          if (wanted.length < 3) {
+            json(res, 400, { ok: false, error: 'name' })
+            return
+          }
+          const found = (await store.load()).members.filter((row) => {
+            const full = normalizePersonName(`${row.firstName ?? ''} ${row.lastName ?? ''}`).toLocaleLowerCase('de-DE')
+            return full === wanted && row.status !== 'cancelled' && row.status !== 'withdrawn'
+          })
+          if (found.length === 0) {
+            json(res, 404, { ok: false, error: 'missing' })
+            return
+          }
+          if (found.length > 1) {
+            json(res, 409, { ok: false, error: 'duplicate' })
+            return
+          }
+          id = found[0].id
+        }
+        const current = (await store.load()).members.find((row) => row.id === id)
+        if (!current) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (current.payMethod !== 'transfer') {
+          json(res, 400, { ok: false, error: 'pay' })
+          return
+        }
+        let mailed
+        try {
+          mailed = await sendTransferSwitchEmail(env, current)
+        } catch (error) {
+          console.error('[admin] transfer switch mail failed', error)
+          json(res, 502, { ok: false, error: 'mail' })
+          return
+        }
+        if (!mailed || mailed === 'skipped') {
+          json(res, 503, { ok: false, error: 'mail_off' })
+          return
+        }
+        const at = new Date().toISOString()
+        let saved = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          db.members[index] = {
+            ...db.members[index],
+            transferSwitchMail: 'sent',
+            transferSwitchMailAt: at,
+            updatedAt: at,
+          }
           saved = db.members[index]
           return db
         })

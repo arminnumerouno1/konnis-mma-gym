@@ -287,6 +287,40 @@ export async function sendPriceChangeEmail(env, record) {
   })
 }
 
+export function transferSwitchMailSubject() {
+  return 'Zahlungsart auf Überweisung umgestellt · KONNI MMA GYM'
+}
+
+export function transferSwitchMailHtml(record) {
+  const first = escapeMail(record.firstName || whoOf(record))
+  const price = escapeMail(Number(record.price).toFixed(2).replace('.', ','))
+  const t = record.transfer
+  const purpose = escapeMail(t?.purpose || `KONNI Beitrag ${whoOf(record)}`)
+  const next = escapeMail(transferNextLabel(t) || '1. des Monats')
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>Hi ${first},</p>
+<p>kurze Info zu deiner Mitgliedschaft: Du hattest bei der Anmeldung Karte / Apple Pay gewählt, den Beitrag aber per <strong>Banküberweisung</strong> gezahlt.</p>
+<p>Deshalb stellen wir dich <strong>vollständig auf Überweisung</strong> um. Die Kartenzahlung / das Stripe-Abo ist beendet — es wird nichts mehr von der Karte abgebucht.</p>
+<p>Den laufenden Monat haben wir als bezahlt verbucht. Ab dem ${next} bitte den Monatsbeitrag <strong>${price}€</strong> selbst überweisen.</p>
+<p><strong>Konto</strong><br>
+${accountLines()}<br>
+Verwendungszweck: <strong>${purpose}</strong></p>
+<p>SEPA-Lastschrift kommt später. Wenn etwas unklar ist, einfach kurz an info@mma-in-leipzig.de schreiben.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+</div>`
+}
+
+export async function sendTransferSwitchEmail(env, record) {
+  const apiKey = env.BREVO_API_KEY?.trim()
+  if (!apiKey || !record?.email || record.payMethod !== 'transfer') return 'skipped'
+  return sendSmtp(env, {
+    to: record.email,
+    name: whoOf(record),
+    subject: transferSwitchMailSubject(),
+    html: transferSwitchMailHtml(record),
+  })
+}
+
 export function paperReturnMailSubject() {
   return 'Dein Vertrag zum Unterschreiben · KONNI MMA GYM'
 }
