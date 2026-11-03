@@ -415,6 +415,38 @@ assert(novRow.status === 'paid' && novRow.source === 'stripe' && novRow.ref === 
 const late = await stripeCall(invoice('invoice.finalized'))
 assert(late.data.status === 'paid', 'late finalized does not reopen paid month')
 
+// Fresh member: checkout often emits invoice.finalized with status already "paid".
+const paidAtFinalize = await post({
+  action: 'create',
+  plan: 'standard',
+  firstName: 'Paid',
+  lastName: 'Finalize',
+  birthDate: '1990-01-01',
+  email: 'paid-finalize@example.com',
+  phone: '+49 171 0000011',
+  payMethod: 'card',
+  startDate: '2026-11-01',
+  bank: { iban: 'DE89370400440532013000', mandateSigned: true },
+})
+assert(paidAtFinalize.status === 200, `create member for paid-finalize case (${paidAtFinalize.data?.error || paidAtFinalize.status})`)
+const finalizePaidEvt = await stripeCall(
+  invoice('invoice.finalized', {
+    id: 'in_paid_finalize',
+    status: 'paid',
+    paid: true,
+    number: 'GND-PAID',
+    customer: 'cus_PAIDFINALIZE',
+    customer_email: 'paid-finalize@example.com',
+    amount_due: 9999,
+  }),
+)
+assert(finalizePaidEvt.data.handled && finalizePaidEvt.data.status === 'paid', 'finalized+paid invoice marks month paid')
+const afterFinalizePaid = (await store.load()).members.find((row) => row.id === paidAtFinalize.data.member.id)
+assert(
+  afterFinalizePaid.payments.find((row) => row.period === '2026-11')?.status === 'paid',
+  'month green when finalized arrives already paid',
+)
+
 const nobody = await stripeCall(invoice('invoice.paid', { customer: 'cus_NOBODY0000', customer_email: 'x@example.com' }))
 assert(nobody.status === 200 && nobody.data.reason === 'unmatched', 'unmatched invoice acknowledged')
 

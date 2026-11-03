@@ -137,10 +137,19 @@ function applyCheckoutCompleted(db, event, today) {
   return { handled: true, memberId: member.id, linked: true, charged: Boolean(paidDay) }
 }
 
+function invoiceEventStatus(eventType, invoice) {
+  const mapped = INVOICE_STATUS[eventType]
+  if (!mapped) return null
+  // Checkout often finalizes an invoice that is already paid in the same second.
+  // Never treat that as "open" — otherwise a late/racy finalized webhook undoes paid.
+  if (mapped === 'open' && (invoice?.status === 'paid' || invoice?.paid === true)) return 'paid'
+  return mapped
+}
+
 export function applyStripeEvent(db, event, today = isoDate()) {
   if (event?.type === 'checkout.session.completed') return applyCheckoutCompleted(db, event, today)
-  const status = INVOICE_STATUS[event?.type]
   const invoice = event?.data?.object
+  const status = invoiceEventStatus(event?.type, invoice)
   if (!status || invoice?.object !== 'invoice') return { handled: false, reason: 'ignored' }
   const index = findMemberIndex(db.members, invoice)
   if (index < 0) return { handled: false, reason: 'unmatched' }
@@ -148,7 +157,8 @@ export function applyStripeEvent(db, event, today = isoDate()) {
   if (!period) return { handled: false, reason: 'period' }
   const member = db.members[index]
   const current = (member.payments ?? []).find((row) => row.kind === 'month' && row.period === period)
-  if (current?.status === 'paid' && current.ref === invoice.id && status === 'open') {
+  // Never downgrade a paid Stripe row back to open for the same invoice.
+  if (current?.status === 'paid' && status === 'open' && (!current.ref || current.ref === invoice.id)) {
     return { handled: true, memberId: member.id, period, status: 'paid' }
   }
   const customer = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
