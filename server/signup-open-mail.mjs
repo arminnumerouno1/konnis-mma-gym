@@ -61,11 +61,11 @@ export function signupOpenMailHtml({ first = '' } = {}) {
 <td style="padding:12px 0;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap"><strong>109,99€</strong><br><span style="color:#666">/ Monat</span></td>
 </tr>
 <tr>
-<td style="padding:12px 0"><strong>Anmeldegebühr</strong><br><span style="color:#666">0€ nur bis 2. November, danach 49€</span></td>
-<td style="padding:12px 0;text-align:right"><strong>0€</strong></td>
+<td style="padding:12px 0"><strong>Anmeldegebühr</strong><br><span style="color:#666">einmalig</span></td>
+<td style="padding:12px 0;text-align:right"><strong>49€</strong></td>
 </tr>
 </table>
-<p>Das Studio eröffnet am 2. November 2026. Vorher gibt es kein Training. Der Beitrag ist jeweils zum 1. des Monats fällig. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto.</p>
+<p>Das Studio ist offen. Training läuft. Der Beitrag ist jeweils zum 1. des Monats fällig.</p>
 <p>Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später.</p>
 <p style="margin:28px 0 0"><a href="${join}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Mitglied werden</a></p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>

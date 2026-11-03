@@ -39,7 +39,7 @@ export const PLANS: Plan[] = [
     includes: INCLUDES_SLOWSTART,
     bullets: [
       '2 Kurse / Einheiten pro Woche',
-      'Zahlung erst ab echter Eröffnung',
+      'Beitrag jeweils zum 1.',
       'Kündigung 1 Monat zum Laufzeitende',
     ],
     contract: '12',
@@ -57,7 +57,7 @@ export const PLANS: Plan[] = [
     includes: INCLUDES_ALL,
     bullets: [
       'Volle Mitgliedschaft',
-      'Zahlung erst ab echter Eröffnung',
+      'Beitrag jeweils zum 1.',
       'Kündigung 1 Monat zum Laufzeitende',
     ],
     contract: '24',
@@ -75,7 +75,7 @@ export const PLANS: Plan[] = [
     includes: INCLUDES_ALL,
     bullets: [
       'Kürzere Erstlaufzeit',
-      'Zahlung erst ab echter Eröffnung',
+      'Beitrag jeweils zum 1.',
       'Kündigung 1 Monat zum Laufzeitende',
     ],
     contract: '12',
@@ -93,7 +93,7 @@ export const PLANS: Plan[] = [
     includes: INCLUDES_ALL,
     bullets: [
       'Kurze Erstlaufzeit',
-      'Zahlung erst ab echter Eröffnung',
+      'Beitrag jeweils zum 1.',
       'Kündigung 1 Monat zum Laufzeitende',
     ],
     contract: '6',
@@ -135,7 +135,7 @@ export const FIRST50: Plan = {
   bullets: [
     '89,99€ statt 99,99€',
     'Nur für die Voranmeldung, persönlicher Link',
-    'Zahlung erst ab echter Eröffnung',
+    'Beitrag jeweils zum 1.',
   ],
   contract: '24',
 }
@@ -153,14 +153,14 @@ export const SIGNUP_OPEN = true
 /** Probetraining-Anfrage. Auf true, wenn Einheiten wieder angefragt werden können. */
 export const TRIAL_OPEN = false
 
-/** Bis einschließlich Eröffnungstag 0 €; danach 49 €. Server: server/signup-fee.mjs */
-export const SIGNUP_FEE = 0
+/** Anzeige / Fallback. Live-Berechnung: server/signup-fee.mjs (0 € bis Eröffnungstag, danach 49 €). */
+export const SIGNUP_FEE = 49
 export const SIGNUP_FEE_AFTER = 49
 export const SIGNUP_FEE_FREE_UNTIL = '2026-11-02'
 /** Erste volle Monatsabbuchung. Muss zu server/stripe-checkout.mjs BILLING_START passen. */
 export const FIRST_CHARGE = '2026-11-01'
 export const PAYMENT_NOTE =
-  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Wer vor der Eröffnung abschließt, zahlt erstmals am 1. November 2026. Vorher geht nichts vom Konto. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.'
+  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 49 €.'
 
 export function planById(id: string | null | undefined): Plan | undefined {
   return ALL_PLANS.find((plan) => plan.id === id)

@@ -115,7 +115,7 @@ function earlyText(record) {
     return `Der Vertrag beginnt am ${chargeLabel(record)}. Vorher fällt kein Mitgliedsbeitrag an. Der Widerruf von 14 Tagen ändert daran nichts.`
   }
   if (!trainingHasStarted(at)) {
-    return 'Training beginnt frühestens am 2. November 2026. Vorher gibt es kein Training. Der Widerruf von 14 Tagen ändert daran nichts.'
+    return 'Training beginnt mit dem vertraglichen Start. Vorher gibt es kein Training. Der Widerruf von 14 Tagen ändert daran nichts.'
   }
   return record.consents?.earlyStart
     ? 'Vorzeitiger Leistungsbeginn ausdrücklich verlangt. Das Widerrufsrecht bleibt. Für schon genutzte Tage kann ein angemessener Anteil berechnet werden.'
@@ -258,12 +258,12 @@ function contractParagraphs(record) {
     record.plan === 'slowstart'
       ? 'Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Im Slow Start Tarif sind zwei Kurse beziehungsweise Einheiten pro Woche inklusive, etwa MMA, Boxen und BJJ. Zusätzliche Einheiten in derselben Woche sind nicht Bestandteil dieses Tarifs. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.'
       : 'Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Alle Kurse und Einheiten sind inklusive, etwa MMA, Boxen und BJJ. Die Nutzung ist nicht auf zwei Einheiten pro Woche begrenzt. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.'
+  const feeEuro = `${Number(record.fee ?? 0).toFixed(2).replace('.', ',')} EUR`
   return [
     access,
-    'Die Zahlungspflicht beginnt erst mit der tatsächlichen Eröffnung. Verschiebt sich die Eröffnung um mehr als acht Wochen über den geplanten Termin, kannst du vor Leistungsbeginn in Textform zurücktreten. Schon gezahlte Beträge werden erstattet.',
     record.payMethod === 'transfer'
-      ? `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst per Banküberweisung auf das Konto der ${GYM_BANK.holder}. ${account}. Die erste Überweisung ist am ${when} fällig. Aufnahmegebühr: 0,00 EUR nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.`
-      : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Die erste Abbuchung ist am ${when} fällig. Aufnahmegebühr: 0,00 EUR nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR. Banküberweisung ist ebenfalls möglich: ${account}.`,
+      ? `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst per Banküberweisung auf das Konto der ${GYM_BANK.holder}. ${account}. Die erste Überweisung ist am ${when} fällig. Aufnahmegebühr: ${feeEuro}.`
+      : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Die erste Abbuchung ist am ${when} fällig. Aufnahmegebühr: ${feeEuro}. Banküberweisung ist ebenfalls möglich: ${account}.`,
     record.payMethod === 'transfer'
       ? 'Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Karte oder Apple Pay über Stripe ist die andere Zahlungsart. SEPA-Lastschrift kommt später und ist in diesem Vertrag nicht erteilt. Kommt eine Überweisung nicht an, gelten die Regeln zum Zahlungsverzug.'
       : 'Kartenzahlung läuft über Stripe. Banküberweisung auf das oben genannte Konto ist ebenfalls möglich. SEPA-Lastschrift kommt später. Ein Lastschriftmandat gibt es nur, wenn das extra vereinbart wird. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.',
@@ -331,7 +331,7 @@ export async function buildContractPdf(record, { paper = false, creditorId = '',
   writer.kv('Tarif', `${record.planName || record.plan}${term ? ` · ${term}` : ''}`)
   writer.kv('Beitrag', `${formatted}${unit ? ` ${unit}` : ''}`)
   if (record.plan !== 'daypass') {
-    writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.')
+    writer.kv('Aufnahmegebühr', `${Number(record.fee ?? 0).toFixed(2).replace('.', ',')} EUR`)
   }
   writer.kv('Vertragsschluss', formatWhen(record.createdAt))
   if (record.visitDay) writer.kv('Day Pass', formatIsoDate(record.visitDay))
@@ -438,7 +438,7 @@ async function buildPaperContractPdf(record, creditorId, { returnCopy = false } 
   writer.kv('Tarif', `${record.planName || record.plan}${term ? ` · ${term}` : ''}`)
   writer.kv('Beitrag', `${formatted}${unit ? ` ${unit}` : ''}`)
   if (record.plan !== 'daypass') {
-    writer.kv('Aufnahmegebühr', '0,00 EUR, nur bis zum 2. November 2026. Danach beträgt sie 49,00 EUR.')
+    writer.kv('Aufnahmegebühr', `${Number(record.fee ?? 0).toFixed(2).replace('.', ',')} EUR`)
   }
   writer.kv('Beginn', formatIsoDate(record.startDate))
   const paperSeat = first50SeatLabel(record.inviteSlot)

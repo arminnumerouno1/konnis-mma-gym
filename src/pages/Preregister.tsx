@@ -192,7 +192,7 @@ export function Preregister() {
               ? 'Wir hatten dich schon auf der Liste und haben deine Angaben jetzt aktualisiert.'
               : 'Du stehst auf unserer Liste. Sobald Probetrainings und Anmeldungen möglich sind, melden wir uns bei dir.'}
           </p>
-          <p>Bis dahin gibt es auf Instagram Einblicke in den Aufbau, das Team und alles rund um die Eröffnung.</p>
+          <p>Bis dahin gibt es auf Instagram Einblicke in Training, Team und Gym.</p>
           <div className="join-closed-actions">
             <a className="btn btn-solid prereg-ig" href={GYM.instagram} target="_blank" rel="noreferrer">
               <InstagramIcon size={18} />
@@ -224,13 +224,13 @@ export function Preregister() {
         <p className="kicker">Voranmeldung</p>
         <h1>Sei von Anfang an dabei.</h1>
         <p className="lead">
-          Wir bauen gerade mit viel Leidenschaft ein MMA-Gym auf, in dem jeder willkommen ist: vom kompletten Anfänger
-          über Fortgeschrittene und Amateurkämpfer bis zu Profis.
+          Im KONNI MMA GYM ist jeder willkommen: vom kompletten Anfänger über Fortgeschrittene und Amateurkämpfer bis zu
+          Profis.
         </p>
         <p>
           Egal, ob du kämpfen, technisch besser werden, fitter werden oder einfach Spaß am Kampfsport haben willst. Wir
-          begleiten dich auf deinem Weg. Mit der unverbindlichen Voranmeldung erfährst du als Erstes von Eröffnung,
-          Probetrainings und Eröffnungsangeboten.
+          begleiten dich auf deinem Weg. Mit der unverbindlichen Voranmeldung erfährst du als Erstes von Probetrainings
+          und Angeboten.
         </p>
         <p className="prereg-meta">Dauert etwa zwei Minuten · unverbindlich · kostenlos</p>
       </header>
@@ -348,7 +348,7 @@ export function Preregister() {
         </label>
 
         <fieldset className={fieldClass('offer')} data-field="offer" aria-describedby={described('offer')}>
-          <legend className="prereg-label">Hättest du Interesse an einer Mitgliedschaft zum Eröffnungspreis?</legend>
+          <legend className="prereg-label">Hättest du Interesse an einer Mitgliedschaft zum Sonderpreis?</legend>
           <div className="prereg-chips">
             {OFFERS.map(([value, label]) => (
               <label key={value} className="prereg-chip">
@@ -435,7 +435,7 @@ export function Preregister() {
         <label className={`check prereg-consent ${errors.consent ? 'has-error' : ''}`} data-field="consent">
           <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
           <span>
-            Ihr dürft meine Angaben speichern und mich zur Eröffnung, zu Probetrainings und zur Mitgliedschaft
+            Ihr dürft meine Angaben speichern und mich zu Probetrainings und zur Mitgliedschaft
             kontaktieren. Das kann ich jederzeit per Mail an {GYM.email} widerrufen. Mehr dazu in der{' '}
             <Link href={href('datenschutz')}>Datenschutzerklärung</Link>.
           </span>

@@ -1,12 +1,12 @@
 export const COPY = {
   gymName: 'KONNI MMA GYM',
   city: 'LEIPZIG',
-  heroStamp: 'Eröffnung 2. November',
+  heroStamp: 'Jetzt offen',
   heroName: 'KONRAD DYRSCHKA',
   heroMma: 'MMA',
   heroCity: 'in Leipzig',
   heroHit: 'Vom Käfig auf die Matte.',
-  tape: 'Endlich ein MMA Gym in Leipzig · 2. November geht die Tür auf · Wittenberger Straße 15 · Kommt vorbei · ',
+  tape: 'MMA Gym in Leipzig · Wittenberger Straße 15 · Training läuft · Komm vorbei · ',
   ctaJoin: 'Mitglied werden',
   ctaTrial: 'Probetraining',
   ctaPrereg: 'Voranmelden',
@@ -20,23 +20,21 @@ export const COPY = {
   navPrereg: 'Voranmelden',
   navFaq: 'FAQ',
   navContact: 'Kontakt',
-  aboutKicker: 'Eröffnung',
-  aboutDate: '02.11.2026',
-  aboutTitleStart: 'KONNI MMA GYM eröffnet',
-  aboutTitleDate: 'am 2. November 2026',
-  aboutTitleEnd: 'in Leipzig! 🥊',
+  aboutKicker: 'Das Gym',
+  aboutDate: 'Jetzt offen',
+  aboutTitleStart: 'KONNI MMA GYM',
+  aboutTitleDate: 'in Leipzig',
+  aboutTitleEnd: '🥊',
   aboutParas: [
-    'Nach vielen Wochen Arbeit ist es endlich so weit. Am 2. November eröffnen Konrad Dyrschka und Mehmet-Deniz Celik das KONNI MMA GYM in der Wittenberger Straße 15 in Leipzig.',
-    'Konrad ist selbst aktiver MMA-Profi-Kämpfer und bringt seine Erfahrung aus dem eigenen Training und aus dem Käfig direkt ins Gym ein. Gemeinsam mit Mehmet hat er in den vergangenen Wochen ein komplett neues Kampfsportstudio aufgebaut, in dem künftig MMA, Ringen, BJJ, Boxen sowie Kick- und Thai-Boxen trainiert werden.',
-    'Am 2. November öffnen wir die Türen und jeder, der neugierig ist, kann vorbeikommen.',
-    'Ihr könnt euch das komplette Studio anschauen, den Trainingsbereich und den Käfig ansehen und Konrad, Mehmet und das Team persönlich kennenlernen. Natürlich könnt ihr euch vor Ort auch über das Training, die einzelnen Kurse und den Ablauf im Gym informieren.',
-    'Für den Eröffnungstag sind außerdem einige Gäste geplant. Wen wir an diesem Tag bei uns begrüßen dürfen, geben wir noch bekannt.',
+    'Konrad Dyrschka und Mehmet-Deniz Celik haben das KONNI MMA GYM in der Wittenberger Straße 15 in Leipzig aufgebaut. Die Türen sind offen – Training läuft.',
+    'Konrad ist selbst aktiver MMA-Profi-Kämpfer und bringt seine Erfahrung aus dem eigenen Training und aus dem Käfig direkt ins Gym ein. Gemeinsam mit Mehmet steht ein komplett neues Kampfsportstudio, in dem MMA, Ringen, BJJ, Boxen sowie Kick- und Thai-Boxen trainiert werden.',
+    'Komm vorbei, schau dir Studio, Trainingsbereich und Käfig an und lern Konrad, Mehmet und das Team kennen. Vor Ort erklären wir dir Training, Kurse und den Ablauf im Gym.',
   ],
   aboutPlace: 'KONNI MMA GYM',
   aboutStreet: 'Wittenberger Straße 15',
   aboutZip: '04129 Leipzig',
-  aboutWhen: 'Eröffnung am 2.\u00A0November\u00A02026',
-  aboutClose: 'Kommt vorbei, schaut euch das neue Gym an und lernt uns kennen. Wir freuen uns auf euch! 🥊',
+  aboutWhen: 'Jetzt offen · Kursplan siehe unten',
+  aboutClose: 'Komm vorbei und trainier mit. Wir freuen uns auf dich.',
   ctaJoinNow: 'Jetzt Mitglied werden',
   trainTitle: 'Die Disziplinen.',
   disciplinePlace: 'in Leipzig',
@@ -111,21 +109,21 @@ export const COPY = {
   planLegendAdvanced: 'Fortgeschrittene',
   priceTitle: 'Tarife.',
   priceLead:
-    'Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Die Anmeldegebühr von 0€ nur bis zum 2. November, danach 49€.',
+    'Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Anmeldegebühr 49€.',
   planIncludes: 'Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.',
-  signupFeePrice: '0€',
-  signupFeeLabel: 'Anmeldegebühr\nnur bis 2. November\ndanach 49€',
+  signupFeePrice: '49€',
+  signupFeeLabel: 'Anmeldegebühr\neinmalig',
   priceFoot:
-    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 0 € nur bis zum 2. November 2026, danach 49 €. Vor der Eröffnung zahlst du nichts.',
+    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 49 €.',
   trialTitle: 'Komm vorbei.',
   preregTitle: 'Sei von Anfang an dabei.',
   preregLead:
-    'Probetrainings starten mit der Eröffnung am 2. November. Melde dich jetzt unverbindlich vor: Du erfährst als Erstes, wann du zum Probetraining kommen kannst, und hilfst uns, den Kursplan nach euren Zeiten zu bauen.',
+    'Melde dich unverbindlich vor: Du erfährst als Erstes, wann du zum Probetraining kommen kannst, und hilfst uns, den Kursplan nach euren Zeiten zu bauen.',
   preregButton: 'Jetzt unverbindlich voranmelden',
   preregMeta: 'Dauert etwa zwei Minuten · kostenlos',
   trialLead: 'Eine Einheit. Kein Vertrag. Wenn du bleibst, bleibst du.',
   trialClosedLead:
-    'Probetraining geht noch nicht. Sobald wir auf haben, kannst du hier eine Einheit anfragen. Bis dahin zur Eröffnung am 2. November kommen.',
+    'Probetraining online anfragen geht gerade noch nicht. Komm vorbei oder schreib uns – wir finden eine Einheit für dich.',
   trialName: 'Name',
   trialEmail: 'E-Mail',
   trialPhone: 'Telefon',
@@ -176,7 +174,7 @@ export const COPY = {
   joinClosedKicker: 'Mitgliedschaft',
   joinClosedTitle: 'Bald.',
   joinClosedLead:
-    'Die Tarife stehen. Online Mitglied werden geht noch nicht. Sobald der Vertrag auf ist, kannst du ihn hier abschließen. Bis dahin zur Eröffnung am 2. November kommen.',
+    'Online Mitglied werden geht gerade nicht. Schreib uns oder komm vorbei im Studio.',
   joinClosedInvite:
     'Dein First-50-Link bleibt. Der Platz ist für dich, sobald die Anmeldung aufgeht.',
   joinClosedHome: 'Zur Startseite',
@@ -229,19 +227,19 @@ export const COPY = {
   payTransfer: 'Banküberweisung',
   payCard: 'Karte oder Apple Pay',
   payTransferNote:
-    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig. Die Kontodaten stehen nach dem Abschluss hier, im Vertrag und in der E-Mail. SEPA-Lastschrift kommt später.',
+    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Kontodaten stehen nach dem Abschluss hier, im Vertrag und in der E-Mail. SEPA-Lastschrift kommt später.',
   payTransferDone:
-    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am 1. November 2026 fällig. Überweise auf das Konto der KONNI MMA GYM GbR. Den Vertrag schicken wir dir per E-Mail. SEPA-Lastschrift kommt später.',
+    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Überweise auf das Konto der KONNI MMA GYM GbR. Den Vertrag schicken wir dir per E-Mail. SEPA-Lastschrift kommt später.',
   payLater:
-    'Deine Anmeldung ist da. Abgebucht wird erstmals am 1. November 2026, danach immer zum 1. Vorher geht nichts vom Konto. Den Link zur Zahlung schicken wir dir.',
+    'Deine Anmeldung ist da. Abgebucht wird zum 1. des Monats. Den Link zur Zahlung schicken wir dir.',
   payDayLater:
-    'Dein Day Pass ist gespeichert. Abgebucht wird er erst ab dem 1. November 2026. Vorher geht nichts vom Konto.',
+    'Dein Day Pass ist gespeichert. Die Zahlung läuft über Stripe.',
   payDayNote:
-    'Der Day Pass ist eine Tageskarte für 19,99 €. Es gibt keine Anmeldegebühr. Du zahlst mit Karte oder Apple Pay. Vor der Eröffnung geht nichts vom Konto.',
+    'Der Day Pass ist eine Tageskarte für 19,99 €. Es gibt keine Anmeldegebühr. Du zahlst mit Karte oder Apple Pay.',
   payUnlinked:
     'Deine Anmeldung ist da. Der Zahlungslink konnte gerade nicht erzeugt werden. Wir schicken ihn dir.',
   payReturnOk:
-    'Danke. Dein Vertrag ist gespeichert und liegt in der E-Mail. Die erste Abbuchung ist am 1. November 2026. Vorher wird nichts eingezogen. Danach immer zum 1. des Monats. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später.',
+    'Danke. Dein Vertrag ist gespeichert und liegt in der E-Mail. Beitrag jeweils zum 1. des Monats. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später.',
   payReturnOkNow:
     'Danke. Dein Vertrag ist gespeichert. Die Zahlung läuft über Stripe. Den laufenden Monat ziehen wir jetzt ein, danach immer zum 1.',
   payReturnCancel:
@@ -259,17 +257,17 @@ export const COPY = {
   consentEarly:
     'Ich verlange ausdrücklich, dass KONNI MMA GYM schon vor Ablauf der 14-Tage-Widerrufsfrist mit dem Training beginnt. Widerrufen kann ich trotzdem. Für schon genutzte Tage kann ein Anteil berechnet werden.',
   consentEarlyHint:
-    'Nur ankreuzen, wenn du nach der Eröffnung schon in der Widerrufsfrist trainieren willst. Vor dem 2. November gibt es kein Training.',
-  trainingFromOpening: 'Training gibt es erst ab dem 2. November. Vorher nicht.',
+    'Nur ankreuzen, wenn du schon in der Widerrufsfrist trainieren willst.',
+  trainingFromOpening: 'Training läuft. Komm vorbei.',
   earlyStartYes:
     'Ausdrücklich verlangt. Das Widerrufsrecht bleibt. Schon genutzte Tage können berechnet werden.',
   earlyStartNo: 'Nicht verlangt. 14 Tage Widerruf, ohne vorzeitiges Training.',
   consentPhoto: 'Optional: Ihr dürft mich auf Gym-Fotos/Videos für die Gym-Kanäle zeigen.',
-  consentNews: 'Optional: Infos zu Start und Kursplan per E-Mail.',
+  consentNews: 'Optional: Infos zu Kursplan und Gym per E-Mail.',
   consentGuardian: 'Ich bin gesetzliche Vertretung und stimme dem Vertrag zu.',
   consentSign: 'Ich unterschreibe diesen Vertrag elektronisch. Der Text gilt wie auf Papier.',
   payNote:
-    'Monatsbeiträge mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Fällig jeweils zum 1. des Monats. Zahlungspflicht erst ab echter Eröffnung.',
+    'Monatsbeiträge mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Fällig jeweils zum 1. des Monats.',
 } as const
 
 export const FAQ = [
@@ -279,11 +277,11 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Ja. Unter Mitglied werden schließt du Slow Start, Standard, Flex oder Plus online ab. Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026. Vorher geht nichts vom Konto. Die Anmeldegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.',
+    a: 'Ja. Unter Mitglied werden schließt du Slow Start, Standard, Flex oder Plus online ab. Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. des Monats. Anmeldegebühr 49 €.',
   },
   {
     q: 'Gibt es ein Probetraining?',
-    a: 'Ja, sobald der Betrieb läuft. Online anfragen geht noch nicht. Zur Eröffnung kommen oder später hier eine Einheit holen.',
+    a: 'Ja. Online anfragen geht gerade noch nicht – komm vorbei oder schreib uns an info@mma-in-leipzig.de, dann finden wir eine Einheit.',
   },
   {
     q: 'Was bringe ich mit?',
@@ -291,11 +289,11 @@ export const FAQ = [
   },
   {
     q: 'Wann zahle ich?',
-    a: 'Erst wenn der reguläre Trainingsbetrieb wirklich startet. Verschiebt sich die Eröffnung um mehr als acht Wochen über den geplanten Termin, kannst du vor dem Start zurücktreten.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Anmeldegebühr von 49 € fällt beim Vertragsschluss an.',
   },
   {
     q: 'Wie wird bezahlt?',
-    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Die erste Zahlung ist am 1. November 2026 fällig. Vorher geht nichts vom Konto. Die Aufnahmegebühr von 0 € gilt nur bis zum 2. November 2026. Danach beträgt sie 49 €.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 49 €.',
   },
   {
     q: 'Kann ich unter 18 trainieren?',

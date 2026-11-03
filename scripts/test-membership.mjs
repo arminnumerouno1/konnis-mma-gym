@@ -246,7 +246,7 @@ const standardMail = membershipCopyHtml({ ...mailRecord, plan: 'standard', planN
 assert(standardMail.includes('Willkommen') && !standardMail.includes('einer der Ersten'), 'standard welcome')
 assert(standardMail.includes('DE77 8605 5592 1090 4292 70'), 'card mail names the transfer account')
 assert(standardMail.includes('SEPA-Lastschrift kommt später'), 'card mail says sepa comes later')
-assert(standardMail.includes('nur bis zum 2. November 2026') && standardMail.includes('Danach beträgt sie 49 €'), 'mail states the later signup fee')
+assert(standardMail.includes('Aufnahmegebühr') && standardMail.includes('0,00 €'), 'mail states the signup fee amount')
 assert(standardMail.includes('Mitgliedsvertrag') || standardMail.includes('Vertrag'), 'card mail mentions the contract')
 assert(
   standardMail.includes('Kleine Extra-Info von Konrad') &&
@@ -304,8 +304,8 @@ const contractText = pdfText(contractBytes)
 assert(contractText.includes('DE77') && contractText.includes('8605') && contractText.includes('4292 70'), 'card contract contains the gym iban')
 assert(contractText.includes('WELADE8LXXX'), 'card contract contains the bic')
 assert(contractText.includes('SEPA-Lastschrift kommt später'), 'card contract says sepa comes later')
-assert(contractText.includes('nur bis zum 2. November 2026') && contractText.includes('Danach beträgt sie 49,00 EUR'), 'signup fee is 49 euro after 2 november')
-assert(contractText.includes('Vorher gibt es kein Training'), 'contract refuses training before opening')
+assert(contractText.includes('Aufnahmegebühr') && contractText.includes('0,00 EUR'), 'signup fee amount is on the contract')
+assert(contractText.includes('Vorher gibt es kein Training'), 'contract refuses training before start')
 assert(contractText.includes('mehr als 50 Kilometer') && contractText.includes('Meldebescheinigung'), 'contract states the 50 km relocation right')
 assert(
   contractText.includes('Alle Kurse') &&
@@ -320,7 +320,7 @@ assert(transferText.includes('Banküberweisung') && transferText.includes('DE77 
 const paperPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard', planName: 'Standard', payMethod: 'transfer' }, { paper: true }))
 const paperText = pdfText(paperPdf)
 assert(paperText.includes('DE77 8605') && paperText.includes('4292 70'), 'paper contract contains the gym account')
-assert(paperText.includes('Danach beträgt sie 49,00 EUR'), 'paper membership still states the later signup fee')
+assert(paperText.includes('Aufnahmegebühr') && paperText.includes('0,00 EUR'), 'paper membership states the signup fee')
 assert(!paperText.includes('Gym-Unterschrift-Test'), 'unsigned paper contract leaves the gym line blank')
 const plusPdf = Buffer.from(
   await buildContractPdf({
@@ -359,10 +359,7 @@ assert(
   slowText.includes('zwei Kurse') && slowText.includes('Einheiten pro Woche') && !slowText.includes('nicht auf zwei Einheiten'),
   'slow start contract limits to two units per week',
 )
-assert(
-  slowText.includes('nur bis zum 2. November 2026') && slowText.includes('Danach beträgt sie 49,00 EUR'),
-  'slow start keeps the signup fee window',
-)
+assert(slowText.includes('Aufnahmegebühr') && slowText.includes('0,00 EUR'), 'slow start states the signup fee')
 const openPaper = Buffer.from(
   await buildContractPdf(
     {

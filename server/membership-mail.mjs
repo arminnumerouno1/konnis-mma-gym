@@ -132,7 +132,7 @@ function memberLead(record, { attached = false } = {}) {
     const later = memberBillingStart(record) > '2026-11-01'
     const welcome = later
       ? `Dein Vertrag beginnt am ${dueOn(record)}. Vorher wird nichts berechnet.`
-      : 'Wir freuen uns, dass du von Anfang an dabei bist. Am 2. November geht die Tür auf. Dann sehen wir uns in der Wittenberger Straße.'
+      : 'Wir freuen uns, dass du von Anfang an dabei bist. Dann sehen wir uns in der Wittenberger Straße.'
     return `<p>Hi ${first},</p>
 <p><strong>Schön, dass du einer der Ersten bist.</strong> Die ersten 50 bekommen den Preis, den wir dafür gemacht haben: 89,99€ statt 99,99€, ${record.termMonths || 24} Monate.</p>
 <p>${welcome}</p>
@@ -174,7 +174,7 @@ export function membershipCopyHtml(record, { forGym = false, attached = false } 
   const early = laterStart
     ? `Der Vertrag beginnt am ${dueOn(record)}. Vorher fällt kein Mitgliedsbeitrag an.`
     : beforeOpening
-    ? 'Training beginnt frühestens am 2. November 2026. Vorher gibt es kein Training.'
+    ? 'Training beginnt mit dem vertraglichen Start. Vorher gibt es kein Training.'
     : record.consents?.earlyStart
       ? 'Vorzeitiger Leistungsbeginn ausdrücklich verlangt. Widerruf bleibt. Schon genutzte Tage können berechnet werden.'
       : 'Kein vorzeitiger Leistungsbeginn. 14 Tage Widerruf.'
@@ -207,7 +207,11 @@ ${
       ? ''
       : '<p><strong>Leistung</strong><br>Alle Kurse inklusive. So oft du willst – nicht nur 2× die Woche.</p>'
 }
-${record.plan === 'daypass' ? '' : '<p><strong>Aufnahmegebühr</strong><br>0,00 €, nur bis zum 2. November 2026. Danach beträgt sie 49 €.</p>'}
+${
+  record.plan === 'daypass'
+    ? ''
+    : `<p><strong>Aufnahmegebühr</strong><br>${Number(record.fee ?? 0).toFixed(2).replace('.', ',')} €</p>`
+}
 <p><strong>Vertragsschluss</strong><br>${escapeMail(when)}</p>
 ${visit}
 ${guardian}
@@ -221,7 +225,7 @@ ${bankBlock(record)}
       ? record.transfer?.prorated
         ? 'Bitte überweise den oben genannten <strong>anteiligen Beitrag</strong> selbst auf das Konto. Ab dem nächsten 1. dann den vollen Monatsbeitrag.'
         : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du überweist ihn selbst auf das Konto oben.'
-      : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später. Zahlungspflicht erst ab echter Eröffnung.'
+      : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später.'
 }</p>
 <p>AGB Stand 22. Oktober 2026 und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.</p>
 ${forGym ? '' : files}
