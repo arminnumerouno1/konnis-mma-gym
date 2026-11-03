@@ -180,7 +180,7 @@ const inviteHtml = first50InviteHtml({
 })
 assert(inviteHtml.includes('ersten 50') && inviteHtml.includes('freuen') && inviteHtml.includes('89,99'), 'invite welcome')
 assert(inviteHtml.includes('Jetzt Vertrag abschließen') && inviteHtml.includes('anna@example.com'), 'invite link')
-assert(inviteHtml.includes('48 Stunden') && inviteHtml.includes('1. November 2026'), 'invite explains the 48 hour link')
+assert(inviteHtml.includes('48 Stunden') && inviteHtml.includes('Aufnahmegebühr beträgt 0 €'), 'invite explains the 48 hour link')
 const januaryHtml = first50InviteHtml({
   first: 'Martin',
   name: 'Martin Masurkewicz',
@@ -201,7 +201,7 @@ const shortHtml = first50InviteHtml({
 })
 assert(shortHtml.includes('12 Monate') && shortHtml.includes('Sondervertrag') && shortHtml.includes('89,99€'), 'twelve month invite')
 assert(!shortHtml.includes('24 Monate') && shortHtml.includes('1. Januar 2027'), 'twelve month invite drops the usual term')
-assert(inviteHtml.includes('Danach beträgt sie 49 €'), 'invite states the later signup fee')
+assert(inviteHtml.includes('Aufnahmegebühr beträgt 0 €'), 'first50 invite has no signup fee')
 assert(inviteHtml.includes('geht dein Platz automatisch an die nächste Person'), 'unused invite passes to the next person')
 assert(!inviteHtml.includes('<script'), 'invite escaped')
 const lastChanceHtml = first50InviteHtml({

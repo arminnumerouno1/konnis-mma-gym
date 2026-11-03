@@ -153,14 +153,14 @@ export const SIGNUP_OPEN = true
 /** Probetraining-Anfrage. Auf true, wenn Einheiten wieder angefragt werden können. */
 export const TRIAL_OPEN = false
 
-/** Anzeige / Fallback. Live-Berechnung: server/signup-fee.mjs (0 € bis Eröffnungstag, danach 49 €). */
-export const SIGNUP_FEE = 49
-export const SIGNUP_FEE_AFTER = 49
+/** Anzeige / Fallback. Live-Berechnung: server/signup-fee.mjs (0 € bis Eröffnungstag, danach 19,99 €). */
+export const SIGNUP_FEE = 19.99
+export const SIGNUP_FEE_AFTER = 19.99
 export const SIGNUP_FEE_FREE_UNTIL = '2026-11-02'
 /** Erste volle Monatsabbuchung. Muss zu server/stripe-checkout.mjs BILLING_START passen. */
 export const FIRST_CHARGE = '2026-11-01'
 export const PAYMENT_NOTE =
-  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 49 €.'
+  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 19,99 €.'
 
 export function planById(id: string | null | undefined): Plan | undefined {
   return ALL_PLANS.find((plan) => plan.id === id)

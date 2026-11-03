@@ -1,8 +1,8 @@
 import { berlinIsoDate, OPENING_DATE } from './opening.mjs'
 
-/** Aufnahmegebühr 0 € bis einschließlich Eröffnungstag, danach 49 €. */
+/** Aufnahmegebühr 0 € bis einschließlich Eröffnungstag, danach 19,99 €. */
 export const FEE_FREE_UNTIL = OPENING_DATE
-export const FEE_AFTER_OPENING = 49
+export const FEE_AFTER_OPENING = 19.99
 
 /**
  * @param {string | Date} [when] ISO-Tag oder Date (Berlin-Kalender bei Date)

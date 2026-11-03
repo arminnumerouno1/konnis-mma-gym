@@ -217,7 +217,7 @@ function Contract({ months }: { months: 6 | 12 | 24 }) {
       <p>
         Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe,
         oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC
-        WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. Aufnahmegebühr: 49 €.
+        WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. Aufnahmegebühr: 19,99 €.
       </p>
       <p>
         SEPA-Lastschrift kommt später und ist derzeit nicht eingerichtet. Ein Lastschriftmandat gibt es nur, wenn das

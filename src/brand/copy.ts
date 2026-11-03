@@ -109,12 +109,12 @@ export const COPY = {
   planLegendAdvanced: 'Fortgeschrittene',
   priceTitle: 'Tarife.',
   priceLead:
-    'Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Anmeldegebühr 49€.',
+    'Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Anmeldegebühr 19,99€.',
   planIncludes: 'Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.',
-  signupFeePrice: '49€',
+  signupFeePrice: '19,99€',
   signupFeeLabel: 'Anmeldegebühr\neinmalig',
   priceFoot:
-    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 49 €.',
+    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 19,99 €.',
   trialTitle: 'Komm vorbei.',
   preregTitle: 'Sei von Anfang an dabei.',
   preregLead:
@@ -277,7 +277,7 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Ja. Unter Mitglied werden schließt du Slow Start, Standard, Flex oder Plus online ab. Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. des Monats. Anmeldegebühr 49 €.',
+    a: 'Ja. Unter Mitglied werden schließt du Slow Start, Standard, Flex oder Plus online ab. Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. des Monats. Anmeldegebühr 19,99 €.',
   },
   {
     q: 'Gibt es ein Probetraining?',
@@ -289,11 +289,11 @@ export const FAQ = [
   },
   {
     q: 'Wann zahle ich?',
-    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Anmeldegebühr von 49 € fällt beim Vertragsschluss an.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Anmeldegebühr von 19,99 € fällt beim Vertragsschluss an.',
   },
   {
     q: 'Wie wird bezahlt?',
-    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 49 €.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 19,99 €.',
   },
   {
     q: 'Kann ich unter 18 trainieren?',

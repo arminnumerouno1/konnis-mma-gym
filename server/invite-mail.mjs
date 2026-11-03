@@ -191,7 +191,7 @@ export function plusInviteHtml({ first, name, email, url, start = '', openUntilS
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
 <p>Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.</p>
-<p>Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die Aufnahmegebühr beträgt 49 €.</p>
+<p>Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Die Aufnahmegebühr beträgt 19,99 €.</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>`
 }

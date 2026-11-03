@@ -62,7 +62,7 @@ export function signupOpenMailHtml({ first = '' } = {}) {
 </tr>
 <tr>
 <td style="padding:12px 0"><strong>Anmeldegebühr</strong><br><span style="color:#666">einmalig</span></td>
-<td style="padding:12px 0;text-align:right"><strong>49€</strong></td>
+<td style="padding:12px 0;text-align:right"><strong>19,99€</strong></td>
 </tr>
 </table>
 <p>Das Studio ist offen. Training läuft. Der Beitrag ist jeweils zum 1. des Monats fällig.</p>

@@ -35,7 +35,7 @@ const withFee = memberFromSignup(
     planName: 'Standard',
     price: 99.99,
     termMonths: 24,
-    fee: 49,
+    fee: 19.99,
     firstName: 'Fee',
     lastName: 'Test',
     birthDate: '1990-01-01',
@@ -49,15 +49,15 @@ const withFee = memberFromSignup(
   '2026-11-03',
 )
 const ready = ensurePayments(withFee, '2026-11-03')
-assert(ready.payments.some((row) => row.kind === 'fee' && row.amount === 49 && row.status === 'open'), 'fee row open')
+assert(ready.payments.some((row) => row.kind === 'fee' && row.amount === 19.99 && row.status === 'open'), 'fee row open')
 assert(openDuesOf(ready, '2026-11-03').openRows.some((row) => row.kind === 'fee'), 'fee in open dues')
 
 const checkout = buildCheckoutFields({
-  member: { ...withFee, fee: 49, stripe: null },
+  member: { ...withFee, fee: 19.99, stripe: null },
   origin: 'https://www.mma-in-leipzig.de',
   nowMs: Date.parse('2026-11-03T12:00:00+01:00'),
 })
-assert(checkout.fields['line_items[1][price_data][unit_amount]'] === '4900', 'stripe checkout adds fee line')
+assert(checkout.fields['line_items[1][price_data][unit_amount]'] === '1999', 'stripe checkout adds fee line')
 
 const csv = `Buchungstag;Verwendungszweck;Beguenstigter/Zahlungspflichtiger;Betrag;Waehrung
 01.11.2026;Mitglied Fee Test fee@example.com;Fee Test;99,99;EUR

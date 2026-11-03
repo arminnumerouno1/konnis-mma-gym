@@ -34,11 +34,11 @@ assert.equal(mid.nextFullDue, '2026-12-01')
 assert.equal(mid.dueNow, true)
 
 const withFee = buildTransferDue(
-  { id: 'abc12345-xxxx', firstName: 'Anna', lastName: 'Test', price: 99.99, fee: 49 },
+  { id: 'abc12345-xxxx', firstName: 'Anna', lastName: 'Test', price: 99.99, fee: 19.99 },
   Date.parse('2026-11-10T12:00:00+01:00'),
 )
-assert.equal(withFee.amount, 6999 + 4900, 'prorate plus signup fee')
-assert.equal(withFee.feeCents, 4900)
+assert.equal(withFee.amount, 6999 + 1999, 'prorate plus signup fee')
+assert.equal(withFee.feeCents, 1999)
 
 const onFirst = buildTransferDue(
   { id: 'x', firstName: 'A', lastName: 'B', price: 99.99, fee: 0 },
@@ -63,13 +63,13 @@ assert.match(purpose, /Wollenberg/)
 assert.match(purpose, /a81f7fb4/)
 
 const payload = buildTransferPayload(
-  { id: 'abc12345-xxxx', firstName: 'Max', lastName: 'Mustermann', price: 99.99, fee: 49 },
+  { id: 'abc12345-xxxx', firstName: 'Max', lastName: 'Mustermann', price: 99.99, fee: 19.99 },
   Date.parse('2026-11-28T12:00:00+01:00'),
 )
 assert.equal(payload.prorated, true)
-assert.equal(payload.amount, 1000 + 4900)
+assert.equal(payload.amount, 1000 + 1999)
 assert.equal(payload.prorateAmount, 1000)
-assert.equal(payload.feeAmount, 4900)
+assert.equal(payload.feeAmount, 1999)
 assert.ok(payload.purpose.includes('Mustermann'))
 assert.equal(payload.iban, 'DE77860555921090429270')
 

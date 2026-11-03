@@ -527,7 +527,7 @@ function JoinForm({ plan, invite }: JoinProps) {
             {summary.plan.id === 'daypass' ? null : (
               <div>
                 <dt>Aufnahmegebühr</dt>
-                <dd>49,00 €</dd>
+                <dd>19,99 €</dd>
               </div>
             )}
             {contractStart ? (
