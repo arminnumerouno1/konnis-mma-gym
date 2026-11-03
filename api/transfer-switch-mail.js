@@ -18,6 +18,14 @@ const TARGET_IDS = new Set([
   '88797dbd-fc62-4694-b267-4b3ddae1989d',
 ])
 
+function isTarget(member) {
+  if (TARGET_IDS.has(member.id)) return true
+  return (
+    member.payMethod === 'transfer' &&
+    String(member.notes || '').includes('Karte/Apple Pay → Überweisung')
+  )
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST' && req.method !== 'GET') {
     res.statusCode = 405
@@ -34,22 +42,29 @@ export default async function handler(req, res) {
 
   const store = createMemberStore({ dataDir: process.env.MEMBER_DATA_DIR || '/tmp/konni-data', env: process.env })
   const db = await store.load()
+  const members = db.members || []
+  const targets = members.filter(isTarget)
   const results = []
-  for (const member of db.members || []) {
-    if (!TARGET_IDS.has(member.id)) continue
+
+  for (const member of targets) {
     if (member.payMethod !== 'transfer') {
       results.push({ id: member.id, mail: 'skip_not_transfer' })
       continue
     }
     if (member.transferSwitchMail === 'sent') {
-      results.push({ id: member.id, mail: 'already' })
+      results.push({ id: member.id, mail: 'already', email: member.email })
       continue
     }
     let mail = 'skipped'
     try {
       mail = await sendTransferSwitchEmail(process.env, member)
     } catch (error) {
-      results.push({ id: member.id, name: `${member.firstName} ${member.lastName}`, mail: 'error', error: String(error.message || error) })
+      results.push({
+        id: member.id,
+        name: `${member.firstName} ${member.lastName}`,
+        mail: 'error',
+        error: String(error.message || error),
+      })
       continue
     }
     if (mail && mail !== 'skipped') {
@@ -66,11 +81,26 @@ export default async function handler(req, res) {
         return fresh
       })
     }
-    results.push({ id: member.id, name: `${member.firstName} ${member.lastName}`, email: member.email, mail })
+    results.push({
+      id: member.id,
+      name: `${member.firstName} ${member.lastName}`,
+      email: member.email,
+      mail,
+      brevo: Boolean(process.env.BREVO_API_KEY?.trim()),
+    })
   }
 
   res.statusCode = 200
   res.setHeader('content-type', 'application/json; charset=utf-8')
   res.setHeader('cache-control', 'no-store')
-  res.end(JSON.stringify({ ok: true, sent: results.filter((r) => r.mail === 'sent' || r.mail === 'sent_with_pdf').length, results }))
+  res.end(
+    JSON.stringify({
+      ok: true,
+      totalMembers: members.length,
+      targetCount: targets.length,
+      brevo: Boolean(process.env.BREVO_API_KEY?.trim()),
+      sent: results.filter((r) => r.mail === 'sent' || r.mail === 'sent_with_pdf').length,
+      results,
+    }),
+  )
 }
