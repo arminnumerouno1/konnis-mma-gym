@@ -2032,7 +2032,9 @@ export function Admin() {
     })
     setBusy(false)
     if (!data.ok) {
-      setLoginError('Passwort stimmt nicht.')
+      if (data.error === 'rate') setLoginError('Zu viele Versuche. Kurz warten und erneut versuchen.')
+      else if (data.error === 'config') setLoginError('Admin-Zugang ist nicht konfiguriert (Secret fehlt auf dem Server).')
+      else setLoginError('Passwort stimmt nicht.')
       return
     }
     setPassword('')

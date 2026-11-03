@@ -762,7 +762,13 @@ export function createAdminHandler({
     const secure = isSecure(req)
 
     if (req.method === 'GET' && url.searchParams.get('ping') === '1') {
-      json(res, 200, { ok: true, auth: authed(req), store: storeKind(env) })
+      json(res, 200, {
+        ok: true,
+        auth: authed(req),
+        store: storeKind(env),
+        // Length only — never the secret. Helps diagnose "password never works" when env is missing.
+        adminReady: Boolean(key),
+      })
       return
     }
 
@@ -846,7 +852,12 @@ export function createAdminHandler({
           json(res, 429, { ok: false, error: 'rate' })
           return
         }
-        if (!key || !secretsEqual(String(body.password ?? ''), key)) {
+        if (!key) {
+          console.error('[admin] login blocked: ADMIN_SECRET/INVITE_SECRET missing or shorter than 16 chars')
+          json(res, 503, { ok: false, error: 'config' })
+          return
+        }
+        if (!secretsEqual(String(body.password ?? ''), key)) {
           json(res, 403, { ok: false, error: 'auth' })
           return
         }
