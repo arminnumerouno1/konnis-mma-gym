@@ -297,11 +297,22 @@ export function transferSwitchMailHtml(record) {
   const t = record.transfer
   const purpose = escapeMail(t?.purpose || `KONNI Beitrag ${whoOf(record)}`)
   const next = escapeMail(transferNextLabel(t) || '1. des Monats')
+  const openNow = (record.payments ?? []).find(
+    (row) => row.kind === 'month' && (row.status === 'open' || row.status === 'failed'),
+  )
+  const dueNow =
+    openNow != null
+      ? escapeMail(Number(openNow.amount ?? record.price).toFixed(2).replace('.', ','))
+      : t?.amount != null
+        ? escapeMail(formatTransferEuro(t.amount))
+        : price
+  const monthLine = openNow
+    ? `<p>Bitte überweise jetzt den offenen Beitrag für diesen Monat: <strong>${dueNow}€</strong>. Ab dem ${next} dann monatlich <strong>${price}€</strong>.</p>`
+    : `<p>Den laufenden Monat haben wir als bezahlt verbucht. Ab dem ${next} bitte den Monatsbeitrag <strong>${price}€</strong> selbst überweisen.</p>`
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>Hi ${first},</p>
-<p>kurze Info zu deiner Mitgliedschaft: Du hattest bei der Anmeldung Karte / Apple Pay gewählt, den Beitrag aber per <strong>Banküberweisung</strong> gezahlt.</p>
-<p>Deshalb stellen wir dich <strong>vollständig auf Überweisung</strong> um. Die Kartenzahlung / das Stripe-Abo ist beendet — es wird nichts mehr von der Karte abgebucht.</p>
-<p>Den laufenden Monat haben wir als bezahlt verbucht. Ab dem ${next} bitte den Monatsbeitrag <strong>${price}€</strong> selbst überweisen.</p>
+<p>kurze Info zu deiner Mitgliedschaft: Wir stellen dich <strong>vollständig auf Banküberweisung</strong> um. Die Kartenzahlung / das Stripe-Abo ist beendet — es wird nichts mehr von der Karte abgebucht.</p>
+${monthLine}
 <p><strong>Konto</strong><br>
 ${accountLines()}<br>
 Verwendungszweck: <strong>${purpose}</strong></p>

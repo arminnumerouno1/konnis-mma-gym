@@ -3,19 +3,9 @@ import { sendTransferSwitchEmail } from '../server/membership-mail.mjs'
 import { cronAuthorized } from '../server/dues-cron.mjs'
 
 const TARGET_IDS = new Set([
-  '3c94fc87-6003-469d-81a9-8d78b96f26df',
-  'ab437b50-ba25-4a8a-a519-264bbe6e153f',
-  '1c9b7b08-9510-4262-bf6e-e5dc60e752ed',
-  '9c7eff30-d333-46f4-87ab-eb4385ea316a',
-  'aca95975-d357-47da-b011-4d559189bb11',
-  '4ed0dbb2-6427-4a57-9c6d-90a7c34e9840',
-  '4448e302-e234-43a3-9517-86cc3677d5ff',
-  '1da440e7-801d-49e8-b444-dddf49d8887b',
-  'ba086961-d42d-48b9-8ca0-4172c7c2af8b',
-  'b9fb5e9d-8c34-45ab-8ee3-2ec5338bb6f3',
-  'fa15d48d-8619-4f8f-a225-b94ad3e7250b',
-  '477dd5ff-ad1d-4d58-a58b-35bf5313022d',
-  '88797dbd-fc62-4694-b267-4b3ddae1989d',
+  '9a32ca7b-98c8-4c90-8db7-c128c0d5d728', // Wanya Donix
+  '16f1706f-069b-4410-874d-0e7e75ce7357', // Sandro Bischoff
+  'afe1522a-81e1-428b-a79d-250a167e9396', // Mark Pupynin
 ])
 
 function isTarget(member) {
