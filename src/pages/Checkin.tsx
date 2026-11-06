@@ -102,6 +102,22 @@ export function Checkin() {
     }
   }
 
+  useEffect(() => {
+    if (phase !== 'done' && phase !== 'already') return
+    const jumpTop = () => {
+      window.scrollTo(0, 0)
+      document.documentElement.scrollTop = 0
+      document.body.scrollTop = 0
+    }
+    jumpTop()
+    const frame = window.requestAnimationFrame(jumpTop)
+    const timer = window.setTimeout(jumpTop, 50)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.clearTimeout(timer)
+    }
+  }, [phase, gif])
+
   const activeLabel = slot?.label || todaySlots.find((row) => row.id === slotId)?.label || ''
   const success = phase === 'done' || phase === 'already'
 
