@@ -1973,8 +1973,6 @@ function Attendance({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [day, slotId])
 
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(checkinUrl)}`
-
   const manualHits = manualQ.trim()
     ? members
         .filter((row) => {
@@ -2132,11 +2130,19 @@ function Attendance({
           ) : null}
 
           <h2>QR an der Tür</h2>
-          <p className="admin-muted">Einmal ausdrucken. Text: „Vor dem Training scannen · deinen Code eingeben“.</p>
+          <p className="admin-muted">Aushang mit Text und QR zum Ausdrucken (A4).</p>
+          <div className="admin-inline">
+            <a className="btn btn-ghost" href="/print/checkin-aushang.html" target="_blank" rel="noreferrer">
+              Aushang öffnen
+            </a>
+            <a className="btn btn-ghost" href="/print/checkin-qr.png" download="konni-checkin-qr.png">
+              Nur QR (PNG)
+            </a>
+          </div>
           <a href={checkinUrl} target="_blank" rel="noreferrer">
             {checkinUrl}
           </a>
-          <img className="admin-checkin-qr" src={qrSrc} alt="QR-Code zur Check-in-Seite" width={280} height={280} />
+          <img className="admin-checkin-qr" src="/print/checkin-qr.png" alt="QR-Code zur Check-in-Seite" width={280} height={280} />
         </aside>
       </div>
     </section>

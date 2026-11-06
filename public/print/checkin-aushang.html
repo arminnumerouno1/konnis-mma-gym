@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Check-in Aushang · KONNI MMA GYM</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Bebas+Neue&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --ink: #111;
+        --muted: #444;
+        --line: #111;
+        --accent: #c45c26;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #ddd;
+        color: var(--ink);
+        font-family: 'Barlow Condensed', 'Helvetica Neue', Arial, sans-serif;
+      }
+
+      .sheet {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 16px auto;
+        padding: 18mm 16mm 16mm;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10mm;
+      }
+
+      .brand {
+        letter-spacing: 0.18em;
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      h1 {
+        margin: 0;
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 72px;
+        line-height: 0.9;
+        letter-spacing: 0.04em;
+      }
+
+      .lead {
+        margin: 0;
+        max-width: 140mm;
+        font-size: 26px;
+        line-height: 1.25;
+        font-weight: 600;
+      }
+
+      .qr-wrap {
+        width: 105mm;
+        height: 105mm;
+        padding: 6mm;
+        border: 2px solid var(--line);
+        display: grid;
+        place-items: center;
+        background: #fff;
+      }
+
+      .qr-wrap img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
+      .url {
+        margin: 0;
+        font-size: 18px;
+        letter-spacing: 0.04em;
+        word-break: break-all;
+      }
+
+      .steps {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        width: 100%;
+        max-width: 150mm;
+        display: grid;
+        gap: 5mm;
+        text-align: left;
+      }
+
+      .steps li {
+        display: grid;
+        grid-template-columns: 12mm 1fr;
+        gap: 4mm;
+        align-items: start;
+        font-size: 22px;
+        line-height: 1.25;
+        font-weight: 600;
+      }
+
+      .steps strong {
+        font-family: 'Bebas Neue', sans-serif;
+        font-size: 28px;
+        line-height: 1;
+        letter-spacing: 0.04em;
+        color: var(--accent);
+      }
+
+      .note {
+        margin: 0;
+        max-width: 150mm;
+        font-size: 18px;
+        line-height: 1.35;
+        color: var(--muted);
+        font-weight: 500;
+      }
+
+      .footer {
+        margin-top: auto;
+        font-size: 16px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+
+      .screen-bar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        flex-wrap: wrap;
+        padding: 12px;
+        background: #111;
+        color: #ece8e1;
+        font-family: 'Barlow Condensed', sans-serif;
+      }
+
+      .screen-bar a,
+      .screen-bar button {
+        appearance: none;
+        border: 1px solid #ece8e1;
+        background: transparent;
+        color: inherit;
+        padding: 10px 16px;
+        font: inherit;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+
+        .screen-bar {
+          display: none !important;
+        }
+
+        .sheet {
+          margin: 0;
+          width: auto;
+          min-height: 100vh;
+          box-shadow: none;
+        }
+
+        @page {
+          size: A4;
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="screen-bar">
+      <button type="button" onclick="window.print()">Drucken / als PDF speichern</button>
+      <a href="./checkin-qr.png" download="konni-checkin-qr.png">Nur QR-Code (PNG)</a>
+      <a href="./checkin-qr.svg" download="konni-checkin-qr.svg">Nur QR-Code (SVG)</a>
+    </div>
+
+    <main class="sheet">
+      <p class="brand">KONNI MMA GYM</p>
+      <h1>CHECK-IN</h1>
+      <p class="lead">Vor dem Training scannen und deinen persönlichen Code eingeben.</p>
+
+      <div class="qr-wrap">
+        <img src="./checkin-qr.svg" width="900" height="900" alt="QR-Code zur Check-in-Seite" />
+      </div>
+
+      <p class="url">www.mma-in-leipzig.de/checkin</p>
+
+      <ol class="steps">
+        <li>
+          <strong>1</strong>
+          <span>QR-Code mit dem Handy scannen.</span>
+        </li>
+        <li>
+          <strong>2</strong>
+          <span>Deinen 6-stelligen Check-in-Code eintippen (steht in der Mail bzw. kennst du von uns).</span>
+        </li>
+        <li>
+          <strong>3</strong>
+          <span>Fertig — der aktuelle Kurs wird automatisch erkannt.</span>
+        </li>
+      </ol>
+
+      <p class="note">
+        Kein Code dabei? Melde dich persönlich bei uns — wir helfen dir weiter.
+      </p>
+    </main>
+  </body>
+</html>

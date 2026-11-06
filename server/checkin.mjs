@@ -184,37 +184,51 @@ export async function performCheckin(
   } else {
     const normalized = normalizeCheckinCode(code)
     if (!isValidCheckinCode(normalized)) return { ok: false, error: 'code' }
-    const member = (members || []).find(
-      (row) => activeMember(row) && normalizeCheckinCode(row.checkinCode) === normalized,
-    )
-    if (member) {
-      const dues = openDuesOf(member, isoDate(now))
+    // Temporary desk test code for Armin — remove after door test.
+    if (normalized === '123456') {
       person = {
         kind: 'member',
-        memberId: member.id,
+        memberId: 'test-123456',
         trialId: null,
-        name: `${member.firstName} ${member.lastName}`.trim(),
-        email: member.email,
-        openDues: dues.openAmount,
-        openCount: dues.openCount,
-        hasPhoto: Boolean(member.photoData || member.hasPhoto),
-      }
-    } else {
-      const trial = (trials || []).find(
-        (row) =>
-          normalizeCheckinCode(row.checkinCode) === normalized &&
-          (row.status === 'bestaetigt' || row.status === 'gekommen' || row.status === 'neu'),
-      )
-      if (!trial) return { ok: false, error: 'code' }
-      person = {
-        kind: 'trial',
-        memberId: null,
-        trialId: trial.id,
-        name: trial.name,
-        email: trial.email,
+        name: 'Armin Test',
+        email: null,
         openDues: 0,
         openCount: 0,
         hasPhoto: false,
+      }
+    } else {
+      const member = (members || []).find(
+        (row) => activeMember(row) && normalizeCheckinCode(row.checkinCode) === normalized,
+      )
+      if (member) {
+        const dues = openDuesOf(member, isoDate(now))
+        person = {
+          kind: 'member',
+          memberId: member.id,
+          trialId: null,
+          name: `${member.firstName} ${member.lastName}`.trim(),
+          email: member.email,
+          openDues: dues.openAmount,
+          openCount: dues.openCount,
+          hasPhoto: Boolean(member.photoData || member.hasPhoto),
+        }
+      } else {
+        const trial = (trials || []).find(
+          (row) =>
+            normalizeCheckinCode(row.checkinCode) === normalized &&
+            (row.status === 'bestaetigt' || row.status === 'gekommen' || row.status === 'neu'),
+        )
+        if (!trial) return { ok: false, error: 'code' }
+        person = {
+          kind: 'trial',
+          memberId: null,
+          trialId: trial.id,
+          name: trial.name,
+          email: trial.email,
+          openDues: 0,
+          openCount: 0,
+          hasPhoto: false,
+        }
       }
     }
   }

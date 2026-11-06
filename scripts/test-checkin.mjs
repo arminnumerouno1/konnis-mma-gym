@@ -79,8 +79,14 @@ const friday = new Date('2026-11-06T17:10:00.000Z')
 const slot = currentSlot(friday)
 assert(slot, 'slot for perform')
 
-const first = await performCheckin(
+const testCode = await performCheckin(
   { members: [member], trials: [], checkins: [] },
+  { code: '123456', slotId: slot.id, now: friday },
+)
+assert(testCode.ok && testCode.entry.name === 'Armin Test', 'fixed test code 123456')
+
+const first = await performCheckin(
+  { members: [member], trials: [], checkins: [testCode.entry] },
   { code: member.checkinCode, slotId: slot.id, now: friday },
 )
 assert(first.ok && !first.already, 'first checkin ok')
