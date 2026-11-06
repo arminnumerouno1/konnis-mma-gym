@@ -4167,6 +4167,28 @@ button.admin-chip {
   color: inherit;
 }
 
+.checkin-success {
+  display: grid;
+  gap: 18px;
+}
+
+.checkin-gif {
+  margin: 0;
+  width: 100%;
+  max-width: 420px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: #111;
+  border: 1px solid var(--line, #2a2a2a);
+}
+
+.checkin-gif img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
 .admin-attendance-grid {
   display: grid;
   gap: 28px;

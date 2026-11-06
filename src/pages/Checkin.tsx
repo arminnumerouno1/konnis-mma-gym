@@ -19,6 +19,18 @@ const ERRORS: Record<string, string> = {
   upstream: 'Check-in hat nicht geklappt. Bitte gleich noch einmal.',
 }
 
+const CHECKIN_GIFS = [
+  'https://media1.tenor.com/m/nodNPlyjhbAAAAAd/khamzat-chimaev-dricus-du-plessis.gif',
+  'https://media1.tenor.com/m/wVKEWs9Y1ZAAAAAd/ilia-topuria-shadowbox.gif',
+  'https://media1.tenor.com/m/tTxzg59MqU4AAAAd/conor-mcgregor-ready-to-fight.gif',
+  'https://media1.tenor.com/m/ai_gPtdLXw0AAAAC/alex-pereira-khaby-lame.gif',
+  'https://media1.tenor.com/m/DEbkQHK7M_MAAAAC/baddy-paddy.gif',
+]
+
+function pickCheckinGif() {
+  return CHECKIN_GIFS[Math.floor(Math.random() * CHECKIN_GIFS.length)]
+}
+
 export function Checkin() {
   const [phase, setPhase] = useState<Phase>('loading')
   const [slot, setSlot] = useState<Slot | null>(null)
@@ -26,6 +38,7 @@ export function Checkin() {
   const [slotId, setSlotId] = useState('')
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
+  const [gif, setGif] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -80,6 +93,7 @@ export function Checkin() {
       }
       setName(String(data.name || ''))
       setSlot((data.slot as Slot) || slot)
+      setGif(pickCheckinGif())
       setPhase(data.already ? 'already' : 'done')
     } catch {
       setError(ERRORS.network)
@@ -89,6 +103,7 @@ export function Checkin() {
   }
 
   const activeLabel = slot?.label || todaySlots.find((row) => row.id === slotId)?.label || ''
+  const success = phase === 'done' || phase === 'already'
 
   return (
     <main className="checkin-page">
@@ -151,18 +166,19 @@ export function Checkin() {
         </>
       ) : null}
 
-      {phase === 'done' ? (
-        <p className="lead checkin-ok">
-          Eingecheckt{name ? ` — ${name}` : ''}.
-          {activeLabel ? ` ${activeLabel}.` : ''} Bis gleich.
-        </p>
-      ) : null}
-
-      {phase === 'already' ? (
-        <p className="lead checkin-ok">
-          Schon da{name ? ` — ${name}` : ''}.
-          {activeLabel ? ` ${activeLabel}.` : ''} Bis gleich.
-        </p>
+      {success ? (
+        <div className="checkin-success">
+          <p className="lead checkin-ok">
+            {phase === 'already' ? 'Schon da' : 'Eingecheckt'}
+            {name ? ` — ${name}` : ''}.
+            {activeLabel ? ` ${activeLabel}.` : ''} Bis gleich.
+          </p>
+          {gif ? (
+            <figure className="checkin-gif">
+              <img src={gif} alt="" />
+            </figure>
+          ) : null}
+        </div>
       ) : null}
 
       {phase === 'error' && !busy ? <p className="checkin-error">{error || ERRORS.upstream}</p> : null}
