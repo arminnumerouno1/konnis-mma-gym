@@ -2023,13 +2023,13 @@ function Attendance({
 
   return (
     <section className="admin-attendance">
-      <div className="admin-filters">
+      <div className="admin-attendance-filters">
         <label>
-          Tag
+          <span>Tag</span>
           <input type="date" value={day} onChange={(event) => setDay(event.target.value)} />
         </label>
         <label>
-          Slot
+          <span>Slot</span>
           <select value={slotId} onChange={(event) => setSlotId(event.target.value)}>
             <option value="">Alle heute</option>
             {slots.map((row) => (
@@ -2039,12 +2039,14 @@ function Attendance({
             ))}
           </select>
         </label>
-        <button className="btn btn-ghost" type="button" onClick={() => void load()}>
-          Neu laden
-        </button>
-        <button className="btn btn-ghost" type="button" disabled={codesBusy} onClick={() => void ensureCodes()}>
-          Fehlende Codes vergeben
-        </button>
+        <div className="admin-attendance-actions">
+          <button className="btn btn-ghost" type="button" onClick={() => void load()}>
+            Neu laden
+          </button>
+          <button className="btn btn-ghost" type="button" disabled={codesBusy} onClick={() => void ensureCodes()}>
+            Codes vergeben
+          </button>
+        </div>
       </div>
 
       {current ? <p className="admin-muted">Aktueller Slot: {current.label}</p> : <p className="admin-muted">Gerade kein Slot im Zeitfenster.</p>}
@@ -2057,45 +2059,73 @@ function Attendance({
           {!loaded ? <p className="admin-muted">Lädt…</p> : null}
           {loaded && !entries.length ? <p className="admin-muted">Noch niemand eingecheckt.</p> : null}
           {entries.length ? (
-            <div className="admin-table-wrap">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Uhrzeit</th>
-                    <th>Name</th>
-                    <th>Art</th>
-                    <th>Slot</th>
-                    <th>Offen</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {entries.map((row) => {
-                    const open = checkinOpenAmount(row)
-                    return (
-                    <tr key={row.id} className={open > 0 ? 'is-warn' : undefined}>
-                      <td>{new Date(row.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</td>
-                      <td>
-                        {row.memberId ? (
-                          <button className="admin-linkish" type="button" onClick={() => onOpenMember(row.memberId!)}>
-                            <strong>{row.name}</strong>
-                          </button>
-                        ) : (
-                          <strong>{row.name}</strong>
-                        )}
-                        {row.hasPhoto ? <span className="admin-muted"> · Foto</span> : null}
-                        {row.source === 'desk' ? <span className="admin-muted"> · manuell</span> : null}
-                      </td>
-                      <td>{row.kind === 'trial' ? 'Probetraining' : 'Mitglied'}</td>
-                      <td>{row.slotLabel || row.slotId}</td>
-                      <td className={open > 0 ? 'is-bad' : undefined}>
-                        {open > 0 ? 'ja' : '—'}
-                      </td>
+            <>
+              <div className="admin-table-wrap admin-attendance-table">
+                <table className="admin-table">
+                  <thead>
+                    <tr>
+                      <th>Uhrzeit</th>
+                      <th>Name</th>
+                      <th>Art</th>
+                      <th>Slot</th>
+                      <th>Offen</th>
                     </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {entries.map((row) => {
+                      const open = checkinOpenAmount(row)
+                      return (
+                        <tr key={row.id} className={open > 0 ? 'is-warn' : undefined}>
+                          <td>{new Date(row.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</td>
+                          <td>
+                            {row.memberId ? (
+                              <button className="admin-linkish" type="button" onClick={() => onOpenMember(row.memberId!)}>
+                                <strong>{row.name}</strong>
+                              </button>
+                            ) : (
+                              <strong>{row.name}</strong>
+                            )}
+                            {row.hasPhoto ? <span className="admin-muted"> · Foto</span> : null}
+                            {row.source === 'desk' ? <span className="admin-muted"> · manuell</span> : null}
+                          </td>
+                          <td>{row.kind === 'trial' ? 'Probetraining' : 'Mitglied'}</td>
+                          <td>{row.slotLabel || row.slotId}</td>
+                          <td className={open > 0 ? 'is-bad' : undefined}>{open > 0 ? 'ja' : '—'}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <ul className="admin-attendance-cards">
+                {entries.map((row) => {
+                  const open = checkinOpenAmount(row)
+                  return (
+                    <li key={row.id} className={open > 0 ? 'is-warn' : undefined}>
+                      <div className="admin-attendance-card-top">
+                        <strong>
+                          {row.memberId ? (
+                            <button className="admin-linkish" type="button" onClick={() => onOpenMember(row.memberId!)}>
+                              {row.name}
+                            </button>
+                          ) : (
+                            row.name
+                          )}
+                        </strong>
+                        <span>{new Date(row.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</span>
+                      </div>
+                      <p>
+                        {row.kind === 'trial' ? 'Probetraining' : 'Mitglied'}
+                        {row.source === 'desk' ? ' · manuell' : ''}
+                        {row.hasPhoto ? ' · Foto' : ''}
+                      </p>
+                      <p>{row.slotLabel || row.slotId}</p>
+                      <p className={open > 0 ? 'is-bad' : 'admin-muted'}>Offen: {open > 0 ? 'ja' : '—'}</p>
+                    </li>
+                  )
+                })}
+              </ul>
+            </>
           ) : null}
         </div>
 
@@ -2103,7 +2133,7 @@ function Attendance({
           <h2>Manuell setzen</h2>
           <p className="admin-muted">Für U18 oder ohne Handy — ohne Code.</p>
           <label>
-            Slot
+            <span>Slot</span>
             <select value={manualSlotId} onChange={(event) => setManualSlotId(event.target.value)}>
               <option value="">Aktueller / gewählter</option>
               {slots.map((row) => (
@@ -2114,7 +2144,7 @@ function Attendance({
             </select>
           </label>
           <label>
-            Mitglied suchen
+            <span>Mitglied suchen</span>
             <input value={manualQ} onChange={(event) => setManualQ(event.target.value)} placeholder="Name oder Mail" />
           </label>
           {manualHits.length ? (
@@ -2139,7 +2169,7 @@ function Attendance({
               Nur QR (PNG)
             </a>
           </div>
-          <a href={checkinUrl} target="_blank" rel="noreferrer">
+          <a className="admin-attendance-url" href={checkinUrl} target="_blank" rel="noreferrer">
             {checkinUrl}
           </a>
           <img className="admin-checkin-qr" src="/print/checkin-qr.png" alt="QR-Code zur Check-in-Seite" width={280} height={280} />
@@ -2701,60 +2731,62 @@ export function Admin() {
   return (
     <main className="admin">
       <header className="admin-top">
-        <div>
-          <p className="admin-kicker">KONNI MMA GYM</p>
-          <h1>
-            {tab === 'report'
-              ? 'Auswertung'
-              : tab === 'prereg'
-                ? 'Voranmeldungen'
-                : tab === 'trials'
-                  ? 'Probetraining'
-                  : tab === 'attendance'
-                    ? 'Check In'
-                    : tab === 'dues'
-                      ? 'Beiträge'
-                      : tab === 'mail'
-                        ? 'Mail'
-                        : 'Mitglieder'}
-          </h1>
-          <nav className="admin-tabs" aria-label="Bereiche">
-            <button type="button" className={tab === 'members' ? 'is-on' : ''} onClick={() => setTab('members')}>
-              Mitglieder
+        <div className="admin-top-title">
+          <div>
+            <p className="admin-kicker">KONNI MMA GYM</p>
+            <h1>
+              {tab === 'report'
+                ? 'Auswertung'
+                : tab === 'prereg'
+                  ? 'Voranmeldungen'
+                  : tab === 'trials'
+                    ? 'Probetraining'
+                    : tab === 'attendance'
+                      ? 'Check In'
+                      : tab === 'dues'
+                        ? 'Beiträge'
+                        : tab === 'mail'
+                          ? 'Mail'
+                          : 'Mitglieder'}
+            </h1>
+          </div>
+          <div className="admin-top-actions">
+            {tab === 'members' ? (
+              <button className="btn btn-ghost" type="button" onClick={() => setCreating((v) => !v)}>
+                {creating ? 'Abbrechen' : 'Neu anlegen'}
+              </button>
+            ) : null}
+            <button className="btn btn-ghost" type="button" onClick={() => void onLogout()}>
+              Raus
             </button>
-            <button type="button" className={tab === 'dues' ? 'is-on' : ''} onClick={() => setTab('dues')}>
-              Beiträge
-              {stats?.openDebt ? <span className="admin-tab-count">{stats.openDebt}</span> : null}
-            </button>
-            <button type="button" className={tab === 'mail' ? 'is-on' : ''} onClick={() => setTab('mail')}>
-              Mail
-            </button>
-            <button type="button" className={tab === 'prereg' ? 'is-on' : ''} onClick={() => setTab('prereg')}>
-              Voranmeldungen
-              {preregFresh ? <span className="admin-tab-count">{preregFresh}</span> : null}
-            </button>
-            <button type="button" className={tab === 'trials' ? 'is-on' : ''} onClick={() => setTab('trials')}>
-              Probetraining
-              {trialFresh ? <span className="admin-tab-count">{trialFresh}</span> : null}
-            </button>
-            <button type="button" className={tab === 'attendance' ? 'is-on' : ''} onClick={() => setTab('attendance')}>
-              Check In
-            </button>
-            <button type="button" className={tab === 'report' ? 'is-on' : ''} onClick={() => setTab('report')}>
-              Auswertung
-            </button>
-          </nav>
+          </div>
         </div>
-        <div className="admin-top-actions">
-          {tab === 'members' ? (
-            <button className="btn btn-ghost" type="button" onClick={() => setCreating((v) => !v)}>
-              {creating ? 'Abbrechen' : 'Neu anlegen'}
-            </button>
-          ) : null}
-          <button className="btn btn-ghost" type="button" onClick={() => void onLogout()}>
-            Raus
+        <nav className="admin-tabs" aria-label="Bereiche">
+          <button type="button" className={tab === 'members' ? 'is-on' : ''} onClick={() => setTab('members')}>
+            Mitglieder
           </button>
-        </div>
+          <button type="button" className={tab === 'dues' ? 'is-on' : ''} onClick={() => setTab('dues')}>
+            Beiträge
+            {stats?.openDebt ? <span className="admin-tab-count">{stats.openDebt}</span> : null}
+          </button>
+          <button type="button" className={tab === 'mail' ? 'is-on' : ''} onClick={() => setTab('mail')}>
+            Mail
+          </button>
+          <button type="button" className={tab === 'prereg' ? 'is-on' : ''} onClick={() => setTab('prereg')}>
+            Voranmeldungen
+            {preregFresh ? <span className="admin-tab-count">{preregFresh}</span> : null}
+          </button>
+          <button type="button" className={tab === 'trials' ? 'is-on' : ''} onClick={() => setTab('trials')}>
+            Probetraining
+            {trialFresh ? <span className="admin-tab-count">{trialFresh}</span> : null}
+          </button>
+          <button type="button" className={tab === 'attendance' ? 'is-on' : ''} onClick={() => setTab('attendance')}>
+            Check In
+          </button>
+          <button type="button" className={tab === 'report' ? 'is-on' : ''} onClick={() => setTab('report')}>
+            Auswertung
+          </button>
+        </nav>
       </header>
 
       {store === 'ephemeral' ? (

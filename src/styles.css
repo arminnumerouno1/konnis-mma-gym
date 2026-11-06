@@ -3064,15 +3064,21 @@ p,
 }
 
 .admin-top {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 8px;
+}
+
+.admin-top-title {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  align-items: flex-end;
-  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px;
 }
 
 .admin-top-actions {
   display: flex;
+  flex-shrink: 0;
   gap: 8px;
 }
 
@@ -3136,7 +3142,6 @@ p,
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  margin-top: 10px;
   max-width: 100%;
 }
 
@@ -3157,23 +3162,37 @@ p,
 }
 
 @media (max-width: 720px) {
-  .admin-top > div:first-child {
-    width: 100%;
-    min-width: 0;
+  .admin {
+    padding: 18px 14px calc(96px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .admin-top-title {
+    align-items: center;
+  }
+
+  .admin-top-title h1 {
+    font-size: 40px;
   }
 
   .admin-tabs {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
-    overflow: visible;
   }
 
   .admin-tabs button {
     width: 100%;
-    padding: 12px 10px;
+    min-height: 44px;
+    padding: 10px 8px;
     text-align: center;
+    display: inline-flex;
+    align-items: center;
     justify-content: center;
+    gap: 6px;
+  }
+
+  .admin-tabs button:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
   }
 }
 
@@ -4155,10 +4174,63 @@ button.admin-chip {
   margin-top: 12px;
 }
 
+.admin-attendance-filters {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+  align-items: end;
+}
+
+.admin-attendance-filters label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.admin-attendance-filters label span {
+  display: block;
+}
+
+.admin-attendance-filters input,
+.admin-attendance-filters select,
+.admin-attendance-side input,
+.admin-attendance-side select {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: #111;
+  color: inherit;
+  font: inherit;
+  color-scheme: dark;
+}
+
+.admin-attendance-actions {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.admin-attendance-actions .btn {
+  width: 100%;
+  justify-content: center;
+}
+
 .admin-attendance-side {
   display: grid;
   gap: 10px;
   align-content: start;
+}
+
+.admin-attendance-side label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
 }
 
 .admin-attendance-hits {
@@ -4169,12 +4241,57 @@ button.admin-chip {
   gap: 6px;
 }
 
+.admin-attendance-url {
+  word-break: break-all;
+  font-size: 13px;
+  color: var(--muted);
+}
+
 .admin-checkin-qr {
   width: 280px;
   max-width: 100%;
   height: auto;
   background: #fff;
   padding: 10px;
+}
+
+.admin-attendance-cards {
+  display: none;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 10px;
+}
+
+.admin-attendance-cards li {
+  display: grid;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  background: var(--bg-2, #191919);
+}
+
+.admin-attendance-cards li.is-warn {
+  border-color: rgba(224, 36, 44, 0.55);
+}
+
+.admin-attendance-cards p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.admin-attendance-cards .is-bad {
+  color: var(--bad);
+}
+
+.admin-attendance-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
 }
 
 .admin-table tr.is-warn td {
@@ -4184,5 +4301,34 @@ button.admin-chip {
 @media (max-width: 900px) {
   .admin-attendance-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .admin-attendance-filters {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-attendance-table {
+    display: none;
+  }
+
+  .admin-attendance-cards {
+    display: grid;
+  }
+
+  .admin-attendance-side .admin-inline {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .admin-attendance-side .admin-inline .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .admin-checkin-qr {
+    width: min(100%, 220px);
+    margin: 0 auto;
   }
 }
