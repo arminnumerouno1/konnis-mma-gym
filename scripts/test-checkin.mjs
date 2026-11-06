@@ -3,7 +3,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createAdminHandler } from '../server/admin.mjs'
 import {
+  berlinWeekRange,
   collectCheckinCodes,
+  countUniqueCheckinDays,
   createCheckinHandler,
   createCheckinStore,
   ensureCheckinCode,
@@ -11,8 +13,9 @@ import {
   isValidCheckinCode,
   normalizeCheckinCode,
   performCheckin,
+  weeklyVisitLimitForPlan,
 } from '../server/checkin.mjs'
-import { currentSlot } from '../server/kursplan.mjs'
+import { currentSlot, findTrialSlot } from '../server/kursplan.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
 
 function assert(cond, message) {
@@ -191,5 +194,85 @@ const ensure = await call(admin, {
   body: { action: 'ensureCheckinCodes' },
 })
 assert(ensure.status === 200 && ensure.data.ok, 'ensure codes')
+
+assert(weeklyVisitLimitForPlan('slowstart') === 2, 'slowstart limit')
+assert(weeklyVisitLimitForPlan('standard') == null, 'standard unlimited')
+
+{
+  const fridayWeek = berlinWeekRange(friday)
+  assert(fridayWeek.start === '2026-11-02' && fridayWeek.end === '2026-11-08', `week range ${fridayWeek.start}..${fridayWeek.end}`)
+}
+
+const slow = ensureCheckinCode(
+  {
+    id: 'm-slow-1',
+    firstName: 'Sam',
+    lastName: 'Slow',
+    email: 'sam.slow@example.com',
+    phone: '+491722222222',
+    status: 'active',
+    plan: 'slowstart',
+    planName: 'Slow Start Tarif',
+    price: 79.99,
+    termMonths: 12,
+    fee: 19.99,
+    startDate: '2026-11-01',
+    payMethod: 'transfer',
+    payments: [],
+    createdAt: new Date().toISOString(),
+    source: 'admin',
+  },
+  new Set([member.checkinCode]),
+)
+
+const moSlot = findTrialSlot('mo|18:00 – 19:30|Boxen')
+const diSlot = findTrialSlot('di|18:00 – 19:30|BJJ')
+const miSlot = findTrialSlot('mi|18:00 – 19:30|Boxen')
+const moEvening = findTrialSlot('mo|19:30 – 21:00|MMA Basic')
+assert(moSlot && diSlot && miSlot && moEvening, 'week slots exist')
+
+const mon = new Date('2026-11-02T17:10:00.000Z') // Mon 18:10 Berlin
+const tue = new Date('2026-11-03T17:10:00.000Z')
+const wed = new Date('2026-11-04T17:10:00.000Z')
+
+const day1 = await performCheckin(
+  { members: [slow], trials: [], checkins: [] },
+  { code: slow.checkinCode, slotId: moSlot.id, now: mon },
+)
+assert(day1.ok && !day1.already, 'slow day1 ok')
+
+const sameDaySecond = await performCheckin(
+  { members: [slow], trials: [], checkins: [day1.entry] },
+  { code: slow.checkinCode, slotId: moEvening.id, now: mon },
+)
+assert(sameDaySecond.ok && !sameDaySecond.already, 'same day second slot counts as one day')
+assert(
+  countUniqueCheckinDays([day1.entry, sameDaySecond.entry], slow.id, berlinWeekRange(mon)) === 1,
+  'unique days still 1',
+)
+
+const day2 = await performCheckin(
+  { members: [slow], trials: [], checkins: [day1.entry, sameDaySecond.entry] },
+  { code: slow.checkinCode, slotId: diSlot.id, now: tue },
+)
+assert(day2.ok && !day2.already, 'slow day2 ok')
+
+const day3 = await performCheckin(
+  { members: [slow], trials: [], checkins: [day1.entry, sameDaySecond.entry, day2.entry] },
+  { code: slow.checkinCode, slotId: miSlot.id, now: wed },
+)
+assert(!day3.ok && day3.error === 'limit' && day3.used === 2 && day3.limit === 2, 'slow day3 blocked')
+
+const manualOverride = await performCheckin(
+  { members: [slow], trials: [], checkins: [day1.entry, sameDaySecond.entry, day2.entry] },
+  { manual: true, memberId: slow.id, slotId: miSlot.id, now: wed },
+)
+assert(manualOverride.ok && !manualOverride.already, 'manual overrides weekly limit')
+
+const unlimited = await performCheckin(
+  { members: [member], trials: [], checkins: [day1.entry, sameDaySecond.entry, day2.entry] },
+  { code: member.checkinCode, slotId: miSlot.id, now: wed },
+)
+assert(unlimited.ok && !unlimited.already, 'standard unlimited across week')
 
 console.log('test-checkin: ok')

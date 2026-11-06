@@ -145,6 +145,63 @@ export function checkinsForDay(entries, day) {
   return sortCheckins(entries.filter((row) => String(row.at || '').slice(0, 10) === wanted || row.day === wanted))
 }
 
+/** Slow Start: 2 Trainingstage pro Kalenderwoche. Andere Tarife unbegrenzt. */
+export function weeklyVisitLimitForPlan(plan) {
+  return plan === 'slowstart' ? 2 : null
+}
+
+function addCalendarDays(isoDay, delta) {
+  const [year, month, day] = String(isoDay)
+    .slice(0, 10)
+    .split('-')
+    .map(Number)
+  const utc = new Date(Date.UTC(year, month - 1, day + delta, 12, 0, 0))
+  return `${utc.getUTCFullYear()}-${String(utc.getUTCMonth() + 1).padStart(2, '0')}-${String(utc.getUTCDate()).padStart(2, '0')}`
+}
+
+/** Monday–Sunday week in Europe/Berlin for the given instant. */
+export function berlinWeekRange(now = new Date()) {
+  const day = berlinIsoDate(now)
+  const weekday = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Europe/Berlin',
+    weekday: 'short',
+  }).format(now)
+  const offset = { Mon: 0, Tue: 1, Wed: 2, Thu: 3, Fri: 4, Sat: 5, Sun: 6 }[weekday] ?? 0
+  const start = addCalendarDays(day, -offset)
+  return { start, end: addCalendarDays(start, 6) }
+}
+
+export function uniqueCheckinDaysForMember(entries, memberId, { start, end }) {
+  const days = new Set()
+  const wanted = String(memberId || '')
+  if (!wanted) return days
+  for (const row of entries || []) {
+    if (String(row.memberId || '') !== wanted) continue
+    const day = String(row.day || row.at || '').slice(0, 10)
+    if (day >= start && day <= end) days.add(day)
+  }
+  return days
+}
+
+export function countUniqueCheckinDays(entries, memberId, week) {
+  return uniqueCheckinDaysForMember(entries, memberId, week).size
+}
+
+function memberPerson(member, today) {
+  const dues = openDuesOf(member, today)
+  return {
+    kind: 'member',
+    memberId: member.id,
+    trialId: null,
+    name: `${member.firstName} ${member.lastName}`.trim(),
+    email: member.email,
+    plan: member.plan || null,
+    openDues: dues.openAmount,
+    openCount: dues.openCount,
+    hasPhoto: Boolean(member.photoData || member.hasPhoto),
+  }
+}
+
 export async function performCheckin(
   { members, trials, checkins },
   { code, slotId, now = new Date(), manual = false, memberId = null, trialId = null },
@@ -157,17 +214,7 @@ export async function performCheckin(
   if (manual && memberId) {
     const member = (members || []).find((row) => row.id === memberId)
     if (!member || !activeMember(member)) return { ok: false, error: 'missing' }
-    const dues = openDuesOf(member, isoDate(now))
-    person = {
-      kind: 'member',
-      memberId: member.id,
-      trialId: null,
-      name: `${member.firstName} ${member.lastName}`.trim(),
-      email: member.email,
-      openDues: dues.openAmount,
-      openCount: dues.openCount,
-      hasPhoto: Boolean(member.photoData || member.hasPhoto),
-    }
+    person = memberPerson(member, isoDate(now))
   } else if (manual && trialId) {
     const trial = (trials || []).find((row) => row.id === trialId)
     if (!trial) return { ok: false, error: 'missing' }
@@ -177,6 +224,7 @@ export async function performCheckin(
       trialId: trial.id,
       name: trial.name,
       email: trial.email,
+      plan: null,
       openDues: 0,
       openCount: 0,
       hasPhoto: false,
@@ -192,6 +240,7 @@ export async function performCheckin(
         trialId: null,
         name: 'Armin Test',
         email: null,
+        plan: null,
         openDues: 0,
         openCount: 0,
         hasPhoto: false,
@@ -201,17 +250,7 @@ export async function performCheckin(
         (row) => activeMember(row) && normalizeCheckinCode(row.checkinCode) === normalized,
       )
       if (member) {
-        const dues = openDuesOf(member, isoDate(now))
-        person = {
-          kind: 'member',
-          memberId: member.id,
-          trialId: null,
-          name: `${member.firstName} ${member.lastName}`.trim(),
-          email: member.email,
-          openDues: dues.openAmount,
-          openCount: dues.openCount,
-          hasPhoto: Boolean(member.photoData || member.hasPhoto),
-        }
+        person = memberPerson(member, isoDate(now))
       } else {
         const trial = (trials || []).find(
           (row) =>
@@ -225,6 +264,7 @@ export async function performCheckin(
           trialId: trial.id,
           name: trial.name,
           email: trial.email,
+          plan: null,
           openDues: 0,
           openCount: 0,
           hasPhoto: false,
@@ -241,6 +281,17 @@ export async function performCheckin(
   )
   if (existing) {
     return { ok: true, already: true, entry: existing, slot }
+  }
+
+  if (!manual && person.kind === 'member' && person.memberId) {
+    const limit = weeklyVisitLimitForPlan(person.plan)
+    if (limit != null) {
+      const week = berlinWeekRange(now)
+      const days = uniqueCheckinDaysForMember(checkins, person.memberId, week)
+      if (!days.has(today) && days.size >= limit) {
+        return { ok: false, error: 'limit', used: days.size, limit }
+      }
+    }
   }
 
   const entry = {
@@ -262,6 +313,7 @@ export async function performCheckin(
     trialId: person.trialId,
     name: person.name,
     email: person.email,
+    plan: person.plan || null,
     openDues: person.openDues,
     openCount: person.openCount,
     hasPhoto: person.hasPhoto,
@@ -325,7 +377,12 @@ export function createCheckinHandler({ dataDir, env }) {
         { code: body.code, slotId: body.slotId },
       )
       if (!result.ok) {
-        json(res, 400, { ok: false, error: result.error })
+        json(res, 400, {
+          ok: false,
+          error: result.error,
+          ...(result.used != null ? { used: result.used } : {}),
+          ...(result.limit != null ? { limit: result.limit } : {}),
+        })
         return
       }
       if (result.already) {

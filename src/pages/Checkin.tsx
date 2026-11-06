@@ -14,6 +14,7 @@ type Phase = 'loading' | 'ready' | 'done' | 'already' | 'error'
 const ERRORS: Record<string, string> = {
   code: 'Code unbekannt. Bitte noch einmal prüfen.',
   slot: 'Gerade kein Kurs im Zeitfenster. Bitte den richtigen Slot wählen.',
+  limit: 'Dein Slow Start Tarif erlaubt 2 Trainingstage pro Woche. Die sind diese Woche schon voll.',
   rate: 'Zu viele Versuche. Kurz warten und noch einmal.',
   network: 'Netzwerkfehler. Bitte noch einmal versuchen.',
   upstream: 'Check-in hat nicht geklappt. Bitte gleich noch einmal.',
