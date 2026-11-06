@@ -2053,7 +2053,7 @@ function Attendance({
 
       <div className="admin-attendance-grid">
         <div>
-          <h2>Anwesend ({entries.length})</h2>
+          <h2>Check In ({entries.length})</h2>
           {!loaded ? <p className="admin-muted">Lädt…</p> : null}
           {loaded && !entries.length ? <p className="admin-muted">Noch niemand eingecheckt.</p> : null}
           {entries.length ? (
@@ -2088,7 +2088,7 @@ function Attendance({
                       <td>{row.kind === 'trial' ? 'Probetraining' : 'Mitglied'}</td>
                       <td>{row.slotLabel || row.slotId}</td>
                       <td className={open > 0 ? 'is-bad' : undefined}>
-                        {open > 0 ? euro(open) : '—'}
+                        {open > 0 ? 'ja' : '—'}
                       </td>
                     </tr>
                     )
@@ -2711,7 +2711,7 @@ export function Admin() {
                 : tab === 'trials'
                   ? 'Probetraining'
                   : tab === 'attendance'
-                    ? 'Anwesend'
+                    ? 'Check In'
                     : tab === 'dues'
                       ? 'Beiträge'
                       : tab === 'mail'
@@ -2738,7 +2738,7 @@ export function Admin() {
               {trialFresh ? <span className="admin-tab-count">{trialFresh}</span> : null}
             </button>
             <button type="button" className={tab === 'attendance' ? 'is-on' : ''} onClick={() => setTab('attendance')}>
-              Anwesend
+              Check In
             </button>
             <button type="button" className={tab === 'report' ? 'is-on' : ''} onClick={() => setTab('report')}>
               Auswertung

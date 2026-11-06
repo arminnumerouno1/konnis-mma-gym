@@ -3134,8 +3134,10 @@ p,
 
 .admin-tabs {
   display: flex;
-  gap: 4px;
+  flex-wrap: wrap;
+  gap: 6px;
   margin-top: 10px;
+  max-width: 100%;
 }
 
 .admin-tabs button {
@@ -3145,12 +3147,34 @@ p,
   padding: 8px 14px;
   font: inherit;
   cursor: pointer;
+  flex: 0 0 auto;
 }
 
 .admin-tabs button.is-on {
   color: var(--ink);
   border-color: var(--red);
   background: rgba(196, 18, 26, 0.18);
+}
+
+@media (max-width: 720px) {
+  .admin-top > div:first-child {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .admin-tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    overflow: visible;
+  }
+
+  .admin-tabs button {
+    width: 100%;
+    padding: 12px 10px;
+    text-align: center;
+    justify-content: center;
+  }
 }
 
 .admin-report {
