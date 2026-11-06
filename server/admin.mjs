@@ -50,7 +50,7 @@ import { matchBankTransactions, parseBankCsv } from './bank-import.mjs'
 import { runDueReminders } from './dues-cron.mjs'
 import { attachSignupDocs, attachTransferNotice } from './signup-docs.mjs'
 import { GYM_BANK } from './gym-bank.mjs'
-import { buildTransferPayload } from './transfer-due.mjs'
+import { buildOngoingTransferPayload, buildTransferPayload } from './transfer-due.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 import { createTrialStore, patchTrial, sendTrialConfirmMail, sortTrials, trialStats } from './trial.mjs'
@@ -646,6 +646,77 @@ function patchMember(current, patch, today) {
   }
 }
 
+async function cancelStripeSubscriptions(env, member, fetchImpl = fetch) {
+  const key = env.STRIPE_SECRET_KEY?.trim()
+  if (!key) return { ok: true, skipped: true, results: [] }
+  const results = []
+  const seen = new Set()
+
+  async function cancelOne(subId, via) {
+    const res = await fetchImpl(`https://api.stripe.com/v1/subscriptions/${subId}`, {
+      method: 'DELETE',
+      headers: {
+        authorization: `Bearer ${key}`,
+        'content-type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({ invoice_now: 'false', prorate: 'false' }),
+    })
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      results.push({ sub: subId, via, error: data?.error?.message || `stripe_${res.status}` })
+      return
+    }
+    results.push({ sub: subId, via, status: data.status || 'canceled' })
+  }
+
+  const subId = member.stripe?.subscriptionId
+  if (subId) {
+    seen.add(subId)
+    await cancelOne(subId, 'stored')
+  }
+  const customerId = member.stripe?.customerId
+  if (customerId) {
+    const listRes = await fetchImpl(
+      `https://api.stripe.com/v1/subscriptions?customer=${encodeURIComponent(customerId)}&status=all&limit=20`,
+      { headers: { authorization: `Bearer ${key}` } },
+    )
+    const list = await listRes.json().catch(() => ({ data: [] }))
+    for (const sub of list.data || []) {
+      if (seen.has(sub.id)) continue
+      if (sub.status === 'canceled' || sub.status === 'incomplete_expired') continue
+      seen.add(sub.id)
+      await cancelOne(sub.id, 'customer')
+    }
+  }
+  return { ok: true, results }
+}
+
+function toTransferMember(current, today) {
+  const transfer = buildOngoingTransferPayload(current, Date.parse(`${today}T12:00:00Z`) || Date.now())
+  const note = `Zahlungsart ${today}: Karte/Apple Pay → Überweisung, Stripe beendet`
+  return {
+    ...current,
+    payMethod: 'transfer',
+    transfer,
+    stripe: null,
+    payLinkAt: null,
+    payLinkUrl: null,
+    updatedAt: new Date().toISOString(),
+    notes: [current.notes, note].filter(Boolean).join('\n').slice(0, 2000),
+  }
+}
+
+function toCardMember(current, today) {
+  const note = `Zahlungsart ${today}: Überweisung → Karte/Apple Pay`
+  return {
+    ...current,
+    payMethod: 'card',
+    transfer: null,
+    updatedAt: new Date().toISOString(),
+    notes: [current.notes, note].filter(Boolean).join('\n').slice(0, 2000),
+  }
+}
+
 function patchMemberFields(current, patch, today) {
   const next = { ...current }
   if (patch.status && ['received', 'active', 'paused', 'cancelled', 'withdrawn', 'expired'].includes(patch.status)) {
@@ -728,6 +799,7 @@ export function createAdminHandler({
   sendReminder = sendReminderEmail,
   sendBroadcast = sendBroadcastEmail,
   sendPhotoRequest = sendPhotoRequestEmail,
+  sendTransferSwitch = sendTransferSwitchEmail,
   deliverInvite = deliverFirst50Invite,
 }) {
   const store = createMemberStore({ dataDir, env })
@@ -1320,6 +1392,97 @@ export function createAdminHandler({
         return
       }
 
+      if (action === 'switchPayMethod') {
+        const id = String(body.id ?? '')
+        const nextMethod = body.payMethod === 'transfer' || body.payMethod === 'card' ? body.payMethod : ''
+        const notify = body.notify !== false
+        if (!id || !nextMethod) {
+          json(res, 400, { ok: false, error: 'invalid' })
+          return
+        }
+        const current = (await store.load()).members.find((row) => row.id === id)
+        if (!current) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (current.plan === 'daypass') {
+          json(res, 400, { ok: false, error: 'plan' })
+          return
+        }
+        if (current.payMethod === nextMethod) {
+          json(res, 200, { ok: true, member: publicMember(current, today, true), unchanged: true })
+          return
+        }
+
+        let stripeCancel = { results: [] }
+        if (nextMethod === 'transfer' && (current.stripe?.subscriptionId || current.stripe?.customerId)) {
+          try {
+            stripeCancel = await cancelStripeSubscriptions(env, current, fetchImpl)
+          } catch (error) {
+            console.error('[admin] stripe cancel on pay switch failed', error)
+            json(res, 502, { ok: false, error: 'stripe_fail' })
+            return
+          }
+        }
+
+        let saved = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          const row = db.members[index]
+          db.members[index] =
+            nextMethod === 'transfer' ? toTransferMember(row, today) : toCardMember(row, today)
+          saved = db.members[index]
+          return db
+        })
+        if (!saved) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+
+        if (nextMethod === 'transfer') {
+          try {
+            saved = await attachTransferNotice(store, saved)
+          } catch (error) {
+            console.error('[admin] transfer notice on pay switch skipped', error)
+          }
+        }
+
+        let mailed = null
+        if (nextMethod === 'transfer' && notify) {
+          try {
+            mailed = await sendTransferSwitch(env, saved)
+            if (mailed && mailed !== 'skipped') {
+              const at = new Date().toISOString()
+              await store.update((db) => {
+                const index = db.members.findIndex((row) => row.id === id)
+                if (index < 0) return db
+                db.members[index] = {
+                  ...db.members[index],
+                  transferSwitchMail: 'sent',
+                  transferSwitchMailAt: at,
+                  updatedAt: at,
+                }
+                saved = db.members[index]
+                return db
+              })
+            }
+          } catch (error) {
+            console.error('[admin] transfer switch mail failed', error)
+            mailed = 'error'
+          }
+        }
+
+        json(res, 200, {
+          ok: true,
+          member: publicMember(saved, today, true),
+          payMethod: nextMethod,
+          stripeCancel: stripeCancel.results,
+          mail: mailed,
+        })
+        return
+      }
+
       if (action === 'sendTransferSwitch') {
         let id = String(body.id ?? '')
         if (!id && proofOk) {
@@ -1353,7 +1516,7 @@ export function createAdminHandler({
         }
         let mailed
         try {
-          mailed = await sendTransferSwitchEmail(env, current)
+          mailed = await sendTransferSwitch(env, current)
         } catch (error) {
           console.error('[admin] transfer switch mail failed', error)
           json(res, 502, { ok: false, error: 'mail' })

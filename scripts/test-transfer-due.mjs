@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import {
+  buildOngoingTransferPayload,
   buildTransferDue,
   buildTransferPayload,
   daysInMonth,
@@ -72,5 +73,14 @@ assert.equal(payload.prorateAmount, 1000)
 assert.equal(payload.feeAmount, 1999)
 assert.ok(payload.purpose.includes('Mustermann'))
 assert.equal(payload.iban, 'DE77860555921090429270')
+
+const ongoing = buildOngoingTransferPayload(
+  { id: 'abcdefgh-xxxx', firstName: 'A', lastName: 'B', price: 99.99 },
+  Date.parse('2026-11-06T12:00:00Z'),
+)
+assert.equal(ongoing.prorated, false)
+assert.equal(ongoing.amount, 9999)
+assert.equal(ongoing.firstDueDate, '2026-12-01')
+assert.equal(ongoing.nextFullDue, '2026-12-01')
 
 console.log('transfer-due ok')

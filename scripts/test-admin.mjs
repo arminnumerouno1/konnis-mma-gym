@@ -1324,4 +1324,73 @@ const priceById = await duesCall({
 })
 assert([200, 502, 503].includes(priceById.status), 'price note by id reaches mail layer')
 
+const switchDeletes = []
+const switchHandler = createAdminHandler({
+  dataDir: duesTmp,
+  env: { ADMIN_SECRET: secret, STRIPE_SECRET_KEY: 'sk_test_example', BREVO_API_KEY: 'xkeysib-test' },
+  fetchImpl: async (url, init) => {
+    const path = String(url)
+    if (path.includes('/subscriptions/') && init?.method === 'DELETE') {
+      const id = path.split('/subscriptions/')[1]
+      switchDeletes.push(id)
+      return { ok: true, async json() { return { id, status: 'canceled' } } }
+    }
+    if (path.includes('/subscriptions?customer=')) {
+      return {
+        ok: true,
+        async json() {
+          return { data: [{ id: 'sub_extra', status: 'active' }] }
+        },
+      }
+    }
+    return { ok: true, async json() { return {} } }
+  },
+  sendTransferSwitch: async () => 'sent',
+})
+async function switchCall(req) {
+  const { res, captured } = mockRes()
+  await switchHandler(req, res)
+  return { status: captured.status, data: captured.body ? JSON.parse(captured.body) : {}, headers: captured.headers }
+}
+const switchLogin = await switchCall({
+  method: 'POST',
+  url: '/api/admin',
+  headers: {},
+  socket: { remoteAddress: '10.0.0.30' },
+  body: { action: 'login', password: secret },
+})
+const switchCookie = String(switchLogin.headers?.['set-cookie'] ?? '').split(';')[0]
+await duesStore.update((db) => {
+  const index = db.members.findIndex((row) => row.email === 'tom.bulk@example.com')
+  if (index >= 0) {
+    db.members[index] = {
+      ...db.members[index],
+      payMethod: 'card',
+      transfer: null,
+      stripe: { customerId: 'cus_switch', subscriptionId: 'sub_main' },
+    }
+  }
+  return db
+})
+const switched = await switchCall({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie: switchCookie },
+  socket: { remoteAddress: '10.0.0.30' },
+  body: { action: 'switchPayMethod', id: bulkMember.id, payMethod: 'transfer', notify: true },
+})
+assert(switched.status === 200 && switched.data.member?.payMethod === 'transfer', 'switch to transfer')
+assert(switched.data.member?.stripe == null, 'stripe cleared')
+assert(switchDeletes.includes('sub_main') && switchDeletes.includes('sub_extra'), 'stripe subs canceled')
+assert(switched.data.mail === 'sent', 'transfer switch mail sent')
+const back = await switchCall({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie: switchCookie },
+  socket: { remoteAddress: '10.0.0.30' },
+  body: { action: 'switchPayMethod', id: bulkMember.id, payMethod: 'card', notify: false },
+})
+assert(back.status === 200 && back.data.member?.payMethod === 'card', 'switch back to card')
+assert(back.data.member?.transfer == null, 'transfer cleared')
+
 console.log('admin tests ok')

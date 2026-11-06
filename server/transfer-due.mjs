@@ -149,6 +149,31 @@ export function buildTransferPayload(member, nowMs = Date.now()) {
   }
 }
 
+/**
+ * Umstellung bestehender Mitglieder auf Überweisung (kein Anmelde-Anteil mehr).
+ * Nächste volle Monatszahlung zum nächsten 1. (heute, falls schon der 1.).
+ */
+export function buildOngoingTransferPayload(member, nowMs = Date.now()) {
+  const today = berlinIsoDate(new Date(nowMs))
+  const monthCents = Math.round(Number(member?.price) * 100) || 0
+  const first = /^(\d{4})-(\d{2})-01$/.test(today) ? today : followingFirstIso(today)
+  return {
+    holder: GYM_BANK.holder,
+    iban: GYM_BANK.iban,
+    bic: GYM_BANK.bic,
+    bank: GYM_BANK.bank,
+    amount: monthCents,
+    monthAmount: monthCents,
+    prorateAmount: monthCents,
+    feeAmount: 0,
+    prorated: false,
+    dueNow: false,
+    firstDueDate: first,
+    nextFullDue: first,
+    purpose: transferPurpose(member),
+  }
+}
+
 export function formatTransferEuro(cents) {
   return eurFromCents(cents)
 }

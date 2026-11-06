@@ -110,6 +110,7 @@ type MemberDetail = MemberList & {
   inviteSlot?: number | null
   reviewedAt?: string | null
   priceNoteAt?: string | null
+  transferSwitchMailAt?: string | null
   payLinkAt?: string | null
 }
 
@@ -284,6 +285,7 @@ const ERROR_TEXT: Record<string, string> = {
   cooldown: 'In den letzten fünf Tagen ging schon eine Mahnung raus. Mit Bestätigung trotzdem senden.',
   period: 'Bitte einen Monat wählen (JJJJ-MM).',
   pay: 'Passt nicht zur Zahlungsart dieses Mitglieds.',
+  plan: 'Day Pass hat keine Monats-Zahlungsart.',
   missing: 'Mitglied nicht gefunden.',
   columns: 'CSV braucht eine Betrag-Spalte (Sparkasse-Export).',
   empty: 'Keine Treffer oder leere Datei.',
@@ -2900,6 +2902,59 @@ function MemberPane({
     if (data.member) onReplace(data.member)
   }
 
+  async function switchPayMethod(next: 'transfer' | 'card') {
+    const toTransfer = next === 'transfer'
+    const ok = window.confirm(
+      toTransfer
+        ? `${member.firstName} ${member.lastName} auf Banküberweisung umstellen? Laufende Stripe-Abos werden beendet. Das Mitglied bekommt eine Infomail mit Kontodaten.`
+        : `${member.firstName} ${member.lastName} auf Karte / Apple Pay umstellen? Danach kannst du wieder einen Zahlungslink schicken.`,
+    )
+    if (!ok) return
+    setSending(true)
+    setPaneError(null)
+    setReminderNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'switchPayMethod', id: member.id, payMethod: next, notify: true }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      setPaneError(errorText(String(data.error ?? '')))
+      return
+    }
+    if (data.member) onReplace(data.member)
+    if (toTransfer) {
+      const mailNote =
+        data.mail === 'sent' || data.mail === 'sent_with_pdf'
+          ? ' Infomail ist raus.'
+          : data.mail === 'error'
+            ? ' Umstellung gespeichert, Mail fehlgeschlagen.'
+            : data.mail === 'skipped'
+              ? ' Umstellung gespeichert, Mail nicht konfiguriert.'
+              : ''
+      setReminderNote(`Jetzt Banküberweisung.${mailNote}`)
+    } else {
+      setReminderNote('Jetzt Karte / Apple Pay.')
+    }
+  }
+
+  async function sendTransferSwitchMail() {
+    setSending(true)
+    setPaneError(null)
+    setReminderNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendTransferSwitch', id: member.id }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      setPaneError(errorText(String(data.error ?? '')))
+      return
+    }
+    setReminderNote(`Umstellungs-Mail raus an ${data.email || member.email}.`)
+    if (data.member) onReplace(data.member)
+  }
+
   async function sendPayLinkMail() {
     setSending(true)
     setPaneError(null)
@@ -3356,11 +3411,37 @@ function MemberPane({
             <button className="btn btn-ghost" type="button" disabled={sending || busy} onClick={() => void sendPriceNote()}>
               Preis-Hinweis per Mail
             </button>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              disabled={sending || busy}
+              onClick={() => void sendTransferSwitchMail()}
+            >
+              Überweisungs-Info nochmal senden
+            </button>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              disabled={sending || busy}
+              onClick={() => void switchPayMethod('card')}
+            >
+              Auf Karte / Apple Pay umstellen
+            </button>
           </div>
           {member.priceNoteAt ? (
             <p className="admin-muted">
               Zuletzt Preis-Hinweis am{' '}
               {new Date(member.priceNoteAt).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}.
+            </p>
+          ) : null}
+          {member.transferSwitchMailAt ? (
+            <p className="admin-muted">
+              Zuletzt Überweisungs-Info am{' '}
+              {new Date(member.transferSwitchMailAt).toLocaleString('de-DE', {
+                dateStyle: 'short',
+                timeStyle: 'short',
+              })}
+              .
             </p>
           ) : null}
         </section>
@@ -3373,9 +3454,19 @@ function MemberPane({
               : 'Das Mitglied zahlt mit Karte, Apple Pay oder Google Pay über Stripe. Eine IBAN ist dafür nicht nötig. SEPA-Lastschrift kommt später und kann hier erfasst werden, sobald sie vereinbart ist.'}
           </p>
           <BankFields value={bank} onChange={setBank} holderHint={holderHint} />
-          <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void save({ bank })}>
-            Kontodaten speichern
-          </button>
+          <div className="admin-inline">
+            <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void save({ bank })}>
+              Kontodaten speichern
+            </button>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              disabled={sending || busy}
+              onClick={() => void switchPayMethod('transfer')}
+            >
+              Auf Banküberweisung umstellen
+            </button>
+          </div>
         </section>
       ) : null}
 
