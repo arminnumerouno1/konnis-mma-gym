@@ -7,6 +7,7 @@ import { openingMailPlugin } from './server/opening-mail-plugin.ts'
 import { signupOpenMailPlugin } from './server/signup-open-mail-plugin.ts'
 import { membershipDataDir, membershipPlugin } from './server/membership-plugin.ts'
 import { adminPlugin } from './server/admin-plugin.ts'
+import { checkinPlugin } from './server/checkin-plugin.ts'
 import { waitlistDataDir, waitlistPlugin } from './server/waitlist-plugin.ts'
 
 function seoPlugin(envUrl = ''): Plugin {
@@ -37,6 +38,7 @@ export default defineConfig(({ mode }) => {
       waitlistPlugin(env, dataDir),
       membershipPlugin(env, membershipDataDir(process.cwd())),
       adminPlugin(env, membershipDataDir(process.cwd())),
+      checkinPlugin(env, membershipDataDir(process.cwd())),
       contactPlugin(env, dataDir),
       inviteMailPlugin(env),
       openingMailPlugin(env),

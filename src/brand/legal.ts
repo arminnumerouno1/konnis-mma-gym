@@ -132,6 +132,7 @@ export const PRIVACY: LegalBlock[] = [
       'Die Kartenzahlung läuft über Stripe Payments Europe, Limited, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, D02 H210, Irland. Stripe verarbeitet Name, E-Mail, Tarif und die Kartendaten bei Apple Pay und Karte. Bei uns liegen die Stripe-Kundennummer, die Abo-Nummer und ob ein Monat bezahlt ist. Die Kartennummer aus dem Stripe-Checkout bleibt bei Stripe. Die Überweisung geht auf unser Konto bei der Stadt- und Kreissparkasse Leipzig. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. Hinweise von Stripe: https://stripe.com/de/privacy',
       'Ohne diese Daten kommt kein Online-Vertrag zustande. Die Daten bleiben für die Vertragsdauer und danach so lange, wie handels- und steuerrechtliche Pflichten das verlangen — in der Regel bis zu zehn Jahre nach Vertragsende.',
       `Änderungen von Anschrift, E-Mail, Bankverbindung und Zahlweg bitte zeitnah an ${GYM.legalEmail}.`,
+      'Check-in an der Tür: Über den QR-Code und deinen persönlichen Check-in-Code erfassen wir Anwesenheit im jeweiligen Kursplan-Slot (Zeitpunkt, Name, Mitglied oder Probetraining, Slot). Offene Beiträge speichern wir nur für die Verwaltung, nicht auf dem Check-in-Bildschirm. Zweck ist Trainingsbetrieb und Zahlungskontrolle (Art. 6 Abs. 1 lit. b und f DSGVO). Check-in-Einträge löschen wir in der Regel nach spätestens 90 Tagen, sofern keine längere Aufbewahrung nötig ist.',
     ],
   },
   {

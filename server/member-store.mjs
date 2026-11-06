@@ -1,5 +1,6 @@
 import { mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
+import { collectCheckinCodes, ensureCheckinCode } from './checkin-code.mjs'
 import { memberFromSignup, membershipTaken } from './member-model.mjs'
 
 const FILE_NAME = 'members.json'
@@ -242,19 +243,21 @@ export async function ingestSignup(store, record) {
 }
 
 export async function claimSignup(store, record) {
-  const member = memberFromSignup(record)
+  let member = memberFromSignup(record)
   let taken = false
   await store.update((db) => {
     if (membershipTaken(db.members, member.email, member.id)) {
       taken = true
       return db
     }
+    member = ensureCheckinCode(member, collectCheckinCodes(db.members, []))
     const index = db.members.findIndex((row) => row.id === member.id || normalizeKey(row.email) === normalizeKey(member.email))
     if (index >= 0) {
       const prev = db.members[index]
       db.members[index] = {
         ...prev,
         ...member,
+        checkinCode: prev.checkinCode || member.checkinCode,
         photoData: prev.photoData || member.photoData,
         notes: prev.notes || member.notes,
         bank: prev.bank || member.bank,
@@ -262,6 +265,7 @@ export async function claimSignup(store, record) {
         stripe: prev.stripe || member.stripe,
         payments: member.payments,
       }
+      member = db.members[index]
     } else db.members.push(member)
     return db
   })

@@ -2,6 +2,7 @@ export type RouteName =
   | 'home'
   | 'join'
   | 'portrait'
+  | 'checkin'
   | 'prereg'
   | 'impressum'
   | 'datenschutz'
@@ -27,6 +28,7 @@ export const PATHS: Record<Exclude<RouteName, 'notfound'>, string> = {
   home: '/',
   join: '/mitglied',
   portrait: '/portrait',
+  checkin: '/checkin',
   prereg: '/voranmeldung',
   impressum: '/impressum',
   datenschutz: '/datenschutz',

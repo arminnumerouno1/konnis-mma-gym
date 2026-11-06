@@ -332,6 +332,36 @@ export async function sendTransferSwitchEmail(env, record) {
   })
 }
 
+export function checkinCodeMailSubject() {
+  return 'Dein Check-in-Code · KONNI MMA GYM'
+}
+
+export function checkinCodeMailHtml(record, site = 'https://www.mma-in-leipzig.de') {
+  const first = escapeMail(record.firstName || whoOf(record))
+  const code = escapeMail(record.checkinCode || '')
+  const checkinUrl = escapeMail(`${String(site).replace(/\/$/, '')}/checkin`)
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>Hi ${first},</p>
+<p>an der Tür scannst du den QR-Code und gibst deinen persönlichen Check-in-Code ein:</p>
+<p style="font-size:28px;letter-spacing:0.2em;font-weight:bold">${code}</p>
+<p>Link: <a href="${checkinUrl}">${checkinUrl}</a></p>
+<p>So sehen wir, dass du da bist. Fragen? Einfach kurz antworten.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+</div>`
+}
+
+export async function sendCheckinCodeEmail(env, record) {
+  const apiKey = env.BREVO_API_KEY?.trim()
+  if (!apiKey || !record?.email || !record?.checkinCode) return 'skipped'
+  const site = env.SITE_URL?.trim() || env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de'
+  return sendSmtp(env, {
+    to: record.email,
+    name: whoOf(record),
+    subject: checkinCodeMailSubject(),
+    html: checkinCodeMailHtml(record, site),
+  })
+}
+
 export function paperReturnMailSubject() {
   return 'Dein Vertrag zum Unterschreiben · KONNI MMA GYM'
 }

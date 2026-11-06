@@ -483,6 +483,7 @@ export function memberFromSignup(record, today = isoDate()) {
     pausedUntil: record.pausedUntil ?? null,
     cancelledAt: record.cancelledAt ?? null,
     cancelEffectiveOn: record.cancelEffectiveOn ?? null,
+    checkinCode: record.checkinCode ?? null,
   }
   return ensurePayments(base, today)
 }

@@ -9,6 +9,7 @@ import { Join } from './pages/Join'
 import { Legal } from './pages/Legal'
 import { Admin } from './pages/Admin'
 import { PortraitUpload } from './pages/PortraitUpload'
+import { Checkin } from './pages/Checkin'
 
 const LEGAL = new Set(['impressum', 'datenschutz', 'agb', 'widerruf', 'hausordnung', 'vertrag6', 'vertrag12', 'vertrag24'])
 
@@ -40,6 +41,14 @@ export default function App() {
     return (
       <div className="shell route-portrait">
         <PortraitUpload token={route.token} />
+      </div>
+    )
+  }
+
+  if (route.name === 'checkin') {
+    return (
+      <div className="shell route-checkin">
+        <Checkin />
       </div>
     )
   }

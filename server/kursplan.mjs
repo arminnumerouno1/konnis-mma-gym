@@ -103,6 +103,66 @@ export function findTrialSlot(slotId) {
   return trialSlots().find((row) => row.id === wanted) ?? null
 }
 
+function berlinParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-GB', {
+    timeZone: 'Europe/Berlin',
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const get = (type) => parts.find((part) => part.type === type)?.value
+  const weekday = String(get('weekday') || '').toLowerCase()
+  const map = { mon: 'mo', tue: 'di', wed: 'mi', thu: 'do', fri: 'fr', sat: 'sa', sun: 'so' }
+  return {
+    dayId: map[weekday] || null,
+    minutes: Number(get('hour')) * 60 + Number(get('minute')),
+    date: `${get('year')}-${get('month')}-${get('day')}`,
+  }
+}
+
+export function slotsForDayId(dayId) {
+  return trialSlots().filter((row) => row.dayId === dayId)
+}
+
+/**
+ * Current class for door check-in.
+ * Window: 20 minutes before start until 40 minutes after start.
+ */
+export function currentSlot(now = new Date(), { beforeMinutes = 20, afterMinutes = 40 } = {}) {
+  const { dayId, minutes } = berlinParts(now)
+  if (!dayId || dayId === 'so') return null
+  const candidates = []
+  for (const row of slotsForDayId(dayId)) {
+    const range = parseRange(row.time)
+    if (!range) continue
+    if (minutes >= range.start - beforeMinutes && minutes <= range.start + afterMinutes) {
+      candidates.push({ ...row, startMinutes: range.start, distance: Math.abs(minutes - range.start) })
+    }
+  }
+  if (!candidates.length) return null
+  candidates.sort((a, b) => a.distance - b.distance)
+  const best = candidates[0]
+  return {
+    id: best.id,
+    dayId: best.dayId,
+    dayLabel: best.dayLabel,
+    time: best.time,
+    title: best.title,
+    level: best.level,
+    label: best.label,
+  }
+}
+
+export function todaySlots(now = new Date()) {
+  const { dayId } = berlinParts(now)
+  if (!dayId || dayId === 'so') return []
+  return slotsForDayId(dayId)
+}
+
 function parseClock(raw) {
   const match = /^(\d{1,2}):(\d{2})$/.exec(String(raw).trim())
   if (!match) return null

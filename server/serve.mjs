@@ -13,6 +13,7 @@ import { createMemberStore } from './member-store.mjs'
 import { createPhotoUploadHandler } from './photo-upload.mjs'
 import { createWaitlistHandler } from './waitlist.mjs'
 import { createPreregHandler } from './prereg.mjs'
+import { createCheckinHandler } from './checkin.mjs'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const dist = join(root, 'dist')
@@ -28,6 +29,7 @@ const handlePrereg = createPreregHandler({ dataDir, env: process.env })
 const handleInviteMail = createInviteMailHandler({ env: process.env })
 const handleOpeningMail = createOpeningMailHandler({ env: process.env })
 const handleSignupOpenMail = createSignupOpenMailHandler({ env: process.env })
+const handleCheckin = createCheckinHandler({ dataDir, env: process.env })
 
 const MIME = {
   '.css': 'text/css; charset=utf-8',
@@ -106,6 +108,10 @@ const server = createServer((req, res) => {
   }
   if (path === '/api/signup-open-mail') {
     void handleSignupOpenMail(req, res)
+    return
+  }
+  if (path === '/api/checkin') {
+    void handleCheckin(req, res)
     return
   }
 

@@ -112,6 +112,7 @@ type MemberDetail = MemberList & {
   priceNoteAt?: string | null
   transferSwitchMailAt?: string | null
   payLinkAt?: string | null
+  checkinCode?: string | null
 }
 
 const FIELD_LABEL: Record<string, string> = {
@@ -1903,6 +1904,245 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
   )
 }
 
+type CheckinEntry = {
+  id: string
+  at: string
+  day: string
+  slotId: string
+  slotLabel?: string
+  kind: 'member' | 'trial'
+  memberId?: string | null
+  trialId?: string | null
+  name: string
+  email?: string
+  openDues?: number
+  openCount?: number
+  hasPhoto?: boolean
+  source?: string
+}
+
+function checkinOpenAmount(row: CheckinEntry) {
+  return typeof row.openDues === 'number' ? row.openDues : 0
+}
+
+type CheckinSlot = {
+  id: string
+  label: string
+  time?: string
+  title?: string
+}
+
+function Attendance({
+  members,
+  onOpenMember,
+}: {
+  members: MemberList[]
+  onOpenMember: (id: string) => void
+}) {
+  const today = new Date().toLocaleDateString('en-CA', { timeZone: 'Europe/Berlin' })
+  const [day, setDay] = useState(today)
+  const [slotId, setSlotId] = useState('')
+  const [entries, setEntries] = useState<CheckinEntry[]>([])
+  const [slots, setSlots] = useState<CheckinSlot[]>([])
+  const [current, setCurrent] = useState<CheckinSlot | null>(null)
+  const [checkinUrl, setCheckinUrl] = useState('https://www.mma-in-leipzig.de/checkin')
+  const [loaded, setLoaded] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [note, setNote] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [manualQ, setManualQ] = useState('')
+  const [manualSlotId, setManualSlotId] = useState('')
+  const [codesBusy, setCodesBusy] = useState(false)
+
+  async function load() {
+    const query = new URLSearchParams({ checkins: '1', day })
+    if (slotId) query.set('slotId', slotId)
+    const { data } = await api(`/api/admin?${query}`)
+    if (data.ok) {
+      setEntries(data.entries ?? [])
+      setSlots(data.todaySlots ?? [])
+      setCurrent(data.slot ?? null)
+      if (data.checkinUrl) setCheckinUrl(String(data.checkinUrl))
+      if (!manualSlotId && data.slot?.id) setManualSlotId(String(data.slot.id))
+    }
+    setLoaded(true)
+  }
+
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [day, slotId])
+
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=280x280&data=${encodeURIComponent(checkinUrl)}`
+
+  const manualHits = manualQ.trim()
+    ? members
+        .filter((row) => {
+          const hay = `${row.firstName} ${row.lastName} ${row.email}`.toLowerCase()
+          return hay.includes(manualQ.trim().toLowerCase())
+        })
+        .slice(0, 8)
+    : []
+
+  async function markPresent(memberId: string) {
+    setBusy(true)
+    setError(null)
+    setNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'checkinManual',
+        memberId,
+        slotId: manualSlotId || slotId || undefined,
+      }),
+    })
+    setBusy(false)
+    if (!data.ok) {
+      setError(data.error === 'slot' ? 'Bitte einen Slot wählen.' : 'Manueller Check-in fehlgeschlagen.')
+      return
+    }
+    setNote(data.already ? 'War schon eingecheckt.' : 'Als anwesend gesetzt.')
+    setManualQ('')
+    await load()
+  }
+
+  async function ensureCodes() {
+    if (!window.confirm('Fehlende Check-in-Codes für aktive Mitglieder und bestätigte Probetermine vergeben?')) return
+    setCodesBusy(true)
+    setError(null)
+    setNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'ensureCheckinCodes' }),
+    })
+    setCodesBusy(false)
+    if (!data.ok) {
+      setError('Codes konnten nicht vergeben werden.')
+      return
+    }
+    setNote(`${data.assigned ?? 0} Code(s) vergeben.`)
+  }
+
+  return (
+    <section className="admin-attendance">
+      <div className="admin-filters">
+        <label>
+          Tag
+          <input type="date" value={day} onChange={(event) => setDay(event.target.value)} />
+        </label>
+        <label>
+          Slot
+          <select value={slotId} onChange={(event) => setSlotId(event.target.value)}>
+            <option value="">Alle heute</option>
+            {slots.map((row) => (
+              <option key={row.id} value={row.id}>
+                {row.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <button className="btn btn-ghost" type="button" onClick={() => void load()}>
+          Neu laden
+        </button>
+        <button className="btn btn-ghost" type="button" disabled={codesBusy} onClick={() => void ensureCodes()}>
+          Fehlende Codes vergeben
+        </button>
+      </div>
+
+      {current ? <p className="admin-muted">Aktueller Slot: {current.label}</p> : <p className="admin-muted">Gerade kein Slot im Zeitfenster.</p>}
+      {note ? <p className="admin-ok">{note}</p> : null}
+      {error ? <p className="admin-error">{error}</p> : null}
+
+      <div className="admin-attendance-grid">
+        <div>
+          <h2>Anwesend ({entries.length})</h2>
+          {!loaded ? <p className="admin-muted">Lädt…</p> : null}
+          {loaded && !entries.length ? <p className="admin-muted">Noch niemand eingecheckt.</p> : null}
+          {entries.length ? (
+            <div className="admin-table-wrap">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Uhrzeit</th>
+                    <th>Name</th>
+                    <th>Art</th>
+                    <th>Slot</th>
+                    <th>Offen</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {entries.map((row) => {
+                    const open = checkinOpenAmount(row)
+                    return (
+                    <tr key={row.id} className={open > 0 ? 'is-warn' : undefined}>
+                      <td>{new Date(row.at).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}</td>
+                      <td>
+                        {row.memberId ? (
+                          <button className="admin-linkish" type="button" onClick={() => onOpenMember(row.memberId!)}>
+                            <strong>{row.name}</strong>
+                          </button>
+                        ) : (
+                          <strong>{row.name}</strong>
+                        )}
+                        {row.hasPhoto ? <span className="admin-muted"> · Foto</span> : null}
+                        {row.source === 'desk' ? <span className="admin-muted"> · manuell</span> : null}
+                      </td>
+                      <td>{row.kind === 'trial' ? 'Probetraining' : 'Mitglied'}</td>
+                      <td>{row.slotLabel || row.slotId}</td>
+                      <td className={open > 0 ? 'is-bad' : undefined}>
+                        {open > 0 ? euro(open) : '—'}
+                      </td>
+                    </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </div>
+
+        <aside className="admin-attendance-side">
+          <h2>Manuell setzen</h2>
+          <p className="admin-muted">Für U18 oder ohne Handy — ohne Code.</p>
+          <label>
+            Slot
+            <select value={manualSlotId} onChange={(event) => setManualSlotId(event.target.value)}>
+              <option value="">Aktueller / gewählter</option>
+              {slots.map((row) => (
+                <option key={row.id} value={row.id}>
+                  {row.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Mitglied suchen
+            <input value={manualQ} onChange={(event) => setManualQ(event.target.value)} placeholder="Name oder Mail" />
+          </label>
+          {manualHits.length ? (
+            <ul className="admin-attendance-hits">
+              {manualHits.map((row) => (
+                <li key={row.id}>
+                  <button className="btn btn-ghost" type="button" disabled={busy} onClick={() => void markPresent(row.id)}>
+                    {row.firstName} {row.lastName}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <h2>QR an der Tür</h2>
+          <p className="admin-muted">Einmal ausdrucken. Text: „Vor dem Training scannen · deinen Code eingeben“.</p>
+          <a href={checkinUrl} target="_blank" rel="noreferrer">
+            {checkinUrl}
+          </a>
+          <img className="admin-checkin-qr" src={qrSrc} alt="QR-Code zur Check-in-Seite" width={280} height={280} />
+        </aside>
+      </div>
+    </section>
+  )
+}
+
 type TrialStatus = 'neu' | 'bestaetigt' | 'gekommen' | 'nicht_gekommen' | 'abgesagt'
 
 type TrialEntry = {
@@ -2227,7 +2467,7 @@ export function Admin() {
   const [detail, setDetail] = useState<MemberDetail | null>(null)
   const [busy, setBusy] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [tab, setTab] = useState<'members' | 'dues' | 'mail' | 'prereg' | 'trials' | 'report'>('members')
+  const [tab, setTab] = useState<'members' | 'dues' | 'mail' | 'prereg' | 'trials' | 'attendance' | 'report'>('members')
   const [preregFresh, setPreregFresh] = useState(0)
   const [trialFresh, setTrialFresh] = useState(0)
   const [joined, setJoined] = useState('')
@@ -2464,11 +2704,13 @@ export function Admin() {
                 ? 'Voranmeldungen'
                 : tab === 'trials'
                   ? 'Probetraining'
-                  : tab === 'dues'
-                    ? 'Beiträge'
-                    : tab === 'mail'
-                      ? 'Mail'
-                      : 'Mitglieder'}
+                  : tab === 'attendance'
+                    ? 'Anwesend'
+                    : tab === 'dues'
+                      ? 'Beiträge'
+                      : tab === 'mail'
+                        ? 'Mail'
+                        : 'Mitglieder'}
           </h1>
           <nav className="admin-tabs" aria-label="Bereiche">
             <button type="button" className={tab === 'members' ? 'is-on' : ''} onClick={() => setTab('members')}>
@@ -2488,6 +2730,9 @@ export function Admin() {
             <button type="button" className={tab === 'trials' ? 'is-on' : ''} onClick={() => setTab('trials')}>
               Probetraining
               {trialFresh ? <span className="admin-tab-count">{trialFresh}</span> : null}
+            </button>
+            <button type="button" className={tab === 'attendance' ? 'is-on' : ''} onClick={() => setTab('attendance')}>
+              Anwesend
             </button>
             <button type="button" className={tab === 'report' ? 'is-on' : ''} onClick={() => setTab('report')}>
               Auswertung
@@ -2515,6 +2760,15 @@ export function Admin() {
 
       {tab === 'prereg' ? <Preregs onFresh={setPreregFresh} /> : null}
       {tab === 'trials' ? <Trials onFresh={setTrialFresh} /> : null}
+      {tab === 'attendance' ? (
+        <Attendance
+          members={members}
+          onOpenMember={(id) => {
+            setOpenId(id)
+            setTab('members')
+          }}
+        />
+      ) : null}
 
       {tab === 'dues' ? (
         <DuesPanel
@@ -2938,6 +3192,29 @@ function MemberPane({
     }
   }
 
+  async function sendCheckinCodeMail() {
+    setSending(true)
+    setPaneError(null)
+    setReminderNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendCheckinCode', id: member.id }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      setPaneError(errorText(String(data.error ?? '')))
+      return
+    }
+    if (data.member) onReplace(data.member)
+    setReminderNote(
+      data.mail === 'sent'
+        ? `Check-in-Code raus an ${member.email}.`
+        : data.mail === 'skipped'
+          ? 'Code gespeichert, Mail nicht konfiguriert.'
+          : 'Code gespeichert, Mail fehlgeschlagen.',
+    )
+  }
+
   async function sendTransferSwitchMail() {
     setSending(true)
     setPaneError(null)
@@ -3208,6 +3485,16 @@ function MemberPane({
             <dd>Platz {member.inviteSlot}</dd>
           </div>
         ) : null}
+        <div>
+          <dt>Check-in-Code</dt>
+          <dd>
+            <strong style={{ letterSpacing: '0.12em' }}>{member.checkinCode || 'noch keiner'}</strong>
+            <br />
+            <button className="btn btn-ghost" type="button" disabled={busy || sending} onClick={() => void sendCheckinCodeMail()}>
+              Code-Mail
+            </button>
+          </dd>
+        </div>
         {member.plan !== 'daypass' ? (
           <div className="admin-dl-wide">
             <dt>Zahlung</dt>

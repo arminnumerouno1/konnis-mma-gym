@@ -4059,3 +4059,106 @@ button.admin-chip {
   font-size: 15px;
   letter-spacing: 0.06em;
 }
+
+.checkin-page {
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 48px 20px 80px;
+}
+
+.checkin-kicker {
+  margin: 0 0 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--muted, #888);
+}
+
+.checkin-page h1 {
+  margin: 0 0 16px;
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+}
+
+.checkin-form,
+.checkin-slot {
+  display: grid;
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.checkin-form input,
+.checkin-slot select {
+  width: 100%;
+  padding: 14px 12px;
+  font-size: 1.25rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  border: 1px solid var(--line, #2a2a2a);
+  background: var(--bg-2, #151515);
+  color: inherit;
+}
+
+.checkin-hp {
+  position: absolute;
+  left: -9999px;
+  opacity: 0;
+  height: 0;
+  width: 0;
+}
+
+.checkin-error {
+  color: #c44;
+}
+
+.checkin-ok {
+  color: var(--ink, #eee);
+}
+
+.checkin-muted,
+.checkin-legal {
+  color: var(--muted, #888);
+  font-size: 0.92rem;
+}
+
+.checkin-legal a {
+  color: inherit;
+}
+
+.admin-attendance-grid {
+  display: grid;
+  gap: 28px;
+  grid-template-columns: minmax(0, 1.4fr) minmax(240px, 0.8fr);
+  margin-top: 12px;
+}
+
+.admin-attendance-side {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.admin-attendance-hits {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.admin-checkin-qr {
+  width: 280px;
+  max-width: 100%;
+  height: auto;
+  background: #fff;
+  padding: 10px;
+}
+
+.admin-table tr.is-warn td {
+  background: rgba(196, 68, 68, 0.08);
+}
+
+@media (max-width: 900px) {
+  .admin-attendance-grid {
+    grid-template-columns: 1fr;
+  }
+}

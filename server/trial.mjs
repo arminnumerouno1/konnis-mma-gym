@@ -248,10 +248,14 @@ export function trialConfirmMailSubject(entry) {
 export function trialConfirmMailHtml(entry) {
   const first = escapeMail(String(entry?.name || '').trim().split(/\s+/)[0] || 'du')
   const slot = escapeMail(entry?.slot?.label || '')
+  const code = entry?.checkinCode
+    ? `<p>An der Tür scannst du den QR und gibst deinen Code ein: <strong style="letter-spacing:0.15em">${escapeMail(entry.checkinCode)}</strong></p>`
+    : ''
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>Hi ${first},</p>
 <p>dein Probetraining ist bestätigt.</p>
 <p><strong>${slot}</strong></p>
+${code}
 <p>Komm einfach rechtzeitig vorbei – T-Shirt, kurze Hose, Handtuch und Flipflops reichen. Wenn du Fragen hast, antworte einfach auf diese Mail.</p>
 <p>Wir freuen uns auf dich.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
 </div>`

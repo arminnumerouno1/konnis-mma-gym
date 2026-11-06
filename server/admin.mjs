@@ -26,6 +26,7 @@ import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
 import {
   sendBroadcastEmail,
+  sendCheckinCodeEmail,
   sendMembershipEmails,
   sendPaperReturnEmail,
   sendPayLinkEmail,
@@ -54,6 +55,14 @@ import { buildOngoingTransferPayload, buildTransferPayload } from './transfer-du
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
 import { createTrialStore, patchTrial, sendTrialConfirmMail, sortTrials, trialStats } from './trial.mjs'
+import {
+  checkinsForDay,
+  collectCheckinCodes,
+  createCheckinStore,
+  ensureCheckinCode,
+  performCheckin,
+  sortCheckins,
+} from './checkin.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
 import { allocateInvoiceNumber, buildReceiptPdf } from './receipt-pdf.mjs'
 import { FIRST50_ID, INVITE_TTL_HOURS, PLUS_ID, contractStart, contractTerm, nextFirst50Slot, normalizePersonName, splitPersonName } from './invite.mjs'
@@ -800,11 +809,13 @@ export function createAdminHandler({
   sendBroadcast = sendBroadcastEmail,
   sendPhotoRequest = sendPhotoRequestEmail,
   sendTransferSwitch = sendTransferSwitchEmail,
+  sendCheckinCode = sendCheckinCodeEmail,
   deliverInvite = deliverFirst50Invite,
 }) {
   const store = createMemberStore({ dataDir, env })
   const preregs = createPreregStore({ dataDir, env })
   const trials = createTrialStore({ dataDir, env })
+  const checkins = createCheckinStore({ dataDir, env })
   const secret = () => adminSecret(env)
 
   return async function handleAdmin(req, res) {
@@ -1121,13 +1132,15 @@ export function createAdminHandler({
           return
         }
         let created = null
+        const trialDb = await trials.load()
         await store.update((db) => {
           if (membershipTaken(db.members, made.member.email)) {
             created = { ok: false, error: 'duplicate' }
             return db
           }
-          db.members.push(made.member)
-          created = { ok: true, member: made.member }
+          const member = ensureCheckinCode(made.member, collectCheckinCodes(db.members, trialDb.entries))
+          db.members.push(member)
+          created = { ok: true, member }
           return db
         })
         if (!created?.ok) {
@@ -2276,6 +2289,20 @@ export function createAdminHandler({
         let confirmMail = null
         if (shouldConfirm && result.entry) {
           try {
+            const memberDb = await store.load()
+            await trials.update((db) => {
+              const index = db.entries.findIndex((row) => row.id === id)
+              if (index < 0) return db
+              const taken = collectCheckinCodes(memberDb.members, db.entries)
+              const withCode = ensureCheckinCode(db.entries[index], taken)
+              db.entries[index] = {
+                ...withCode,
+                status: withCode.status === 'neu' ? 'bestaetigt' : withCode.status,
+                updatedAt: new Date().toISOString(),
+              }
+              result = { ok: true, entry: db.entries[index] }
+              return db
+            })
             confirmMail = await sendTrialConfirmMail(env, result.entry)
             if (confirmMail === 'sent') {
               const at = new Date().toISOString()
@@ -2284,7 +2311,6 @@ export function createAdminHandler({
                 if (index < 0) return db
                 db.entries[index] = {
                   ...db.entries[index],
-                  status: db.entries[index].status === 'neu' ? 'bestaetigt' : db.entries[index].status,
                   confirmMailAt: at,
                   confirmMail: 'sent',
                   updatedAt: at,
@@ -2299,6 +2325,100 @@ export function createAdminHandler({
           }
         }
         json(res, 200, { ok: true, entry: result.entry, confirmMail })
+        return
+      }
+
+      if (action === 'checkinManual') {
+        const memberDb = await store.load()
+        const trialDb = await trials.load()
+        const checkinDb = await checkins.load()
+        const result = await performCheckin(
+          { members: memberDb.members, trials: trialDb.entries, checkins: checkinDb.entries },
+          {
+            manual: true,
+            memberId: body.memberId ? String(body.memberId) : null,
+            trialId: body.trialId ? String(body.trialId) : null,
+            slotId: body.slotId ? String(body.slotId) : null,
+          },
+        )
+        if (!result.ok) {
+          json(res, 400, { ok: false, error: result.error })
+          return
+        }
+        if (!result.already) {
+          await checkins.update((db) => {
+            db.entries.push(result.entry)
+            return db
+          })
+        }
+        json(res, 200, {
+          ok: true,
+          already: Boolean(result.already),
+          entry: result.entry,
+          slot: result.slot,
+        })
+        return
+      }
+
+      if (action === 'ensureCheckinCodes') {
+        const trialDb = await trials.load()
+        let assigned = 0
+        let saved = null
+        await store.update((db) => {
+          const taken = collectCheckinCodes(db.members, trialDb.entries)
+          db.members = db.members.map((row) => {
+            if (row.status === 'cancelled' || row.status === 'withdrawn' || row.status === 'expired') return row
+            if (row.checkinCode) {
+              taken.add(String(row.checkinCode).toUpperCase())
+              return row
+            }
+            assigned += 1
+            return ensureCheckinCode(row, taken)
+          })
+          saved = db.members
+          return db
+        })
+        await trials.update((db) => {
+          const taken = collectCheckinCodes(saved || [], db.entries)
+          db.entries = db.entries.map((row) => {
+            if (row.status !== 'bestaetigt' && row.status !== 'gekommen' && row.status !== 'neu') return row
+            if (row.checkinCode) {
+              taken.add(String(row.checkinCode).toUpperCase())
+              return row
+            }
+            assigned += 1
+            return ensureCheckinCode(row, taken)
+          })
+          return db
+        })
+        json(res, 200, { ok: true, assigned })
+        return
+      }
+
+      if (action === 'sendCheckinCode') {
+        const id = String(body.id ?? '')
+        const trialDb = await trials.load()
+        let mailed = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          const withCode = ensureCheckinCode(db.members[index], collectCheckinCodes(db.members, trialDb.entries))
+          db.members[index] = { ...withCode, updatedAt: new Date().toISOString() }
+          mailed = db.members[index]
+          return db
+        })
+        if (!mailed) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        let mail = 'skipped'
+        try {
+          mail = await sendCheckinCode(env, mailed)
+        } catch (error) {
+          console.error('[admin] checkin code mail failed', error)
+          mail = 'error'
+        }
+        json(res, 200, { ok: true, member: publicMember(mailed, today, true), mail })
         return
       }
 
@@ -2337,6 +2457,27 @@ export function createAdminHandler({
       const { entries } = await trials.load()
       const sorted = sortTrials(entries)
       json(res, 200, { ok: true, entries: sorted, stats: trialStats(entries) })
+      return
+    }
+
+    const checkinView = url.searchParams.get('checkins')
+    if (checkinView) {
+      const { currentSlot, todaySlots } = await import('./kursplan.mjs')
+      const now = new Date()
+      const dayParam = String(url.searchParams.get('day') ?? '').trim()
+      const day = /^\d{4}-\d{2}-\d{2}$/.test(dayParam) ? dayParam : today
+      const slotId = String(url.searchParams.get('slotId') ?? '').trim()
+      const { entries } = await checkins.load()
+      let list = checkinsForDay(entries, day)
+      if (slotId) list = list.filter((row) => row.slotId === slotId)
+      json(res, 200, {
+        ok: true,
+        day,
+        slot: currentSlot(now),
+        todaySlots: todaySlots(now),
+        entries: sortCheckins(list),
+        checkinUrl: `${String(siteOrigin(req, env) || 'https://www.mma-in-leipzig.de').replace(/\/$/, '')}/checkin`,
+      })
       return
     }
 
