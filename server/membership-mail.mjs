@@ -342,10 +342,13 @@ export function checkinCodeMailHtml(record, site = 'https://www.mma-in-leipzig.d
   const checkinUrl = escapeMail(`${String(site).replace(/\/$/, '')}/checkin`)
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>Hi ${first},</p>
-<p>an der Tür scannst du den QR-Code und gibst deinen persönlichen Check-in-Code ein:</p>
+<p>ab jetzt checkst du dich vor dem Training selbst ein.</p>
+<p>An der Tür hängt ein QR-Code. Den scannst du mit dem Handy und landest auf unserer Check-in-Seite. Dort gibst du deinen persönlichen Code ein:</p>
 <p style="font-size:28px;letter-spacing:0.2em;font-weight:bold">${code}</p>
 <p>Link: <a href="${checkinUrl}">${checkinUrl}</a></p>
-<p>So sehen wir, dass du da bist. Fragen? Einfach kurz antworten.</p>
+<p>Warum machen wir das?<br>Damit wir klar sehen, wer wirklich im Training war – und die Anwesenheit sauber zuordnen können.</p>
+<p>Dein Code ist nur für dich. Am besten speicherst du diese Mail oder notierst den Code kurz im Handy.</p>
+<p>Kein Handy dabei oder Code weg? Melde dich einfach persönlich bei uns, dann checken wir dich manuell ein.</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
 </div>`
 }
