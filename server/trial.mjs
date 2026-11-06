@@ -206,23 +206,64 @@ ${entry.note ? `<p><strong>Nachricht</strong><br>${escapeMail(entry.note)}</p>` 
 </div>`
 }
 
-export async function sendTrialGymMail(env, entry) {
+async function sendBrevo(env, { to, name, subject, html, replyTo }) {
   const apiKey = env.BREVO_API_KEY?.trim()
-  if (!apiKey || !entry) return 'skipped'
+  if (!apiKey) return 'skipped'
   const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
-  const to = env.TRIAL_NOTIFY_EMAIL?.trim() || sender
+  const payload = {
+    sender: { name: 'KONNI MMA GYM', email: sender },
+    to: [{ email: to, name: name || to }],
+    replyTo: replyTo || { email: sender, name: 'KONNI MMA GYM' },
+    subject,
+    htmlContent: html,
+  }
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
     headers: { 'api-key': apiKey, accept: 'application/json', 'content-type': 'application/json' },
-    body: JSON.stringify({
-      sender: { name: 'KONNI MMA GYM', email: sender },
-      to: [{ email: to, name: 'KONNI MMA GYM' }],
-      replyTo: { email: entry.email, name: entry.name },
-      subject: trialGymMailSubject(entry),
-      htmlContent: trialGymMailHtml(entry),
-    }),
+    body: JSON.stringify(payload),
   })
   const detail = await response.text()
   if (!response.ok) throw new Error(`brevo_mail_${response.status}:${detail.slice(0, 240)}`)
   return 'sent'
+}
+
+export async function sendTrialGymMail(env, entry) {
+  if (!entry) return 'skipped'
+  const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
+  const to = env.TRIAL_NOTIFY_EMAIL?.trim() || sender
+  return sendBrevo(env, {
+    to,
+    name: 'KONNI MMA GYM',
+    subject: trialGymMailSubject(entry),
+    html: trialGymMailHtml(entry),
+    replyTo: { email: entry.email, name: entry.name },
+  })
+}
+
+export function trialConfirmMailSubject(entry) {
+  const slot = entry?.slot?.label || trialSlotLabel(entry?.slot || {})
+  return `Dein Probetraining ist bestätigt · ${slot}`
+}
+
+export function trialConfirmMailHtml(entry) {
+  const first = escapeMail(String(entry?.name || '').trim().split(/\s+/)[0] || 'du')
+  const slot = escapeMail(entry?.slot?.label || '')
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>Hi ${first},</p>
+<p>dein Probetraining ist bestätigt.</p>
+<p><strong>${slot}</strong></p>
+<p>Komm einfach rechtzeitig vorbei – T-Shirt, kurze Hose, Handtuch und Flipflops reichen. Wenn du Fragen hast, antworte einfach auf diese Mail.</p>
+<p>Wir freuen uns auf dich.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+</div>`
+}
+
+/** Bestätigungsmail an den Interessenten, wenn der Desk den Slot freigibt. */
+export async function sendTrialConfirmMail(env, entry) {
+  if (!entry?.email) return 'skipped'
+  return sendBrevo(env, {
+    to: entry.email,
+    name: entry.name,
+    subject: trialConfirmMailSubject(entry),
+    html: trialConfirmMailHtml(entry),
+  })
 }

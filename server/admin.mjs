@@ -53,7 +53,7 @@ import { GYM_BANK } from './gym-bank.mjs'
 import { buildTransferPayload } from './transfer-due.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
-import { createTrialStore, patchTrial, sortTrials, trialStats } from './trial.mjs'
+import { createTrialStore, patchTrial, sendTrialConfirmMail, sortTrials, trialStats } from './trial.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
 import { allocateInvoiceNumber, buildReceiptPdf } from './receipt-pdf.mjs'
 import { FIRST50_ID, INVITE_TTL_HOURS, PLUS_ID, contractStart, contractTerm, nextFirst50Slot, normalizePersonName, splitPersonName } from './invite.mjs'
@@ -2076,15 +2076,21 @@ export function createAdminHandler({
         return
       }
 
-      if (action === 'trialUpdate' || action === 'trialDelete') {
+      if (action === 'trialUpdate' || action === 'trialDelete' || action === 'trialSendConfirm') {
         const id = String(body.id ?? '')
         let result = null
+        let previous = null
         await trials.update((db) => {
           const index = db.entries.findIndex((row) => row.id === id)
           if (index < 0) return db
           if (action === 'trialDelete') {
             db.entries.splice(index, 1)
             result = { ok: true, entry: null }
+            return db
+          }
+          previous = db.entries[index]
+          if (action === 'trialSendConfirm') {
+            result = { ok: true, entry: previous }
             return db
           }
           result = patchTrial(db.entries[index], body)
@@ -2099,7 +2105,37 @@ export function createAdminHandler({
           json(res, 400, { ok: false, error: result.error })
           return
         }
-        json(res, 200, { ok: true, entry: result.entry })
+        const shouldConfirm =
+          action === 'trialSendConfirm' ||
+          (action === 'trialUpdate' &&
+            result.entry?.status === 'bestaetigt' &&
+            previous?.status !== 'bestaetigt')
+        let confirmMail = null
+        if (shouldConfirm && result.entry) {
+          try {
+            confirmMail = await sendTrialConfirmMail(env, result.entry)
+            if (confirmMail === 'sent') {
+              const at = new Date().toISOString()
+              await trials.update((db) => {
+                const index = db.entries.findIndex((row) => row.id === id)
+                if (index < 0) return db
+                db.entries[index] = {
+                  ...db.entries[index],
+                  status: db.entries[index].status === 'neu' ? 'bestaetigt' : db.entries[index].status,
+                  confirmMailAt: at,
+                  confirmMail: 'sent',
+                  updatedAt: at,
+                }
+                result = { ok: true, entry: db.entries[index] }
+                return db
+              })
+            }
+          } catch (error) {
+            console.error('[admin] trial confirm mail failed', error)
+            confirmMail = 'error'
+          }
+        }
+        json(res, 200, { ok: true, entry: result.entry, confirmMail })
         return
       }
 

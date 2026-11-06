@@ -1913,6 +1913,8 @@ type TrialEntry = {
   status: TrialStatus
   createdAt: string
   updatedAt: string
+  confirmMailAt?: string | null
+  confirmMail?: string | null
   slot: {
     id: string
     dayId: string
@@ -2042,10 +2044,30 @@ function TrialPane({
         >
           Notiz speichern
         </button>
+        <button
+          className="btn btn-ghost"
+          type="button"
+          disabled={busy}
+          onClick={() => void send({ action: 'trialSendConfirm' }).then((data) => {
+            if (data?.entry) onSaved(data.entry)
+            if (data && data.confirmMail !== 'sent') {
+              setError(
+                data.confirmMail === 'skipped'
+                  ? 'Mail nicht konfiguriert (Brevo).'
+                  : 'Bestätigungsmail konnte nicht gesendet werden.',
+              )
+            }
+          })}
+        >
+          Bestätigung nochmal senden
+        </button>
         <button className="btn btn-ghost admin-danger" type="button" disabled={busy} onClick={() => void remove()}>
           Löschen
         </button>
       </div>
+      {entry.confirmMailAt ? (
+        <p className="admin-muted">Bestätigungsmail zuletzt: {deDateTime(entry.confirmMailAt)}</p>
+      ) : null}
       {error ? <p className="admin-error">{error}</p> : null}
     </section>
   )

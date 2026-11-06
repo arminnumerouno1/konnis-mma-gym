@@ -192,6 +192,53 @@ mkdirSync(dataDir, { recursive: true })
   )
   const after = JSON.parse(again.captured.body)
   assert(after.stats.gekommen === 1 && after.stats.fresh === 0, 'stats after attendance')
+
+  // Second trial: confirming sends visitor mail when Brevo is configured (skipped without key)
+  const handleOpen = createContactHandler({ dataDir, env: { TRIAL_OPEN: 'true' } })
+  const second = mockRes()
+  await handleOpen(
+    {
+      method: 'POST',
+      url: '/api/kontakt',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.6' },
+      body: {
+        name: 'Ben Beispiel',
+        email: 'ben@example.com',
+        phone: '+49 171 9998877',
+        slotId: slots[1].id,
+      },
+    },
+    second.res,
+  )
+  assert(second.captured.status === 200, 'second trial saved')
+  const listed2 = mockRes()
+  await handle(
+    {
+      method: 'GET',
+      url: '/api/admin?trials=1',
+      headers: { cookie },
+      socket: { remoteAddress: '127.0.0.5' },
+    },
+    listed2.res,
+  )
+  const rows = JSON.parse(listed2.captured.body).entries
+  const ben = rows.find((row) => row.email === 'ben@example.com')
+  assert(ben, 'ben found')
+  const confirm = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/admin',
+      headers: { cookie, 'content-type': 'application/json' },
+      socket: { remoteAddress: '127.0.0.5' },
+      body: { action: 'trialUpdate', id: ben.id, status: 'bestaetigt' },
+    },
+    confirm.res,
+  )
+  const confirmed = JSON.parse(confirm.captured.body)
+  assert(confirm.captured.status === 200 && confirmed.entry.status === 'bestaetigt', 'confirm status')
+  assert(confirmed.confirmMail === 'skipped' || confirmed.confirmMail === 'sent', 'confirm mail attempted')
 }
 
 console.log('contact tests ok')
