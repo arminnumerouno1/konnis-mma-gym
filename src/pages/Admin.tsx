@@ -1901,6 +1901,286 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
   )
 }
 
+type TrialStatus = 'neu' | 'bestaetigt' | 'gekommen' | 'nicht_gekommen' | 'abgesagt'
+
+type TrialEntry = {
+  id: string
+  name: string
+  email: string
+  phone: string
+  note: string
+  adminNote?: string
+  status: TrialStatus
+  createdAt: string
+  updatedAt: string
+  slot: {
+    id: string
+    dayId: string
+    dayLabel: string
+    time: string
+    title: string
+    level: string
+    label: string
+  }
+}
+
+type TrialStats = {
+  total: number
+  fresh: number
+  open: number
+  gekommen: number
+}
+
+const TRIAL_STATUS_LABEL: Record<TrialStatus, string> = {
+  neu: 'Neu',
+  bestaetigt: 'Bestätigt',
+  gekommen: 'Gekommen',
+  nicht_gekommen: 'Nicht gekommen',
+  abgesagt: 'Abgesagt',
+}
+
+const TRIAL_STATUS_ORDER: TrialStatus[] = ['neu', 'bestaetigt', 'gekommen', 'nicht_gekommen', 'abgesagt']
+
+function TrialPane({
+  entry,
+  onClose,
+  onSaved,
+  onDeleted,
+}: {
+  entry: TrialEntry
+  onClose: () => void
+  onSaved: (entry: TrialEntry) => void
+  onDeleted: (id: string) => void
+}) {
+  const [note, setNote] = useState(entry.adminNote || '')
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  async function send(payload: Record<string, unknown>) {
+    setBusy(true)
+    setError(null)
+    const { data } = await api('/api/admin', { method: 'POST', body: JSON.stringify({ id: entry.id, ...payload }) })
+    setBusy(false)
+    if (!data.ok) {
+      setError('Hat nicht geklappt. Bitte nochmal versuchen.')
+      return null
+    }
+    return data
+  }
+
+  async function update(payload: Record<string, unknown>) {
+    const data = await send({ action: 'trialUpdate', ...payload })
+    if (data?.entry) onSaved(data.entry)
+  }
+
+  async function remove() {
+    if (!window.confirm(`Probetraining von ${entry.name} wirklich löschen?`)) return
+    const data = await send({ action: 'trialDelete' })
+    if (data) onDeleted(entry.id)
+  }
+
+  return (
+    <section className="admin-pane">
+      <header className="admin-pane-top">
+        <button className="btn btn-ghost" type="button" onClick={onClose}>
+          Schließen
+        </button>
+      </header>
+
+      <div>
+        <h2>{entry.name}</h2>
+        <p className="admin-muted">Angefragt am {deDateTime(entry.createdAt)}</p>
+      </div>
+
+      <dl className="admin-dl">
+        <div>
+          <dt>Slot</dt>
+          <dd>
+            <strong>{entry.slot.label}</strong>
+          </dd>
+        </div>
+        <div>
+          <dt>Mail / Telefon</dt>
+          <dd>
+            <a href={`mailto:${entry.email}`}>{entry.email}</a>
+            <br />
+            <a href={`tel:${entry.phone.replace(/[^+0-9]/g, '')}`}>{entry.phone}</a>
+          </dd>
+        </div>
+        {entry.note ? (
+          <div>
+            <dt>Nachricht</dt>
+            <dd className="admin-pre">{entry.note}</dd>
+          </div>
+        ) : null}
+      </dl>
+
+      <div className="admin-flags" style={{ marginBottom: '1rem' }}>
+        {TRIAL_STATUS_ORDER.map((key) => (
+          <button
+            key={key}
+            type="button"
+            className={`admin-chip ${entry.status === key ? 'is-on' : ''}`}
+            disabled={busy || entry.status === key}
+            onClick={() => void update({ status: key })}
+          >
+            {TRIAL_STATUS_LABEL[key]}
+          </button>
+        ))}
+      </div>
+
+      <label className="admin-notes">
+        <span>Interne Notiz</span>
+        <textarea rows={3} value={note} onChange={(event) => setNote(event.target.value)} />
+      </label>
+      <div className="admin-pane-actions">
+        <button
+          className="btn btn-solid"
+          type="button"
+          disabled={busy || note === (entry.adminNote || '')}
+          onClick={() => void update({ adminNote: note })}
+        >
+          Notiz speichern
+        </button>
+        <button className="btn btn-ghost admin-danger" type="button" disabled={busy} onClick={() => void remove()}>
+          Löschen
+        </button>
+      </div>
+      {error ? <p className="admin-error">{error}</p> : null}
+    </section>
+  )
+}
+
+function Trials({ onFresh }: { onFresh: (count: number) => void }) {
+  const [entries, setEntries] = useState<TrialEntry[]>([])
+  const [stats, setStats] = useState<TrialStats | null>(null)
+  const [loaded, setLoaded] = useState(false)
+  const [q, setQ] = useState('')
+  const [status, setStatus] = useState('')
+  const [scope, setScope] = useState<'open' | 'done' | ''>('open')
+  const [openId, setOpenId] = useState<string | null>(null)
+
+  async function load() {
+    const { data } = await api('/api/admin?trials=1')
+    if (data.ok) {
+      setEntries(data.entries ?? [])
+      setStats(data.stats ?? null)
+      onFresh(data.stats?.fresh ?? 0)
+    }
+    setLoaded(true)
+  }
+
+  useEffect(() => {
+    void load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const needle = q.trim().toLowerCase()
+  const shown = entries.filter((row) => {
+    if (needle && ![row.name, row.email, row.phone, row.slot?.label].some((value) => String(value || '').toLowerCase().includes(needle))) {
+      return false
+    }
+    if (status && row.status !== status) return false
+    if (scope === 'open' && row.status !== 'neu' && row.status !== 'bestaetigt') return false
+    if (scope === 'done' && (row.status === 'neu' || row.status === 'bestaetigt')) return false
+    return true
+  })
+  const open = openId ? entries.find((row) => row.id === openId) ?? null : null
+
+  if (!loaded) return <p className="admin-muted">Laden…</p>
+
+  return (
+    <>
+      {stats ? (
+        <section className="admin-stats">
+          <article className={stats.fresh ? 'is-new' : ''}>
+            <strong>{stats.fresh}</strong>
+            <span>Neu</span>
+          </article>
+          <article>
+            <strong>{stats.open}</strong>
+            <span>Offen (neu + bestätigt)</span>
+          </article>
+          <article>
+            <strong>{stats.gekommen}</strong>
+            <span>Gekommen</span>
+          </article>
+          <article>
+            <strong>{stats.total}</strong>
+            <span>Gesamt</span>
+          </article>
+        </section>
+      ) : null}
+
+      <section className="admin-filters">
+        <input value={q} onChange={(event) => setQ(event.target.value)} placeholder="Name, Mail, Slot" />
+        <select value={scope} onChange={(event) => setScope(event.target.value as typeof scope)}>
+          <option value="open">Nur offen</option>
+          <option value="done">Nur erledigt</option>
+          <option value="">Alle</option>
+        </select>
+        <select value={status} onChange={(event) => setStatus(event.target.value)}>
+          <option value="">Jeder Status</option>
+          {TRIAL_STATUS_ORDER.map((key) => (
+            <option key={key} value={key}>
+              {TRIAL_STATUS_LABEL[key]}
+            </option>
+          ))}
+        </select>
+      </section>
+
+      <div className="admin-split">
+        <section className="admin-list">
+          {shown.length === 0 ? (
+            <p className="admin-muted">
+              {entries.length ? 'Keine Anfrage passt zum Filter.' : 'Noch keine Probetraining-Anfragen.'}
+            </p>
+          ) : null}
+          {shown.map((row) => (
+            <button
+              key={row.id}
+              type="button"
+              className={`admin-row ${openId === row.id ? 'is-open' : ''}`}
+              onClick={() => setOpenId(row.id)}
+            >
+              <span className="admin-face">{initials(row.name || row.email)}</span>
+              <span className="admin-row-copy">
+                <strong>{row.name}</strong>
+                <small>{row.slot?.label || row.email}</small>
+              </span>
+              <span className="admin-row-meta">
+                <span className={`admin-pill prereg-${row.status === 'neu' ? 'neu' : row.status === 'abgesagt' ? 'abgesagt' : 'kontaktiert'}`}>
+                  {TRIAL_STATUS_LABEL[row.status]}
+                </span>
+                <small>{deDate(row.createdAt)}</small>
+              </span>
+            </button>
+          ))}
+        </section>
+
+        {open ? (
+          <TrialPane
+            key={`${open.id}-${open.updatedAt}`}
+            entry={open}
+            onClose={() => setOpenId(null)}
+            onSaved={(next) => {
+              setEntries((list) => list.map((row) => (row.id === next.id ? next : row)))
+              void load()
+            }}
+            onDeleted={(id) => {
+              setOpenId(null)
+              setEntries((list) => list.filter((row) => row.id !== id))
+              void load()
+            }}
+          />
+        ) : (
+          <p className="admin-muted admin-empty">Anfrage links antippen, Status per Klick setzen.</p>
+        )}
+      </div>
+    </>
+  )
+}
+
 function PayPill({ status }: { status: PayStatus }) {
   return <span className={`admin-pill pay-${status}`}>{PAY_LABEL[status] ?? status}</span>
 }
@@ -1923,8 +2203,9 @@ export function Admin() {
   const [detail, setDetail] = useState<MemberDetail | null>(null)
   const [busy, setBusy] = useState(false)
   const [creating, setCreating] = useState(false)
-  const [tab, setTab] = useState<'members' | 'dues' | 'mail' | 'prereg' | 'report'>('members')
+  const [tab, setTab] = useState<'members' | 'dues' | 'mail' | 'prereg' | 'trials' | 'report'>('members')
   const [preregFresh, setPreregFresh] = useState(0)
+  const [trialFresh, setTrialFresh] = useState(0)
   const [joined, setJoined] = useState('')
   const [duesPeriod, setDuesPeriod] = useState('')
 
@@ -1995,6 +2276,9 @@ export function Admin() {
     if (!authed) return
     void api('/api/admin?prereg=1').then(({ data }) => {
       if (data.ok) setPreregFresh(data.stats?.fresh ?? 0)
+    })
+    void api('/api/admin?trials=1').then(({ data }) => {
+      if (data.ok) setTrialFresh(data.stats?.fresh ?? 0)
     })
   }, [authed])
 
@@ -2154,11 +2438,13 @@ export function Admin() {
               ? 'Auswertung'
               : tab === 'prereg'
                 ? 'Voranmeldungen'
-                : tab === 'dues'
-                  ? 'Beiträge'
-                  : tab === 'mail'
-                    ? 'Mail'
-                    : 'Mitglieder'}
+                : tab === 'trials'
+                  ? 'Probetraining'
+                  : tab === 'dues'
+                    ? 'Beiträge'
+                    : tab === 'mail'
+                      ? 'Mail'
+                      : 'Mitglieder'}
           </h1>
           <nav className="admin-tabs" aria-label="Bereiche">
             <button type="button" className={tab === 'members' ? 'is-on' : ''} onClick={() => setTab('members')}>
@@ -2174,6 +2460,10 @@ export function Admin() {
             <button type="button" className={tab === 'prereg' ? 'is-on' : ''} onClick={() => setTab('prereg')}>
               Voranmeldungen
               {preregFresh ? <span className="admin-tab-count">{preregFresh}</span> : null}
+            </button>
+            <button type="button" className={tab === 'trials' ? 'is-on' : ''} onClick={() => setTab('trials')}>
+              Probetraining
+              {trialFresh ? <span className="admin-tab-count">{trialFresh}</span> : null}
             </button>
             <button type="button" className={tab === 'report' ? 'is-on' : ''} onClick={() => setTab('report')}>
               Auswertung
@@ -2200,6 +2490,7 @@ export function Admin() {
       ) : null}
 
       {tab === 'prereg' ? <Preregs onFresh={setPreregFresh} /> : null}
+      {tab === 'trials' ? <Trials onFresh={setTrialFresh} /> : null}
 
       {tab === 'dues' ? (
         <DuesPanel

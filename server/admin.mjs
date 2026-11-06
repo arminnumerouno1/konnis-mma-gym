@@ -53,6 +53,7 @@ import { GYM_BANK } from './gym-bank.mjs'
 import { buildTransferPayload } from './transfer-due.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
+import { createTrialStore, patchTrial, sortTrials, trialStats } from './trial.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
 import { allocateInvoiceNumber, buildReceiptPdf } from './receipt-pdf.mjs'
 import { FIRST50_ID, INVITE_TTL_HOURS, PLUS_ID, contractStart, contractTerm, nextFirst50Slot, normalizePersonName, splitPersonName } from './invite.mjs'
@@ -731,6 +732,7 @@ export function createAdminHandler({
 }) {
   const store = createMemberStore({ dataDir, env })
   const preregs = createPreregStore({ dataDir, env })
+  const trials = createTrialStore({ dataDir, env })
   const secret = () => adminSecret(env)
 
   return async function handleAdmin(req, res) {
@@ -2074,6 +2076,33 @@ export function createAdminHandler({
         return
       }
 
+      if (action === 'trialUpdate' || action === 'trialDelete') {
+        const id = String(body.id ?? '')
+        let result = null
+        await trials.update((db) => {
+          const index = db.entries.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          if (action === 'trialDelete') {
+            db.entries.splice(index, 1)
+            result = { ok: true, entry: null }
+            return db
+          }
+          result = patchTrial(db.entries[index], body)
+          if (result.ok) db.entries[index] = result.entry
+          return db
+        })
+        if (!result) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (!result.ok) {
+          json(res, 400, { ok: false, error: result.error })
+          return
+        }
+        json(res, 200, { ok: true, entry: result.entry })
+        return
+      }
+
       json(res, 400, { ok: false, error: 'invalid' })
       return
     }
@@ -2101,6 +2130,14 @@ export function createAdminHandler({
         return
       }
       json(res, 200, { ok: true, entries: sorted, stats: preregStats(entries) })
+      return
+    }
+
+    const trialView = url.searchParams.get('trials')
+    if (trialView) {
+      const { entries } = await trials.load()
+      const sorted = sortTrials(entries)
+      json(res, 200, { ok: true, entries: sorted, stats: trialStats(entries) })
       return
     }
 

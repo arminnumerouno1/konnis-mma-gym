@@ -66,6 +66,8 @@ export const COPY = {
     },
   ],
   trialInterests: ['MMA', 'Ringen', 'BJJ', 'Boxen', 'Kick- & Thai-Boxen', 'Weiß noch nicht'],
+  trialSlot: 'Welches Probetraining?',
+  trialSlotPick: 'Bitte Kurs und Tag wählen',
   whoKicker: 'Für wen',
   whoTitle: 'Für alle.',
   whoLead:
@@ -132,7 +134,7 @@ export const COPY = {
   trialSubmit: 'Anfrage schicken',
   trialPending: 'Wird geschickt…',
   trialDone: 'Ist raus. Wir schreiben dir.',
-  trialNeed: 'Bitte Name, Mail und Telefon eintragen.',
+  trialNeed: 'Bitte Name, Mail, Telefon und Kurs eintragen.',
   faqTitle: 'Fragen',
   contactTitle: 'Kontakt',
   hoursTitle: 'Öffnungszeiten',
@@ -281,7 +283,7 @@ export const FAQ = [
   },
   {
     q: 'Gibt es ein Probetraining?',
-    a: 'Ja. Online anfragen geht gerade noch nicht – komm vorbei oder schreib uns an info@mma-in-leipzig.de, dann finden wir eine Einheit.',
+    a: 'Ja. Online wählst du einen konkreten Kurs aus dem Kursplan (Tag und Uhrzeit). Wir melden uns und bestätigen den Termin.',
   },
   {
     q: 'Was bringe ich mit?',

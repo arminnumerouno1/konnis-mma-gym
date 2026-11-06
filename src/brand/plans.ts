@@ -151,7 +151,7 @@ export const PUBLIC_PLANS: Plan[] = DAY_PASS_OPEN ? PLANS : PLANS.filter((plan) 
 export const SIGNUP_OPEN = true
 
 /** Probetraining-Anfrage. Auf true, wenn Einheiten wieder angefragt werden können. */
-export const TRIAL_OPEN = false
+export const TRIAL_OPEN = true
 
 /** Anzeige / Fallback. Live-Berechnung: server/signup-fee.mjs (0 € bis Eröffnungstag, danach 19,99 €). */
 export const SIGNUP_FEE = 19.99

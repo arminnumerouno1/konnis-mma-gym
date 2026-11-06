@@ -1,13 +1,16 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
+import {
+  addTrial,
+  createTrialStore,
+  readTrialRequest,
+  sendTrialGymMail,
+} from './trial.mjs'
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const MAX_BODY = 8192
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 8
 
 /** Muss mit src/brand/plans.ts TRIAL_OPEN zusammenpassen, außer TRIAL_OPEN=true/false in der Umgebung. */
-export const TRIAL_OPEN = false
+export const TRIAL_OPEN = true
 
 export function isTrialOpen(env = {}) {
   const raw = String(env.TRIAL_OPEN ?? '').trim().toLowerCase()
@@ -78,22 +81,6 @@ async function readBody(req) {
   return readJsonBody(req)
 }
 
-async function loadRows(file) {
-  try {
-    const raw = await readFile(file, 'utf8')
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed.requests) ? parsed.requests : []
-  } catch (error) {
-    if (error && typeof error === 'object' && 'code' in error && error.code === 'ENOENT') return []
-    throw error
-  }
-}
-
-async function saveRows(file, requests) {
-  await mkdir(dirname(file), { recursive: true })
-  await writeFile(file, `${JSON.stringify({ requests }, null, 2)}\n`, 'utf8')
-}
-
 function json(res, status, body) {
   res.statusCode = status
   res.setHeader('content-type', 'application/json; charset=utf-8')
@@ -102,7 +89,7 @@ function json(res, status, body) {
 }
 
 export function createContactHandler({ dataDir, env }) {
-  const file = join(dataDir, 'contacts.json')
+  const trials = createTrialStore({ dataDir, env })
 
   return async function handleContact(req, res) {
     try {
@@ -141,47 +128,31 @@ export function createContactHandler({ dataDir, env }) {
         return
       }
 
-      const name = String(body.name ?? '').trim().slice(0, 80)
-      const email = String(body.email ?? '')
-        .trim()
-        .toLowerCase()
-      const phone = String(body.phone ?? '').trim().slice(0, 40)
-      const interest = String(body.interest ?? '').trim().slice(0, 40)
-      const note = String(body.note ?? '').trim().slice(0, 500)
-      if (name.length < 2 || !EMAIL_RE.test(email) || phone.length < 6) {
-        json(res, 400, { ok: false, error: 'invalid' })
+      const parsed = readTrialRequest(body)
+      if (!parsed.ok) {
+        json(res, 400, { ok: false, error: parsed.error })
         return
       }
 
-      const row = {
-        type: 'trial',
-        name,
-        email,
-        phone,
-        interest,
-        note,
-        createdAt: new Date().toISOString(),
-      }
-
-      const rows = await loadRows(file)
-      rows.push(row)
-      try {
-        await saveRows(file, rows)
-      } catch (error) {
-        console.error('[kontakt] save skipped', error)
-      }
+      const { entry } = await addTrial(trials, parsed.entry)
 
       const hook = env.CONTACT_WEBHOOK_URL?.trim() || env.WAITLIST_WEBHOOK_URL?.trim()
       if (hook) {
         const response = await fetch(hook, {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(row),
+          body: JSON.stringify({ type: 'trial', ...entry }),
         })
         if (!response.ok) {
           json(res, 502, { ok: false, error: 'upstream' })
           return
         }
+      }
+
+      try {
+        await sendTrialGymMail(env, entry)
+      } catch (error) {
+        console.error('[kontakt] trial mail failed', error)
       }
 
       json(res, 200, { ok: true })

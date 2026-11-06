@@ -8,12 +8,14 @@ import {
   kursLevelLabel,
   kursplanByDay,
   openingHoursFromKursplan,
+  trialSlots,
 } from '../brand/kursplan'
+import { PUBLIC_PLANS, TRIAL_OPEN, type Plan } from '../brand/plans'
+import { submitTrial } from '../contact/api'
 
 const KURSPLAN_BY_DAY = kursplanByDay()
 const OPENING_HOURS = openingHoursFromKursplan()
-import { PUBLIC_PLANS, TRIAL_OPEN, type Plan } from '../brand/plans'
-import { submitTrial } from '../contact/api'
+const TRIAL_SLOTS = trialSlots()
 import { hasExtrasConsent, onConsentChange } from '../lib/consent'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
@@ -54,7 +56,7 @@ function TrialForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [interest, setInterest] = useState('MMA')
+  const [slotId, setSlotId] = useState('')
   const [note, setNote] = useState('')
   const [pending, setPending] = useState(false)
   const [done, setDone] = useState(false)
@@ -63,16 +65,16 @@ function TrialForm() {
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
-    if (name.trim().length < 2 || !email.includes('@') || phone.trim().length < 6) {
+    if (name.trim().length < 2 || !email.includes('@') || phone.trim().length < 6 || !slotId) {
       setError(COPY.trialNeed)
       return
     }
     setPending(true)
     const honey = String(new FormData(event.currentTarget).get('company') ?? '')
-    const result = await submitTrial({ name, email, phone, interest, note, company: honey })
+    const result = await submitTrial({ name, email, phone, slotId, note, company: honey })
     setPending(false)
     if (!result.ok) {
-      setError(result.error === 'rate' ? COPY.rate : COPY.error)
+      setError(result.error === 'rate' ? COPY.rate : result.error === 'slot' ? COPY.trialSlotPick : COPY.error)
       return
     }
     setDone(true)
@@ -100,11 +102,14 @@ function TrialForm() {
         {COPY.trialPhone}
         <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" required />
       </label>
-      <label>
-        {COPY.trialInterest}
-        <select value={interest} onChange={(e) => setInterest(e.target.value)}>
-          {COPY.trialInterests.map((item) => (
-            <option key={item}>{item}</option>
+      <label className="wide">
+        {COPY.trialSlot}
+        <select value={slotId} onChange={(e) => setSlotId(e.target.value)} required>
+          <option value="">{COPY.trialSlotPick}</option>
+          {TRIAL_SLOTS.map((slot) => (
+            <option key={slot.id} value={slot.id}>
+              {slot.label}
+            </option>
           ))}
         </select>
       </label>

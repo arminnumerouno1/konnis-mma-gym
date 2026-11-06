@@ -2,10 +2,10 @@ export async function submitTrial(input: {
   name: string
   email: string
   phone: string
-  interest: string
+  slotId: string
   note: string
   company?: string
-}): Promise<{ ok: true } | { ok: false; error: 'invalid' | 'rate' | 'closed' | 'upstream' | 'network' }> {
+}): Promise<{ ok: true } | { ok: false; error: 'invalid' | 'slot' | 'rate' | 'closed' | 'upstream' | 'network' }> {
   try {
     const response = await fetch('/api/kontakt', {
       method: 'POST',
@@ -17,6 +17,7 @@ export async function submitTrial(input: {
     if (data.error === 'closed' || response.status === 403) return { ok: false, error: 'closed' }
     if (data.ok) return { ok: true }
     if (data.error === 'upstream') return { ok: false, error: 'upstream' }
+    if (data.error === 'slot') return { ok: false, error: 'slot' }
     return { ok: false, error: 'invalid' }
   } catch {
     return { ok: false, error: 'network' }
