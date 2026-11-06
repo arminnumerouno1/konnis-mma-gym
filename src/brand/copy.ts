@@ -123,7 +123,7 @@ export const COPY = {
     'Melde dich unverbindlich vor: Du erfährst als Erstes, wann du zum Probetraining kommen kannst, und hilfst uns, den Kursplan nach euren Zeiten zu bauen.',
   preregButton: 'Jetzt unverbindlich voranmelden',
   preregMeta: 'Dauert etwa zwei Minuten · kostenlos',
-  trialLead: 'Eine Einheit. Kein Vertrag. Wenn du bleibst, bleibst du.',
+  trialLead: 'Such dir einen Kurs und Tag aus. Die erste Einheit ist unverbindlich – ohne Vertrag.',
   trialClosedLead:
     'Probetraining online anfragen geht gerade noch nicht. Komm vorbei oder schreib uns – wir finden eine Einheit für dich.',
   trialName: 'Name',
