@@ -133,7 +133,7 @@ export const COPY = {
   trialNote: 'Nachricht (optional)',
   trialSubmit: 'Anfrage schicken',
   trialPending: 'Wird geschickt…',
-  trialDone: 'Ist raus. Wir schreiben dir.',
+  trialDone: 'Passt. Wir freuen uns auf dich und melden uns kurz mit der Bestätigung.',
   trialNeed: 'Bitte Name, Mail, Telefon und Kurs eintragen.',
   faqTitle: 'Fragen',
   contactTitle: 'Kontakt',
