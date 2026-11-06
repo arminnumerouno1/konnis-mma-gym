@@ -2131,7 +2131,7 @@ function Attendance({
 
         <aside className="admin-attendance-side">
           <h2>Manuell setzen</h2>
-          <p className="admin-muted">Für U18 oder ohne Handy — ohne Code.</p>
+          <p className="admin-muted">Für alle, die ihr Handy vergessen haben — oder zu blöd für den Code sind.</p>
           <label>
             <span>Slot</span>
             <select value={manualSlotId} onChange={(event) => setManualSlotId(event.target.value)}>
