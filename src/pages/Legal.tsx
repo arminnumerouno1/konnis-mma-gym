@@ -7,6 +7,7 @@ import {
   COOKIE_TABLE,
   HOUSE_RULES,
   IMPRESSUM,
+  IMPRESSUM_KONRAD,
   ODR_URL,
   PRIVACY,
   WITHDRAWAL,
@@ -16,7 +17,18 @@ import { Link } from '../lib/Link'
 import { href, type RouteName } from '../lib/router'
 
 type LegalProps = {
-  name: Extract<RouteName, 'impressum' | 'datenschutz' | 'agb' | 'widerruf' | 'hausordnung' | 'vertrag6' | 'vertrag12' | 'vertrag24'>
+  name: Extract<
+    RouteName,
+    | 'impressum'
+    | 'impressumKonrad'
+    | 'datenschutz'
+    | 'agb'
+    | 'widerruf'
+    | 'hausordnung'
+    | 'vertrag6'
+    | 'vertrag12'
+    | 'vertrag24'
+  >
 }
 
 function Blocks({ blocks }: { blocks: { title: string; paragraphs: string[] }[] }) {
@@ -69,10 +81,11 @@ export function Legal({ name }: LegalProps) {
     <main className="page legal-page">
       <p className="kicker">KONNI MMA GYM · Leipzig</p>
       {name === 'impressum' ? <Impressum /> : null}
+      {name === 'impressumKonrad' ? <ImpressumKonrad /> : null}
       {name === 'datenschutz' ? (
         <>
           <h1>{COPY.privacy}</h1>
-          <p>Stand: {GYM.agbStand}</p>
+          <p>Stand: {GYM.privacyStand}</p>
           <CookieStatus />
           <Blocks blocks={PRIVACY} />
         </>
@@ -103,6 +116,44 @@ export function Legal({ name }: LegalProps) {
   )
 }
 
+function imprintRowValue(label: string, value: string) {
+  if (label === 'E-Mail' || label === 'E-Mail (Verträge)') {
+    return <a href={`mailto:${value}`}>{value}</a>
+  }
+  if (label === 'Telefon') {
+    return <a href={GYM.phoneHref}>{value}</a>
+  }
+  if (label === 'WhatsApp') {
+    return (
+      <a href={GYM.whatsapp} target="_blank" rel="noreferrer">
+        {value}
+      </a>
+    )
+  }
+  if (label === 'Umsetzung') {
+    return (
+      <a href={GYM.siteBy.url} target="_blank" rel="noreferrer">
+        {value}
+      </a>
+    )
+  }
+  if (label === 'Instagram') {
+    return (
+      <a href={GYM.konradInstagram} target="_blank" rel="noreferrer">
+        {value}
+      </a>
+    )
+  }
+  if (label === 'TikTok') {
+    return (
+      <a href="https://www.tiktok.com/@konrad.dyrschka" target="_blank" rel="noreferrer">
+        {value}
+      </a>
+    )
+  }
+  return value
+}
+
 function Impressum() {
   return (
     <>
@@ -112,29 +163,20 @@ function Impressum() {
         {IMPRESSUM.rows.map((row) => (
           <div key={row.label}>
             <dt>{row.label}</dt>
-            <dd>
-              {row.label === 'E-Mail' || row.label === 'E-Mail (Verträge)' ? (
-                <a href={`mailto:${row.value}`}>{row.value}</a>
-              ) : row.label === 'Telefon' ? (
-                <a href={GYM.phoneHref}>{row.value}</a>
-              ) : row.label === 'WhatsApp' ? (
-                <a href={GYM.whatsapp} target="_blank" rel="noreferrer">
-                  {row.value}
-                </a>
-              ) : row.label === 'Umsetzung' ? (
-                <a href={GYM.siteBy.url} target="_blank" rel="noreferrer">
-                  {row.value}
-                </a>
-              ) : (
-                row.value
-              )}
-            </dd>
+            <dd>{imprintRowValue(row.label, row.value)}</dd>
           </div>
         ))}
       </dl>
-      {IMPRESSUM.notes.map((note) => (
-        <p key={note}>{note}</p>
-      ))}
+      {IMPRESSUM.notes.map((note) =>
+        note.includes('/impressum/konrad') ? (
+          <p key={note}>
+            Für die persönlichen Social-Media-Kanäle von Konrad Dyrschka (Instagram, TikTok u. a.) gilt das Impressum unter{' '}
+            <Link href={href('impressumKonrad')}>/impressum/konrad</Link>.
+          </p>
+        ) : (
+          <p key={note}>{note}</p>
+        ),
+      )}
       {IMPRESSUM.blocks.map((block) => (
         <section key={block.title}>
           <h2>{block.title}</h2>
@@ -150,6 +192,40 @@ function Impressum() {
               <p key={p}>{p}</p>
             ),
           )}
+        </section>
+      ))}
+    </>
+  )
+}
+
+function ImpressumKonrad() {
+  return (
+    <>
+      <p className="kicker">{IMPRESSUM_KONRAD.eyebrow}</p>
+      <h1>{IMPRESSUM_KONRAD.title}</h1>
+      <dl className="imprint">
+        {IMPRESSUM_KONRAD.rows.map((row) => (
+          <div key={row.label}>
+            <dt>{row.label}</dt>
+            <dd>{imprintRowValue(row.label, row.value)}</dd>
+          </div>
+        ))}
+      </dl>
+      {IMPRESSUM_KONRAD.notes.map((note) =>
+        note.includes('/impressum') && !note.includes('/impressum/konrad') ? (
+          <p key={note}>
+            Das Impressum der KONNI MMA GYM GbR findest du unter <Link href={href('impressum')}>/impressum</Link>.
+          </p>
+        ) : (
+          <p key={note}>{note}</p>
+        ),
+      )}
+      {IMPRESSUM_KONRAD.blocks.map((block) => (
+        <section key={block.title}>
+          <h2>{block.title}</h2>
+          {block.paragraphs.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
         </section>
       ))}
     </>
@@ -217,7 +293,8 @@ function Contract({ months }: { months: 6 | 12 | 24 }) {
       <p>
         Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe,
         oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC
-        WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. Aufnahmegebühr: 19,99 €.
+        WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. Aufnahmegebühr: 19,99 €. Alle Preise sind Endpreise inkl.
+        gesetzlicher Umsatzsteuer.
       </p>
       <p>
         SEPA-Lastschrift kommt später und ist derzeit nicht eingerichtet. Ein Lastschriftmandat gibt es nur, wenn das
@@ -229,16 +306,17 @@ function Contract({ months }: { months: 6 | 12 | 24 }) {
         Anfängliche Vertragsdauer: {months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das
         vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum
         Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit
-        einem Monat kündbar. Kündigung in Textform an {GYM.legalEmail}. Außerordentliche Kündigung bleibt.
-        Zusätzlich vorzeitig mit einem Monat zum Monatsende, wenn der Hauptwohnsitz in der Luftlinie mehr als 50
-        Kilometer vom Studio entfernt liegt. Nachweis durch amtliche Meldebescheinigung. Ein näherer Umzug begründet
-        dieses Recht nicht.
+        einem Monat kündbar. Online-Kündigung über{' '}
+        <Link href={href('kuendigen')}>/kuendigen</Link> („Verträge hier kündigen“) oder in Textform an{' '}
+        {GYM.legalEmail}. Außerordentliche Kündigung bleibt. Zusätzlich vorzeitig mit einem Monat zum Monatsende,
+        wenn der Hauptwohnsitz in der Luftlinie mehr als 50 Kilometer vom Studio entfernt liegt. Nachweis durch
+        amtliche Meldebescheinigung. Ein näherer Umzug begründet dieses Recht nicht.
       </p>
       <h2>4.–6. Training, Gesundheit, Minderjährige</h2>
       <p>
-        Hausordnung gilt. Eigenverantwortliche Gesundheitsprüfung. Haftung nach Gesetz. Minderjährige brauchen die
-        Zustimmung aller erforderlichen gesetzlichen Vertreter. AGB Stand {GYM.agbDate} und Hausordnung sind Teil
-        des Vertrags.
+        Hausordnung gilt. Eigenverantwortliche Gesundheitsprüfung. Haftung nach Gesetz. Minderjährige: Online nur
+        Antrag; wirksamer Vertrag erst mit unterschriebener Elternvollmacht. Bei gemeinsamer Sorge i. d. R.
+        Zustimmung beider Sorgeberechtigter. AGB Stand {GYM.agbDate} und Hausordnung sind Teil des Vertrags.
       </p>
       <p>
         Sobald die Online-Anmeldung offen ist, schließt du denselben Inhalt über{' '}

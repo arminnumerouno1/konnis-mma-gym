@@ -10,8 +10,8 @@ export const KURSPLAN_DAYS = [
 ]
 
 export const KURSPLAN_TIMES = [
-  '09:00 – 10:30',
   '10:00 – 11:30',
+  '11:30 – 13:00',
   '17:00 – 18:00',
   '18:00 – 19:30',
   '19:30 – 21:00',
@@ -30,23 +30,37 @@ const advanced = (title, accent) => ({
   accent,
 })
 
-/** Rows × days, Monday first. */
+/** Rows × days, Monday first. Keep in sync with the published poster. */
 export const KURSPLAN = [
-  // 09:00 – 10:30
-  [null, null, null, all('Fitness Boxen', 'orange'), null, null],
   // 10:00 – 11:30
-  [all('BJJ / MMA', 'blue'), null, null, null, null, all('Open Mat / Sparring', 'teal', '10:00 – 14:00')],
+  [
+    all('BJJ NoGi / MMA', 'blue'),
+    null,
+    all('Boxen Basic', 'red'),
+    null,
+    null,
+    all('Sparring', 'orange'),
+  ],
+  // 11:30 – 13:00
+  [null, null, null, null, null, all('Open Mat', 'teal')],
   // 17:00 – 18:00
-  [all('Fitness Boxen', 'orange'), null, null, advanced('MMA', 'red'), null, null],
+  [null, all('Boxen Basic', 'red'), all('Ringen', 'green'), null, all('MMA', 'gold'), null],
   // 18:00 – 19:30
-  [all('Boxen', 'red'), all('BJJ', 'blue'), all('Boxen', 'red'), all('BJJ', 'blue'), all('Kickboxen', 'purple'), null],
+  [
+    advanced('Boxen', 'red'),
+    all('BJJ NoGi', 'blue'),
+    advanced('Boxen', 'red'),
+    all('BJJ NoGi', 'blue'),
+    all('K1', 'purple'),
+    null,
+  ],
   // 19:30 – 21:00
   [
     all('MMA Basic', 'gold'),
-    advanced('MMA', 'red'),
-    all('Sparring', 'orange'),
-    all('Ringen', 'green'),
-    all('BJJ / MMA Grappling', 'purple'),
+    all('MMA', 'gold'),
+    null,
+    all('K1', 'purple'),
+    all('Boxen Basic', 'red'),
     null,
   ],
 ]

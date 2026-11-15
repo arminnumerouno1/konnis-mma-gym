@@ -52,6 +52,7 @@ export type MembershipInput = {
   photoData: string
   visitDay?: string
   guardianName?: string
+  guardianRelation?: string
   guardianEmail?: string
   guardianPhone?: string
   guardianConsent?: boolean
@@ -66,7 +67,7 @@ export type MembershipOk = {
   confirmation: 'saved' | 'listed'
   id?: string
   remainingFirst50: number
-  payment?: 'checkout' | 'later' | 'unlinked' | 'transfer'
+  payment?: 'checkout' | 'later' | 'unlinked' | 'transfer' | 'guardian_pending'
   checkoutUrl?: string
   billingStart?: string
   transfer?: {
@@ -95,7 +96,7 @@ export type InviteLookup =
         email: string
         name: string
         slot: number
-        plan: 'first50' | 'plus'
+        plan: 'first50' | 'plus' | 'slowstart' | 'standard'
         price: number
         start?: string
         term?: number

@@ -14,6 +14,8 @@ export type Plan = {
   accent: 'red' | 'white' | 'gold' | 'pink'
   limited?: boolean
   limit?: number
+  /** Highlight as the most chosen membership on pricing/join. */
+  featured?: boolean
   /** Leistungsumfang auf Karten und im Anmeldeformular. */
   includes: string
   bullets: string[]
@@ -54,6 +56,7 @@ export const PLANS: Plan[] = [
     term: '24 Monate Laufzeit',
     termMonths: 24,
     accent: 'white',
+    featured: true,
     includes: INCLUDES_ALL,
     bullets: [
       'Volle Mitgliedschaft',
@@ -160,7 +163,30 @@ export const SIGNUP_FEE_FREE_UNTIL = '2026-11-02'
 /** Erste volle Monatsabbuchung. Muss zu server/stripe-checkout.mjs BILLING_START passen. */
 export const FIRST_CHARGE = '2026-11-01'
 export const PAYMENT_NOTE =
-  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 19,99 €.'
+  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 19,99 €. Alle Preise sind Endpreise inkl. gesetzlicher Umsatzsteuer.'
+
+/** Kurzhinweis für Preisstellen (Karten, Join, Fußzeilen). */
+export const PRICE_TAX_NOTE = 'Endpreise inkl. gesetzlicher Umsatzsteuer (MwSt.).'
+
+export function formatEuro(amount: number) {
+  return amount.toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })
+}
+
+/** Gesamtbetrag Erstlaufzeit inkl. Anmeldegebühr, oder null bei Day Pass. */
+export function termTotal(plan: Plan, signupFee = SIGNUP_FEE) {
+  if (!plan.termMonths) return null
+  const fee = plan.id === 'daypass' ? 0 : signupFee
+  return Number((plan.priceValue * plan.termMonths + fee).toFixed(2))
+}
+
+export function termTotalLabel(plan: Plan, signupFee = SIGNUP_FEE) {
+  const total = termTotal(plan, signupFee)
+  if (total == null || !plan.termMonths) return null
+  const fee = plan.id === 'daypass' ? 0 : signupFee
+  return `${formatEuro(total)} für ${plan.termMonths} Monate (${formatEuro(plan.priceValue)} × ${plan.termMonths}${
+    fee ? ` + ${formatEuro(fee)} Anmeldegebühr` : ''
+  })`
+}
 
 export function planById(id: string | null | undefined): Plan | undefined {
   return ALL_PLANS.find((plan) => plan.id === id)

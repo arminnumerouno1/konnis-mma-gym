@@ -57,6 +57,9 @@ export function Footer() {
               <Link href={href('widerruf')}>{COPY.withdraw}</Link>
             </li>
             <li>
+              <Link href={href('kuendigen')}>{COPY.cancelContract}</Link>
+            </li>
+            <li>
               <Link href={href('hausordnung')}>{COPY.house}</Link>
             </li>
             <li>
@@ -71,6 +74,14 @@ export function Footer() {
           </ul>
         </div>
         <div>
+          <div>
+            <p className="footer-kicker">{COPY.cancelContract}</p>
+            <p>
+              <Link className="btn btn-ghost" href={href('kuendigen')}>
+                Verträge hier kündigen
+              </Link>
+            </p>
+          </div>
           <p className="footer-kicker">{COPY.legalDownload}</p>
           <ul>
             <li>

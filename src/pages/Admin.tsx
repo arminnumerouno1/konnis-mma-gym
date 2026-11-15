@@ -56,6 +56,13 @@ type MemberList = {
   cancel: CancelInfo
   createdAt: string
   updatedAt: string
+  checkinCount?: number
+  checkinThisWeek?: number
+  checkinLastDay?: string | null
+  checkinWeekLimit?: number | null
+  onlineCancelAt?: string | null
+  onlineCancelId?: string | null
+  onlineCancelKind?: string | null
 }
 
 type MemberDetail = MemberList & {
@@ -104,7 +111,7 @@ type MemberDetail = MemberList & {
     nextFullDue?: string
     purpose?: string
   }
-  docs?: { contract?: DocMeta; sepa?: DocMeta; payment?: DocMeta }
+  docs?: { contract?: DocMeta; sepa?: DocMeta; payment?: DocMeta; guardian?: DocMeta }
   history?: { at: string; field: string; from: string; to: string }[]
   reminders?: ReminderEntry[]
   inviteSlot?: number | null
@@ -113,6 +120,12 @@ type MemberDetail = MemberList & {
   transferSwitchMailAt?: string | null
   payLinkAt?: string | null
   checkinCode?: string | null
+  checkinLastAt?: string | null
+  onlineCancelAt?: string | null
+  onlineCancelId?: string | null
+  onlineCancelKind?: string | null
+  onlineCancelNote?: string | null
+  onlineCancelSuggestedEnd?: string | null
 }
 
 const FIELD_LABEL: Record<string, string> = {
@@ -262,7 +275,7 @@ const ERROR_TEXT: Record<string, string> = {
   iban: 'IBAN stimmt nicht. Bitte nochmal abtippen.',
   bic: 'BIC stimmt nicht. Bei deutscher IBAN einfach leer lassen.',
   holder: 'Kontoinhaber fehlt.',
-  guardian: 'Unter 18: Name und Telefon der Erziehungsberechtigten fehlen.',
+  guardian: 'Unter 18: Eltern-Einverständnis fehlt oder ist unvollständig.',
   photo: 'Portraitfoto fehlt oder ist ungültig. Gesicht muss klar zu erkennen sein.',
   birth: 'Geburtstag prüfen.',
   name: 'Vor- und Nachname prüfen.',
@@ -280,8 +293,9 @@ const ERROR_TEXT: Record<string, string> = {
   place: 'Ort der Unterschrift prüfen.',
   mail: 'Die Mail ist nicht rausgegangen. Bitte noch einmal versuchen.',
   mail_off: 'Der Mailversand ist nicht eingerichtet.',
-  invite_open: 'An diese E-Mail ist schon ein First-50-Link raus, der noch gilt.',
-  full: 'Gerade ist kein weiterer First-50-Platz frei.',
+  invite_open: 'An diese E-Mail ist schon ein Einladungslink raus, der noch gilt.',
+  full: 'Gerade ist kein weiterer Einladungsplatz frei.',
+  start: 'Vertragsstart muss der 1. eines späteren Monats sein (z. B. 2026-12-01).',
   no_open: 'Keine offenen Beiträge bei diesem Mitglied.',
   cooldown: 'In den letzten fünf Tagen ging schon eine Mahnung raus. Mit Bestätigung trotzdem senden.',
   period: 'Bitte einen Monat wählen (JJJJ-MM).',
@@ -488,7 +502,7 @@ function GuardianFields({ value, onChange }: { value: GuardianForm; onChange: (n
           checked={value.signed}
           onChange={(event) => onChange({ ...value, signed: event.target.checked })}
         />
-        Vertrag von Erziehungsberechtigten unterschrieben
+        Unterschriebene Elternvollmacht liegt vor
       </label>
     </div>
   )
@@ -619,7 +633,7 @@ function DocSlot({
   onChanged,
 }: {
   memberId: string
-  kind: 'contract' | 'sepa' | 'payment'
+  kind: 'contract' | 'sepa' | 'payment' | 'guardian'
   label: string
   hint: string
   doc?: DocMeta
@@ -2186,6 +2200,9 @@ type TrialEntry = {
   name: string
   email: string
   phone: string
+  birthDate?: string
+  age?: number
+  minor?: boolean
   note: string
   adminNote?: string
   status: TrialStatus
@@ -2193,6 +2210,15 @@ type TrialEntry = {
   updatedAt: string
   confirmMailAt?: string | null
   confirmMail?: string | null
+  guardianConsentMailAt?: string | null
+  guardian?: {
+    name: string
+    relation?: string
+    email?: string
+    phone?: string
+    signedAt?: string | null
+    signedVia?: string | null
+  } | null
   slot: {
     id: string
     dayId: string
@@ -2235,6 +2261,7 @@ function TrialPane({
   const [note, setNote] = useState(entry.adminNote || '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const guardianMissing = Boolean(entry.minor) && !entry.guardian?.signedAt
 
   async function send(payload: Record<string, unknown>) {
     setBusy(true)
@@ -2242,7 +2269,7 @@ function TrialPane({
     const { data } = await api('/api/admin', { method: 'POST', body: JSON.stringify({ id: entry.id, ...payload }) })
     setBusy(false)
     if (!data.ok) {
-      setError('Hat nicht geklappt. Bitte nochmal versuchen.')
+      setError(errorText(String(data.error ?? '')) || 'Hat nicht geklappt. Bitte nochmal versuchen.')
       return null
     }
     return data
@@ -2287,6 +2314,15 @@ function TrialPane({
             <a href={`tel:${entry.phone.replace(/[^+0-9]/g, '')}`}>{entry.phone}</a>
           </dd>
         </div>
+        {entry.birthDate ? (
+          <div>
+            <dt>Geburtsdatum</dt>
+            <dd>
+              {deDate(entry.birthDate)}
+              {entry.minor ? ' · unter 18' : ''}
+            </dd>
+          </div>
+        ) : null}
         {entry.note ? (
           <div>
             <dt>Nachricht</dt>
@@ -2295,13 +2331,63 @@ function TrialPane({
         ) : null}
       </dl>
 
+      {entry.minor ? (
+        <section className={`admin-block ${guardianMissing ? 'is-alert' : ''}`}>
+          <h3>Eltern-Einverständnis</h3>
+          <p className="admin-muted">
+            {entry.guardian?.signedAt
+              ? `Liegt vor (${entry.guardian.signedVia === 'desk' ? 'vor Ort' : 'Papier/Scan'}, ${deDate(entry.guardian.signedAt)}).`
+              : 'Fehlt noch. PDF per Mail oder Unterschrift vor Ort — sonst kein Bestätigen und kein Check-in.'}
+          </p>
+          {entry.guardian ? (
+            <p>
+              {entry.guardian.name}
+              {entry.guardian.relation ? ` · ${entry.guardian.relation}` : ''}
+              <br />
+              {entry.guardian.email ? <a href={`mailto:${entry.guardian.email}`}>{entry.guardian.email}</a> : null}
+              {entry.guardian.phone ? (
+                <>
+                  <br />
+                  <a href={`tel:${String(entry.guardian.phone).replace(/[^+0-9]/g, '')}`}>{entry.guardian.phone}</a>
+                </>
+              ) : null}
+            </p>
+          ) : null}
+          <div className="admin-inline">
+            <button
+              className="btn btn-solid"
+              type="button"
+              disabled={busy || !guardianMissing}
+              onClick={() => void update({ guardianSigned: true, signedVia: 'desk' })}
+            >
+              Vor Ort unterschrieben
+            </button>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              disabled={busy || !entry.guardian?.email}
+              onClick={() =>
+                void send({ action: 'trialSendGuardianConsent' }).then((data) => {
+                  if (data?.entry) onSaved(data.entry)
+                })
+              }
+            >
+              Einverständnis erneut senden
+            </button>
+          </div>
+          {entry.guardianConsentMailAt ? (
+            <p className="admin-muted">Einverständnis-Mail zuletzt: {deDateTime(entry.guardianConsentMailAt)}</p>
+          ) : null}
+        </section>
+      ) : null}
+
       <div className="admin-flags" style={{ marginBottom: '1rem' }}>
         {TRIAL_STATUS_ORDER.map((key) => (
           <button
             key={key}
             type="button"
             className={`admin-chip ${entry.status === key ? 'is-on' : ''}`}
-            disabled={busy || entry.status === key}
+            disabled={busy || entry.status === key || (guardianMissing && (key === 'bestaetigt' || key === 'gekommen'))}
             onClick={() => void update({ status: key })}
           >
             {TRIAL_STATUS_LABEL[key]}
@@ -2325,17 +2411,21 @@ function TrialPane({
         <button
           className="btn btn-ghost"
           type="button"
-          disabled={busy}
-          onClick={() => void send({ action: 'trialSendConfirm' }).then((data) => {
-            if (data?.entry) onSaved(data.entry)
-            if (data && data.confirmMail !== 'sent') {
-              setError(
-                data.confirmMail === 'skipped'
-                  ? 'Mail nicht konfiguriert (Brevo).'
-                  : 'Bestätigungsmail konnte nicht gesendet werden.',
-              )
-            }
-          })}
+          disabled={busy || guardianMissing}
+          onClick={() =>
+            void send({ action: 'trialSendConfirm' }).then((data) => {
+              if (data?.entry) onSaved(data.entry)
+              if (data && data.confirmMail !== 'sent') {
+                setError(
+                  data.confirmMail === 'skipped'
+                    ? 'Mail nicht konfiguriert (Brevo).'
+                    : data.confirmMail === 'guardian'
+                      ? 'Eltern-Einverständnis fehlt.'
+                      : 'Bestätigungsmail konnte nicht gesendet werden.',
+                )
+              }
+            })
+          }
         >
           Bestätigung nochmal senden
         </button>
@@ -2452,6 +2542,9 @@ function Trials({ onFresh }: { onFresh: (count: number) => void }) {
                 <span className={`admin-pill prereg-${row.status === 'neu' ? 'neu' : row.status === 'abgesagt' ? 'abgesagt' : 'kontaktiert'}`}>
                   {TRIAL_STATUS_LABEL[row.status]}
                 </span>
+                {row.minor && !row.guardian?.signedAt ? (
+                  <span className="admin-flag">Eltern-Einverständnis fehlt</span>
+                ) : null}
                 <small>{deDate(row.createdAt)}</small>
               </span>
             </button>
@@ -2483,6 +2576,45 @@ function Trials({ onFresh }: { onFresh: (count: number) => void }) {
 
 function PayPill({ status }: { status: PayStatus }) {
   return <span className={`admin-pill pay-${status}`}>{PAY_LABEL[status] ?? status}</span>
+}
+
+const ADMIN_USERNAME = 'konni-verwaltung'
+
+type PasswordCred = Credential & { password?: string }
+
+async function rememberAdminPassword(value: string) {
+  const password = value.trim()
+  if (!password || !('credentials' in navigator)) return
+  try {
+    const PasswordCredentialCtor = (
+      window as Window & {
+        PasswordCredential?: new (data: { id: string; password: string; name?: string }) => Credential
+      }
+    ).PasswordCredential
+    if (!PasswordCredentialCtor || !navigator.credentials.store) return
+    const cred = new PasswordCredentialCtor({
+      id: ADMIN_USERNAME,
+      password,
+      name: 'KONNI Verwaltung',
+    })
+    await navigator.credentials.store(cred)
+  } catch {
+    // Browser ohne Support oder User-Abbruch — ok.
+  }
+}
+
+async function loadSavedAdminPassword() {
+  if (!('credentials' in navigator) || !navigator.credentials.get) return ''
+  try {
+    const cred = (await navigator.credentials.get({
+      password: true,
+      mediation: 'optional',
+    } as CredentialRequestOptions)) as PasswordCred | null
+    if (cred?.password) return String(cred.password)
+  } catch {
+    // ignore
+  }
+  return ''
 }
 
 export function Admin() {
@@ -2563,9 +2695,10 @@ export function Admin() {
 
   useEffect(() => {
     void (async () => {
-      const { data } = await api('/api/admin?ping=1')
+      const [{ data }, saved] = await Promise.all([api('/api/admin?ping=1'), loadSavedAdminPassword()])
       setAuthed(Boolean(data.auth))
       setStore(String(data.store ?? ''))
+      if (!data.auth && saved) setPassword(saved)
       setReady(true)
       if (data.auth) await refreshList()
     })()
@@ -2610,9 +2743,10 @@ export function Admin() {
     event.preventDefault()
     setLoginError(null)
     setBusy(true)
+    const entered = password
     const { data } = await api('/api/admin', {
       method: 'POST',
-      body: JSON.stringify({ action: 'login', password }),
+      body: JSON.stringify({ action: 'login', password: entered }),
     })
     setBusy(false)
     if (!data.ok) {
@@ -2621,6 +2755,7 @@ export function Admin() {
       else setLoginError('Passwort stimmt nicht.')
       return
     }
+    await rememberAdminPassword(entered)
     setPassword('')
     setAuthed(true)
     setStore(String(data.store ?? ''))
@@ -2708,11 +2843,22 @@ export function Admin() {
         <p className="admin-kicker">KONNI MMA GYM</p>
         <h1>Verwaltung</h1>
         <p>Mitglieder, Tarife, Laufzeiten, Kündigungen, Zahlungen. Nicht öffentlich verlinkt.</p>
-        <form className="admin-card" onSubmit={(event) => void onLogin(event)}>
+        <form className="admin-card" autoComplete="on" onSubmit={(event) => void onLogin(event)}>
+          <input
+            className="admin-username"
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={ADMIN_USERNAME}
+            readOnly
+            tabIndex={-1}
+            aria-hidden="true"
+          />
           <label>
             Passwort
             <input
               type="password"
+              name="password"
               autoComplete="current-password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -2889,7 +3035,12 @@ export function Admin() {
 
       {tab === 'mail' ? <BroadcastMailer /> : null}
       {tab === 'members' ? <PhotoRequestBulk missing={stats?.noPhoto ?? 0} onDone={() => void refreshList()} /> : null}
-      {tab === 'members' ? <First50Sender /> : null}
+      {tab === 'members' ? (
+        <>
+          <First50Sender />
+          <SlowStartSender />
+        </>
+      ) : null}
 
       {tab === 'members' && creating ? <CreateMember onDone={async (id) => {
         setCreating(false)
@@ -2971,6 +3122,7 @@ export function Admin() {
                   row.guardianMissing ||
                   row.bankMissing ||
                   row.contractMissing ||
+                  row.onlineCancelAt ||
                   (!row.hasPhoto && row.plan !== 'daypass') ||
                   (row.openCount ?? 0) > 0 ? (
                     <span className="admin-flags">
@@ -2983,8 +3135,9 @@ export function Admin() {
                           {row.openCount} offen · {euro(row.openAmount)}
                         </span>
                       ) : null}
+                      {row.onlineCancelAt ? <span className="admin-flag">Online-Kündigung</span> : null}
                       {row.contractMissing ? <span className="admin-flag">Vertrag fehlt</span> : null}
-                      {row.guardianMissing ? <span className="admin-flag">Eltern-Unterschrift fehlt</span> : null}
+                      {row.guardianMissing ? <span className="admin-flag">Elternvollmacht fehlt</span> : null}
                       {row.bankMissing ? <span className="admin-flag">Kontodaten fehlen</span> : null}
                       {!row.hasPhoto && row.plan !== 'daypass' ? (
                         <span className="admin-flag">Portrait fehlt</span>
@@ -2993,6 +3146,13 @@ export function Admin() {
                   ) : null}
                   <small>
                     {STATUS_LABEL[row.status]} · {row.planName} · {euro(row.price)} · Start {deDate(row.startDate)}
+                    {row.plan !== 'daypass'
+                      ? ` · ${row.checkinCount ?? 0}× da${
+                          row.checkinWeekLimit
+                            ? ` · Woche ${row.checkinThisWeek ?? 0}/${row.checkinWeekLimit}`
+                            : ''
+                        }`
+                      : ''}
                   </small>
                 </span>
                 <span className="admin-row-meta">
@@ -3112,6 +3272,21 @@ function MemberPane({
       return
     }
     onReplace(data.member)
+  }
+
+  async function sendGuardianMandate() {
+    setSending(true)
+    setPaneError(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'sendGuardianMandate', id: member.id }),
+    })
+    setSending(false)
+    if (!data.ok) {
+      setPaneError(errorText(data.error))
+      return
+    }
+    if (data.member) onReplace(data.member)
   }
 
   async function sendReminder(force = false) {
@@ -3515,6 +3690,23 @@ function MemberPane({
             {member.cancel?.deadline ? ` · Frist ${deDate(member.cancel.deadline)}` : ''}
             <br />
             <small>{member.cancel?.hint}</small>
+            {member.onlineCancelAt ? (
+              <>
+                <br />
+                <strong className="admin-flag">Online-Kündigung eingegangen</strong>
+                {' · '}
+                {deDate(member.onlineCancelAt)}
+                {member.onlineCancelId ? ` · ${member.onlineCancelId}` : ''}
+                {member.onlineCancelKind ? ` · ${member.onlineCancelKind}` : ''}
+                {member.onlineCancelSuggestedEnd ? ` · Vorschlag Ende ${deDate(member.onlineCancelSuggestedEnd)}` : ''}
+                {member.onlineCancelNote ? (
+                  <>
+                    <br />
+                    <small>{member.onlineCancelNote}</small>
+                  </>
+                ) : null}
+              </>
+            ) : null}
           </dd>
         </div>
         {member.inviteSlot ? (
@@ -3534,6 +3726,36 @@ function MemberPane({
           </dd>
         </div>
         {member.plan !== 'daypass' ? (
+          <div>
+            <dt>Einheiten</dt>
+            <dd>
+              <strong>{member.checkinCount ?? 0}</strong> Check-ins insgesamt
+              {member.checkinWeekLimit != null ? (
+                <>
+                  <br />
+                  Diese Woche: {member.checkinThisWeek ?? 0}/{member.checkinWeekLimit}
+                </>
+              ) : (member.checkinThisWeek ?? 0) > 0 ? (
+                <>
+                  <br />
+                  Diese Woche: {member.checkinThisWeek}
+                </>
+              ) : null}
+              {member.checkinLastDay ? (
+                <>
+                  <br />
+                  Zuletzt: {deDate(member.checkinLastDay)}
+                </>
+              ) : (
+                <>
+                  <br />
+                  Noch kein Check-in
+                </>
+              )}
+            </dd>
+          </div>
+        ) : null}
+        {member.plan !== 'daypass' ? (
           <div className="admin-dl-wide">
             <dt>Zahlung</dt>
             <dd>
@@ -3546,13 +3768,28 @@ function MemberPane({
                   <br />
                   {[member.transfer?.bic, member.transfer?.bank].filter(Boolean).join(' · ')}
                   <br />
-                  <small>Beitrag jeweils zum 1. des Monats. Erste Überweisung am 1. November 2026.</small>
+                  <small>
+                    Beitrag jeweils zum 1. des Monats.
+                    {member.transfer?.firstDueDate
+                      ? ` Erste Überweisung am ${deDate(member.transfer.firstDueDate)}.`
+                      : member.startDate
+                        ? ` Erste Überweisung am ${deDate(member.startDate)}.`
+                        : ''}
+                  </small>
                 </>
               ) : (
                 <>
                   Karte, Apple Pay oder Google Pay
                   <br />
-                  <small>Über Stripe. Erste Abbuchung am 1. November 2026. Eine IBAN ist dafür nicht nötig.</small>
+                  <small>
+                    Über Stripe.
+                    {member.stripe?.billingStart
+                      ? ` Erste Abbuchung am ${deDate(member.stripe.billingStart)}.`
+                      : member.startDate
+                        ? ` Erste Abbuchung am ${deDate(member.startDate)}.`
+                        : ''}{' '}
+                    Eine IBAN ist dafür nicht nötig.
+                  </small>
                   {member.bank?.iban ? (
                     <>
                       <br />
@@ -3674,16 +3911,37 @@ function MemberPane({
 
       {member.minor ? (
         <section className={`admin-block ${member.guardian?.signedAt ? '' : 'is-alert'}`}>
-          <h3>Unter 18 · Erziehungsberechtigte</h3>
+          <h3>Unter 18 · Elternvollmacht</h3>
           <p className="admin-muted">
             {member.guardian?.signedAt
-              ? `Zustimmung liegt vor (${member.guardian.signedVia === 'online' ? 'online bestätigt' : 'Papier'}, ${deDate(member.guardian.signedAt)}).`
-              : 'Ohne Unterschrift der Eltern kein Training. Status bleibt „Angemeldet“, bis hier abgehakt ist.'}
+              ? `Vollmacht liegt vor (${member.guardian.signedVia === 'paper' ? 'Papier/Scan' : member.guardian.signedVia || 'erfasst'}, ${deDate(member.guardian.signedAt)}). Zahlung und Training sind freigegeben.`
+              : 'Ohne unterschriebene Elternvollmacht kein Training und keine Abbuchung. Status bleibt „Angemeldet“. Vollmacht-PDF geht an die Eltern-Mail; Scan hier hochladen oder Häkchen setzen, sobald sie zurück ist.'}
           </p>
           <GuardianFields value={guardian} onChange={setGuardian} />
-          <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void save({ guardian })}>
-            Erziehungsberechtigte speichern
-          </button>
+          <div className="admin-inline">
+            <button className="btn btn-solid" type="button" disabled={busy} onClick={() => void save({ guardian })}>
+              Erziehungsberechtigte speichern
+            </button>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              disabled={busy || sending || !guardian.email}
+              onClick={() => void sendGuardianMandate()}
+            >
+              Vollmacht erneut senden
+            </button>
+          </div>
+          <div className="admin-docs" style={{ marginTop: '1rem' }}>
+            <DocSlot
+              memberId={member.id}
+              kind="guardian"
+              label="Unterschriebene Elternvollmacht"
+              hint="PDF-Scan oder Handyfoto der vollständig ausgefüllten und unterschriebenen Vollmacht."
+              doc={member.docs?.guardian}
+              busy={busy}
+              onChanged={onReplace}
+            />
+          </div>
         </section>
       ) : null}
 
@@ -3891,7 +4149,7 @@ function MemberPane({
           <p className="admin-muted">
             {member.stripe?.chargeNow && member.stripe.delay === 'prorate'
               ? `Anteiliger Beitrag jetzt, volle Monate ab ${deDate(member.stripe.billingStart)}.`
-              : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Erste Abbuchung ${deDate(member.stripe?.billingStart || '2026-11-01')}. Vorher wird nichts eingezogen.`}
+              : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Erste Abbuchung ${deDate(member.stripe?.billingStart || member.startDate)}.`}
             {member.stripe?.subscriptionId
               ? ' Das Abo ist verknüpft. Die Monate färben sich, sobald die Rechnung kommt.'
               : ' Das Mitglied zahlt auf der Stripe-Seite mit Karte oder Apple Pay. Banküberweisung ist die andere Möglichkeit. SEPA-Lastschrift kommt später und wird im Checkout nicht angezeigt. Der Link gilt 24 Stunden.'}
@@ -4393,6 +4651,71 @@ function First50Sender() {
         <label>
           E-Mail
           <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+        </label>
+      </div>
+      {error ? <p className="admin-error">{error}</p> : null}
+      {note ? <p className="admin-muted">{note}</p> : null}
+      <button className="btn btn-solid" type="submit" disabled={busy}>
+        Link senden
+      </button>
+    </form>
+  )
+}
+
+function SlowStartSender() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [start, setStart] = useState('2026-12-01')
+  const [note, setNote] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+
+  async function onSubmit(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError(null)
+    setNote(null)
+    const { data } = await api('/api/admin', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'sendSlowStartInvite',
+        name,
+        email,
+        start,
+        openUntilSignup: true,
+      }),
+    })
+    setBusy(false)
+    if (!data.ok) {
+      setError(errorText(data.error))
+      return
+    }
+    setNote(
+      `Slow-Start-Link raus an ${data.email}. 79,99€, Start ${deDate(String(data.start || start))}, bis zur Anmeldung gültig.`,
+    )
+    setName('')
+    setEmail('')
+  }
+
+  return (
+    <form className="admin-card" onSubmit={(event) => void onSubmit(event)}>
+      <h2>Slow-Start-Link</h2>
+      <p className="admin-muted">
+        79,99€, 12 Monate, 2×/Woche. Vertrag und erste Zahlung ab dem gewählten 1. des Monats. Bis dahin trainieren sie
+        mit, ohne Beitrag. Link bleibt bis zur Anmeldung gültig.
+      </p>
+      <div className="admin-grid">
+        <label>
+          Name
+          <input value={name} onChange={(event) => setName(event.target.value)} required />
+        </label>
+        <label>
+          E-Mail
+          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+        </label>
+        <label>
+          Vertragsstart
+          <input type="date" value={start} onChange={(event) => setStart(event.target.value)} required />
         </label>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}

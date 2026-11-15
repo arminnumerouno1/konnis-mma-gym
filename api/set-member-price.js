@@ -1,3 +1,4 @@
+import { cronAuthorized, cronRateLimited } from '../server/dues-cron.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
 import { ensurePayments, isoDate } from '../server/member-model.mjs'
 import { buildOngoingTransferPayload } from '../server/transfer-due.mjs'
@@ -71,11 +72,12 @@ export default async function handler(req, res) {
       json(res, 405, { ok: false, error: 'method' })
       return
     }
-    const secret = process.env.CRON_SECRET?.trim() || ''
-    const auth = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim()
-    const header = String(req.headers['x-cron-secret'] || '').trim()
-    if (!secret || (auth !== secret && header !== secret)) {
+    if (!cronAuthorized(req, process.env)) {
       json(res, 401, { ok: false, error: 'auth' })
+      return
+    }
+    if (cronRateLimited(req)) {
+      json(res, 429, { ok: false, error: 'rate' })
       return
     }
 

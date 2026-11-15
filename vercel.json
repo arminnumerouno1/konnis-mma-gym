@@ -40,6 +40,12 @@
     "api/dues-cron.js": {
       "maxDuration": 60
     },
+    "api/photo-request-mail.js": {
+      "maxDuration": 60
+    },
+    "api/checkin-code-mail.js": {
+      "maxDuration": 300
+    },
     "api/admin.js": {
       "includeFiles": "public/legal/widerrufsbelehrung.pdf,server/assets/widerrufsbelehrung.pdf"
     }
@@ -57,9 +63,11 @@
     { "source": "/checkin", "destination": "/index.html" },
     { "source": "/verwaltung", "destination": "/index.html" },
     { "source": "/impressum", "destination": "/index.html" },
+    { "source": "/impressum/konrad", "destination": "/index.html" },
     { "source": "/datenschutz", "destination": "/index.html" },
     { "source": "/agb", "destination": "/index.html" },
     { "source": "/widerruf", "destination": "/index.html" },
+    { "source": "/kuendigen", "destination": "/index.html" },
     { "source": "/hausordnung", "destination": "/index.html" },
     { "source": "/vertrag/6", "destination": "/index.html" },
     { "source": "/vertrag/12", "destination": "/index.html" },

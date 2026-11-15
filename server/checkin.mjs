@@ -6,7 +6,7 @@ import { currentSlot, findTrialSlot, todaySlots } from './kursplan.mjs'
 import { createMemberStore } from './member-store.mjs'
 import { isoDate, openDuesOf } from './member-model.mjs'
 import { berlinIsoDate } from './opening.mjs'
-import { createTrialStore } from './trial.mjs'
+import { createTrialStore, trialGuardianMissing } from './trial.mjs'
 
 const FILE_NAME = 'checkins.json'
 const BLOB_PATH = 'konni/checkins.json'
@@ -171,6 +171,35 @@ export function berlinWeekRange(now = new Date()) {
   return { start, end: addCalendarDays(start, 6) }
 }
 
+/** Aggregierte Check-ins je Mitglied: Gesamt, diese Woche, letzter Besuch. */
+export function checkinStatsByMember(entries, now = new Date()) {
+  const week = berlinWeekRange(now)
+  const byId = new Map()
+  for (const row of entries || []) {
+    const id = String(row.memberId || '')
+    if (!id) continue
+    let stats = byId.get(id)
+    if (!stats) {
+      stats = { total: 0, thisWeek: 0, lastAt: null, lastDay: null }
+      byId.set(id, stats)
+    }
+    stats.total += 1
+    const day = String(row.day || row.at || '').slice(0, 10)
+    if (day >= week.start && day <= week.end) stats.thisWeek += 1
+    const at = String(row.at || '')
+    if (!stats.lastAt || at > stats.lastAt) {
+      stats.lastAt = at || null
+      stats.lastDay = day || null
+    }
+  }
+  return byId
+}
+
+export function checkinStatsForMember(entries, memberId, now = new Date()) {
+  const all = checkinStatsByMember(entries, now)
+  return all.get(String(memberId || '')) || { total: 0, thisWeek: 0, lastAt: null, lastDay: null }
+}
+
 export function uniqueCheckinDaysForMember(entries, memberId, { start, end }) {
   const days = new Set()
   const wanted = String(memberId || '')
@@ -218,6 +247,7 @@ export async function performCheckin(
   } else if (manual && trialId) {
     const trial = (trials || []).find((row) => row.id === trialId)
     if (!trial) return { ok: false, error: 'missing' }
+    if (trialGuardianMissing(trial)) return { ok: false, error: 'guardian' }
     person = {
       kind: 'trial',
       memberId: null,
@@ -258,6 +288,7 @@ export async function performCheckin(
             (row.status === 'bestaetigt' || row.status === 'gekommen' || row.status === 'neu'),
         )
         if (!trial) return { ok: false, error: 'code' }
+        if (trialGuardianMissing(trial)) return { ok: false, error: 'guardian' }
         person = {
           kind: 'trial',
           memberId: null,

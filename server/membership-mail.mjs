@@ -1,5 +1,10 @@
 import { GYM_BANK, spacedIban } from './gym-bank.mjs'
-import { buildContractPdf, loadWithdrawalPdf, membershipPdfAttachments } from './membership-pdf.mjs'
+import {
+  buildContractPdf,
+  buildGuardianMandatePdf,
+  loadWithdrawalPdf,
+  membershipPdfAttachments,
+} from './membership-pdf.mjs'
 import { germanDate, memberBillingStart } from './member-model.mjs'
 import { trainingHasStarted } from './opening.mjs'
 import { formatTransferEuro, transferDueLabel, transferNextLabel } from './transfer-due.mjs'
@@ -39,7 +44,7 @@ function isFirst50(record) {
 export function membershipMailSubject(record, { forGym = false } = {}) {
   const who = whoOf(record)
   if (forGym) return `Neue Mitgliedschaft: ${who} · ${record.planName || record.plan}`
-  if (isFirst50(record)) return 'Schön, dass du einer der Ersten bist · KONNI MMA GYM'
+  if (isFirst50(record)) return 'Willkommen zum Sonderpreis · KONNI MMA GYM'
   if (record.plan === 'daypass') return 'Dein Day Pass · KONNI MMA GYM'
   return `Willkommen im KONNI MMA GYM · ${record.planName || record.plan}`
 }
@@ -132,9 +137,9 @@ function memberLead(record, { attached = false } = {}) {
     const later = memberBillingStart(record) > '2026-11-01'
     const welcome = later
       ? `Dein Vertrag beginnt am ${dueOn(record)}. Vorher wird nichts berechnet.`
-      : 'Wir freuen uns, dass du von Anfang an dabei bist. Dann sehen wir uns in der Wittenberger Straße.'
+      : 'Willkommen im KONNI MMA GYM. Das Studio ist offen – wir freuen uns auf dich auf der Matte.'
     return `<p>Hi ${first},</p>
-<p><strong>Schön, dass du einer der Ersten bist.</strong> Die ersten 50 bekommen den Preis, den wir dafür gemacht haben: 89,99€ statt 99,99€, ${record.termMonths || 24} Monate.</p>
+<p><strong>Schön, dass du dabei bist.</strong> Mit deinem Sonderpreis zahlst du 89,99€ statt 99,99€, ${record.termMonths || 24} Monate.</p>
 <p>${welcome}</p>
 <p>${files} Unten die Kurzfassung. Widerruf: 14 Tage. ${due}</p>`
   }
@@ -156,16 +161,38 @@ function memberSignoff() {
 
 const ESN_CODE = 'KONNI'
 const ESN_SHOP_URL = 'https://www.esn.com/instagram/KONNI/aktion'
+const DEFAULT_SITE = 'https://www.mma-in-leipzig.de'
+
+function siteOf(site) {
+  const raw = String(site || DEFAULT_SITE).trim() || DEFAULT_SITE
+  return raw.replace(/\/+$/, '')
+}
+
+/** Check-in-Code in der Vertragsmail — jedes neue Mitglied soll den Code hier bekommen. */
+export function checkinCodeMailBlock(record, { site = DEFAULT_SITE, forGym = false } = {}) {
+  const code = String(record?.checkinCode || '')
+    .trim()
+    .toUpperCase()
+  if (!code) return ''
+  if (forGym) return `<p><strong>Check-in-Code</strong><br>${escapeMail(code)}</p>`
+  const checkinUrl = escapeMail(`${siteOf(site)}/checkin`)
+  return `<p><strong>Dein Check-in-Code</strong><br>
+An der Tür hängt ein QR-Code. Den scannst du mit dem Handy und landest auf unserer Check-in-Seite. Dort gibst du deinen persönlichen Code ein:<br>
+<span style="font-size:24px;letter-spacing:0.18em;font-weight:bold">${escapeMail(code)}</span><br>
+Link: <a href="${checkinUrl}">${checkinUrl}</a><br>
+Dein Code ist nur für dich. Beim ersten Check-in kannst du ihn im Passwortmanager speichern.</p>`
+}
 
 function esnPartnerBlock() {
-  return `<p><strong>Kleine Extra-Info von Konrad</strong><br>
-Konrad wird von ESN gesponsert. Mit seinem Code <strong>${ESN_CODE}</strong> sparst du dauerhaft 10% auf jede Bestellung im ESN Shop.<br>
+  return `<p><strong>Werbung</strong><br>
+<strong>Kleine Extra-Info von Konrad</strong><br>
+Konrad wird von ESN gesponsert. Mit seinem Code <strong>${ESN_CODE}</strong> sparst du dauerhaft 10% auf jede Bestellung im ESN Shop. Das ist Werbung für ein Partnerangebot.<br>
 Code: <strong>${ESN_CODE}</strong><br>
 Shop: <a href="${ESN_SHOP_URL}">${ESN_SHOP_URL}</a><br>
 Einfach im Checkout einlösen. Fertig.</p>`
 }
 
-export function membershipCopyHtml(record, { forGym = false, attached = false } = {}) {
+export function membershipCopyHtml(record, { forGym = false, attached = false, site = DEFAULT_SITE } = {}) {
   const who = whoOf(record)
   const { formatted, unit, term } = money(record)
   const when = record.createdAt ? new Date(record.createdAt).toLocaleString('de-DE') : ''
@@ -183,12 +210,13 @@ export function membershipCopyHtml(record, { forGym = false, attached = false } 
     ? `<p><strong>Gesetzliche Vertretung</strong><br>${escapeMail(record.guardian.name)} · ${escapeMail(record.guardian.email)} · ${escapeMail(record.guardian.phone)}</p>`
     : ''
   const visit = record.visitDay ? `<p><strong>Day Pass</strong><br>${escapeMail(record.visitDay)}</p>` : ''
+  const checkin = checkinCodeMailBlock(record, { site, forGym })
   const files = attached
     ? '<p>Angehängt: <strong>Mitgliedsvertrag.pdf</strong> und <strong>Widerrufsbelehrung.pdf</strong>.</p>'
     : '<p><a href="https://www.mma-in-leipzig.de/legal/widerrufsbelehrung.pdf">Widerrufsbelehrung als PDF</a></p>'
   const lead = forGym
     ? `<p>Neue Mitgliedschaft über die Website.${attached ? ' Vertrag und Widerrufsbelehrung liegen als PDF bei.' : ''}${isFirst50(record) ? ' First 50, Sonderpreis 89,99€.' : ''}</p>`
-    : `${memberLead(record, { attached })}${esnPartnerBlock()}${memberSignoff()}`
+    : `${memberLead(record, { attached })}${checkin}${esnPartnerBlock()}${memberSignoff()}`
 
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 ${lead}
@@ -199,6 +227,7 @@ ${forGym ? files : ''}
 <p><strong>Mitglied</strong><br>${escapeMail(who)}, geboren ${escapeMail(record.birthDate)}</p>
 <p><strong>Anschrift</strong><br>${escapeMail(record.street)}, ${escapeMail(record.zip)} ${escapeMail(record.city)}</p>
 <p><strong>Kontakt</strong><br>${[record.email, record.phone].filter(Boolean).map(escapeMail).join(' · ')}</p>
+${forGym ? checkin : ''}
 <p><strong>Tarif</strong><br>${escapeMail(record.planName || record.plan)} · ${escapeMail(formatted)}€ ${escapeMail(unit)} · ${escapeMail(term)}</p>
 ${
   record.plan === 'slowstart'
@@ -234,7 +263,7 @@ ${record.signedUploadName ? '<p>Zusätzlich liegt der hochgeladene unterschriebe
 </div>`
 }
 
-async function sendSmtp(env, { to, name, subject, html, attachments = [] }) {
+async function sendSmtp(env, { to, name, subject, html, attachments = [], cc = [] } = {}) {
   const apiKey = env.BREVO_API_KEY?.trim()
   if (!apiKey) return 'skipped'
   const sender = senderOf(env)
@@ -244,6 +273,11 @@ async function sendSmtp(env, { to, name, subject, html, attachments = [] }) {
     replyTo: { email: sender, name: 'KONNI MMA GYM' },
     subject,
     htmlContent: html,
+  }
+  if (cc.length) {
+    payload.cc = cc
+      .filter((row) => row?.email && row.email !== to)
+      .map((row) => ({ email: row.email, name: row.name || row.email }))
   }
   if (attachments.length) payload.attachment = attachments
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -347,7 +381,7 @@ export function checkinCodeMailHtml(record, site = 'https://www.mma-in-leipzig.d
 <p style="font-size:28px;letter-spacing:0.2em;font-weight:bold">${code}</p>
 <p>Link: <a href="${checkinUrl}">${checkinUrl}</a></p>
 <p>Warum machen wir das?<br>Damit wir klar sehen, wer wirklich im Training war – und die Anwesenheit sauber zuordnen können.</p>
-<p>Dein Code ist nur für dich. Am besten speicherst du diese Mail oder notierst den Code kurz im Handy.</p>
+<p>Dein Code ist nur für dich. Beim ersten Check-in kannst du ihn im Passwortmanager deines Handys speichern – dann musst du ihn nicht merken.</p>
 <p>Kein Handy dabei oder Code weg? Melde dich einfach persönlich bei uns, dann checken wir dich manuell ein.</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
 </div>`
@@ -406,6 +440,87 @@ export async function sendPaperReturnEmail(env, record) {
   })
 }
 
+export function guardianMandateMailSubject(record) {
+  const who = whoOf(record)
+  return `Elternvollmacht für ${who} · KONNI MMA GYM`
+}
+
+export function guardianMandateMailHtml(record) {
+  const child = escapeMail(whoOf(record))
+  const guardian = escapeMail(record.guardian?.name || 'Eltern / gesetzliche Vertretung')
+  const plan = escapeMail(record.planName || record.plan || 'Mitgliedschaft')
+  const price = escapeMail(Number(record.price).toFixed(2).replace('.', ','))
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>Hallo ${guardian},</p>
+<p><strong>${child}</strong> hat sich online für eine Mitgliedschaft im KONNI MMA GYM angemeldet (${plan}, ${price}€ / Monat).</p>
+<p>Unter 18 brauchen wir eine <strong>vollständig ausgefüllte und unterschriebene Elternvollmacht</strong> von Mutter, Vater oder Vormund. Ein Häkchen online reicht dafür nicht.</p>
+<p><strong>Wichtig:</strong> Solange die unterschriebene Vollmacht nicht bei uns liegt, wird <strong>nichts abgebucht</strong> und es gibt noch kein Training.</p>
+<p>Bitte:</p>
+<ol>
+<li>PDF <strong>Elternvollmacht.pdf</strong> vollständig ausfüllen und unterschreiben (bei gemeinsamem Sorgerecht beide, oder Zustimmung der anderen Person bestätigen).</li>
+<li>Unterschrieben zurück an <strong>info@mma-in-leipzig.de</strong> (Scan oder klares Foto) — oder persönlich / per Post ins Studio.</li>
+</ol>
+<p>Angehängt: <strong>Elternvollmacht.pdf</strong>, <strong>Mitgliedsvertrag.pdf</strong> und <strong>Widerrufsbelehrung.pdf</strong>.</p>
+<p>Sobald die Vollmacht da ist, schalten wir die Mitgliedschaft frei und die Zahlung startet erst dann.</p>
+<p>Fragen? Einfach kurz an info@mma-in-leipzig.de.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+</div>`
+}
+
+export function guardianPendingMemberMailSubject() {
+  return 'Anmeldung unter 18 · Elternvollmacht nötig · KONNI MMA GYM'
+}
+
+export function guardianPendingMemberMailHtml(record) {
+  const first = escapeMail(record.firstName || whoOf(record))
+  const guardianMail = escapeMail(record.guardian?.email || 'die Eltern')
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
+<p>Hi ${first},</p>
+<p>deine Anmeldung ist bei uns. Weil du unter 18 bist, brauchen wir zuerst die <strong>unterschriebene Elternvollmacht</strong>.</p>
+<p>Wir haben das Formular an <strong>${guardianMail}</strong> geschickt. Bitte die Eltern: ausfüllen, unterschreiben und an <strong>info@mma-in-leipzig.de</strong> zurücksenden.</p>
+<p><strong>Bis dahin wird nichts abgebucht</strong> und Training startet erst nach Freigabe.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+</div>`
+}
+
+export async function sendGuardianMandateEmail(env, record) {
+  const apiKey = env.BREVO_API_KEY?.trim()
+  const to = record?.guardian?.email
+  if (!apiKey || !to) return 'skipped'
+  const [mandate, contract, withdrawal] = await Promise.all([
+    buildGuardianMandatePdf(record),
+    buildContractPdf(record, { paper: true, returnCopy: true }),
+    loadWithdrawalPdf(),
+  ])
+  const attachments = [
+    { name: 'Elternvollmacht.pdf', content: Buffer.from(mandate).toString('base64') },
+    { name: 'Mitgliedsvertrag.pdf', content: Buffer.from(contract).toString('base64') },
+    { name: 'Widerrufsbelehrung.pdf', content: Buffer.from(withdrawal).toString('base64') },
+  ]
+  const mailed = await sendSmtp(env, {
+    to,
+    name: record.guardian?.name || to,
+    subject: guardianMandateMailSubject(record),
+    html: guardianMandateMailHtml(record),
+    attachments,
+    cc: record.email && record.email !== to ? [{ email: record.email, name: whoOf(record) }] : [],
+  })
+  if (mailed === 'skipped') return mailed
+  // Kurze Bestätigung an das Mitglied, falls andere Mail als die der Eltern.
+  if (record.email && record.email !== to) {
+    try {
+      await sendSmtp(env, {
+        to: record.email,
+        name: whoOf(record),
+        subject: guardianPendingMemberMailSubject(),
+        html: guardianPendingMemberMailHtml(record),
+      })
+    } catch (error) {
+      console.error('[mitglied] guardian member notice failed', error)
+    }
+  }
+  return mailed
+}
+
 export function payLinkMailSubject() {
   return 'Karte noch einrichten · KONNI MMA GYM'
 }
@@ -414,7 +529,7 @@ export function payLinkMailHtml({ first = '', url = '', when = '' } = {}) {
   const who = escapeMail(String(first ?? '').trim() || 'du')
   const hi = who === 'du' ? 'Hi,' : `Hi ${who},`
   const link = escapeMail(url)
-  const due = escapeMail(when || '1. November 2026')
+  const due = escapeMail(when || 'Fälligkeitstag')
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>${hi}</p>
 <p>deine Anmeldung ist da. Der Vertrag auch. <strong>Die Karte oder Apple Pay fehlt noch.</strong></p>
@@ -608,6 +723,7 @@ export async function sendMembershipEmails(env, record, { paper = false, credito
 
   const who = whoOf(record)
   const gymTo = gymInbox(env)
+  const site = env.VITE_SITE_URL?.trim() || env.SITE_URL?.trim() || DEFAULT_SITE
 
   let attachments = []
   try {
@@ -621,7 +737,7 @@ export async function sendMembershipEmails(env, record, { paper = false, credito
     to: gymTo,
     name: 'KONNI MMA GYM',
     subject: membershipMailSubject(record, { forGym: true }),
-    html: membershipCopyHtml(record, { forGym: true, attached: attachments.length > 0 }),
+    html: membershipCopyHtml(record, { forGym: true, attached: attachments.length > 0, site }),
     attachments,
   })
 
@@ -629,9 +745,14 @@ export async function sendMembershipEmails(env, record, { paper = false, credito
     to: record.email,
     name: who,
     subject: membershipMailSubject(record),
-    html: membershipCopyHtml(record, { forGym: false, attached: attachments.length > 0 }),
+    html: membershipCopyHtml(record, { forGym: false, attached: attachments.length > 0, site }),
     attachments,
   })
 
-  return { member, gym, pdfs: attachments.map((file) => file.name) }
+  return {
+    member,
+    gym,
+    pdfs: attachments.map((file) => file.name),
+    checkinCodeIncluded: Boolean(String(record?.checkinCode || '').trim()),
+  }
 }

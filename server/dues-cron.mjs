@@ -1,3 +1,4 @@
+import { CRON_SECRET_MIN } from './admin-guard.mjs'
 import { DEFAULT_BILLING_START, openDuesOf } from './member-model.mjs'
 import { createMemberStore } from './member-store.mjs'
 import { sendReminderEmail } from './membership-mail.mjs'
@@ -6,6 +7,9 @@ import { berlinIsoDate } from './opening.mjs'
 const REMINDER_COOLDOWN_MS = 5 * 24 * 60 * 60 * 1000
 const BATCH = 40
 const STAGES = ['reminder', 'mahnung1', 'mahnung2']
+const CRON_RATE_WINDOW_MS = 10 * 60 * 1000
+const CRON_RATE_MAX = 60
+const cronHits = new Map()
 
 export function nextDunningStage(reminders = []) {
   const last = Array.isArray(reminders) && reminders.length ? reminders[reminders.length - 1] : null
@@ -27,11 +31,31 @@ function secretsEqual(a, b) {
 export function cronAuthorized(req, env) {
   // Dedicated cron secret only — never fall back to SIGNUP_MAIL_PROOF.
   const secret = env.CRON_SECRET?.trim() || ''
-  if (!secret) return false
+  if (secret.length < CRON_SECRET_MIN) return false
   const auth = String(req.headers?.authorization || '')
   if (auth.toLowerCase().startsWith('bearer ') && secretsEqual(auth.slice(7).trim(), secret)) return true
   const header = String(req.headers?.['x-cron-secret'] || '').trim()
   if (secretsEqual(header, secret)) return true
+  return false
+}
+
+function cronClientIp(req) {
+  const forwarded = req.headers?.['x-forwarded-for']
+  if (typeof forwarded === 'string' && forwarded.trim()) return forwarded.split(',')[0].trim()
+  return req.socket?.remoteAddress ?? 'unknown'
+}
+
+/** Soft per-instance cap so a leaked secret cannot spray ops endpoints unbounded. */
+export function cronRateLimited(req, max = CRON_RATE_MAX) {
+  const ip = cronClientIp(req)
+  const now = Date.now()
+  const recent = (cronHits.get(ip) ?? []).filter((t) => now - t < CRON_RATE_WINDOW_MS)
+  if (recent.length >= max) {
+    cronHits.set(ip, recent)
+    return true
+  }
+  recent.push(now)
+  cronHits.set(ip, recent)
   return false
 }
 
@@ -134,6 +158,12 @@ export function createDuesCronHandler({ dataDir, env, sendReminder = sendReminde
       res.statusCode = 401
       res.setHeader('content-type', 'application/json; charset=utf-8')
       res.end(JSON.stringify({ ok: false, error: 'auth' }))
+      return
+    }
+    if (cronRateLimited(req)) {
+      res.statusCode = 429
+      res.setHeader('content-type', 'application/json; charset=utf-8')
+      res.end(JSON.stringify({ ok: false, error: 'rate' }))
       return
     }
     const result = await runDueReminders({ store, env, sendReminder })

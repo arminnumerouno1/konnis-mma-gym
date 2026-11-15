@@ -39,29 +39,45 @@ function pdfSafe(value) {
   return cleaned
 }
 
+/** Marker: hält Telefonnummern/IBANs beim Umbruch zusammen (wird wieder zu Leerzeichen). */
+const WRAP_GLUE = '\u0001'
+
+/** Telefon, IBAN u.ä. nicht mitten in der Nummer umbrechen. */
+function keepTogetherTokens(text) {
+  return String(text ?? '')
+    .replace(/\+\d[\d\s/-]{5,}\d/g, (match) => match.replace(/ +/g, WRAP_GLUE))
+    .replace(/\bDE\d{2}(?:\s*\d{4}){4,5}\b/gi, (match) => match.replace(/ +/g, WRAP_GLUE))
+}
+
+function unwrapGlue(value) {
+  return String(value ?? '').replaceAll(WRAP_GLUE, ' ')
+}
+
 function wrapLines(font, text, size, maxWidth) {
-  const blocks = pdfSafe(text).split('\n')
+  const blocks = keepTogetherTokens(pdfSafe(text)).split('\n')
   const lines = []
   for (const block of blocks) {
-    const words = block.split(/\s+/).filter(Boolean)
+    // Nur normale Leerzeichen trennen — Glue in Telefon/IBAN bleibt im Token.
+    const words = block.split(/ +/).filter(Boolean)
     if (!words.length) {
       lines.push('')
       continue
     }
     let current = ''
     for (const word of words) {
-      const next = current ? `${current} ${word}` : word
+      const visibleWord = unwrapGlue(word)
+      const next = current ? `${current} ${visibleWord}` : visibleWord
       if (font.widthOfTextAtSize(next, size) <= maxWidth) {
         current = next
         continue
       }
       if (current) lines.push(current)
-      if (font.widthOfTextAtSize(word, size) <= maxWidth) {
-        current = word
+      if (font.widthOfTextAtSize(visibleWord, size) <= maxWidth) {
+        current = visibleWord
         continue
       }
       let chunk = ''
-      for (const ch of word) {
+      for (const ch of visibleWord) {
         const trial = chunk + ch
         if (font.widthOfTextAtSize(trial, size) <= maxWidth) chunk = trial
         else {
@@ -252,8 +268,8 @@ function contractParagraphs(record) {
   const when = chargeLabel(record)
   const termLine =
     memberBillingStart(record) > '2026-11-01'
-      ? `Anfängliche Vertragsdauer: ${months} Monate ab ${when}. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt. Zusätzlich vorzeitig mit einem Monat zum Monatsende, wenn der Hauptwohnsitz in der Luftlinie mehr als 50 Kilometer vom Studio entfernt liegt. Nachweis durch amtliche Meldebescheinigung. Ein näherer Umzug begründet dieses Recht nicht.`
-      : `Anfängliche Vertragsdauer: ${months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Kündigung in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt. Zusätzlich vorzeitig mit einem Monat zum Monatsende, wenn der Hauptwohnsitz in der Luftlinie mehr als 50 Kilometer vom Studio entfernt liegt. Nachweis durch amtliche Meldebescheinigung. Ein näherer Umzug begründet dieses Recht nicht.`
+      ? `Anfängliche Vertragsdauer: ${months} Monate ab ${when}. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Online-Kündigung unter https://mma-in-leipzig.de/kuendigen („Verträge hier kündigen“) oder in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt. Zusätzlich vorzeitig mit einem Monat zum Monatsende, wenn der Hauptwohnsitz in der Luftlinie mehr als 50 Kilometer vom Studio entfernt liegt. Nachweis durch amtliche Meldebescheinigung. Ein näherer Umzug begründet dieses Recht nicht.`
+      : `Anfängliche Vertragsdauer: ${months} Monate ab Vertragsschluss. Beginnt das Training später, bleibt das vertragliche Ende gleich; vorher fallen keine Monatsbeiträge an. Ordentliche Kündigung mit einem Monat zum Ende dieser Erstlaufzeit. Ohne Kündigung läuft der Vertrag unbefristet weiter und ist dann jederzeit mit einem Monat kündbar. Online-Kündigung unter https://mma-in-leipzig.de/kuendigen („Verträge hier kündigen“) oder in Textform an info@mma-in-leipzig.de. Außerordentliche Kündigung bleibt. Zusätzlich vorzeitig mit einem Monat zum Monatsende, wenn der Hauptwohnsitz in der Luftlinie mehr als 50 Kilometer vom Studio entfernt liegt. Nachweis durch amtliche Meldebescheinigung. Ein näherer Umzug begründet dieses Recht nicht.`
   const access =
     record.plan === 'slowstart'
       ? 'Nutzung der Trainings und Flächen ab Beginn des regulären Betriebs zu den veröffentlichten Zeiten. Im Slow Start Tarif sind zwei Kurse beziehungsweise Einheiten pro Woche inklusive, etwa MMA, Boxen und BJJ. Zusätzliche Einheiten in derselben Woche sind nicht Bestandteil dieses Tarifs. Der Kursplan kann sich ändern, der wesentliche Charakter bleibt.'
@@ -315,16 +331,18 @@ export async function buildContractPdf(record, { paper = false, creditorId = '',
 
   writer.heading('1. Vertragsparteien')
   writer.para(
-    'Anbieter: KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig. E-Mail: info@mma-in-leipzig.de. Telefon: +49 1522 1872354.',
+    'Anbieter: KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig.',
   )
+  writer.kv('E-Mail Studio', 'info@mma-in-leipzig.de')
+  writer.kv('Telefon Studio', '+49 1522 1872354')
   writer.kv('Mitglied', `${who}, geboren ${formatIsoDate(record.birthDate)}`)
   writer.kv('Anschrift', `${record.street}, ${record.zip} ${record.city}`)
-  writer.kv('Kontakt', [record.email, record.phone].filter(Boolean).join(' · '))
+  writer.kv('E-Mail', record.email || '')
+  writer.kv('Telefon', record.phone || '')
   if (record.guardian) {
-    writer.kv(
-      'Gesetzliche Vertretung',
-      `${record.guardian.name} · ${record.guardian.email} · ${record.guardian.phone}`,
-    )
+    writer.kv('Gesetzliche Vertretung', record.guardian.name)
+    if (record.guardian.email) writer.kv('E-Mail Vertretung', record.guardian.email)
+    if (record.guardian.phone) writer.kv('Telefon Vertretung', record.guardian.phone)
   }
 
   writer.heading('2. Tarif, Beginn und Preis')
@@ -420,18 +438,21 @@ async function buildPaperContractPdf(record, creditorId, { returnCopy = false } 
 
   writer.heading('1. Vertragsparteien')
   writer.para(
-    'Anbieter: KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig. E-Mail: info@mma-in-leipzig.de. Telefon: +49 1522 1872354.',
+    'Anbieter: KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig.',
   )
+  writer.kv('E-Mail Studio', 'info@mma-in-leipzig.de')
+  writer.kv('Telefon Studio', '+49 1522 1872354')
   writer.kv('Mitglied', birth ? `${who}, geboren ${birth}` : `${who || blank}, geboren ${blank}`)
   writer.kv('Anschrift', [record.street, [record.zip, record.city].filter(Boolean).join(' ')].filter(Boolean).join(', ') || blank)
-  writer.kv('Kontakt', [record.email || `E-Mail: ${blank}`, record.phone || `Telefon: ${blank}`].join(' · '))
+  writer.kv('E-Mail', record.email || blank)
+  writer.kv('Telefon', record.phone || blank)
   if (record.guardian) {
     writer.kv(
       'Gesetzliche Vertretung',
-      [record.guardian.name, record.guardian.relation, record.guardian.email, record.guardian.phone]
-        .filter(Boolean)
-        .join(' · '),
+      [record.guardian.name, record.guardian.relation].filter(Boolean).join(' · ') || blank,
     )
+    writer.kv('E-Mail Vertretung', record.guardian.email || blank)
+    writer.kv('Telefon Vertretung', record.guardian.phone || blank)
   }
 
   writer.heading('2. Tarif, Beginn und Preis')
@@ -456,7 +477,7 @@ async function buildPaperContractPdf(record, creditorId, { returnCopy = false } 
   if (record.minor) {
     writer.gap(4)
     writer.para(
-      'Das Mitglied ist unter 18. Mit der Unterschrift stimmen die gesetzlichen Vertreter dem Vertrag zu und bestätigen, dass sie zur Vertretung berechtigt sind. Bei gemeinsamem Sorgerecht unterschreiben beide oder die unterschreibende Person bestätigt die Zustimmung der anderen.',
+      'Das Mitglied ist unter 18. Der Vertrag wird erst wirksam, wenn die gesetzliche Vertretung die Elternvollmacht vollständig ausgefüllt und unterschrieben zurückgesandt hat. Bis dahin findet kein Training statt und es wird nichts abgebucht. Bei gemeinsamem Sorgerecht unterschreiben beide, oder die unterschreibende Person bestätigt die Zustimmung der anderen.',
     )
     signLine(
       writer,
@@ -622,6 +643,111 @@ export async function buildTransferNoticePdf(record) {
   return writer.bytes()
 }
 
+/** Elternvollmacht: nass zu unterschreiben und an das Studio zurückzusenden. */
+export async function buildGuardianMandatePdf(record) {
+  const who = whoOf(record)
+  const { formatted, unit, term } = moneyOf(record)
+  const blank = '____________________'
+  const writer = new PdfWriter(`Elternvollmacht ${who}`.trim(), 'Elternvollmacht KONNI MMA GYM')
+  await writer.init()
+  writer.doc.setSubject(`Elternvollmacht · ${who}`)
+
+  writer.text('KONNI MMA GYM', { font: writer.bold, size: 16, leading: 20, color: RULE })
+  writer.text('Elternvollmacht / Zustimmung der gesetzlichen Vertretung', {
+    font: writer.bold,
+    size: 14,
+    leading: 18,
+  })
+  writer.text('Bitte vollständig ausfüllen, unterschreiben und zurücksenden', {
+    size: 10,
+    color: MUTED,
+    leading: 13,
+  })
+  writer.gap(6)
+
+  writer.kv('Studio', 'KONNI MMA GYM GbR, Wittenberger Straße 15, 04129 Leipzig')
+  writer.kv('E-Mail', 'info@mma-in-leipzig.de')
+  writer.kv('Telefon', '+49 1522 1872354')
+  writer.para(
+    'Ohne diese unterschriebene Vollmacht kommt kein wirksamer Mitgliedsvertrag mit einem Minderjährigen zustande. Bis die vollständige, unterschriebene Vollmacht beim Studio vorliegt, findet kein Training statt und es wird nichts abgebucht (weder Karte/Apple Pay noch Überweisungspflicht noch Lastschrift).',
+  )
+
+  writer.heading('1. Minderjähriges Mitglied')
+  writer.kv('Name', who)
+  writer.kv('Geburtsdatum', formatIsoDate(record.birthDate))
+  writer.kv('Anschrift', `${record.street || ''}, ${record.zip || ''} ${record.city || ''}`.replace(/^, /, ''))
+  writer.kv('E-Mail Mitglied', record.email || blank)
+  writer.kv('Telefon Mitglied', record.phone || blank)
+
+  writer.heading('2. Tarif (Angemeldet)')
+  writer.kv('Tarif', `${record.planName || record.plan}${term ? ` · ${term}` : ''}`)
+  writer.kv('Beitrag', `${formatted}${unit ? ` ${unit}` : ''}`)
+  if (record.plan !== 'daypass') {
+    writer.kv('Aufnahmegebühr', `${Number(record.fee ?? 0).toFixed(2).replace('.', ',')} EUR`)
+  }
+  const byTransfer = record.payMethod === 'transfer'
+  writer.kv('Gewünschte Zahlungsart', byTransfer ? 'Banküberweisung' : 'Karte / Apple Pay (Stripe)')
+  writer.kv('Beginn', formatIsoDate(record.startDate) || 'laut Vertrag')
+  if (byTransfer) {
+    writer.gap(4)
+    writer.para(
+      'Zahlung per Banküberweisung: Nach Freigabe der Vollmacht überweist das Mitglied bzw. die gesetzliche Vertretung den Beitrag selbst auf das Studio-Konto. Es gibt keinen Karteneinzug und keine Lastschrift. Bis zur Freigabe muss nichts überwiesen werden.',
+    )
+    writer.kv('Kontoinhaber', GYM_BANK.holder)
+    writer.kv('IBAN', spaceGymIban(GYM_BANK.iban))
+    writer.kv('BIC', GYM_BANK.bic)
+    writer.kv('Bank', GYM_BANK.bank)
+    writer.kv('Erste Überweisung fällig', chargeLabel(record))
+    if (record.transfer?.purpose) writer.kv('Verwendungszweck', record.transfer.purpose)
+  } else {
+    writer.para(
+      'Zahlung mit Karte oder Apple Pay: Nach Freigabe der Vollmacht schickt das Studio einen Stripe-Zahlungslink. Bis dahin wird nichts abgebucht.',
+    )
+  }
+
+  writer.heading('3. Gesetzliche Vertretung')
+  writer.kv('Name', record.guardian?.name || blank)
+  writer.kv('Beziehung', record.guardian?.relation || 'Mutter / Vater / Vormund')
+  writer.kv('E-Mail', record.guardian?.email || blank)
+  writer.kv('Telefon', record.guardian?.phone || blank)
+  writer.para('Falls Angaben fehlen oder falsch sind, bitte hier korrigieren:')
+  writer.para(blank + blank)
+
+  writer.heading('4. Erklärungen der gesetzlichen Vertretung')
+  writer.para(
+    'Ich / wir bin / sind alleinige oder gemeinsam sorgeberechtigte gesetzliche Vertretung des oben genannten Minderjährigen und zur Vertretung berechtigt.',
+  )
+  writer.para(
+    'Ich / wir stimme / stimmen dem Mitgliedsvertrag mit der KONNI MMA GYM GbR (inkl. AGB Stand 22. Oktober 2026, Hausordnung, Datenschutzerklärung und Widerrufsbelehrung) für das minderjährige Mitglied zu.',
+  )
+  if (byTransfer) {
+    writer.para(
+      'Ich / wir bestätige / bestätigen die Zahlungsart Banküberweisung und werde / werden nach Vorliegen dieser unterschriebenen Vollmacht den Mitgliedsbeitrag und ggf. die Aufnahmegebühr auf das oben genannte Konto der KONNI MMA GYM GbR überweisen. Bis dahin muss nichts überwiesen werden. SEPA-Lastschrift und Karteneinzug sind mit dieser Anmeldung nicht erteilt.',
+    )
+  } else {
+    writer.para(
+      'Ich / wir ermächtige / ermächtigen die KONNI MMA GYM GbR, nach Vorliegen dieser unterschriebenen Vollmacht den Mitgliedsbeitrag und ggf. die Aufnahmegebühr per Karte oder Apple Pay über Stripe einzuziehen. Bis dahin darf nichts abgebucht werden.',
+    )
+  }
+  writer.para(
+    'Ich / wir bestätige / bestätigen, dass das minderjährige Mitglied gesundheitlich für das Training geeignet ist und die Hausordnung eingehalten wird. AGB, Hausordnung und Widerrufsbelehrung habe ich / haben wir erhalten bzw. liegen bei.',
+  )
+  writer.para(
+    'Bei gemeinsamem Sorgerecht: [  ] beide unterschreiben unten, oder [  ] die unterschreibende Person bestätigt die Zustimmung der anderen sorgeberechtigten Person.',
+  )
+
+  writer.heading('5. Unterschriften')
+  writer.para(`Ort, Datum: ${blank}`)
+  signLine(writer, 'Unterschrift gesetzliche Vertretung', '')
+  signLine(writer, 'Unterschrift zweite sorgeberechtigte Person (falls gemeinsames Sorgerecht)', '')
+  writer.gap(4)
+  writer.para(
+    'Rücksendung: vollständig ausgefüllt und unterschrieben per E-Mail an info@mma-in-leipzig.de (Scan/Foto) oder per Post / persönlich im Studio. Erst danach wird die Mitgliedschaft freigeschaltet und die Zahlung freigegeben.',
+  )
+
+  return writer.bytes()
+}
+
 export async function membershipPdfAttachments(record, { paper = false, creditorId = '' } = {}) {
   const [contract, withdrawal] = await Promise.all([
     buildContractPdf(record, { paper, creditorId }),
@@ -631,4 +757,72 @@ export async function membershipPdfAttachments(record, { paper = false, creditor
     { name: 'Mitgliedsvertrag.pdf', content: Buffer.from(contract).toString('base64') },
     { name: 'Widerrufsbelehrung.pdf', content: Buffer.from(withdrawal).toString('base64') },
   ]
+}
+
+/** Kurzes Eltern-Einverständnis nur fürs Probetraining — ohne Beitrag/IBAN. */
+export async function buildTrialGuardianConsentPdf(entry) {
+  const who = String(entry?.name ?? '').trim() || 'Teilnehmer/in'
+  const blank = '____________________'
+  const slot = entry?.slot?.label || trialSlotLabel(entry?.slot || {})
+  const writer = new PdfWriter(`Probetraining Einverstaendnis ${who}`.trim(), 'Probetraining Einverstaendnis')
+  await writer.init()
+  writer.doc.setSubject(`Probetraining-Einverständnis · ${who}`)
+
+  writer.text('KONNI MMA GYM', { font: writer.bold, size: 16, leading: 20, color: RULE })
+  writer.text('Einverständnis Probetraining', { font: writer.bold, size: 14, leading: 18 })
+  writer.text('Für Minderjährige · bitte unterschreiben', { size: 10, color: MUTED, leading: 13 })
+  writer.gap(6)
+
+  writer.kv('Studio', 'KONNI MMA GYM GbR, Wittenberger Straße 15, 04129 Leipzig')
+  writer.kv('E-Mail', 'info@mma-in-leipzig.de')
+  writer.kv('Telefon', '+49 1522 1872354')
+  writer.para(
+    'Ohne dieses unterschriebene Einverständnis findet kein Probetraining mit einem Minderjährigen statt. Unterschreiben geht per Scan/Foto zurück an info@mma-in-leipzig.de oder vor Ort im Studio.',
+  )
+
+  writer.heading('1. Minderjährige Person')
+  writer.kv('Name', who)
+  writer.kv('Geburtsdatum', formatIsoDate(entry?.birthDate) || blank)
+  writer.kv('Kontakt', [entry?.email, entry?.phone].filter(Boolean).join(' · ') || blank)
+
+  writer.heading('2. Probetraining')
+  writer.kv('Termin / Kurs', slot || blank)
+  writer.para(
+    'Das Probetraining ist einmalig und unverbindlich. Es entsteht kein Mitgliedsvertrag und keine Zahlungspflicht durch dieses Einverständnis.',
+  )
+
+  writer.heading('3. Gesetzliche Vertretung')
+  writer.kv('Name', entry?.guardian?.name || blank)
+  writer.kv('Beziehung', entry?.guardian?.relation || 'Mutter / Vater / Vormund')
+  writer.kv('E-Mail', entry?.guardian?.email || blank)
+  writer.kv('Telefon', entry?.guardian?.phone || blank)
+
+  writer.heading('4. Erklärungen')
+  writer.para(
+    'Ich / wir bin / sind alleinige oder gemeinsam sorgeberechtigte gesetzliche Vertretung und zur Vertretung berechtigt.',
+  )
+  writer.para(
+    'Ich / wir stimme / stimmen dem einmaligen Probetraining im KONNI MMA GYM zu. Hausordnung und eigenverantwortliche Gesundheitsprüfung gelten. Das minderjährige Mitglied ist gesundheitlich für das Training geeignet.',
+  )
+  writer.para(
+    'Bei gemeinsamem Sorgerecht: [  ] beide unterschreiben unten, oder [  ] die unterschreibende Person bestätigt die Zustimmung der anderen sorgeberechtigten Person.',
+  )
+
+  writer.heading('5. Unterschriften')
+  writer.para(`Ort, Datum: ${blank}`)
+  signLine(writer, 'Unterschrift gesetzliche Vertretung', '')
+  signLine(writer, 'Unterschrift zweite sorgeberechtigte Person (falls gemeinsames Sorgerecht)', '')
+  writer.gap(4)
+  writer.para(
+    'Rücksendung per E-Mail an info@mma-in-leipzig.de (Scan/Foto) oder Unterschrift vor Ort im Studio. Erst danach ist das Probetraining freigegeben.',
+  )
+
+  return writer.bytes()
+}
+
+function trialSlotLabel(slot) {
+  if (!slot) return ''
+  if (slot.label) return String(slot.label)
+  const parts = [slot.dayLabel, slot.time, slot.title].filter(Boolean)
+  return parts.join(' · ')
 }

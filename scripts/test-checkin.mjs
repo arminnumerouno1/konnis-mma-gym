@@ -4,6 +4,8 @@ import { join } from 'node:path'
 import { createAdminHandler } from '../server/admin.mjs'
 import {
   berlinWeekRange,
+  checkinStatsByMember,
+  checkinStatsForMember,
   collectCheckinCodes,
   countUniqueCheckinDays,
   createCheckinHandler,
@@ -34,11 +36,12 @@ const ensured = ensureCheckinCode({ name: 'x' }, new Set([code, next]))
 assert(isValidCheckinCode(ensured.checkinCode), 'ensure assigns')
 
 {
-  // Friday 18:10 Berlin ≈ Kickboxen window (depends on plan)
+  // Friday 18:10 Berlin ≈ K1 window (depends on plan)
   const friday = new Date('2026-11-06T17:10:00.000Z') // 18:10 Berlin (CET)
   const slot = currentSlot(friday)
   assert(slot, `currentSlot finds Friday evening class, got ${slot}`)
   assert(slot.dayId === 'fr', `friday dayId, got ${slot.dayId}`)
+  assert(slot.title === 'K1', `friday class is K1, got ${slot.title}`)
 }
 
 {
@@ -226,7 +229,7 @@ const slow = ensureCheckinCode(
 )
 
 const moSlot = findTrialSlot('mo|18:00 – 19:30|Boxen')
-const diSlot = findTrialSlot('di|18:00 – 19:30|BJJ')
+const diSlot = findTrialSlot('di|18:00 – 19:30|BJJ NoGi')
 const miSlot = findTrialSlot('mi|18:00 – 19:30|Boxen')
 const moEvening = findTrialSlot('mo|19:30 – 21:00|MMA Basic')
 assert(moSlot && diSlot && miSlot && moEvening, 'week slots exist')
@@ -274,5 +277,17 @@ const unlimited = await performCheckin(
   { code: member.checkinCode, slotId: miSlot.id, now: wed },
 )
 assert(unlimited.ok && !unlimited.already, 'standard unlimited across week')
+
+{
+  const stats = checkinStatsByMember([
+    { memberId: member.id, day: '2026-11-02', at: '2026-11-02T17:00:00.000Z' },
+    { memberId: member.id, day: '2026-11-03', at: '2026-11-03T17:00:00.000Z' },
+    { memberId: 'other', day: '2026-11-03', at: '2026-11-03T18:00:00.000Z' },
+  ], new Date('2026-11-03T12:00:00.000Z'))
+  const mine = stats.get(member.id)
+  assert(mine && mine.total === 2 && mine.thisWeek === 2 && mine.lastDay === '2026-11-03', 'member visit counter')
+  const alone = checkinStatsForMember([], member.id)
+  assert(alone.total === 0 && alone.thisWeek === 0, 'empty visit counter')
+}
 
 console.log('test-checkin: ok')

@@ -92,7 +92,7 @@ export function verifyPhotoToken(secret, token) {
 }
 
 export function photoRequestMailSubject() {
-  return 'Bitte Portraitfoto hochladen · KONNI MMA GYM'
+  return 'Dein Foto fehlt noch – ohne geht’s im Studio nicht weiter'
 }
 
 export function photoRequestMailHtml({ first = '', url = '' } = {}) {
@@ -101,19 +101,18 @@ export function photoRequestMailHtml({ first = '', url = '' } = {}) {
   const href = escapeMail(url)
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>${hi}</p>
-<p><strong>Bitte lade ein Portraitfoto von dir hoch</strong> – ein Gesichtsbild, auf dem man dich klar erkennt.</p>
-<p><strong>Warum brauchen wir das?</strong><br>
-Im Studio müssen wir wissen, wer wirklich Mitglied ist. Mit deinem Portraitfoto können wir dich an der Tür zuordnen und verhindern, dass sich jemand anderes mit deinem Namen ausgibt.</p>
+<p>dein Portraitfoto fehlt noch bei uns.</p>
+<p>Ohne klares Foto können wir dich im Studio nicht zuordnen. Das gehört zur Mitgliedschaft und ist für den Trainingsbetrieb nötig — bitte lade es jetzt hoch.</p>
+<p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Portraitfoto hochladen</a></p>
 <p><strong>So soll das Foto aussehen:</strong></p>
 <ul>
-<li>dein Gesicht klar und frontal erkennbar</li>
+<li>Gesicht klar und frontal</li>
 <li>gut beleuchtet, ohne Sonnenbrille und ohne Maske</li>
-<li>aktuell, nur du auf dem Bild – kein Gruppenfoto, kein Screenshot von weit weg</li>
+<li>aktuell, nur du — kein Gruppenfoto</li>
 </ul>
-<p>Der Link gilt <strong>${PHOTO_TOKEN_TTL_DAYS} Tage</strong> und ist nur für dich.</p>
-<p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Portraitfoto hochladen</a></p>
-<p>Fragen? Schreib an info@mma-in-leipzig.de.</p>
-<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+<p>Der Link gilt <strong>${PHOTO_TOKEN_TTL_DAYS} Tage</strong> und ist nur für dich. Wenn er abläuft, schreib uns kurz – wir schicken einen neuen.</p>
+<p>Fragen? info@mma-in-leipzig.de</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
 </div>`
 }
 

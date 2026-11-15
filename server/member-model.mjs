@@ -130,6 +130,11 @@ export function guardianMissing(member) {
   return Boolean(member.minor) && !member.guardian?.signedAt
 }
 
+/** U18 ohne zurückgesandte Eltern-Vollmacht: kein Einzug, keine offenen Beiträge. */
+export function billingHeld(member) {
+  return guardianMissing(member)
+}
+
 export function isoDate(at = new Date()) {
   return new Date(at).toISOString().slice(0, 10)
 }
@@ -271,16 +276,23 @@ export function ensurePayments(member, today = isoDate()) {
     const period = member.visitDay || member.startDate || today
     const key = `day:${period}`
     const prev = byKey.get(key)
-    rows.push(
-      prev ?? {
+    const heldDay = billingHeld(member)
+    if (prev) {
+      rows.push(
+        heldDay && (prev.status === 'open' || prev.status === 'failed')
+          ? { ...prev, status: 'upcoming', note: prev.note || 'Wartet auf Eltern-Vollmacht' }
+          : prev,
+      )
+    } else {
+      rows.push({
         kind: 'day',
         period,
         amount: member.price,
-        status: 'open',
+        status: heldDay ? 'upcoming' : 'open',
         paidAt: null,
-        note: '',
-      },
-    )
+        note: heldDay ? 'Wartet auf Eltern-Vollmacht' : '',
+      })
+    }
     return { ...member, payments: rows }
   }
 
@@ -296,6 +308,7 @@ export function ensurePayments(member, today = isoDate()) {
       if (endYm && endYm > lastYm) lastYm = endYm
     }
   }
+  const held = billingHeld(member)
   let cursor = startYm
   let guard = 0
   while (cursor && cursor <= lastYm && guard < 120) {
@@ -303,17 +316,24 @@ export function ensurePayments(member, today = isoDate()) {
     const due = today >= `${cursor}-01` && today >= start
     const prev = byKey.get(key)
     if (prev) {
-      if (prev.status === 'upcoming' && due) rows.push({ ...prev, status: 'open' })
-      else rows.push(prev)
+      if (held && (prev.status === 'open' || prev.status === 'failed')) {
+        rows.push({
+          ...prev,
+          status: 'upcoming',
+          note: prev.note || 'Wartet auf Eltern-Vollmacht',
+        })
+      } else if (prev.status === 'upcoming' && due && !held) {
+        rows.push({ ...prev, status: 'open', note: prev.note === 'Wartet auf Eltern-Vollmacht' ? '' : prev.note })
+      } else rows.push(prev)
     } else {
       const pausedFuture = member.status === 'paused' && !due
       rows.push({
         kind: 'month',
         period: cursor,
         amount: paymentAmount(member, cursor),
-        status: pausedFuture ? 'waived' : due ? 'open' : 'upcoming',
+        status: pausedFuture ? 'waived' : due && !held ? 'open' : 'upcoming',
         paidAt: null,
-        note: pausedFuture ? 'Pausiert' : '',
+        note: pausedFuture ? 'Pausiert' : held && due ? 'Wartet auf Eltern-Vollmacht' : '',
       })
     }
     cursor = addMonthsIso(`${cursor}-01`, 1)?.slice(0, 7) ?? null
@@ -324,15 +344,22 @@ export function ensurePayments(member, today = isoDate()) {
   if (feeAmount > 0) {
     const feeKey = 'fee:fee'
     const prevFee = byKey.get(feeKey)
-    if (prevFee) rows.push(prevFee)
-    else {
+    if (prevFee) {
+      if (held && (prevFee.status === 'open' || prevFee.status === 'failed')) {
+        rows.push({
+          ...prevFee,
+          status: 'upcoming',
+          note: prevFee.note || 'Wartet auf Eltern-Vollmacht',
+        })
+      } else rows.push(prevFee)
+    } else {
       rows.push({
         kind: 'fee',
         period: 'fee',
         amount: feeAmount,
-        status: 'open',
+        status: held ? 'upcoming' : 'open',
         paidAt: null,
-        note: 'Aufnahmegebühr',
+        note: held ? 'Wartet auf Eltern-Vollmacht' : 'Aufnahmegebühr',
       })
     }
   }
@@ -350,6 +377,7 @@ export function ensurePayments(member, today = isoDate()) {
 export function payStatusThisMonth(member, today = isoDate()) {
   if (isFormerMember(member.status)) return 'na'
   if (member.status === 'paused') return 'waived'
+  if (billingHeld(member)) return 'upcoming'
   if (member.plan === 'daypass') {
     const row = (member.payments ?? []).find((item) => item.kind === 'day')
     return row?.status || 'open'
@@ -362,6 +390,7 @@ export function payStatusThisMonth(member, today = isoDate()) {
 
 /** Offene oder nicht erhaltene Beiträge (Monate, Day Pass, Aufnahmegebühr). */
 export function openPaymentRows(member, today = isoDate()) {
+  if (billingHeld(member)) return []
   const ready = ensurePayments(member, today)
   return (ready.payments ?? []).filter(
     (row) =>
@@ -457,6 +486,9 @@ export function listMember(member, today = isoDate()) {
     openAmount: dues.openAmount,
     lastReminderAt: dues.lastReminderAt,
     cancel: view.cancel,
+    onlineCancelAt: view.onlineCancelAt || null,
+    onlineCancelId: view.onlineCancelId || null,
+    onlineCancelKind: view.onlineCancelKind || null,
     createdAt: view.createdAt,
     updatedAt: view.updatedAt,
   }
@@ -464,16 +496,25 @@ export function listMember(member, today = isoDate()) {
 
 export function memberFromSignup(record, today = isoDate()) {
   const startDate = memberStartDate(record, today)
+  const guardian = record.guardian
+    ? {
+        ...record.guardian,
+        signedAt: record.guardian.signedAt ?? null,
+        signedVia: record.guardian.signedVia ?? null,
+      }
+    : null
+  const needsGuardianPaper = Boolean(record.minor) && !guardian?.signedAt
   const base = {
     ...record,
-    status: record.status && record.status !== 'received' ? record.status : 'active',
+    status: needsGuardianPaper
+      ? 'received'
+      : record.status && record.status !== 'received'
+        ? record.status
+        : 'active',
     startDate,
     endDate: termEndDate(startDate, record.termMonths),
     cancelDeadline: cancelDeadlineDate(startDate, record.termMonths),
-    guardian:
-      record.guardian && !record.guardian.signedAt && record.source !== 'admin'
-        ? { ...record.guardian, signedAt: record.createdAt ?? null, signedVia: 'online' }
-        : (record.guardian ?? null),
+    guardian,
     bank: record.bank ?? null,
     notes: record.notes ?? '',
     photoData: record.photoData ?? null,

@@ -11,10 +11,13 @@ type Slot = {
 
 type Phase = 'loading' | 'ready' | 'done' | 'already' | 'error'
 
+const CHECKIN_USERNAME = 'konni-checkin'
+
 const ERRORS: Record<string, string> = {
   code: 'Code unbekannt. Bitte noch einmal prüfen.',
   slot: 'Gerade kein Kurs im Zeitfenster. Bitte den richtigen Slot wählen.',
   limit: 'Dein Slow Start Tarif erlaubt 2 Trainingstage pro Woche. Die sind diese Woche schon voll.',
+  guardian: 'Eltern-Einverständnis fehlt. Unter 18 erst nach Unterschrift der Eltern.',
   rate: 'Zu viele Versuche. Kurz warten und noch einmal.',
   network: 'Netzwerkfehler. Bitte noch einmal versuchen.',
   upstream: 'Check-in hat nicht geklappt. Bitte gleich noch einmal.',
@@ -32,12 +35,50 @@ function pickCheckinGif() {
   return CHECKIN_GIFS[Math.floor(Math.random() * CHECKIN_GIFS.length)]
 }
 
+type PasswordCred = Credential & { password?: string }
+
+async function rememberCheckinCode(value: string) {
+  const password = value.trim().toUpperCase()
+  if (!password || !('credentials' in navigator)) return
+  try {
+    const PasswordCredentialCtor = (
+      window as Window & {
+        PasswordCredential?: new (data: { id: string; password: string; name?: string }) => Credential
+      }
+    ).PasswordCredential
+    if (!PasswordCredentialCtor || !navigator.credentials.store) return
+    const cred = new PasswordCredentialCtor({
+      id: CHECKIN_USERNAME,
+      password,
+      name: 'KONNI Check-in',
+    })
+    await navigator.credentials.store(cred)
+  } catch {
+    // Browser ohne Support oder User-Abbruch — ok.
+  }
+}
+
+async function loadSavedCheckinCode() {
+  if (!('credentials' in navigator) || !navigator.credentials.get) return ''
+  try {
+    const cred = (await navigator.credentials.get({
+      password: true,
+      mediation: 'optional',
+    } as CredentialRequestOptions)) as PasswordCred | null
+    if (cred?.password) return cred.password.toUpperCase()
+  } catch {
+    // ignore
+  }
+  return ''
+}
+
 export function Checkin() {
   const [phase, setPhase] = useState<Phase>('loading')
   const [slot, setSlot] = useState<Slot | null>(null)
   const [todaySlots, setTodaySlots] = useState<Slot[]>([])
   const [slotId, setSlotId] = useState('')
   const [code, setCode] = useState('')
+  const [showCode, setShowCode] = useState(false)
   const [name, setName] = useState('')
   const [gif, setGif] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -47,7 +88,10 @@ export function Checkin() {
     let cancelled = false
     void (async () => {
       try {
-        const response = await fetch('/api/checkin', { headers: { accept: 'application/json' } })
+        const [response, saved] = await Promise.all([
+          fetch('/api/checkin', { headers: { accept: 'application/json' } }),
+          loadSavedCheckinCode(),
+        ])
         const data = await response.json().catch(() => ({}))
         if (cancelled) return
         if (!response.ok || !data.ok) {
@@ -60,6 +104,7 @@ export function Checkin() {
         setSlot(nextSlot)
         setTodaySlots(slots)
         setSlotId(nextSlot?.id || slots[0]?.id || '')
+        if (saved) setCode(saved)
         setPhase('ready')
       } catch {
         if (!cancelled) {
@@ -78,11 +123,12 @@ export function Checkin() {
     setError(null)
     setBusy(true)
     try {
+      const normalized = code.trim().toUpperCase()
       const response = await fetch('/api/checkin', {
         method: 'POST',
         headers: { 'content-type': 'application/json', accept: 'application/json' },
         body: JSON.stringify({
-          code: code.trim(),
+          code: normalized,
           slotId: slot?.id || slotId || undefined,
           company: '',
         }),
@@ -92,6 +138,7 @@ export function Checkin() {
         setError(ERRORS[String(data.error)] || ERRORS.upstream)
         return
       }
+      await rememberCheckinCode(normalized)
       setName(String(data.name || ''))
       setSlot((data.slot as Slot) || slot)
       setGif(pickCheckinGif())
@@ -155,21 +202,46 @@ export function Checkin() {
             </>
           )}
 
-          <form className="checkin-form" onSubmit={(event) => void onSubmit(event)}>
+          <form className="checkin-form" autoComplete="on" onSubmit={(event) => void onSubmit(event)}>
+            <input
+              className="checkin-username"
+              type="text"
+              name="username"
+              autoComplete="username"
+              value={CHECKIN_USERNAME}
+              readOnly
+              tabIndex={-1}
+              aria-hidden="true"
+            />
             <label>
               Dein Check-in-Code
-              <input
-                inputMode="text"
-                autoComplete="one-time-code"
-                autoCapitalize="characters"
-                spellCheck={false}
-                maxLength={8}
-                value={code}
-                onChange={(event) => setCode(event.target.value.toUpperCase())}
-                placeholder="z. B. K7M2QX"
-                required
-              />
+              <span className="checkin-code-row">
+                <input
+                  type={showCode ? 'text' : 'password'}
+                  name="password"
+                  inputMode="text"
+                  autoComplete="current-password"
+                  autoCapitalize="characters"
+                  spellCheck={false}
+                  maxLength={8}
+                  value={code}
+                  onChange={(event) => setCode(event.target.value.toUpperCase())}
+                  placeholder="z. B. K7M2QX"
+                  required
+                />
+                <button
+                  className="checkin-code-toggle"
+                  type="button"
+                  onClick={() => setShowCode((open) => !open)}
+                  aria-pressed={showCode}
+                >
+                  {showCode ? 'Verbergen' : 'Anzeigen'}
+                </button>
+              </span>
             </label>
+            <p className="checkin-muted">
+              Beim ersten Mal speichert dein Handy den Code gern als Passwort — dann musst du ihn nicht jedes Mal tippen.
+            </p>
             <input className="checkin-hp" name="company" tabIndex={-1} autoComplete="off" aria-hidden="true" />
             {error ? <p className="checkin-error">{error}</p> : null}
             <button className="btn" type="submit" disabled={busy || (!slot && !slotId)}>

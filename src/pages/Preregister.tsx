@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
 import { InstagramIcon } from '../components/InstagramIcon'
 import { Link } from '../lib/Link'
@@ -222,17 +223,9 @@ export function Preregister() {
     <main className="page prereg-page">
       <header className="prereg-head">
         <p className="kicker">Voranmeldung</p>
-        <h1>Sei von Anfang an dabei.</h1>
-        <p className="lead">
-          Im KONNI MMA GYM ist jeder willkommen: vom kompletten Anfänger über Fortgeschrittene und Amateurkämpfer bis zu
-          Profis.
-        </p>
-        <p>
-          Egal, ob du kämpfen, technisch besser werden, fitter werden oder einfach Spaß am Kampfsport haben willst. Wir
-          begleiten dich auf deinem Weg. Mit der unverbindlichen Voranmeldung erfährst du als Erstes von Probetrainings
-          und Angeboten.
-        </p>
-        <p className="prereg-meta">Dauert etwa zwei Minuten · unverbindlich · kostenlos</p>
+        <h1>{COPY.preregTitle}</h1>
+        <p className="lead">{COPY.preregLead}</p>
+        <p className="prereg-meta">{COPY.preregMeta}</p>
       </header>
 
       <form ref={formRef} className="prereg-form" onSubmit={(event) => void onSubmit(event)} noValidate>

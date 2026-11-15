@@ -1,5 +1,15 @@
+import { cronAuthorized, cronRateLimited } from '../server/dues-cron.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
-import { needsPortrait, sendPhotoRequestEmail } from '../server/photo-upload.mjs'
+import {
+  membersMissingPortrait,
+  needsPortrait,
+  PHOTO_REQUEST_CONFIRM,
+  sendPhotoRequestEmail,
+} from '../server/photo-upload.mjs'
+
+export const config = {
+  maxDuration: 60,
+}
 
 function json(res, status, body) {
   res.statusCode = status
@@ -33,30 +43,86 @@ function normalizeName(value) {
     .trim()
 }
 
+async function sendOne(store, member) {
+  const mailed = await sendPhotoRequestEmail(process.env, member)
+  if (!mailed?.ok) return { ok: false, error: mailed?.error || 'mail' }
+  const at = new Date().toISOString()
+  await store.update((fresh) => {
+    const index = fresh.members.findIndex((row) => row.id === member.id)
+    if (index < 0) return fresh
+    fresh.members[index] = {
+      ...fresh.members[index],
+      photoRequestedAt: at,
+      updatedAt: at,
+    }
+    return fresh
+  })
+  return { ok: true }
+}
+
 export default async function handler(req, res) {
   try {
     if (req.method !== 'POST') {
       json(res, 405, { ok: false, error: 'method' })
       return
     }
-    const secret = process.env.CRON_SECRET?.trim() || ''
-    const auth = String(req.headers.authorization || '').replace(/^Bearer\s+/i, '').trim()
-    const header = String(req.headers['x-cron-secret'] || '').trim()
-    if (!secret || (auth !== secret && header !== secret)) {
+    if (!cronAuthorized(req, process.env)) {
       json(res, 401, { ok: false, error: 'auth' })
+      return
+    }
+    if (cronRateLimited(req)) {
+      json(res, 429, { ok: false, error: 'rate' })
       return
     }
 
     const body = await readBody(req)
-    const email = String(body.email || '')
-      .trim()
-      .toLowerCase()
-    const nameWanted = normalizeName(body.name || '')
-
     const store = createMemberStore({
       dataDir: '/tmp/konni-memberships',
       env: process.env,
     })
+
+    if (body.bulk === true) {
+      if (String(body.confirm ?? '').trim() !== PHOTO_REQUEST_CONFIRM) {
+        json(res, 403, { ok: false, error: 'confirm' })
+        return
+      }
+      if (!process.env.BREVO_API_KEY?.trim()) {
+        json(res, 503, { ok: false, error: 'mail_off' })
+        return
+      }
+      const people = membersMissingPortrait((await store.load()).members ?? [])
+      if (!people.length) {
+        json(res, 409, { ok: false, error: 'no_recipients' })
+        return
+      }
+      let sent = 0
+      let failed = 0
+      const errors = []
+      for (const person of people) {
+        const result = await sendOne(store, person)
+        if (!result.ok) {
+          failed += 1
+          errors.push({ email: person.email, error: result.error })
+          console.error('[photo-request-bulk]', person.email, result.error)
+        } else {
+          sent += 1
+        }
+        await new Promise((resolve) => setTimeout(resolve, 250))
+      }
+      json(res, failed && !sent ? 502 : 200, {
+        ok: failed === 0,
+        sent,
+        failed,
+        total: people.length,
+        errors: errors.slice(0, 20),
+      })
+      return
+    }
+
+    const email = String(body.email || '')
+      .trim()
+      .toLowerCase()
+    const nameWanted = normalizeName(body.name || '')
     const db = await store.load()
     let member = null
     if (email) {
@@ -90,24 +156,11 @@ export default async function handler(req, res) {
       return
     }
 
-    const mailed = await sendPhotoRequestEmail(process.env, member)
-    if (!mailed?.ok) {
-      json(res, mailed?.error === 'mail_off' ? 503 : 502, { ok: false, error: mailed?.error || 'mail' })
+    const result = await sendOne(store, member)
+    if (!result.ok) {
+      json(res, result.error === 'mail_off' ? 503 : 502, { ok: false, error: result.error })
       return
     }
-
-    const at = new Date().toISOString()
-    await store.update((fresh) => {
-      const index = fresh.members.findIndex((row) => row.id === member.id)
-      if (index < 0) return fresh
-      fresh.members[index] = {
-        ...fresh.members[index],
-        photoRequestedAt: at,
-        updatedAt: at,
-      }
-      return fresh
-    })
-
     json(res, 200, {
       ok: true,
       email: member.email,

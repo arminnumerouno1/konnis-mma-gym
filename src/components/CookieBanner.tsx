@@ -107,15 +107,15 @@ export function CookieBanner() {
         ) : null}
 
         <div className="cookie-actions">
-          <button className="btn btn-ghost" type="button" onClick={() => finish(false)}>
+          <button className="btn btn-solid" type="button" onClick={() => finish(false)}>
             {COPY.cookieNeeded}
           </button>
           {details ? (
-            <button className="btn btn-solid" type="button" onClick={() => finish(extras)}>
+            <button className="btn btn-ghost" type="button" onClick={() => finish(extras)}>
               {COPY.cookieSave}
             </button>
           ) : (
-            <button className="btn btn-solid" type="button" onClick={() => finish(true)}>
+            <button className="btn btn-ghost" type="button" onClick={() => finish(true)}>
               {COPY.cookieAll}
             </button>
           )}

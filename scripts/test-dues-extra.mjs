@@ -273,4 +273,54 @@ const escalated = await runDueReminders({
 })
 assert(escalated.sent >= 1 && escalated.byStage?.mahnung1 >= 1, 'cron escalates to mahnung1')
 
+const feeMember = ensurePayments(
+  {
+    ...withFee,
+    id: 'fee-stripe-1',
+    email: 'fee-stripe@example.com',
+    stripe: { customerId: 'cus_fee_invoice' },
+  },
+  '2026-11-05',
+)
+assert(feeMember.payments.some((row) => row.kind === 'fee' && row.status === 'open'), 'fee starts open')
+const feeInvoiceDb = { members: [{ ...feeMember }] }
+const feeInvoice = applyStripeEvent(
+  feeInvoiceDb,
+  {
+    type: 'invoice.paid',
+    data: {
+      object: {
+        object: 'invoice',
+        id: 'in_fee_combo',
+        number: 'INV-FEE',
+        customer: 'cus_fee_invoice',
+        amount_due: 8731,
+        status: 'paid',
+        paid: true,
+        lines: {
+          data: [
+            {
+              amount: 6732,
+              description: 'KONNI MMA GYM · Slow Start Tarif',
+              period: { start: Math.floor(Date.parse('2026-11-05T00:00:00+01:00') / 1000) },
+            },
+            {
+              amount: 1999,
+              description: 'KONNI MMA GYM · Aufnahmegebühr',
+              period: { start: Math.floor(Date.parse('2026-11-05T00:00:00+01:00') / 1000) },
+            },
+          ],
+        },
+      },
+    },
+  },
+  '2026-11-05',
+)
+assert(feeInvoice.handled && feeInvoice.status === 'paid' && feeInvoice.feePaid === true, 'invoice marks fee paid')
+const afterFee = feeInvoiceDb.members[0]
+const feeRow = afterFee.payments.find((row) => row.kind === 'fee')
+const monthRow = afterFee.payments.find((row) => row.kind === 'month' && row.period === '2026-11')
+assert(feeRow?.status === 'paid' && feeRow.amount === 19.99, 'fee payment closed from invoice')
+assert(monthRow?.status === 'paid' && monthRow.amount === 67.32, 'month amount excludes fee')
+
 console.log('dues extra tests ok')

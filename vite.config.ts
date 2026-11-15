@@ -2,6 +2,7 @@ import react from '@vitejs/plugin-react'
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import { buildSeoBody, buildSeoHead, buildSitemap, canonicalOrigin } from './src/brand/seo.ts'
 import { contactPlugin } from './server/contact-plugin.ts'
+import { cancelPlugin } from './server/cancel-plugin.ts'
 import { inviteMailPlugin } from './server/invite-mail-plugin.ts'
 import { openingMailPlugin } from './server/opening-mail-plugin.ts'
 import { signupOpenMailPlugin } from './server/signup-open-mail-plugin.ts'
@@ -40,6 +41,7 @@ export default defineConfig(({ mode }) => {
       adminPlugin(env, membershipDataDir(process.cwd())),
       checkinPlugin(env, membershipDataDir(process.cwd())),
       contactPlugin(env, dataDir),
+      cancelPlugin(env, membershipDataDir(process.cwd())),
       inviteMailPlugin(env),
       openingMailPlugin(env),
       signupOpenMailPlugin(env),

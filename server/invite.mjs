@@ -2,7 +2,9 @@ import { createHmac, timingSafeEqual } from 'node:crypto'
 
 export const FIRST50_ID = 'first50'
 export const PLUS_ID = 'plus'
-export const INVITE_PLAN_IDS = [FIRST50_ID, PLUS_ID]
+export const SLOWSTART_ID = 'slowstart'
+export const STANDARD_ID = 'standard'
+export const INVITE_PLAN_IDS = [FIRST50_ID, PLUS_ID, SLOWSTART_ID, STANDARD_ID]
 export const FIRST50_LIMIT = 50
 /** Extra personal seats past the original fifty. They stay First 50 in price, without a “Platz N von 50”. */
 export const FIRST50_SLOT_MAX = 400
@@ -112,7 +114,8 @@ export function verifyInvite(secret, token) {
       plan,
       openUntilSignup: payload.o === 1,
       start: contractStart(payload.d),
-      term: plan === PLUS_ID ? 6 : contractTerm(payload.m) || 24,
+      term:
+        plan === PLUS_ID ? 6 : plan === SLOWSTART_ID ? 12 : plan === STANDARD_ID ? 24 : contractTerm(payload.m) || 24,
     },
   }
 }
@@ -170,7 +173,10 @@ export function makeInvitePayload({
   nowMs = Date.now(),
 }) {
   const planId = INVITE_PLAN_IDS.includes(plan) ? plan : FIRST50_ID
-  const hours = openUntilSignup
+  const keepOpen =
+    openUntilSignup === true &&
+    (planId === PLUS_ID || planId === SLOWSTART_ID || planId === STANDARD_ID)
+  const hours = keepOpen
     ? INVITE_OPEN_UNTIL_SIGNUP_HOURS
     : Number.isFinite(Number(ttlHours)) && Number(ttlHours) > 0
       ? Number(ttlHours)
@@ -182,7 +188,7 @@ export function makeInvitePayload({
     s: Number(slot),
     exp: Math.floor(nowMs / 1000) + hours * 60 * 60,
   }
-  if (openUntilSignup) payload.o = 1
+  if (keepOpen) payload.o = 1
   const deferred = contractStart(start)
   if (deferred) payload.d = deferred
   if (planId === FIRST50_ID) {

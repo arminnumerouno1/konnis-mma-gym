@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Toilette · Bitte sitzen · KONNI MMA GYM</title>
+    <style>
+      @font-face {
+        font-family: 'Bebas Neue';
+        src: url('../fonts/BebasNeue-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Barlow Condensed';
+        src: url('../fonts/BarlowCondensed-Regular.ttf') format('truetype');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: 'Barlow Condensed';
+        src: url('../fonts/BarlowCondensed-Medium.ttf') format('truetype');
+        font-weight: 700;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: #ccc;
+        color: #000;
+        font-family: 'Barlow Condensed', 'Helvetica Neue', Arial, sans-serif;
+      }
+
+      .sheet {
+        width: 210mm;
+        min-height: 297mm;
+        margin: 12px auto;
+        padding: 22mm 18mm;
+        background: #fff;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        gap: 12mm;
+        border: 1px solid #999;
+      }
+
+      .brand {
+        letter-spacing: 0.22em;
+        font-size: 15px;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .rule {
+        width: 100%;
+        max-width: 140mm;
+        border: none;
+        border-top: 2px solid #000;
+        margin: 0;
+      }
+
+      .icon {
+        width: 42mm;
+        height: 42mm;
+      }
+
+      h1 {
+        margin: 0;
+        font-family: 'Bebas Neue', Impact, sans-serif;
+        font-size: 52px;
+        line-height: 0.95;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        max-width: 160mm;
+      }
+
+      .lead {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 700;
+        line-height: 1.15;
+        letter-spacing: 0.02em;
+        max-width: 150mm;
+      }
+
+      .note {
+        margin: 0;
+        font-size: 18px;
+        line-height: 1.35;
+        max-width: 140mm;
+      }
+
+      .foot {
+        margin: 0;
+        font-size: 14px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .print-bar {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        padding: 10px;
+        background: #111;
+      }
+
+      .print-bar button {
+        font: inherit;
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border: 0;
+        background: #fff;
+        color: #111;
+        padding: 10px 16px;
+        cursor: pointer;
+      }
+
+      @media print {
+        body {
+          background: #fff;
+        }
+        .print-bar {
+          display: none;
+        }
+        .sheet {
+          margin: 0;
+          border: 0;
+          width: 210mm;
+          min-height: 297mm;
+          page-break-after: avoid;
+        }
+        @page {
+          size: A4 portrait;
+          margin: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="print-bar">
+      <button type="button" onclick="window.print()">Drucken / PDF</button>
+    </div>
+
+    <main class="sheet" aria-label="Toilettenhinweis">
+      <p class="brand">KONNI MMA GYM</p>
+      <hr class="rule" />
+
+      <svg class="icon" viewBox="0 0 120 120" aria-hidden="true">
+        <circle cx="60" cy="60" r="54" fill="none" stroke="#000" stroke-width="6" />
+        <path
+          d="M28 28 L92 92"
+          fill="none"
+          stroke="#000"
+          stroke-width="8"
+          stroke-linecap="round"
+        />
+        <!-- person standing stick figure -->
+        <circle cx="48" cy="34" r="8" fill="none" stroke="#000" stroke-width="3.5" />
+        <path
+          d="M48 44 V72 M48 52 L36 62 M48 52 L60 62 M48 72 L38 94 M48 72 L58 94"
+          fill="none"
+          stroke="#000"
+          stroke-width="3.5"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+        <!-- toilet bowl hint -->
+        <path
+          d="M74 70 H96 V86 Q96 98 84 98 H78 Q70 98 70 88 V70 Z"
+          fill="none"
+          stroke="#000"
+          stroke-width="3.5"
+          stroke-linejoin="round"
+        />
+      </svg>
+
+      <h1>Bitte nicht<br />im Stehen pinkeln</h1>
+      <p class="lead">Immer im Sitzen.</p>
+      <p class="note">Sauberkeit für alle. Danke.</p>
+
+      <hr class="rule" />
+      <p class="foot">Wittenberger Straße 15 · Leipzig</p>
+    </main>
+  </body>
+</html>

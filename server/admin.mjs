@@ -1,7 +1,6 @@
 import { createHmac, randomUUID, timingSafeEqual } from 'node:crypto'
 import { isValidEmail, isValidName, isValidPhone, ageOn, normalizeEmail } from './membership.mjs'
 import {
-  ADMIN_COOKIE,
   cancelInfo,
   ensurePayments,
   isoDate,
@@ -21,12 +20,23 @@ import {
   maskIban,
   membershipTaken,
   normalizeIban,
+  guardianMissing,
 } from './member-model.mjs'
+import {
+  LOGIN_FAIL_DELAY_MS,
+  SESSION_MS,
+  buildAdminCookie,
+  clearAdminCookies,
+  createAdminAuthStore,
+  readAdminCookie,
+  sleep,
+} from './admin-guard.mjs'
 import { createMemberStore, storeKind } from './member-store.mjs'
 import { buildContractPdf } from './membership-pdf.mjs'
 import {
   sendBroadcastEmail,
   sendCheckinCodeEmail,
+  sendGuardianMandateEmail,
   sendMembershipEmails,
   sendPaperReturnEmail,
   sendPayLinkEmail,
@@ -54,18 +64,41 @@ import { GYM_BANK } from './gym-bank.mjs'
 import { buildOngoingTransferPayload, buildTransferPayload } from './transfer-due.mjs'
 import { berlinYm, buildReport } from './member-report.mjs'
 import { createPreregStore, importPreregs, patchPrereg, preregCsv, preregStats, sortPreregs } from './prereg.mjs'
-import { createTrialStore, patchTrial, sendTrialConfirmMail, sortTrials, trialStats } from './trial.mjs'
 import {
+  createTrialStore,
+  patchTrial,
+  sendTrialConfirmMail,
+  sendTrialGuardianConsentEmail,
+  sortTrials,
+  trialGuardianMissing,
+  trialStats,
+} from './trial.mjs'
+import {
+  checkinStatsByMember,
+  checkinStatsForMember,
   checkinsForDay,
   collectCheckinCodes,
   createCheckinStore,
   ensureCheckinCode,
   performCheckin,
   sortCheckins,
+  weeklyVisitLimitForPlan,
 } from './checkin.mjs'
 import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
 import { allocateInvoiceNumber, buildReceiptPdf } from './receipt-pdf.mjs'
-import { FIRST50_ID, INVITE_TTL_HOURS, PLUS_ID, contractStart, contractTerm, nextFirst50Slot, normalizePersonName, splitPersonName } from './invite.mjs'
+import {
+  FIRST50_ID,
+  INVITE_TTL_HOURS,
+  PLUS_ID,
+  SLOWSTART_ID,
+  STANDARD_ID,
+  contractStart,
+  contractTerm,
+  inviteRevoked,
+  nextFirst50Slot,
+  normalizePersonName,
+  splitPersonName,
+} from './invite.mjs'
 import { deliverFirst50Invite } from './invite-mail.mjs'
 import { mailProofMatches } from './mail-proof.mjs'
 import { PHOTO_MAX, readPhotoData } from './photo-data.mjs'
@@ -73,9 +106,8 @@ import { PHOTO_MAX, readPhotoData } from './photo-data.mjs'
 const RATE_WINDOW_MS = 10 * 60 * 1000
 const RATE_MAX = 12
 /** Separate, slightly higher ceiling for proof-authenticated ops scripts. */
-const PROOF_RATE_MAX = 40
+const PROOF_RATE_MAX = 24
 const MAX_BODY = 420_000
-const SESSION_MS = 12 * 60 * 60 * 1000
 const PLAN_IDS = ['slowstart', 'standard', 'flex', 'plus', 'daypass', 'first50']
 const PLAN_META = {
   slowstart: { name: 'Slow Start Tarif', price: 79.99, months: 12 },
@@ -88,8 +120,19 @@ const PLAN_META = {
 const hits = new Map()
 
 function adminSecret(env) {
-  const value = env.ADMIN_SECRET?.trim() || env.INVITE_SECRET?.trim() || ''
-  return value.length >= 16 ? value : ''
+  const dedicated = env.ADMIN_SECRET?.trim() || ''
+  if (dedicated.length >= 16) return dedicated
+  // Temporary bridge so a missing ADMIN_SECRET does not lock the desk out.
+  // INVITE_SECRET is a signing key — set a dedicated ADMIN_SECRET in production.
+  const legacy = env.INVITE_SECRET?.trim() || ''
+  if (legacy.length >= 16) {
+    if (!adminSecret._warned) {
+      console.error('[admin] ADMIN_SECRET missing; temporarily using INVITE_SECRET. Set a dedicated ADMIN_SECRET.')
+      adminSecret._warned = true
+    }
+    return legacy
+  }
+  return ''
 }
 
 function secretsEqual(left, right) {
@@ -99,13 +142,13 @@ function secretsEqual(left, right) {
   return timingSafeEqual(a, b)
 }
 
-function signSession(secret, exp) {
-  const payload = Buffer.from(JSON.stringify({ exp })).toString('base64url')
+function signSession(secret, exp, epoch) {
+  const payload = Buffer.from(JSON.stringify({ exp, epoch: Number(epoch) || 1 })).toString('base64url')
   const sig = createHmac('sha256', secret).update(payload).digest('base64url')
   return `${payload}.${sig}`
 }
 
-function readSession(secret, token) {
+function readSession(secret, token, epoch) {
   const [payload, sig] = String(token ?? '').split('.')
   if (!payload || !sig) return false
   const expected = createHmac('sha256', secret).update(payload).digest('base64url')
@@ -114,30 +157,11 @@ function readSession(secret, token) {
   if (left.length !== right.length || !timingSafeEqual(left, right)) return false
   try {
     const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
-    return Number(data.exp) > Date.now()
+    if (Number(data.exp) <= Date.now()) return false
+    return Number(data.epoch) === Number(epoch || 1)
   } catch {
     return false
   }
-}
-
-function cookieValue(header, name) {
-  if (!header) return ''
-  const prefix = `${name}=`
-  const hit = String(header)
-    .split(';')
-    .map((part) => part.trim())
-    .find((part) => part.startsWith(prefix))
-  return hit ? decodeURIComponent(hit.slice(prefix.length)) : ''
-}
-
-function cookieHeader(token, secure) {
-  const base = `${ADMIN_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${Math.floor(SESSION_MS / 1000)}`
-  return secure ? `${base}; Secure` : base
-}
-
-function clearCookie(secure) {
-  const base = `${ADMIN_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0`
-  return secure ? `${base}; Secure` : base
 }
 
 function isSecure(req) {
@@ -161,7 +185,25 @@ function rateLimited(ip, max = RATE_MAX) {
   }
   recent.push(now)
   hits.set(ip, recent)
+  // Bound map growth: drop stale IPs occasionally.
+  if (hits.size > 2000) {
+    for (const [key, times] of hits) {
+      const keep = times.filter((t) => now - t < RATE_WINDOW_MS)
+      if (keep.length) hits.set(key, keep)
+      else hits.delete(key)
+    }
+  }
   return false
+}
+
+function setCookieHeaders(resHeaders, cookies) {
+  const list = Array.isArray(cookies) ? cookies : [cookies]
+  if (list.length === 1) {
+    resHeaders['set-cookie'] = list[0]
+    return resHeaders
+  }
+  resHeaders['set-cookie'] = list
+  return resHeaders
 }
 
 function json(res, status, body, extraHeaders = {}) {
@@ -202,7 +244,7 @@ async function readBody(req) {
   })
 }
 
-const DOC_KINDS = ['contract', 'sepa', 'payment']
+const DOC_KINDS = ['contract', 'sepa', 'payment', 'guardian']
 const DOC_MAX = 4_200_000
 const DOC_TYPES = {
   'application/pdf': { ext: 'pdf', magic: (b) => b.subarray(0, 5).toString('latin1') === '%PDF-' },
@@ -236,7 +278,12 @@ function applyDocSideEffects(member, kind, at) {
   if (kind === 'sepa' && next.bank?.iban && !next.bank.mandateSignedAt) {
     next.bank = { ...next.bank, mandateSignedAt: at }
   }
-  if (kind === 'contract' && next.minor && next.guardian && !next.guardian.signedAt) {
+  if (
+    (kind === 'contract' || kind === 'guardian') &&
+    next.minor &&
+    next.guardian &&
+    !next.guardian.signedAt
+  ) {
     next.guardian = { ...next.guardian, signedAt: at, signedVia: 'paper' }
     if (next.status === 'received') next.status = 'active'
   }
@@ -761,6 +808,12 @@ function patchMemberFields(current, patch, today) {
     if (profile.values.birthDate) {
       next.age = ageOn(profile.values.birthDate)
       next.minor = next.age < 18
+      if (next.minor && !next.guardian?.signedAt && next.status === 'active') {
+        next.status = 'received'
+      }
+      if (!next.minor) {
+        next.guardian = null
+      }
     }
   }
   if (typeof patch.startDate === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(patch.startDate)) {
@@ -816,6 +869,7 @@ export function createAdminHandler({
   const preregs = createPreregStore({ dataDir, env })
   const trials = createTrialStore({ dataDir, env })
   const checkins = createCheckinStore({ dataDir, env })
+  const authStore = createAdminAuthStore({ dataDir, env })
   const secret = () => adminSecret(env)
 
   return async function handleAdmin(req, res) {
@@ -827,10 +881,14 @@ export function createAdminHandler({
     }
   }
 
-  function authed(req) {
+  async function authed(req) {
     const key = secret()
     if (!key) return false
-    return readSession(key, cookieValue(req.headers.cookie, ADMIN_COOKIE))
+    const secure = isSecure(req)
+    const token = readAdminCookie(req.headers.cookie, secure)
+    if (!token) return false
+    const epoch = await authStore.sessionEpoch()
+    return readSession(key, token, epoch)
   }
 
   async function run(req, res) {
@@ -845,13 +903,18 @@ export function createAdminHandler({
     const today = isoDate()
     const key = secret()
     const secure = isSecure(req)
+    const sessionOk = await authed(req)
 
     if (req.method === 'GET' && url.searchParams.get('ping') === '1') {
+      // Unauthenticated callers only learn whether they have a session — no config fingerprint.
+      if (!sessionOk) {
+        json(res, 200, { ok: true, auth: false })
+        return
+      }
       json(res, 200, {
         ok: true,
-        auth: authed(req),
+        auth: true,
         store: storeKind(env),
-        // Length only — never the secret. Helps diagnose "password never works" when env is missing.
         adminReady: Boolean(key),
       })
       return
@@ -859,7 +922,7 @@ export function createAdminHandler({
 
     const uploadKind = url.searchParams.get('upload')
     if (req.method === 'POST' && uploadKind) {
-      if (!authed(req)) {
+      if (!sessionOk) {
         json(res, 401, { ok: false, error: 'auth' })
         return
       }
@@ -933,34 +996,62 @@ export function createAdminHandler({
       const action = String(body.action ?? '')
 
       if (action === 'login') {
-        if (rateLimited(clientIp(req))) {
+        const ip = clientIp(req)
+        if (rateLimited(ip)) {
           json(res, 429, { ok: false, error: 'rate' })
           return
         }
+        const gate = await authStore.loginStatus(ip)
+        if (!gate.ok) {
+          await sleep(LOGIN_FAIL_DELAY_MS)
+          json(res, 429, { ok: false, error: 'rate', retryAfterMs: gate.retryAfterMs || undefined })
+          return
+        }
         if (!key) {
-          console.error('[admin] login blocked: ADMIN_SECRET/INVITE_SECRET missing or shorter than 16 chars')
+          console.error('[admin] login blocked: ADMIN_SECRET missing or shorter than 16 chars')
           json(res, 503, { ok: false, error: 'config' })
           return
         }
         if (!secretsEqual(String(body.password ?? ''), key)) {
-          json(res, 403, { ok: false, error: 'auth' })
+          const failure = await authStore.recordLoginFailure(ip)
+          await sleep(LOGIN_FAIL_DELAY_MS)
+          json(
+            res,
+            failure.locked ? 429 : 403,
+            {
+              ok: false,
+              error: failure.locked ? 'rate' : 'auth',
+              retryAfterMs: failure.locked ? failure.retryAfterMs : undefined,
+            },
+          )
           return
         }
+        await authStore.clearLoginFailures(ip)
+        const epoch = await authStore.sessionEpoch()
         json(
           res,
           200,
           { ok: true, store: storeKind(env) },
-          { 'set-cookie': cookieHeader(signSession(key, Date.now() + SESSION_MS), secure) },
+          setCookieHeaders({}, buildAdminCookie(signSession(key, Date.now() + SESSION_MS, epoch), secure)),
         )
         return
       }
 
       if (action === 'logout') {
-        json(res, 200, { ok: true }, { 'set-cookie': clearCookie(secure) })
+        json(res, 200, { ok: true }, setCookieHeaders({}, clearAdminCookies(secure)))
         return
       }
 
-      const sessionOk = authed(req)
+      if (action === 'revokeSessions') {
+        if (!sessionOk) {
+          json(res, 401, { ok: false, error: 'auth' })
+          return
+        }
+        await authStore.bumpSessionEpoch()
+        json(res, 200, { ok: true }, setCookieHeaders({}, clearAdminCookies(secure)))
+        return
+      }
+
       const proofOk = mailProofMatches(body.proof, env)
       // Unauthenticated POSTs are rate-limited (higher ceiling when proof is valid for batch ops).
       if (!sessionOk && rateLimited(clientIp(req), proofOk ? PROOF_RATE_MAX : RATE_MAX)) {
@@ -974,12 +1065,19 @@ export function createAdminHandler({
           action === 'sendPriceNote' ||
           action === 'sendTransferSwitch' ||
           action === 'sendPaperReturn' ||
+          action === 'sendGuardianMandate' ||
           action === 'sendReminder' ||
           action === 'sendFirst50' ||
           action === 'sendPlusInvite' ||
+          action === 'sendSlowStartInvite' ||
+          action === 'sendStandardInvite' ||
           action === 'revokeInvite' ||
           action === 'sendPhotoRequest' ||
-          action === 'sendPhotoRequestBulk') &&
+          action === 'sendPhotoRequestBulk' ||
+          action === 'markWithdrawn' ||
+          action === 'markCancelled' ||
+          action === 'lookupMember' ||
+          action === 'reactivateMember') &&
         proofOk
       if (!sessionOk && !proofSend) {
         json(res, 401, { ok: false, error: 'auth' })
@@ -987,11 +1085,263 @@ export function createAdminHandler({
       }
       const proofOnly = proofOk && !sessionOk
 
-      if (action === 'sendFirst50' || action === 'sendPlusInvite') {
+      if (action === 'lookupMember') {
+        const wanted = normalizePersonName(body.name).toLocaleLowerCase('de-DE')
+        const emailWanted = body.email ? normalizeEmail(body.email) : ''
+        if (wanted.length < 3 && !emailWanted) {
+          json(res, 400, { ok: false, error: 'name' })
+          return
+        }
+        const found = (await store.load()).members.filter((row) => {
+          const full = normalizePersonName(`${row.firstName ?? ''} ${row.lastName ?? ''}`).toLocaleLowerCase('de-DE')
+          const mail = normalizeEmail(row.email)
+          if (emailWanted && mail === emailWanted) return true
+          if (wanted && full === wanted) return true
+          return false
+        })
+        json(res, 200, {
+          ok: true,
+          count: found.length,
+          members: found.map((row) => ({
+            id: row.id,
+            name: `${row.firstName || ''} ${row.lastName || ''}`.trim(),
+            email: row.email,
+            phone: row.phone || null,
+            status: row.status,
+            plan: row.plan,
+            planName: row.planName,
+            startDate: row.startDate || null,
+            checkinCode: row.checkinCode || null,
+            payMethod: row.payMethod || null,
+            inviteSlot: row.inviteSlot ?? null,
+            cancelledAt: row.cancelledAt || null,
+            cancelEffectiveOn: row.cancelEffectiveOn || null,
+            street: row.street || null,
+            zip: row.zip || null,
+            city: row.city || null,
+            birthDate: row.birthDate || null,
+            hasPhoto: Boolean(row.photoData),
+          })),
+        })
+        return
+      }
+
+      if (action === 'reactivateMember') {
+        const wanted = normalizePersonName(body.name).toLocaleLowerCase('de-DE')
+        const emailWanted = body.email ? normalizeEmail(body.email) : ''
+        if (wanted.length < 3 && !emailWanted) {
+          json(res, 400, { ok: false, error: 'name' })
+          return
+        }
+        const found = (await store.load()).members.filter((row) => {
+          const full = normalizePersonName(`${row.firstName ?? ''} ${row.lastName ?? ''}`).toLocaleLowerCase('de-DE')
+          const mail = normalizeEmail(row.email)
+          if (emailWanted && mail === emailWanted) return true
+          if (wanted && full === wanted) return true
+          return false
+        })
+        if (found.length === 0) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (found.length > 1 && !emailWanted) {
+          json(res, 409, { ok: false, error: 'duplicate' })
+          return
+        }
+        const current = found[0]
+        const trialDb = await trials.load()
+        const noteLine = String(
+          body.note || `Wieder aktiviert ${today}. Missverständnis bereinigt.`,
+        ).slice(0, 400)
+        let saved = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === current.id)
+          if (index < 0) return db
+          const withCode = ensureCheckinCode(
+            db.members[index],
+            collectCheckinCodes(db.members, trialDb.entries),
+          )
+          const patched = patchMember(
+            withCode,
+            {
+              status: 'active',
+              notes: [withCode.notes, noteLine].filter(Boolean).join('\n').slice(0, 4000),
+            },
+            today,
+          )
+          if (!patched.ok) return db
+          db.members[index] = patched.member
+          saved = patched.member
+          return db
+        })
+        if (!saved) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        let mail = 'skipped'
+        if (body.sendCode !== false) {
+          try {
+            mail = await sendCheckinCode(env, saved)
+            if (mail && mail !== 'skipped') {
+              const at = new Date().toISOString()
+              await store.update((db) => {
+                const index = db.members.findIndex((row) => row.id === saved.id)
+                if (index < 0) return db
+                db.members[index] = { ...db.members[index], checkinCodeMailAt: at, updatedAt: at }
+                saved = db.members[index]
+                return db
+              })
+            }
+          } catch (error) {
+            console.error('[admin] checkin code mail on reactivate failed', error)
+            mail = 'fail'
+          }
+        }
+        if (proofOnly) {
+          json(res, 200, {
+            ok: true,
+            name: `${saved.firstName} ${saved.lastName}`,
+            status: saved.status,
+            checkinCode: saved.checkinCode || null,
+            mail,
+          })
+          return
+        }
+        json(res, 200, {
+          ok: true,
+          member: publicMember(saved, today, true),
+          mail,
+        })
+        return
+      }
+
+      if (action === 'markWithdrawn' || action === 'markCancelled') {
+        const nextStatus = action === 'markCancelled' ? 'cancelled' : 'withdrawn'
+        const wanted = normalizePersonName(body.name).toLocaleLowerCase('de-DE')
+        const emailWanted = body.email ? normalizeEmail(body.email) : ''
+        if (wanted.length < 3 && !emailWanted) {
+          json(res, 400, { ok: false, error: 'name' })
+          return
+        }
+        const found = (await store.load()).members.filter((row) => {
+          const full = normalizePersonName(`${row.firstName ?? ''} ${row.lastName ?? ''}`).toLocaleLowerCase('de-DE')
+          const mail = normalizeEmail(row.email)
+          if (emailWanted && mail === emailWanted) return true
+          if (wanted && full === wanted) return true
+          return false
+        })
+        if (found.length === 0) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (found.length > 1 && !emailWanted) {
+          json(res, 409, { ok: false, error: 'duplicate' })
+          return
+        }
+        const current = found[0]
+        if (current.status === nextStatus) {
+          if (proofOnly) {
+            json(res, 200, { ok: true, already: true, name: `${current.firstName} ${current.lastName}`, status: nextStatus })
+            return
+          }
+          json(res, 200, { ok: true, already: true, member: publicMember(current, today, true) })
+          return
+        }
+        let stripeCancel = { ok: true, results: [] }
+        try {
+          stripeCancel = await cancelStripeSubscriptions(env, current, fetchImpl)
+        } catch (error) {
+          console.error('[admin] stripe cancel on status change failed', error)
+          json(res, 502, { ok: false, error: 'stripe_fail' })
+          return
+        }
+        const defaultNote =
+          nextStatus === 'cancelled'
+            ? `Mitgliedschaft beendet ${today}. Nicht mehr im Gym.`
+            : `Widerruf eingegangen ${today}. Vertrag beendet.`
+        const noteLine = String(body.note || defaultNote).slice(0, 400)
+        const waiveNote = nextStatus === 'cancelled' ? 'Mitgliedschaft beendet' : 'Widerruf'
+        let saved = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === current.id)
+          if (index < 0) return db
+          const patched = patchMember(
+            db.members[index],
+            {
+              status: nextStatus,
+              ...(nextStatus === 'cancelled' ? { cancelEffectiveOn: today } : {}),
+              notes: [db.members[index].notes, noteLine].filter(Boolean).join('\n').slice(0, 4000),
+            },
+            today,
+          )
+          if (!patched.ok) return db
+          let next = patched.member
+          if (Array.isArray(next.payments)) {
+            next = {
+              ...next,
+              payments: next.payments.map((row) => {
+                if (row.status !== 'open' && row.status !== 'upcoming' && row.status !== 'failed') return row
+                return {
+                  ...row,
+                  status: 'waived',
+                  note: row.note || waiveNote,
+                  paidAt: null,
+                }
+              }),
+            }
+          }
+          if (stripeCancel?.results?.length) {
+            next = {
+              ...next,
+              stripe: {
+                ...(next.stripe ?? {}),
+                subscriptionId: null,
+                canceledAt: new Date().toISOString(),
+              },
+            }
+          }
+          db.members[index] = next
+          saved = next
+          return db
+        })
+        if (!saved) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (proofOnly) {
+          json(res, 200, {
+            ok: true,
+            name: `${saved.firstName} ${saved.lastName}`,
+            status: saved.status,
+            stripeCanceled: Boolean(stripeCancel?.results?.length),
+          })
+          return
+        }
+        json(res, 200, {
+          ok: true,
+          member: publicMember(saved, today, true),
+          stripeCanceled: Boolean(stripeCancel?.results?.length),
+        })
+        return
+      }
+
+      if (
+        action === 'sendFirst50' ||
+        action === 'sendPlusInvite' ||
+        action === 'sendSlowStartInvite' ||
+        action === 'sendStandardInvite'
+      ) {
         const email = normalizeEmail(body.email)
         const name = normalizePersonName(body.name)
         const start = body.start ? contractStart(body.start) : ''
-        const plan = action === 'sendPlusInvite' || body.plan === PLUS_ID ? PLUS_ID : FIRST50_ID
+        const plan =
+          action === 'sendPlusInvite' || body.plan === PLUS_ID
+            ? PLUS_ID
+            : action === 'sendSlowStartInvite' || body.plan === SLOWSTART_ID
+              ? SLOWSTART_ID
+              : action === 'sendStandardInvite' || body.plan === STANDARD_ID
+                ? STANDARD_ID
+                : FIRST50_ID
         if (!isValidEmail(email) || name.length < 3) {
           json(res, 400, { ok: false, error: name.length < 3 ? 'name' : 'email' })
           return
@@ -1000,7 +1350,14 @@ export function createAdminHandler({
           json(res, 400, { ok: false, error: 'start' })
           return
         }
-        if (plan === PLUS_ID && !start) {
+        if (proofOnly) {
+          const claim = await authStore.claimProofInvite(email)
+          if (!claim.ok) {
+            json(res, 429, { ok: false, error: 'rate' })
+            return
+          }
+        }
+        if ((plan === PLUS_ID || plan === SLOWSTART_ID || plan === STANDARD_ID) && !start) {
           json(res, 400, { ok: false, error: 'start' })
           return
         }
@@ -1009,19 +1366,23 @@ export function createAdminHandler({
           return
         }
         const now = new Date().toISOString()
-        const openUntilSignup = plan === PLUS_ID && body.openUntilSignup === true
+        const openUntilSignup =
+          (plan === PLUS_ID || plan === SLOWSTART_ID || plan === STANDARD_ID) &&
+          body.openUntilSignup === true
         const freshUntil = Date.now() - INVITE_TTL_HOURS * 60 * 60 * 1000
         let reserved = null
         await store.update((db) => {
           const issued = Array.isArray(db.issuedFirst50) ? db.issuedFirst50 : []
           db.issuedFirst50 = issued
           if (!openUntilSignup) {
-            const open = issued.find(
-              (row) =>
-                row?.email === email &&
-                Date.parse(row.at || '') > freshUntil &&
-                (row?.plan || FIRST50_ID) === plan,
-            )
+            const revoked = Array.isArray(db.revokedInvites) ? db.revokedInvites : []
+            const open = issued.find((row) => {
+              if (row?.email !== email) return false
+              if (Date.parse(row.at || '') <= freshUntil) return false
+              if ((row?.plan || FIRST50_ID) !== plan) return false
+              if (inviteRevoked(revoked, email, row?.slot)) return false
+              return true
+            })
             if (open) {
               reserved = { ok: false, error: 'invite_open' }
               return db
@@ -1085,6 +1446,7 @@ export function createAdminHandler({
             lastChance,
             openUntilSignup,
             ...(start ? { start } : {}),
+            ...(mailed?.url ? { url: mailed.url } : {}),
           })
           return
         }
@@ -1096,6 +1458,7 @@ export function createAdminHandler({
           lastChance,
           openUntilSignup,
           ...(start ? { start } : {}),
+          ...(mailed?.url ? { url: mailed.url } : {}),
         })
         return
       }
@@ -1222,7 +1585,18 @@ export function createAdminHandler({
             console.error('[admin] signed contract attachment skipped', error)
           }
         }
-        const mailRecord = extra.length ? { ...current, signedUploadName: extra[0].name } : current
+        let mailMember = current
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          const withCode = ensureCheckinCode(db.members[index], collectCheckinCodes(db.members, []))
+          db.members[index] = withCode
+          mailMember = withCode
+          return db
+        })
+        const mailRecord = extra.length
+          ? { ...mailMember, signedUploadName: extra[0].name }
+          : mailMember
         let mailed
         try {
           mailed = await sendMail(env, mailRecord, {
@@ -1240,11 +1614,17 @@ export function createAdminHandler({
           return
         }
         const at = new Date().toISOString()
-        let saved = current
+        let saved = mailMember
         await store.update((db) => {
           const index = db.members.findIndex((row) => row.id === id)
           if (index < 0) return db
-          db.members[index] = { ...db.members[index], contractMail: 'sent', contractMailAt: at, updatedAt: at }
+          db.members[index] = {
+            ...db.members[index],
+            contractMail: 'sent',
+            contractMailAt: at,
+            updatedAt: at,
+            ...(mailed.checkinCodeIncluded ? { checkinCodeMailAt: at } : {}),
+          }
           saved = db.members[index]
           return db
         })
@@ -1296,6 +1676,10 @@ export function createAdminHandler({
         }
         if (current.stripe?.subscriptionId) {
           json(res, 409, { ok: false, error: 'stripe_exists' })
+          return
+        }
+        if (guardianMissing(current)) {
+          json(res, 400, { ok: false, error: 'guardian' })
           return
         }
         const secretKey = env.STRIPE_SECRET_KEY?.trim() || ''
@@ -1566,6 +1950,53 @@ export function createAdminHandler({
         return
       }
 
+      if (action === 'sendGuardianMandate') {
+        const id = String(body.id ?? '')
+        const current = (await store.load()).members.find((row) => row.id === id)
+        if (!current) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        if (!current.minor || !current.guardian?.email) {
+          json(res, 400, { ok: false, error: 'guardian' })
+          return
+        }
+        let mailed
+        try {
+          mailed = await sendGuardianMandateEmail(env, current)
+        } catch (error) {
+          console.error('[admin] guardian mandate failed', error)
+          json(res, 502, { ok: false, error: 'mail' })
+          return
+        }
+        if (!mailed || mailed === 'skipped') {
+          json(res, 503, { ok: false, error: 'mail_off' })
+          return
+        }
+        const at = new Date().toISOString()
+        let saved = null
+        await store.update((db) => {
+          const index = db.members.findIndex((row) => row.id === id)
+          if (index < 0) return db
+          db.members[index] = {
+            ...db.members[index],
+            guardianMandateMailAt: at,
+            updatedAt: at,
+          }
+          saved = db.members[index]
+          return db
+        })
+        if (proofOnly) {
+          json(res, 200, { ok: true })
+          return
+        }
+        json(res, 200, {
+          ok: true,
+          member: saved ? publicMember(saved, today, true) : undefined,
+        })
+        return
+      }
+
       if (action === 'sendPaperReturn') {
         const email = normalizeEmail(body.email)
         if (!isValidEmail(email)) {
@@ -1644,6 +2075,10 @@ export function createAdminHandler({
         }
         if (current.stripe?.subscriptionId) {
           json(res, 409, { ok: false, error: 'stripe_exists' })
+          return
+        }
+        if (guardianMissing(current)) {
+          json(res, 400, { ok: false, error: 'guardian' })
           return
         }
         const secretKey = env.STRIPE_SECRET_KEY?.trim() || ''
@@ -2252,7 +2687,12 @@ export function createAdminHandler({
         return
       }
 
-      if (action === 'trialUpdate' || action === 'trialDelete' || action === 'trialSendConfirm') {
+      if (
+        action === 'trialUpdate' ||
+        action === 'trialDelete' ||
+        action === 'trialSendConfirm' ||
+        action === 'trialSendGuardianConsent'
+      ) {
         const id = String(body.id ?? '')
         let result = null
         let previous = null
@@ -2265,7 +2705,7 @@ export function createAdminHandler({
             return db
           }
           previous = db.entries[index]
-          if (action === 'trialSendConfirm') {
+          if (action === 'trialSendConfirm' || action === 'trialSendGuardianConsent') {
             result = { ok: true, entry: previous }
             return db
           }
@@ -2281,6 +2721,40 @@ export function createAdminHandler({
           json(res, 400, { ok: false, error: result.error })
           return
         }
+
+        if (action === 'trialSendGuardianConsent') {
+          if (!result.entry?.minor || !result.entry?.guardian?.email) {
+            json(res, 400, { ok: false, error: 'guardian' })
+            return
+          }
+          let mailed
+          try {
+            mailed = await sendTrialGuardianConsentEmail(env, result.entry)
+          } catch (error) {
+            console.error('[admin] trial guardian consent failed', error)
+            json(res, 502, { ok: false, error: 'mail' })
+            return
+          }
+          if (!mailed || mailed === 'skipped') {
+            json(res, 503, { ok: false, error: 'mail_off' })
+            return
+          }
+          const at = new Date().toISOString()
+          await trials.update((db) => {
+            const index = db.entries.findIndex((row) => row.id === id)
+            if (index < 0) return db
+            db.entries[index] = {
+              ...db.entries[index],
+              guardianConsentMailAt: at,
+              updatedAt: at,
+            }
+            result = { ok: true, entry: db.entries[index] }
+            return db
+          })
+          json(res, 200, { ok: true, entry: result.entry })
+          return
+        }
+
         const shouldConfirm =
           action === 'trialSendConfirm' ||
           (action === 'trialUpdate' &&
@@ -2288,6 +2762,10 @@ export function createAdminHandler({
             previous?.status !== 'bestaetigt')
         let confirmMail = null
         if (shouldConfirm && result.entry) {
+          if (trialGuardianMissing(result.entry)) {
+            json(res, 400, { ok: false, error: 'guardian' })
+            return
+          }
           try {
             const memberDb = await store.load()
             await trials.update((db) => {
@@ -2431,7 +2909,7 @@ export function createAdminHandler({
       return
     }
 
-    if (!authed(req)) {
+    if (!sessionOk) {
       json(res, 401, { ok: false, error: 'auth' })
       return
     }
@@ -2556,7 +3034,21 @@ export function createAdminHandler({
         res.end(Buffer.from(bytes))
         return
       }
-      json(res, 200, { ok: true, member: publicMember(row, today, true), store: storeKind(env) })
+      const { entries: checkinEntries } = await checkins.load()
+      const visits = checkinStatsForMember(checkinEntries, row.id)
+      const weekLimit = weeklyVisitLimitForPlan(row.plan)
+      json(res, 200, {
+        ok: true,
+        member: {
+          ...publicMember(row, today, true),
+          checkinCount: visits.total,
+          checkinThisWeek: visits.thisWeek,
+          checkinLastAt: visits.lastAt,
+          checkinLastDay: visits.lastDay,
+          checkinWeekLimit: weekLimit,
+        },
+        store: storeKind(env),
+      })
       return
     }
 
@@ -2585,10 +3077,22 @@ export function createAdminHandler({
     const joined = /^\d{4}-\d{2}$/.test(joinedParam) ? joinedParam : ''
     const photoRaw = String(url.searchParams.get('photo') ?? '')
     const photo = photoRaw === 'missing' || photoRaw === 'has' ? photoRaw : ''
+    const { entries: checkinEntries } = await checkins.load()
+    const visitStats = checkinStatsByMember(checkinEntries)
     const members = db.members
       .filter((row) => matches(row, { q, plan, status, pay, payMethod, joined, photo }, today))
       .sort((a, b) => String(b.updatedAt || b.createdAt).localeCompare(String(a.updatedAt || a.createdAt)))
-      .map((row) => listMember(row, today))
+      .map((row) => {
+        const base = listMember(row, today)
+        const visits = visitStats.get(row.id) || { total: 0, thisWeek: 0, lastAt: null, lastDay: null }
+        return {
+          ...base,
+          checkinCount: visits.total,
+          checkinThisWeek: visits.thisWeek,
+          checkinLastDay: visits.lastDay,
+          checkinWeekLimit: weeklyVisitLimitForPlan(row.plan),
+        }
+      })
     json(res, 200, {
       ok: true,
       store: storeKind(env),

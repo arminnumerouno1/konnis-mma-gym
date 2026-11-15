@@ -10,7 +10,7 @@ function escapeMail(value) {
 }
 
 export function openingMailSubject({ test = false } = {}) {
-  const subject = '2. November. Die Tür geht auf. · KONNI MMA GYM'
+  const subject = 'Wir sind offen · KONNI MMA GYM'
   return test ? `Test: ${subject}` : subject
 }
 
@@ -18,23 +18,25 @@ export function openingMailHtml({ first = '' } = {}) {
   const who = escapeMail(String(first ?? '').trim() || 'du')
   const hi = who === 'du' ? 'Hi,' : `Hi ${who},`
   const logo = 'https://www.mma-in-leipzig.de/brand/konni-logo-mail.jpg'
+  const join = 'https://www.mma-in-leipzig.de/mitglied'
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <div style="background:#111;color:#ece8e1;padding:28px 24px;text-align:center">
 <img src="${logo}" alt="KONNI MMA GYM" width="164" height="178" style="display:block;margin:0 auto 16px;border:0;outline:none;text-decoration:none" />
 <p style="margin:0;letter-spacing:.22em;font-size:12px;color:#c4121a">KONNI MMA GYM · LEIPZIG</p>
-<p style="margin:10px 0 0;font-size:36px;line-height:0.95;font-weight:bold;letter-spacing:.02em">2. NOVEMBER.</p>
-<p style="margin:8px 0 0;font-size:18px;color:#c9a227">Die Tür geht auf.</p>
+<p style="margin:10px 0 0;font-size:34px;line-height:0.95;font-weight:bold;letter-spacing:.02em">WIR SIND OFFEN.</p>
+<p style="margin:8px 0 0;font-size:18px;color:#c9a227">Training läuft. Komm vorbei.</p>
 </div>
 <div style="padding:24px 4px 0">
 <p>${hi}</p>
-<p>danke, dass du dich vorangemeldet hast. Deine Anmeldung ist angekommen. Das bedeutet uns was.</p>
-<p>Und wir sind begeistert, wie viele das schon gemacht haben. Es sind mehr Voranmeldungen reingekommen, als wir am Anfang gedacht haben. Dass so viele dabei sein wollen, bevor die Tür auf ist — das gibt uns richtig Rückenwind.</p>
-<p>Wir freuen uns auf den 2. November. Und wir freuen uns auf dich.</p>
-<p style="font-size:22px;line-height:1.3;margin:24px 0 16px"><strong>Endlich hat das Warten ein Ende.</strong></p>
-<p style="font-size:20px;line-height:1.35;margin:0 0 20px">Eröffnung am <strong>2. November 2026</strong><br>Wittenberger Straße 15<br>04129 Leipzig</p>
+<p>kurze Klarstellung, falls bei dir noch eine ältere Mail liegt: <strong>Das KONNI MMA GYM ist geöffnet.</strong> Training läuft. Es gibt keine Warteliste mehr.</p>
+<p>Du kannst online Mitglied werden und direkt trainieren. Wittenberger Straße 15, 04129 Leipzig.</p>
 <p>Von MMA-Profi Konrad Dyrschka. Endlich ein Top MMA Gym in Leipzig.</p>
 <p style="margin:28px 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#666">Die Tarife</p>
 <table style="width:100%;border-collapse:collapse">
+<tr>
+<td style="padding:12px 0;border-bottom:1px solid #ddd"><strong>Slow Start Tarif</strong><br><span style="color:#666">12 Monate · 2 Kurse/Einheiten pro Woche</span></td>
+<td style="padding:12px 0;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap"><strong>79,99€</strong><br><span style="color:#666">/ Monat</span></td>
+</tr>
 <tr>
 <td style="padding:12px 0;border-bottom:1px solid #ddd"><strong>Standard</strong><br><span style="color:#666">24 Monate · alle Kurse nutzbar</span></td>
 <td style="padding:12px 0;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap"><strong>99,99€</strong><br><span style="color:#666">/ Monat</span></td>
@@ -44,15 +46,13 @@ export function openingMailHtml({ first = '' } = {}) {
 <td style="padding:12px 0;border-bottom:1px solid #ddd;text-align:right;white-space:nowrap"><strong>109,99€</strong><br><span style="color:#666">/ Monat</span></td>
 </tr>
 <tr>
-<td style="padding:12px 0"><strong>Anmeldegebühr</strong><br><span style="color:#666">0€ nur bis 2. November, danach 19,99€</span></td>
-<td style="padding:12px 0;text-align:right"><strong>0€</strong></td>
+<td style="padding:12px 0"><strong>Anmeldegebühr</strong><br><span style="color:#666">einmalig</span></td>
+<td style="padding:12px 0;text-align:right"><strong>19,99€</strong></td>
 </tr>
 </table>
-<p><strong>Online Mitglied werden ist noch nicht möglich.</strong> Sobald es möglich ist, Mitglied zu werden, schreiben wir dir und sagen es auf Instagram: <a href="https://www.instagram.com/konnimmagym/" style="color:#c4121a;font-weight:bold">@konnimmagym</a>.</p>
-<p>Die <strong>ersten 50</strong> von der Voranmeldung bekommen extra eine eigene Mail, sobald es möglich ist, Mitglied zu werden — mit persönlichem Link.</p>
-<p>Warst du nicht so schnell und nicht unter den ersten 50? Kein Stress. <strong>Wenn du dich bis zum 2. November anmeldest, entfällt die Anmeldegebühr. Danach beträgt sie 19,99€.</strong></p>
-<p>Am 2. November öffnet das KONNI MMA GYM in der Wittenberger Straße 15.</p>
-<p style="margin:28px 0 0"><a href="https://www.mma-in-leipzig.de/" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">mma-in-leipzig.de</a></p>
+<p>First-50-Plätze laufen über persönlichen Link. Alle anderen melden sich unter <a href="${join}">mma-in-leipzig.de/mitglied</a> an.</p>
+<p>Aktuelles und Kursplan auch auf Instagram: <a href="https://www.instagram.com/konnimmagym/" style="color:#c4121a;font-weight:bold">@konnimmagym</a>.</p>
+<p style="margin:28px 0 0"><a href="${join}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Mitglied werden</a></p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>
 </div>`

@@ -563,6 +563,30 @@ const kid2Up = await rawCall({
 })
 assert(kid2Up.data.member.status === 'active' && kid2Up.data.member.guardian.signedVia === 'paper', 'signed contract activates minor')
 
+const kid3 = await post({
+  action: 'create',
+  plan: 'flex',
+  firstName: 'Noah',
+  lastName: 'Kurz',
+  birthDate: '2013-02-02',
+  email: 'noah@example.com',
+  phone: '+49 171 3334457',
+  guardian: { name: 'Sabine Kurz', relation: 'Mutter', phone: '+49 171 9998877', email: 'sabine@example.com', signed: false },
+})
+assert(kid3.data.member.status === 'received' && !kid3.data.member.guardian?.signedAt, 'third minor waits')
+const kid3Up = await rawCall({
+  method: 'POST',
+  url: `/api/admin?upload=guardian&id=${kid3.data.member.id}`,
+  headers: { 'content-type': 'application/pdf' },
+  bytes: pdfBytes,
+})
+assert(
+  kid3Up.data.member.status === 'active' &&
+    kid3Up.data.member.guardian.signedVia === 'paper' &&
+    kid3Up.data.member.docs?.guardian,
+  'guardian scan activates minor',
+)
+
 const moved = await post({
   action: 'update',
   id: doraId,
@@ -581,6 +605,7 @@ assert(badZip.status === 400 && badZip.data.error === 'address', 'rejects bad zi
 
 const nowMinor = await post({ action: 'update', id: doraId, profile: { birthDate: '2012-06-01' } })
 assert(nowMinor.data.member.minor === true, 'birth date change recomputes minor')
+assert(nowMinor.data.member.status === 'received', 'becoming minor without vollmacht goes received')
 
 const ibanSwap = await post({ action: 'update', id: doraId, bank: { iban: 'DE02120300000000202051', holder: 'Dora Lang', mandateSigned: false } })
 assert(ibanSwap.data.member.history.some((row) => row.field === 'iban' && row.to.endsWith('2051')), 'iban change logged masked')
@@ -732,7 +757,30 @@ assert(!afterReview.data.members.find((row) => row.id === olga.id).isNew, 'no lo
 
 const reportMembers = [
   memberFromSignup({ id: 'r1', plan: 'standard', planName: 'Standard', price: 99.99, termMonths: 24, firstName: 'A', lastName: 'A', email: 'r1@example.com', startDate: '2026-11-02', createdAt: '2026-10-05T10:00:00.000Z', source: 'online' }, '2026-12-15'),
-  memberFromSignup({ id: 'r2', plan: 'flex', planName: 'Flex', price: 109.99, termMonths: 12, firstName: 'B', lastName: 'B', email: 'r2@example.com', minor: true, startDate: '2026-11-02', createdAt: '2026-10-31T23:30:00.000Z', source: 'admin' }, '2026-12-15'),
+  memberFromSignup(
+    {
+      id: 'r2',
+      plan: 'flex',
+      planName: 'Flex',
+      price: 109.99,
+      termMonths: 12,
+      firstName: 'B',
+      lastName: 'B',
+      email: 'r2@example.com',
+      minor: true,
+      guardian: {
+        name: 'Eltern B',
+        email: 'eltern-b@example.com',
+        phone: '03411234567',
+        signedAt: '2026-10-31T23:30:00.000Z',
+        signedVia: 'paper',
+      },
+      startDate: '2026-11-02',
+      createdAt: '2026-10-31T23:30:00.000Z',
+      source: 'admin',
+    },
+    '2026-12-15',
+  ),
   { ...memberFromSignup({ id: 'r3', plan: 'standard', planName: 'Standard', price: 99.99, termMonths: 24, firstName: 'C', lastName: 'C', email: 'r3@example.com', startDate: '2026-11-02', createdAt: '2026-11-10T10:00:00.000Z', source: 'online' }, '2026-12-15'), status: 'cancelled', cancelledAt: '2026-12-01T09:00:00.000Z', cancelEffectiveOn: '2028-11-01' },
   memberFromSignup({ id: 'r4', plan: 'daypass', planName: 'Day Pass', price: 19.99, termMonths: null, firstName: 'D', lastName: 'D', email: 'r4@example.com', visitDay: '2026-11-20', createdAt: '2026-11-19T10:00:00.000Z' }, '2026-12-15'),
 ]
@@ -827,6 +875,34 @@ const linkCall = await (async () => {
   return { status: captured.status, data: JSON.parse(captured.body) }
 })()
 assert(linkCall.status === 409 && linkCall.data.error === 'stripe_exists', 'no second subscription')
+
+const unsignedMinor = await post({
+  action: 'create',
+  plan: 'standard',
+  firstName: 'Ulla',
+  lastName: 'Jung',
+  birthDate: '2014-04-04',
+  email: 'ulla@example.com',
+  phone: '+49 171 5556677',
+  guardian: { name: 'Parent Jung', relation: 'Vater', phone: '+49 171 5556678', email: 'parent.jung@example.com', signed: false },
+  payMethod: 'card',
+})
+assert(unsignedMinor.status === 200 && unsignedMinor.data.member.status === 'received', 'unsigned minor for stripe block')
+const blockedLink = await (async () => {
+  const { res, captured } = mockRes()
+  await stripeAdmin(
+    {
+      method: 'POST',
+      url: '/api/admin',
+      headers: { cookie, 'content-type': 'application/json' },
+      socket: { remoteAddress: '10.0.0.3' },
+      body: { action: 'stripeLink', id: unsignedMinor.data.member.id },
+    },
+    res,
+  )
+  return { status: captured.status, data: JSON.parse(captured.body) }
+})()
+assert(blockedLink.status === 400 && blockedLink.data.error === 'guardian', 'no stripe without vollmacht')
 
 const fresh = await post({
   action: 'create',
@@ -1392,5 +1468,83 @@ const back = await switchCall({
 })
 assert(back.status === 200 && back.data.member?.payMethod === 'card', 'switch back to card')
 assert(back.data.member?.transfer == null, 'transfer cleared')
+
+// --- admin login hardening ---
+const inviteOnly = createAdminHandler({
+  dataDir: tmp,
+  env: { INVITE_SECRET: 'invite-secret-only-xx' },
+})
+const inviteLogin = await (async () => {
+  const { res, captured } = mockRes()
+  await inviteOnly(
+    {
+      method: 'POST',
+      url: '/api/admin',
+      headers: {},
+      socket: { remoteAddress: '10.0.0.90' },
+      body: { action: 'login', password: 'invite-secret-only-xx' },
+    },
+    res,
+  )
+  return { status: captured.status, data: captured.body ? JSON.parse(captured.body) : {} }
+})()
+assert(inviteLogin.status === 200 && inviteLogin.data.ok, 'legacy INVITE_SECRET still unlocks when ADMIN_SECRET is unset')
+
+const secureLogin = await call({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { 'x-forwarded-proto': 'https' },
+  socket: { remoteAddress: '10.0.0.91' },
+  body: { action: 'login', password: secret },
+})
+assert(secureLogin.status === 200, 'https login ok')
+const secureCookie = String(secureLogin.headers['set-cookie'] || '')
+assert(secureCookie.includes('__Host-konni_admin='), 'https sets __Host- cookie')
+assert(secureCookie.includes('Secure'), 'https cookie is Secure')
+
+const pingAnon = await call({
+  method: 'GET',
+  url: '/api/admin?ping=1',
+  headers: { cookie: '' },
+  socket: { remoteAddress: '10.0.0.92' },
+})
+assert(pingAnon.status === 200 && pingAnon.data.auth === false, 'anon ping')
+assert(pingAnon.data.adminReady === undefined && pingAnon.data.store === undefined, 'anon ping hides config')
+
+const revoke = await call({
+  method: 'POST',
+  url: '/api/admin',
+  headers: { cookie },
+  socket: { remoteAddress: '10.0.0.3' },
+  body: { action: 'revokeSessions' },
+})
+assert(revoke.status === 200, 'revoke sessions')
+const afterRevoke = await call({
+  method: 'GET',
+  url: '/api/admin',
+  headers: { cookie },
+  socket: { remoteAddress: '10.0.0.3' },
+})
+assert(afterRevoke.status === 401, 'old cookie dies after revokeSessions')
+
+const lockIp = '10.0.0.93'
+for (let i = 0; i < 8; i += 1) {
+  const attempt = await call({
+    method: 'POST',
+    url: '/api/admin',
+    headers: {},
+    socket: { remoteAddress: lockIp },
+    body: { action: 'login', password: 'wrong-password-xxxxxx' },
+  })
+  assert(attempt.status === 403 || attempt.status === 429, `fail attempt ${i + 1}`)
+}
+const lockoutHit = await call({
+  method: 'POST',
+  url: '/api/admin',
+  headers: {},
+  socket: { remoteAddress: lockIp },
+  body: { action: 'login', password: secret },
+})
+assert(lockoutHit.status === 429 && lockoutHit.data.error === 'rate', 'lockout blocks even the real password')
 
 console.log('admin tests ok')

@@ -1,6 +1,6 @@
 import { createMemberStore } from '../server/member-store.mjs'
 import { sendTransferSwitchEmail } from '../server/membership-mail.mjs'
-import { cronAuthorized } from '../server/dues-cron.mjs'
+import { cronAuthorized, cronRateLimited } from '../server/dues-cron.mjs'
 
 const TARGET_IDS = new Set([
   '9a32ca7b-98c8-4c90-8db7-c128c0d5d728', // Wanya Donix
@@ -27,6 +27,12 @@ export default async function handler(req, res) {
     res.statusCode = 401
     res.setHeader('content-type', 'application/json; charset=utf-8')
     res.end(JSON.stringify({ ok: false, error: 'auth' }))
+    return
+  }
+  if (cronRateLimited(req)) {
+    res.statusCode = 429
+    res.setHeader('content-type', 'application/json; charset=utf-8')
+    res.end(JSON.stringify({ ok: false, error: 'rate' }))
     return
   }
 

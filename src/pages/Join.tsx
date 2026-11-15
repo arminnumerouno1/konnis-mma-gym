@@ -2,7 +2,17 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState, type FormEvent }
 import { COPY } from '../brand/copy'
 import { StreetInput } from '../components/StreetInput'
 import { GYM } from '../brand/gym'
-import { FIRST50, PAYMENT_NOTE, PUBLIC_PLANS, SIGNUP_OPEN, isPublicPlanId, planById, type PlanId } from '../brand/plans'
+import {
+  FIRST50,
+  PAYMENT_NOTE,
+  PRICE_TAX_NOTE,
+  PUBLIC_PLANS,
+  SIGNUP_OPEN,
+  isPublicPlanId,
+  planById,
+  termTotalLabel,
+  type PlanId,
+} from '../brand/plans'
 import { Link } from '../lib/Link'
 import { ageFromIso } from '../lib/motion'
 import { href } from '../lib/router'
@@ -176,7 +186,7 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [inviteReady, setInviteReady] = useState(!invite)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviteSlot, setInviteSlot] = useState<number | null>(null)
-  const [invitePlan, setInvitePlan] = useState<'first50' | 'plus' | null>(null)
+  const [invitePlan, setInvitePlan] = useState<'first50' | 'plus' | 'slowstart' | 'standard' | null>(null)
   const [contractStart, setContractStart] = useState('')
   const [contractTerm, setContractTerm] = useState<number | null>(null)
   const [inviteOpenUntilSignup, setInviteOpenUntilSignup] = useState(false)
@@ -190,6 +200,7 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [phone, setPhone] = useState('')
   const [visitDay, setVisitDay] = useState('')
   const [guardianName, setGuardianName] = useState('')
+  const [guardianRelation, setGuardianRelation] = useState('Mutter')
   const [guardianEmail, setGuardianEmail] = useState('')
   const [guardianPhone, setGuardianPhone] = useState('')
   const [guardianConsent, setGuardianConsent] = useState(false)
@@ -215,8 +226,22 @@ function JoinForm({ plan, invite }: JoinProps) {
   const beforeOpening = berlinToday() < GYM.openingDate
   const age = ageFromIso(birthDate)
   const minor = age != null && age < 18
-  const inviteLocked = Boolean(invite) && (invitePlan === 'first50' || invitePlan === 'plus')
-  const visiblePlans = invitePlan === 'plus' ? [PLUS] : invitePlan === 'first50' ? [FIRST50] : PUBLIC_PLANS
+  const inviteLocked =
+    Boolean(invite) &&
+    (invitePlan === 'first50' ||
+      invitePlan === 'plus' ||
+      invitePlan === 'slowstart' ||
+      invitePlan === 'standard')
+  const visiblePlans =
+    invitePlan === 'plus'
+      ? [PLUS]
+      : invitePlan === 'first50'
+        ? [FIRST50]
+        : invitePlan === 'slowstart'
+          ? PUBLIC_PLANS.filter((row) => row.id === 'slowstart')
+          : invitePlan === 'standard'
+            ? PUBLIC_PLANS.filter((row) => row.id === 'standard')
+            : PUBLIC_PLANS
   const termLabel = (plan: { id: string; term: string }) =>
     plan.id === 'first50' && contractTerm === 12 ? '12 Monate Laufzeit' : plan.term
   const inviteLead =
@@ -224,9 +249,17 @@ function JoinForm({ plan, invite }: JoinProps) {
       ? inviteOpenUntilSignup
         ? COPY.invitePlusLeadOpen
         : COPY.invitePlusLead
-      : contractTerm === 12
-        ? 'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 12 Monate. Das ist ein Sondervertrag. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, geht der Platz an die nächste Person. Nicht weiterleiten.'
-        : COPY.inviteLead
+      : invitePlan === 'slowstart'
+        ? inviteOpenUntilSignup
+          ? COPY.inviteSlowStartLeadOpen
+          : COPY.inviteSlowStartLead
+        : invitePlan === 'standard'
+          ? inviteOpenUntilSignup
+            ? COPY.inviteStandardLeadOpen
+            : COPY.inviteStandardLead
+          : contractTerm === 12
+            ? 'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 12 Monate. Das ist ein Sondervertrag. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, geht der Platz an die nächste Person. Nicht weiterleiten.'
+            : COPY.inviteLead
 
   useEffect(() => {
     if (!invite) return
@@ -239,7 +272,14 @@ function JoinForm({ plan, invite }: JoinProps) {
         return
       }
       const names = splitInviteName(result.invite.name)
-      const plan = result.invite.plan === 'plus' ? 'plus' : 'first50'
+      const plan =
+        result.invite.plan === 'plus'
+          ? 'plus'
+          : result.invite.plan === 'slowstart'
+            ? 'slowstart'
+            : result.invite.plan === 'standard'
+              ? 'standard'
+              : 'first50'
       setChosen(plan)
       setInvitePlan(plan)
       setInviteSlot(result.invite.slot)
@@ -377,6 +417,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       photoData,
       visitDay: chosen === 'daypass' ? visitDay : undefined,
       guardianName: minor ? guardianName : undefined,
+      guardianRelation: minor ? guardianRelation : undefined,
       guardianEmail: minor ? guardianEmail : undefined,
       guardianPhone: minor ? guardianPhone : undefined,
       guardianConsent: minor ? guardianConsent : undefined,
@@ -407,8 +448,10 @@ function JoinForm({ plan, invite }: JoinProps) {
     return (
       <main className="page join-page">
         <p className="kicker">{COPY.joinPageKicker}</p>
-        <h1>{COPY.successTitle}</h1>
-        <p className="lead">{COPY.successLead}</p>
+        <h1>{summary.payment === 'guardian_pending' ? COPY.successGuardianTitle : COPY.successTitle}</h1>
+        <p className="lead">
+          {summary.payment === 'guardian_pending' ? COPY.successGuardianLead : COPY.successLead}
+        </p>
         {summary.payment === 'later' ? (
           <p className="lead">{summary.plan.id === 'daypass' ? COPY.payDayLater : deferredPaymentNote(contractStart) || COPY.payLater}</p>
         ) : null}
@@ -596,6 +639,27 @@ function JoinForm({ plan, invite }: JoinProps) {
     )
   }
 
+  // Broken / expired invite links must NOT fall through to the public 99€ plans.
+  if (invite && inviteError) {
+    return (
+      <main className="page join-page">
+        <p className="kicker">{COPY.joinPageKicker}</p>
+        <h1>{COPY.joinPageTitle}</h1>
+        <p className="form-error" role="alert">
+          {inviteError}
+        </p>
+        <p className="lead">
+          Schreib uns an{' '}
+          <a href="mailto:info@mma-in-leipzig.de">info@mma-in-leipzig.de</a> — wir schicken dir einen neuen persönlichen
+          Link. Bitte nicht den normalen 99€-Tarif auf der Website buchen.
+        </p>
+        <Link className="btn btn-ghost" href="/">
+          Zur Startseite
+        </Link>
+      </main>
+    )
+  }
+
   return (
     <main className="page join-page" ref={pageRef}>
       <p className="kicker">{COPY.joinPageKicker}</p>
@@ -613,9 +677,21 @@ function JoinForm({ plan, invite }: JoinProps) {
           <strong>
             {invitePlan === 'plus'
               ? 'Plus · 119€ · 6 Monate'
-              : `First 50${inviteSlot != null && inviteSlot >= 1 && inviteSlot <= 50 ? ` · Platz ${inviteSlot} von 50` : ''} · 89,99€`}
+              : invitePlan === 'slowstart'
+                ? 'Slow Start Tarif · 79,99€ · 12 Monate'
+                : invitePlan === 'standard'
+                  ? 'Standard · 99,99€ · 24 Monate'
+                  : `Sonderpreis${inviteSlot != null && inviteSlot >= 1 && inviteSlot <= 50 ? ` · Platz ${inviteSlot}` : ''} · 89,99€`}
           </strong>
-          <p>{invitePlan === 'plus' ? COPY.invitePlusLockedNote : COPY.inviteLockedNote}</p>
+          <p>
+            {invitePlan === 'plus'
+              ? COPY.invitePlusLockedNote
+              : invitePlan === 'slowstart'
+                ? COPY.inviteSlowStartLockedNote
+                : invitePlan === 'standard'
+                  ? COPY.inviteStandardLockedNote
+                  : COPY.inviteLockedNote}
+          </p>
         </div>
       ) : null}
 
@@ -630,7 +706,10 @@ function JoinForm({ plan, invite }: JoinProps) {
           <fieldset className="plan-pick">
             <legend className="sr-only">{COPY.stepPlan}</legend>
             {visiblePlans.map((item) => (
-              <label key={item.id} className={`plan-option accent-${item.accent}`}>
+              <label
+                key={item.id}
+                className={`plan-option accent-${item.accent}${item.featured ? ' is-featured' : ''}`}
+              >
                 <input
                   type="radio"
                   name="plan"
@@ -642,6 +721,7 @@ function JoinForm({ plan, invite }: JoinProps) {
                   }}
                 />
                 <span>
+                  {item.featured ? <small className="plan-featured">{COPY.priceFeatured}</small> : null}
                   <strong>{item.name}</strong>
                   <small className="plan-term">{termLabel(item)}</small>
                   <em>
@@ -654,6 +734,12 @@ function JoinForm({ plan, invite }: JoinProps) {
                       <span>{COPY.signupFeeLabel}</span>
                     </small>
                   )}
+                  <small className="price-tax">{PRICE_TAX_NOTE}</small>
+                  {termTotalLabel(item) ? (
+                    <small className="price-total">
+                      {COPY.termTotalLabel}: {termTotalLabel(item)}
+                    </small>
+                  ) : null}
                 </span>
               </label>
             ))}
@@ -785,6 +871,16 @@ function JoinForm({ plan, invite }: JoinProps) {
                     <input value={guardianName} onChange={(e) => setGuardianName(e.target.value)} required />
                   </label>
                   <label>
+                    {COPY.guardianRelation}
+                    <select value={guardianRelation} onChange={(e) => setGuardianRelation(e.target.value)} required>
+                      <option value="Mutter">Mutter</option>
+                      <option value="Vater">Vater</option>
+                      <option value="Beide Eltern">Beide Eltern</option>
+                      <option value="Vormund">Vormund</option>
+                      <option value="Andere">Andere</option>
+                    </select>
+                  </label>
+                  <label>
                     {COPY.guardianEmail}
                     <input type="email" value={guardianEmail} onChange={(e) => setGuardianEmail(e.target.value)} required />
                   </label>
@@ -809,6 +905,12 @@ function JoinForm({ plan, invite }: JoinProps) {
         {step === 2 ? (
           <div className="legal-step">
             <p>{selected ? `${selected.name} · ${selected.price}€ ${selected.unit} · ${termLabel(selected)}` : ''}</p>
+            {selected && termTotalLabel(selected) ? (
+              <p>
+                <strong>{COPY.termTotalLabel}:</strong> {termTotalLabel(selected)}
+              </p>
+            ) : null}
+            <p className="field-hint">{PRICE_TAX_NOTE}</p>
             {minor ? <p>{COPY.minorLegalNote}</p> : null}
             <fieldset className="pay-pick">
               <legend>Zahlungsweise</legend>
@@ -834,7 +936,9 @@ function JoinForm({ plan, invite }: JoinProps) {
               ) : null}
             </fieldset>
             <p>{chosen === 'daypass' ? COPY.payDayNote : deferredPaymentNote(contractStart) || PAYMENT_NOTE}</p>
-            {chosen !== 'daypass' && payMethod === 'transfer' && !contractStart ? <p>{COPY.payTransferNote}</p> : null}
+            {chosen !== 'daypass' && payMethod === 'transfer' && !contractStart && !minor ? (
+              <p>{COPY.payTransferNote}</p>
+            ) : null}
             {contractStart ? <p>Dein Vertrag beginnt am {germanStart(contractStart)}.</p> : null}
             <label className="check">
               <input type="checkbox" checked={consents.agb} onChange={() => toggleConsent('agb')} />
@@ -898,7 +1002,7 @@ function JoinForm({ plan, invite }: JoinProps) {
             </label>
             <label className="check">
               <input type="checkbox" checked={consents.sign} onChange={() => toggleConsent('sign')} />
-              <span>{COPY.consentSign}</span>
+              <span>{minor ? COPY.consentSignMinor : COPY.consentSign}</span>
             </label>
           </div>
         ) : null}
@@ -926,7 +1030,7 @@ function JoinForm({ plan, invite }: JoinProps) {
             </button>
           ) : (
             <button type="submit" className="btn btn-solid" disabled={pending}>
-              {pending ? COPY.pending : COPY.submit}
+              {pending ? COPY.pending : minor ? COPY.submitMinor : COPY.submit}
             </button>
           )}
         </div>

@@ -2,6 +2,7 @@ import {
   FIRST50_SLOT_MAX,
   INVITE_TTL_HOURS,
   PLUS_ID,
+  SLOWSTART_ID,
   first50SeatLabel,
   inviteRevoked,
   inviteUsed,
@@ -21,6 +22,8 @@ import {
   first50InviteSubject,
   plusInviteHtml,
   plusInviteSubject,
+  slowstartInviteHtml,
+  slowstartInviteSubject,
 } from '../server/invite-mail.mjs'
 import { validateMembership } from '../server/membership.mjs'
 
@@ -170,7 +173,7 @@ assert(!reused.ok && reused.error === 'invite', 'one first50 per email')
 const missing = validateMembership({ ...base, invite: undefined }, ctx)
 assert(!missing.ok && missing.error === 'invite', 'token required')
 
-assert(first50InviteSubject().includes('ersten 50'), 'invite subject')
+assert(first50InviteSubject().includes('Sonderpreis'), 'invite subject')
 assert(first50InviteSubject({ test: true }).startsWith('Test:'), 'test prefix')
 const inviteHtml = first50InviteHtml({
   first: 'Anna',
@@ -178,9 +181,18 @@ const inviteHtml = first50InviteHtml({
   email: 'anna@example.com',
   url: 'https://www.mma-in-leipzig.de/mitglied?invite=abc',
 })
-assert(inviteHtml.includes('ersten 50') && inviteHtml.includes('freuen') && inviteHtml.includes('89,99'), 'invite welcome')
+assert(
+  inviteHtml.includes('persönlicher Link') &&
+    inviteHtml.includes('Studio ist offen') &&
+    inviteHtml.includes('direkt mittrainieren') &&
+    inviteHtml.includes('89,99') &&
+    !inviteHtml.includes('ersten 50') &&
+    !inviteHtml.includes('Du gehörst'),
+  'invite welcome',
+)
 assert(inviteHtml.includes('Jetzt Vertrag abschließen') && inviteHtml.includes('anna@example.com'), 'invite link')
 assert(inviteHtml.includes('48 Stunden') && inviteHtml.includes('Aufnahmegebühr beträgt 0 €'), 'invite explains the 48 hour link')
+assert(!inviteHtml.includes('von Anfang an'), 'invite has no pre-opening phrasing')
 const januaryHtml = first50InviteHtml({
   first: 'Martin',
   name: 'Martin Masurkewicz',
@@ -202,7 +214,7 @@ const shortHtml = first50InviteHtml({
 assert(shortHtml.includes('12 Monate') && shortHtml.includes('Sondervertrag') && shortHtml.includes('89,99€'), 'twelve month invite')
 assert(!shortHtml.includes('24 Monate') && shortHtml.includes('1. Januar 2027'), 'twelve month invite drops the usual term')
 assert(inviteHtml.includes('Aufnahmegebühr beträgt 0 €'), 'first50 invite has no signup fee')
-assert(inviteHtml.includes('geht dein Platz automatisch an die nächste Person'), 'unused invite passes to the next person')
+assert(inviteHtml.includes('an jemand anderen vergeben'), 'unused invite can be reassigned')
 assert(!inviteHtml.includes('<script'), 'invite escaped')
 const lastChanceHtml = first50InviteHtml({
   first: 'Anna',
@@ -212,13 +224,16 @@ const lastChanceHtml = first50InviteHtml({
   lastChance: true,
 })
 assert(
-  lastChanceHtml.includes('noch nicht angemeldet') &&
-    lastChanceHtml.includes('noch einmalig die Chance') &&
-    lastChanceHtml.includes('keinen weiteren Link'),
+  lastChanceHtml.includes('noch nicht genutzt') &&
+    lastChanceHtml.includes('noch einmal') &&
+    lastChanceHtml.includes('keinen weiteren'),
   'last chance invite says final offer',
 )
-assert(lastChanceHtml.includes('ist der Platz weg') && !lastChanceHtml.includes('geht dein Platz automatisch an die nächste Person'), 'last chance invite drops the pass-along line')
-assert(first50InviteSubject({ lastChance: true }).includes('Letzte Chance'), 'last chance subject')
+assert(
+  lastChanceHtml.includes('Sonderpreis weg') && !lastChanceHtml.includes('an jemand anderen vergeben'),
+  'last chance invite drops the pass-along line',
+)
+assert(first50InviteSubject({ lastChance: true }).includes('Noch einmal'), 'last chance subject')
 
 const plusPayload = makeInvitePayload({
   email: 'benjaminpitzinger@icloud.com',
@@ -339,7 +354,7 @@ function mockRes() {
   const parsed = JSON.parse(okMail.captured.body)
   assert(okMail.captured.status === 200 && parsed.ok && parsed.slot === 19 && !parsed.url, 'one invite sent without returning the link')
   assert(sent.to[0].email === 'neu@example.com', 'invite recipient')
-  assert(sent.subject === 'Du gehörst zu den ersten 50 · KONNI MMA GYM', 'live subject')
+  assert(sent.subject === 'Dein persönlicher Sonderpreis · KONNI MMA GYM', 'live subject')
   assert(sent.htmlContent.includes('Hi Neu,') && sent.htmlContent.includes('89,99'), 'invite body')
   const href = sent.htmlContent.match(/https:\/\/www\.mma-in-leipzig\.de\/mitglied\?invite=([^"]+)/)
   assert(href, 'invite link')
@@ -404,5 +419,79 @@ function mockRes() {
   )
   assert(badTerm.captured.status === 400, 'other terms are refused')
 }
+
+const slowPayload = makeInvitePayload({
+  email: 'Julius-Beck@gmx.net',
+  name: 'Julius Beck',
+  slot: 200,
+  plan: SLOWSTART_ID,
+  start: '2026-12-01',
+  openUntilSignup: true,
+})
+assert(slowPayload.p === SLOWSTART_ID && slowPayload.d === '2026-12-01' && slowPayload.o === 1, 'slowstart invite payload')
+const slowChecked = verifyInvite(secret, signInvite(secret, slowPayload))
+assert(
+  slowChecked.ok &&
+    slowChecked.payload.plan === SLOWSTART_ID &&
+    slowChecked.payload.start === '2026-12-01' &&
+    slowChecked.payload.term === 12 &&
+    slowChecked.payload.openUntilSignup,
+  'slowstart invite verifies',
+)
+const slowSignup = validateMembership(
+  {
+    plan: 'slowstart',
+    firstName: 'Julius',
+    lastName: 'Beck',
+    birthDate: '1998-03-01',
+    street: 'Wittenberger Straße 15',
+    zip: '04129',
+    city: 'Leipzig',
+    email: 'julius-beck@gmx.net',
+    phone: '+49 171 1234567',
+    place: 'Leipzig',
+    signature: 'Julius Beck',
+    photoData: `data:image/jpeg;base64,${'B'.repeat(80)}`,
+    invite: signInvite(secret, slowPayload),
+    consents: {
+      agb: true,
+      hausordnung: true,
+      widerruf: true,
+      privacy: true,
+      health: true,
+      sign: true,
+    },
+  },
+  { inviteSecret: secret, memberships: [] },
+)
+assert(
+  slowSignup.ok &&
+    slowSignup.record?.plan === 'slowstart' &&
+    slowSignup.record?.startDate === '2026-12-01' &&
+    slowSignup.record?.fee === 0 &&
+    slowSignup.record?.termMonths === 12,
+  'slowstart deferred signup has no fee until december',
+)
+assert(slowstartInviteSubject().includes('Slow Start'), 'slowstart subject')
+assert(
+  slowstartInviteHtml({
+    first: 'Julius',
+    name: 'Julius Beck',
+    email: 'julius-beck@gmx.net',
+    url: 'https://www.mma-in-leipzig.de/mitglied?invite=abc',
+    start: '2026-12-01',
+    openUntilSignup: true,
+  }).includes('1. Dezember 2026') &&
+    slowstartInviteHtml({
+      first: 'Julius',
+      name: 'Julius Beck',
+      email: 'julius-beck@gmx.net',
+      url: 'https://www.mma-in-leipzig.de/mitglied?invite=abc',
+      start: '2026-12-01',
+      openUntilSignup: true,
+    }).includes('79,99'),
+  'slowstart mail explains december start',
+)
+assert(PLUS_ID === 'plus', 'plus id stays available')
 
 console.log('invite tests ok')

@@ -13,8 +13,19 @@ import {
   SIGNUP_OPEN,
   validateMembership,
 } from '../server/membership.mjs'
-import { membershipCopyHtml, membershipMailSubject, paperReturnMailHtml, paperReturnMailSubject, priceChangeMailHtml, priceChangeMailSubject } from '../server/membership-mail.mjs'
-import { buildContractPdf, membershipPdfAttachments } from '../server/membership-pdf.mjs'
+import {
+  checkinCodeMailBlock,
+  guardianMandateMailHtml,
+  guardianMandateMailSubject,
+  membershipCopyHtml,
+  membershipMailSubject,
+  paperReturnMailHtml,
+  paperReturnMailSubject,
+  priceChangeMailHtml,
+  priceChangeMailSubject,
+} from '../server/membership-mail.mjs'
+import { buildContractPdf, buildGuardianMandatePdf, membershipPdfAttachments } from '../server/membership-pdf.mjs'
+import { billingHeld, guardianMissing, memberFromSignup, openDuesOf } from '../server/member-model.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
 import { makeInvitePayload, signInvite } from '../server/invite.mjs'
 
@@ -170,6 +181,14 @@ const kid = validateMembership(
   {},
 )
 assert(kid.ok && kid.record?.minor, 'minor with guardian')
+assert(kid.record?.guardian?.signedAt == null, 'online minor has no signedAt yet')
+assert(kid.record?.guardian?.relation, 'guardian relation stored')
+
+const kidMember = memberFromSignup(kid.record, '2026-11-12')
+assert(kidMember.status === 'received', 'unsigned minor stays received')
+assert(guardianMissing(kidMember) && billingHeld(kidMember), 'unsigned minor holds billing')
+assert(openDuesOf(kidMember, '2026-11-12').openCount === 0, 'no open dues without vollmacht')
+assert(!kidMember.guardian?.signedVia, 'online checkbox is not a paper signature')
 
 const kidNoGuard = validateMembership({ ...base, birthDate: '2014-01-01' }, {})
 assert(!kidNoGuard.ok && kidNoGuard.error === 'guardian', 'minor needs guardian')
@@ -204,7 +223,17 @@ const mailRecord = {
 }
 const mail = membershipCopyHtml(mailRecord)
 assert(mail.includes('First 50') && mail.includes('89,99') && mail.includes('Anna Müller'), 'mail copy')
-assert(mail.includes('einer der Ersten') && mail.includes('freuen') && mail.includes('Konrad und Mehmet'), 'first50 welcome')
+assert(
+  mail.includes('Schön, dass du dabei bist') &&
+    mail.includes('Sonderpreis') &&
+    mail.includes('Studio ist offen') &&
+    mail.includes('Konrad und Mehmet') &&
+    !mail.includes('einer der Ersten') &&
+    !mail.includes('Die ersten 50'),
+  'first50 welcome',
+)
+assert(!mail.includes('von Anfang an'), 'first50 mail has no pre-opening phrasing')
+assert(membershipMailSubject(mailRecord).includes('Sonderpreis'), 'first50 subject')
 const januaryMail = membershipCopyHtml({ ...mailRecord, startDate: '2027-01-01' })
 assert(januaryMail.includes('1. Januar 2027') && januaryMail.includes('Vorher wird nichts berechnet'), 'january contract mail')
 const shortContractMail = membershipCopyHtml({ ...mailRecord, termMonths: 12, startDate: '2027-01-01' })
@@ -218,7 +247,6 @@ assert(transferMail.includes('DE77 8605 5592 1090 4292 70'), 'transfer mail has 
 assert(transferMail.includes('WELADE8LXXX') && transferMail.includes('Stadt- und Kreissparkasse Leipzig'), 'transfer mail names the bank')
 assert(transferMail.includes('erste Überweisung ist am 1. November 2026'), 'first transfer date')
 assert(!mail.includes('<script') && mail.includes('Wittenberger'), 'mail escaped')
-assert(membershipMailSubject(mailRecord).includes('Ersten'), 'first50 subject')
 const priceNote = priceChangeMailHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', payMethod: 'transfer', price: 89.99, startDate: '2026-11-02' })
 assert(priceNote.includes('89,99€') && priceNote.includes('DE77 8605 5592 1090 4292 70') && priceNote.includes('1. November 2026'), 'price note names the new amount and the account')
 assert(priceChangeMailSubject({ price: 89.99 }).includes('89,99€'), 'price note subject')
@@ -226,7 +254,7 @@ const paperReturn = paperReturnMailHtml({ ...mailRecord, payMethod: 'transfer', 
 assert(paperReturn.includes('89,99€') && paperReturn.includes('Banküberweisung') && paperReturn.includes('DE77 8605 5592 1090 4292 70'), 'paper return mail names price and account')
 assert(paperReturn.includes('unterschrieben zurück') && paperReturn.includes('info@mma-in-leipzig.de') && paperReturn.includes('1. November 2026'), 'paper return mail asks for the signed contract')
 assert(paperReturnMailSubject().includes('Unterschreiben'), 'paper return subject')
-assert(!membershipMailSubject({ ...mailRecord, plan: 'standard', planName: 'Standard' }).includes('Ersten'), 'standard subject')
+assert(!membershipMailSubject({ ...mailRecord, plan: 'standard', planName: 'Standard' }).includes('Sonderpreis'), 'standard subject')
 
 const attachedMail = membershipCopyHtml(
   {
@@ -240,22 +268,46 @@ const attachedMail = membershipCopyHtml(
   { attached: true },
 )
 assert(attachedMail.includes('Mitgliedsvertrag.pdf') && attachedMail.includes('Widerrufsbelehrung.pdf'), 'mail names pdfs')
-assert(attachedMail.includes('einer der Ersten') && attachedMail.includes('PDF bei'), 'first50 attached welcome')
+assert(attachedMail.includes('Schön, dass du dabei bist') && attachedMail.includes('PDF bei'), 'first50 attached welcome')
 
-const standardMail = membershipCopyHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', price: 99.99, payMethod: 'card' })
+const standardMail = membershipCopyHtml({
+  ...mailRecord,
+  plan: 'standard',
+  planName: 'Standard',
+  price: 99.99,
+  payMethod: 'card',
+  checkinCode: 'R7GH7D',
+})
 assert(standardMail.includes('Willkommen') && !standardMail.includes('einer der Ersten'), 'standard welcome')
 assert(standardMail.includes('DE77 8605 5592 1090 4292 70'), 'card mail names the transfer account')
 assert(standardMail.includes('SEPA-Lastschrift kommt später'), 'card mail says sepa comes later')
 assert(standardMail.includes('Aufnahmegebühr') && standardMail.includes('0,00 €'), 'mail states the signup fee amount')
 assert(standardMail.includes('Mitgliedsvertrag') || standardMail.includes('Vertrag'), 'card mail mentions the contract')
 assert(
-  standardMail.includes('Kleine Extra-Info von Konrad') &&
+  standardMail.includes('Dein Check-in-Code') &&
+    standardMail.includes('R7GH7D') &&
+    standardMail.includes('/checkin'),
+  'contract mail always includes check-in code',
+)
+assert(
+  checkinCodeMailBlock({ checkinCode: 'R7GH7D' }).includes('R7GH7D') &&
+    !checkinCodeMailBlock({}).includes('Check-in'),
+  'checkin block only when code exists',
+)
+assert(
+  standardMail.includes('<strong>Werbung</strong>') &&
+    standardMail.includes('Kleine Extra-Info von Konrad') &&
     standardMail.includes('Code: <strong>KONNI</strong>') &&
     standardMail.includes('https://www.esn.com/instagram/KONNI/aktion') &&
-    standardMail.includes('10%'),
-  'signup mail includes ESN partner code',
+    standardMail.includes('10%') &&
+    standardMail.includes('Partnerangebot'),
+  'signup mail includes labeled ESN partner code',
 )
 assert(!membershipCopyHtml(mailRecord, { forGym: true }).includes('Kleine Extra-Info von Konrad'), 'gym copy skips ESN pitch')
+assert(
+  membershipCopyHtml({ ...mailRecord, checkinCode: 'AB12CD' }, { forGym: true }).includes('AB12CD'),
+  'gym contract copy includes check-in code',
+)
 
 const dayMail = membershipCopyHtml({
   ...mailRecord,
@@ -378,7 +430,10 @@ const openPaper = Buffer.from(
 )
 const openPaperText = pdfText(openPaper)
 assert(openPaperText.includes('geboren ______________________________'), 'open paper contract leaves the birth date blank')
-assert(openPaperText.includes('Telefon: ______________________________'), 'open paper contract leaves the phone blank')
+assert(
+  openPaperText.includes('Telefon') && openPaperText.includes('______________________________'),
+  'open paper contract leaves the phone blank',
+)
 assert(openPaperText.includes('zurücksenden') && openPaperText.includes('89,99 EUR') && openPaperText.includes('Banküberweisung'), 'open paper contract is the transfer copy')
 const signedPaper = Buffer.from(
   await buildContractPdf(
@@ -450,6 +505,44 @@ const minorFiles = await membershipPdfAttachments({
 })
 const minorPdf = await PDFDocument.load(Buffer.from(minorFiles[0].content, 'base64'))
 assert(String(minorPdf.getSubject() || '').includes('Leo Hartmann'), 'minor subject')
+
+const mandateRecord = {
+  ...sample,
+  firstName: 'Leo',
+  lastName: 'Hartmann',
+  birthDate: '2012-05-01',
+  minor: true,
+  payMethod: 'transfer',
+  guardian: {
+    name: 'Kim Hartmann',
+    relation: 'Mutter',
+    email: 'kim@example.com',
+    phone: '03411234567',
+  },
+}
+const mandateBytes = await buildGuardianMandatePdf(mandateRecord)
+assert(Buffer.from(mandateBytes).subarray(0, 5).toString() === '%PDF-', 'vollmacht header')
+const mandateText = pdfText(mandateBytes)
+assert(mandateText.includes('Elternvollmacht') && mandateText.includes('Leo Hartmann'), 'vollmacht names child')
+assert(mandateText.includes('abgebucht') && mandateText.includes('Vollmacht'), 'vollmacht holds billing')
+assert(
+  mandateText.includes('Banküberweisung') &&
+    mandateText.includes('DE77 8605 5592 1090 4292 70') &&
+    mandateText.includes('überweisen'),
+  'vollmacht names transfer account',
+)
+const mandateCard = await buildGuardianMandatePdf({ ...mandateRecord, payMethod: 'card' })
+const mandateCardText = pdfText(mandateCard)
+assert(
+  mandateCardText.includes('Apple Pay') && mandateCardText.includes('Stripe') && !mandateCardText.includes('DE77 8605'),
+  'card vollmacht has no transfer iban block',
+)
+assert(guardianMandateMailSubject(mandateRecord).includes('Leo Hartmann'), 'vollmacht mail subject')
+assert(
+  guardianMandateMailHtml(mandateRecord).includes('vollständig ausgefüllt') &&
+    guardianMandateMailHtml(mandateRecord).includes('nichts abgebucht'),
+  'vollmacht mail asks for signed return',
+)
 
 function mockRes() {
   const captured = { status: 0, body: '' }

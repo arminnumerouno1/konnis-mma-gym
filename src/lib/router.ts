@@ -5,9 +5,11 @@ export type RouteName =
   | 'checkin'
   | 'prereg'
   | 'impressum'
+  | 'impressumKonrad'
   | 'datenschutz'
   | 'agb'
   | 'widerruf'
+  | 'kuendigen'
   | 'hausordnung'
   | 'vertrag6'
   | 'vertrag12'
@@ -31,9 +33,11 @@ export const PATHS: Record<Exclude<RouteName, 'notfound'>, string> = {
   checkin: '/checkin',
   prereg: '/voranmeldung',
   impressum: '/impressum',
+  impressumKonrad: '/impressum/konrad',
   datenschutz: '/datenschutz',
   agb: '/agb',
   widerruf: '/widerruf',
+  kuendigen: '/kuendigen',
   hausordnung: '/hausordnung',
   vertrag6: '/vertrag/6',
   vertrag12: '/vertrag/12',

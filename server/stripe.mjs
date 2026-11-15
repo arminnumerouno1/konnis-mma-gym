@@ -80,6 +80,50 @@ function stripeId(value) {
   return ''
 }
 
+function lineLooksLikeSignupFee(line) {
+  const bits = [
+    line?.description,
+    line?.price?.product?.name,
+    typeof line?.price?.product === 'string' ? line.price.product : '',
+    line?.plan?.nickname,
+  ]
+  return bits.some((bit) => /aufnahmegebühr/i.test(String(bit || '')))
+}
+
+/** Cents of Aufnahmegebühr on a Stripe invoice, or 0 if not present. */
+export function invoiceSignupFeeCents(invoice, feeEuro = 0) {
+  const lines = Array.isArray(invoice?.lines?.data) ? invoice.lines.data : []
+  const named = lines.find((line) => lineLooksLikeSignupFee(line))
+  if (named && Number.isFinite(named.amount)) return Math.max(0, Math.round(named.amount))
+  const expected = Math.round((Number(feeEuro) || 0) * 100)
+  if (expected > 0) {
+    const byAmount = lines.find((line) => Math.round(Number(line?.amount) || 0) === expected)
+    if (byAmount) return expected
+  }
+  return 0
+}
+
+function feeStillOpen(member) {
+  if ((Number(member?.fee) || 0) <= 0) return false
+  return !(member.payments || []).some((row) => row.kind === 'fee' && row.status === 'paid')
+}
+
+function markSignupFeePaid(member, { note, ref, amount, today }) {
+  return setPayment(
+    member,
+    {
+      period: 'fee',
+      kind: 'fee',
+      status: 'paid',
+      note,
+      source: 'stripe',
+      ref,
+      amount: typeof amount === 'number' ? amount : Number(member.fee) || null,
+    },
+    today,
+  )
+}
+
 function applyCheckoutCompleted(db, event, today) {
   const session = event?.data?.object
   if (session?.object !== 'checkout.session') return { handled: false, reason: 'ignored' }
@@ -118,20 +162,22 @@ function applyCheckoutCompleted(db, event, today) {
       today,
     )
   }
-  if ((Number(member.fee) || 0) > 0 && session.payment_status === 'paid') {
-    next = setPayment(
-      next,
-      {
-        period: 'fee',
-        kind: 'fee',
-        status: 'paid',
-        note: `Aufnahmegebühr Stripe ${session.id}`,
-        source: 'stripe',
-        ref: `${session.id}:fee`,
-        amount: Number(member.fee) || null,
-      },
+  // Card checkout settles immediately as "paid". Subscription first invoices can also
+  // land as "no_payment_required" when only a later cycle charges — still mark fee if
+  // the session total clearly includes the Aufnahmegebühr (one-time line at checkout).
+  const feeDue = Number(member.fee) || 0
+  const sessionTotal = Number.isFinite(session.amount_total) ? Math.round(session.amount_total) : null
+  const feeLikelyPaid =
+    feeDue > 0 &&
+    (session.payment_status === 'paid' ||
+      (session.payment_status === 'no_payment_required' && sessionTotal != null && sessionTotal >= Math.round(feeDue * 100)))
+  if (feeLikelyPaid && feeStillOpen(member)) {
+    next = markSignupFeePaid(next, {
+      note: `Aufnahmegebühr Stripe ${session.id}`,
+      ref: `${session.id}:fee`,
+      amount: feeDue,
       today,
-    )
+    })
   }
   db.members[index] = next
   return { handled: true, memberId: member.id, linked: true, charged: Boolean(paidDay) }
@@ -165,8 +211,11 @@ export function applyStripeEvent(db, event, today = isoDate()) {
   const withStripe = customer
     ? { ...member, stripe: { ...(member.stripe ?? {}), customerId: customer } }
     : member
-  const amount = Number.isFinite(invoice.amount_due) ? Math.round(invoice.amount_due) / 100 : null
-  db.members[index] = setPayment(
+  const feeCents = status === 'paid' ? invoiceSignupFeeCents(invoice, member.fee) : 0
+  const totalDue = Number.isFinite(invoice.amount_due) ? Math.round(invoice.amount_due) : null
+  const amount =
+    totalDue == null ? null : Math.round(totalDue - (feeCents > 0 && feeStillOpen(member) ? feeCents : 0)) / 100
+  let next = setPayment(
     withStripe,
     {
       period,
@@ -179,7 +228,16 @@ export function applyStripeEvent(db, event, today = isoDate()) {
     },
     today,
   )
-  return { handled: true, memberId: member.id, period, status }
+  if (status === 'paid' && feeCents > 0 && feeStillOpen(member)) {
+    next = markSignupFeePaid(next, {
+      note: `Aufnahmegebühr Stripe ${invoice.number || invoice.id}`,
+      ref: `${invoice.id}:fee`,
+      amount: feeCents / 100,
+      today,
+    })
+  }
+  db.members[index] = next
+  return { handled: true, memberId: member.id, period, status, feePaid: feeCents > 0 }
 }
 
 async function readRaw(req) {

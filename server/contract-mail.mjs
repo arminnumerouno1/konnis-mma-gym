@@ -1,3 +1,4 @@
+import { collectCheckinCodes, ensureCheckinCode } from './checkin-code.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 
 function mailOpen(env = {}) {
@@ -18,19 +19,35 @@ function mailLockPath(memberId) {
   return `mail-lock/${memberId}`
 }
 
+/** Stellt sicher, dass vor der Vertragsmail ein Check-in-Code existiert. */
+export async function ensureMemberCheckinCode(store, memberId) {
+  if (!memberId) return null
+  let saved = null
+  await store.update((db) => {
+    const index = db.members.findIndex((row) => row.id === memberId)
+    if (index < 0) return db
+    const withCode = ensureCheckinCode(db.members[index], collectCheckinCodes(db.members, []))
+    db.members[index] = withCode
+    saved = withCode
+    return db
+  })
+  return saved
+}
+
 /**
  * Vertragsmail nur für Online-Kartenanmeldungen, und nur einmal.
  * Banküberweisung verschickt die Mail beim Abschluss, nicht hier.
+ * Enthält immer den Check-in-Code.
  */
 export async function sendContractMailOnce(store, env, memberId) {
   if (!mailOpen(env)) return { sent: false, reason: 'off' }
   if (!memberId) return { sent: false, reason: 'missing' }
 
   const before = await store.load()
-  const member = before.members.find((row) => row.id === memberId)
-  if (!member) return { sent: false, reason: 'missing' }
-  if (member.contractMail === 'sent') return { sent: false, reason: 'already' }
-  if (member.contractMail !== 'after_payment' || member.payMethod === 'transfer') {
+  const existing = before.members.find((row) => row.id === memberId)
+  if (!existing) return { sent: false, reason: 'missing' }
+  if (existing.contractMail === 'sent') return { sent: false, reason: 'already' }
+  if (existing.contractMail !== 'after_payment' || existing.payMethod === 'transfer') {
     return { sent: false, reason: 'not_due' }
   }
 
@@ -38,18 +55,22 @@ export async function sendContractMailOnce(store, env, memberId) {
   if (!claimed) return { sent: false, reason: 'already' }
 
   try {
+    const member = (await ensureMemberCheckinCode(store, memberId)) || existing
     const mailed = await sendMembershipEmails(env, member)
     if (mailed.member === 'skipped' && mailed.gym === 'skipped') {
       await store.deleteDoc(mailLockPath(memberId))
       return { sent: false, reason: 'skipped' }
     }
+    const at = new Date().toISOString()
     await store.update((db) => {
       const index = db.members.findIndex((row) => row.id === memberId)
       if (index < 0) return db
       db.members[index] = {
         ...db.members[index],
+        checkinCode: db.members[index].checkinCode || member.checkinCode || null,
         contractMail: 'sent',
-        contractMailAt: new Date().toISOString(),
+        contractMailAt: at,
+        ...(mailed.checkinCodeIncluded ? { checkinCodeMailAt: at } : {}),
       }
       return db
     })

@@ -27,6 +27,7 @@ export const IMPRESSUM = {
   ],
   notes: [
     'Dieses Impressum gilt für die Website von KONNI MMA GYM einschließlich der Unterseiten, des Online-Mitgliedschaftsformulars und der verlinkten Gym-Kanäle, soweit wir sie selbst betreiben.',
+    'Für die persönlichen Social-Media-Kanäle von Konrad Dyrschka (Instagram, TikTok u. a.) gilt das Impressum unter /impressum/konrad.',
     'Hinweise zu Cookies und zur übrigen Datenverarbeitung stehen in der Datenschutzerklärung. Die Cookie-Auswahl kannst du über den Link Cookies im Footer ändern.',
   ],
   blocks: [
@@ -34,7 +35,8 @@ export const IMPRESSUM = {
       title: 'Register und Steuernummern',
       paragraphs: [
         'Die KONNI MMA GYM GbR ist nicht ins Handelsregister eingetragen. Eine Handelsregisternummer ist daher nicht anzugeben.',
-        'Eine Umsatzsteuer-Identifikationsnummer nach § 27a UStG liegt derzeit nicht vor. Sobald eine erteilt ist, wird sie hier ergänzt.',
+        'Die ausgewiesenen Preise sind Endpreise einschließlich der gesetzlichen Umsatzsteuer.',
+        'Eine Umsatzsteuer-Identifikationsnummer nach § 27a UStG wird hier angegeben, sobald sie vorliegt bzw. sobald sie mitgeteilt werden soll.',
         'Eine Wirtschaftsidentifikationsnummer nach § 139c AO wird hier angegeben, sobald sie vorliegt.',
       ],
     },
@@ -84,6 +86,45 @@ export const IMPRESSUM = {
   ],
 } as const
 
+/** Persönliches Impressum Konrad Dyrschka für Social-Kanäle (§ 5 DDG inkl. zweitem Kontaktweg). */
+export const IMPRESSUM_KONRAD = {
+  eyebrow: 'Angaben gemäß § 5 DDG',
+  title: 'Impressum · Konrad Dyrschka',
+  rows: [
+    { label: 'Diensteanbieter', value: GYM.partners[0] },
+    { label: 'Anschrift', value: `${GYM_ADDRESS}, ${GYM.country}` },
+    { label: 'Telefon', value: GYM.phone },
+    { label: 'WhatsApp', value: GYM.phone },
+    { label: 'E-Mail', value: GYM.email },
+    {
+      label: 'Inhaltlich verantwortlich',
+      value: `${GYM.partners[0]}, ${GYM_ADDRESS} (gemäß § 18 Abs. 2 MStV)`,
+    },
+    { label: 'Instagram', value: GYM.konradInstagramHandle },
+    { label: 'TikTok', value: '@konrad.dyrschka' },
+  ],
+  notes: [
+    'Dieses Impressum gilt für die persönlichen digitalen Angebote von Konrad Dyrschka, insbesondere Instagram und TikTok, soweit er sie selbst betreibt.',
+    'Eine schnelle elektronische Kontaktaufnahme ist möglich per E-Mail und zusätzlich telefonisch oder über WhatsApp (zweiter Kontaktweg gemäß § 5 Abs. 1 Nr. 2 DDG).',
+    'Das Impressum der KONNI MMA GYM GbR findest du unter /impressum.',
+  ],
+  blocks: [
+    {
+      title: 'Kontaktaufnahme',
+      paragraphs: [
+        `Du erreichst Konrad Dyrschka per E-Mail an ${GYM.email}, telefonisch unter ${GYM.phone} oder über WhatsApp. Wir antworten in der Regel an Werktagen.`,
+      ],
+    },
+    {
+      title: 'Haftung für Inhalte',
+      paragraphs: [
+        'Als Diensteanbieter bin ich gemäß § 7 Abs. 1 DDG für eigene Inhalte auf meinen Kanälen nach den allgemeinen Gesetzen verantwortlich.',
+        'Nach §§ 8 bis 10 DDG bin ich nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur Entfernung oder Sperrung der Nutzung von Informationen nach den allgemeinen Gesetzen bleiben unberührt.',
+      ],
+    },
+  ],
+} as const
+
 export const PRIVACY: LegalBlock[] = [
   {
     title: '1. Verantwortlicher',
@@ -118,7 +159,7 @@ export const PRIVACY: LegalBlock[] = [
     title: '4. Kontakt, Probetraining, Voranmeldung, WhatsApp',
     paragraphs: [
       `Schreibst du uns per Formular, E-Mail oder Telefon, verarbeiten wir die angegebenen Daten zur Bearbeitung und Antwort (Art. 6 Abs. 1 lit. b DSGVO bei vorvertraglicher Anfrage, sonst Art. 6 Abs. 1 lit. f DSGVO).`,
-      `Das Probetraining-Formular erfasst Name, E-Mail, Telefon, gewünschten Kursplan-Slot (Tag, Uhrzeit, Kurs) und optional eine Nachricht. Die Angaben gehen an ${GYM.email} und liegen in der Mitgliederverwaltung, damit wir den Termin bestätigen und die Anwesenheit abhaken können.`,
+      `Das Probetraining-Formular erfasst Name, Geburtsdatum, E-Mail, Telefon, gewünschten Kursplan-Slot (Tag, Uhrzeit, Kurs) und optional eine Nachricht. Bei Minderjährigen zusätzlich Name, Beziehung, E-Mail und Telefon der gesetzlichen Vertretung sowie den Stand des Einverständnisses. Die Angaben gehen an ${GYM.email} und liegen in der Mitgliederverwaltung, damit wir den Termin bestätigen, das Eltern-Einverständnis prüfen und die Anwesenheit abhaken können.`,
       `Die öffentliche Voranmeldung ist geschlossen. Neue Interessenten schließen den Vertrag unter /mitglied. Bereits abgegebene Voranmeldungen (Name, Alter, E-Mail, optional Telefon, Sportarten, Erfahrung, Trainingszeiten, Interesse am Sonderpreis, wie du von uns erfahren hast, dein Ziel und optional eine Nachricht) bleiben in unserer Mitgliederverwaltung (Hosting und Speicher bei Vercel), damit wir das Training planen können. Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Du kannst sie jederzeit per Mail an ${GYM.email} widerrufen; dann löschen wir deine Voranmeldung. Wirst du kein Mitglied, löschen wir sie spätestens zwölf Monate nach Eingang.`,
       'Bietest du uns WhatsApp an oder nutzt du unseren WhatsApp-Link, werden Inhalte und Metadaten über WhatsApp Ireland Limited / Meta verarbeitet. WhatsApp hat eigene Datenschutzhinweise. Die Nutzung ist freiwillig; du kannst uns stattdessen per E-Mail oder Telefon erreichen.',
       'Anfragen löschen wir, sobald die Sache erledigt ist und keine Aufbewahrungspflicht entgegensteht.',
@@ -127,31 +168,43 @@ export const PRIVACY: LegalBlock[] = [
   {
     title: '5. Mitgliedschaft und Day Pass',
     paragraphs: [
-      'Beim Online-Vertrag verarbeiten wir die angegebenen Vertragsdaten: Name, Geburtsdatum, Anschrift, E-Mail, Telefon, Tarif, Bestätigungen, digitale Unterschrift, ein Portraitfoto zur Identifikation beim Training sowie bei Minderjährigen die Daten der gesetzlichen Vertretung. Das Portraitfoto ist Pflichtbestandteil der Anmeldung und dient ausschließlich der Zuordnung der Person im Studio. Fehlt es bei bestehenden Mitgliedern, können wir per E-Mail einen persönlichen Upload-Link senden; das Foto wird dann genauso gespeichert und genutzt. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertrag) und Art. 6 Abs. 1 lit. c DSGVO, soweit gesetzliche Aufbewahrung gilt.',
-      'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Monatsbeiträge der Mitgliedsverträge (einschließlich Slow Start, Standard, Flex und Plus mit 6-, 12- oder 24-Monats-Laufzeit) werden mit Karte oder Apple Pay über Stripe eingezogen, oder du überweist sie auf das Konto der KONNI MMA GYM GbR bei der Stadt- und Kreissparkasse Leipzig, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX. SEPA-Lastschrift kommt später und ist derzeit nicht eingerichtet. Kartendaten verarbeitet Stripe zur Zahlung (Art. 6 Abs. 1 lit. b DSGVO).',
-      'Die Kartenzahlung läuft über Stripe Payments Europe, Limited, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, D02 H210, Irland. Stripe verarbeitet Name, E-Mail, Tarif und die Kartendaten bei Apple Pay und Karte. Bei uns liegen die Stripe-Kundennummer, die Abo-Nummer und ob ein Monat bezahlt ist. Die Kartennummer aus dem Stripe-Checkout bleibt bei Stripe. Die Überweisung geht auf unser Konto bei der Stadt- und Kreissparkasse Leipzig. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO. Hinweise von Stripe: https://stripe.com/de/privacy',
+      'Beim Online-Vertrag verarbeiten wir die angegebenen Vertragsdaten: Name, Geburtsdatum, Anschrift, E-Mail, Telefon, Tarif, Bestätigungen, digitale Unterschrift, ein Portraitfoto zur Identifikation beim Training sowie bei Minderjährigen die Daten der gesetzlichen Vertretung. Das Portraitfoto ist Pflichtbestandteil der Anmeldung und dient ausschließlich der Zuordnung der Person im Studio (kein biometrisches Matching, keine automatisierte Gesichtserkennung). Fehlt es bei bestehenden Mitgliedern, können wir per E-Mail einen persönlichen Upload-Link senden; das Foto wird dann genauso gespeichert und genutzt. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertrag) und Art. 6 Abs. 1 lit. c DSGVO, soweit gesetzliche Aufbewahrung gilt. Das Portraitfoto löschen wir in der Regel spätestens zwölf Monate nach Vertragsende, sofern keine Streit-, Sicherheits- oder gesetzlichen Aufbewahrungsgründe eine längere Speicherung erfordern. Vertrags- und Buchhaltungsunterlagen ohne Lichtbild bleiben davon unberührt.',
+      'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Zahlung erfolgt nach Wahl mit Karte oder Apple Pay über Stripe (siehe Abschnitt 6) oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR bei der Stadt- und Kreissparkasse Leipzig, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX. SEPA-Lastschrift kommt später und ist derzeit nicht eingerichtet.',
       'Ohne diese Daten kommt kein Online-Vertrag zustande. Die Daten bleiben für die Vertragsdauer und danach so lange, wie handels- und steuerrechtliche Pflichten das verlangen — in der Regel bis zu zehn Jahre nach Vertragsende.',
       `Änderungen von Anschrift, E-Mail, Bankverbindung und Zahlweg bitte zeitnah an ${GYM.legalEmail}.`,
       'Check-in an der Tür: Über den QR-Code und deinen persönlichen Check-in-Code erfassen wir Anwesenheit im jeweiligen Kursplan-Slot (Zeitpunkt, Name, Mitglied oder Probetraining, Slot). Offene Beiträge speichern wir nur für die Verwaltung, nicht auf dem Check-in-Bildschirm. Zweck ist Trainingsbetrieb und Zahlungskontrolle (Art. 6 Abs. 1 lit. b und f DSGVO). Check-in-Einträge löschen wir in der Regel nach spätestens 90 Tagen, sofern keine längere Aufbewahrung nötig ist.',
     ],
   },
   {
-    title: '6. Optionale Einwilligungen',
+    title: '6. Zahlung über Stripe',
+    paragraphs: [
+      'Für Kartenzahlungen und Apple Pay (Mitgliedschaft, Day Pass, Aufnahmegebühr und laufende Monatsbeiträge) setzen wir den Zahlungsdienstleister Stripe ein. Vertragspartner und Ansprechpartner in der EU ist Stripe Payments Europe, Limited, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, D02 H210, Irland, sowie verbundene Unternehmen der Stripe-Gruppe, soweit für die Zahlungsabwicklung erforderlich.',
+      'Zu Stripe können insbesondere folgende Daten übermittelt bzw. dort verarbeitet werden: Name, E-Mail-Adresse, Rechnungs- und Transaktionsdaten, Tarif bzw. Leistungsbeschreibung, Betrag, Währung, Zeitpunkt der Zahlung, Zahlungsstatus, Geräte- und Sicherheitsdaten zur Betrugsprävention sowie die von dir eingegebenen Zahlungsdaten (z. B. Kartennummer, Ablaufdatum, CVC; bei Apple Pay die von Apple bereitgestellten Token). Die vollständige Kartennummer aus dem Stripe-Checkout speichern wir nicht selbst.',
+      'Bei uns liegen zur Vertrags- und Buchhaltungsabwicklung vor allem: Stripe-Kundennummer (Customer-ID), Abo- bzw. Checkout-Referenzen, Zahlungsstatus je Periode und, soweit vorhanden, Beleg-/Rechnungsinformationen.',
+      'Rechtsgrundlage für die Weitergabe und Verarbeitung zur Zahlungsabwicklung ist Art. 6 Abs. 1 lit. b DSGVO (Erfüllung des Mitgliedschafts- bzw. Kaufvertrags). Zusätzlich kann Art. 6 Abs. 1 lit. f DSGVO greifen, soweit Stripe und wir ein berechtigtes Interesse an sicheren, effizienten Zahlungen und der Verhinderung von Missbrauch haben und deine Interessen nicht überwiegen. Soweit handels- und steuerrechtliche Aufbewahrungspflichten bestehen, stützt sich die Speicherung auch auf Art. 6 Abs. 1 lit. c DSGVO.',
+      'Stripe nimmt bei der Datenverarbeitung eine Doppelrolle ein: Als Auftragsverarbeiter (Art. 28 DSGVO) verarbeitet Stripe Zahlungsdaten nach unseren Weisungen, um Transaktionen durchzuführen. Als eigener Verantwortlicher verarbeitet Stripe Daten außerdem für eigene Zwecke, insbesondere zur Erfüllung gesetzlicher und regulatorischer Pflichten (z. B. Geldwäscheprävention, Betrugsbekämpfung, Sicherheits- und Compliance-Maßnahmen). Auf diese eigene Verarbeitung haben wir keinen Einfluss; es gelten die Hinweise von Stripe.',
+      'Zwischen uns und Stripe besteht eine Datenverarbeitungsvereinbarung (Stripe DPA) einschließlich Regelungen zu internationalen Datenübermittlungen. Soweit Stripe personenbezogene Daten in Drittländer (insbesondere USA oder Indien) übermittelt oder dort verarbeitet, erfolgt dies auf Grundlage geeigneter Garantien nach Art. 46 DSGVO, insbesondere EU-Standardvertragsklauseln, und — soweit anwendbar — dem EU-US Data Privacy Framework.',
+      'Die Angabe der Zahlungsdaten bei Stripe ist für die gewählte Kartenzahlung erforderlich. Ohne sie können wir die Zahlung über Stripe nicht ausführen. Du kannst alternativ per Banküberweisung auf unser oben genanntes Konto zahlen, soweit dieser Zahlweg für den jeweiligen Tarif angeboten wird.',
+      'Zahlungs- und Buchhaltungsdaten speichern wir so lange, wie der Vertrag und gesetzliche Aufbewahrungsfristen das verlangen — in der Regel bis zu zehn Jahre. Stripe speichert Daten nach eigenen Fristen; Einzelheiten ergeben sich aus den Stripe-Hinweisen.',
+      'Datenschutzhinweise von Stripe: https://stripe.com/de/privacy · Datenverarbeitungsvereinbarung: https://stripe.com/de/legal/dpa',
+    ],
+  },
+  {
+    title: '7. Optionale Einwilligungen',
     paragraphs: [
       'Foto- und Videoaufnahmen für die Kanäle des Gyms sowie Infomails zum Start und Kursplan sind freiwillig (Art. 6 Abs. 1 lit. a DSGVO). Du kannst sie jederzeit mit Wirkung für die Zukunft widerrufen — per E-Mail an uns. Der Mitgliedsvertrag bleibt davon unberührt.',
       'Für Infomails kann der EU-Anbieter Brevo (Sendinblue SAS, 106 boulevard Haussmann, 75008 Paris, Frankreich) als Auftragsverarbeiter eingesetzt werden. Jede Mail hat einen Abmeldelink.',
     ],
   },
   {
-    title: '7. Videoüberwachung',
+    title: '8. Videoüberwachung',
     paragraphs: [
-      'In gekennzeichneten Bereichen des Studios kann eine Videoüberwachung erfolgen, soweit eine datenschutzrechtliche Grundlage besteht. Zweck, Rechtsgrundlage, überwachte Bereiche, Speicherdauer und Empfänger werden dann vor Ort und in einer ergänzenden Datenschutzinformation zur Videoüberwachung genannt.',
-      'Rechtsgrundlage ist in der Regel Art. 6 Abs. 1 lit. f DSGVO (Hausrecht, Sicherheit, Aufklärung von Diebstahl oder Sachbeschädigung). Die Kameras werden auf das Erforderliche beschränkt.',
-      'Umkleide-, Dusch- und Sanitärräume werden nicht videoüberwacht. Eine pauschale Zustimmung in den AGB ersetzt diese Hinweise nicht.',
+      'Derzeit findet in den Räumen der KONNI MMA GYM GbR keine Videoüberwachung statt.',
+      'Sollte künftig eine Videoüberwachung eingerichtet werden, erfolgt das nur mit vorheriger Kennzeichnung vor Ort und einer ergänzenden Datenschutzinformation (Zweck, Rechtsgrundlage, Bereiche, Speicherdauer, Empfänger). Umkleide-, Dusch- und Sanitärräume werden nicht videoüberwacht. Eine pauschale Zustimmung in den AGB ersetzt diese Hinweise nicht.',
     ],
   },
   {
-    title: '8. Instagram, OpenStreetMap und andere Links',
+    title: '9. Instagram, OpenStreetMap und andere Links',
     paragraphs: [
       `Wir verlinken unseren Instagram-Account ${GYM.instagramHandle} (${GYM.instagram}). Beim Klick verlässt du unsere Website. Es gelten die Hinweise von Meta Platforms Ireland Limited.`,
       'Auf unserer Seite ist kein Instagram-Plugin und kein eingebetteter Feed aktiv. Ohne Klick und ohne optionale Cookie-Zustimmung werden keine Daten an Instagram übertragen.',
@@ -161,42 +214,49 @@ export const PRIVACY: LegalBlock[] = [
     ],
   },
   {
-    title: '9. Empfänger',
+    title: '10. Empfänger und Auftragsverarbeitung',
     paragraphs: [
-      'Empfänger können sein: unser Hosting-Dienstleister, der E-Mail-Dienstleister, soweit eingesetzt, Stripe Payments Europe, Limited für die Zahlung, sowie Stellen, denen wir gesetzlich zur Auskunft verpflichtet sind.',
+      'Empfänger können sein: unser Hosting-Dienstleister (derzeit Vercel), der E-Mail-Dienstleister (soweit eingesetzt, derzeit Brevo), Stripe Payments Europe, Limited sowie verbundene Stripe-Unternehmen für die Zahlungsabwicklung, unsere Bank (bei Überweisung) sowie Stellen, denen wir gesetzlich zur Auskunft verpflichtet sind.',
+      'Soweit Dienstleister als Auftragsverarbeiter tätig werden, geschieht das auf Grundlage von Verträgen nach Art. 28 DSGVO. Bei Stripe gilt zusätzlich die Stripe-Datenverarbeitungsvereinbarung (siehe Abschnitt 6).',
       'Eine Übermittlung zu eigenen Werbezwecken an Dritte findet nicht statt.',
     ],
   },
   {
-    title: '10. Speicherdauer',
+    title: '11. Speicherdauer',
     paragraphs: [
       'Wir speichern personenbezogene Daten nur so lange, wie es für den jeweiligen Zweck nötig ist oder das Gesetz uns eine Frist setzt. Vertrags- und Buchhaltungsunterlagen in der Regel bis zu zehn Jahre, Korrespondenz oft kürzer, Logs nur technisch nötig.',
     ],
   },
   {
-    title: '11. Deine Rechte',
+    title: '12. Deine Rechte',
     paragraphs: [
       'Du hast das Recht auf Auskunft, Berichtigung, Löschung, Einschränkung der Verarbeitung, Datenübertragbarkeit und Widerspruch gegen Verarbeitungen auf Art. 6 Abs. 1 lit. f DSGVO (Art. 15–21 DSGVO). Eine Einwilligung kannst du jederzeit widerrufen; die Rechtmäßigkeit bis zum Widerruf bleibt unberührt.',
       'Außerdem hast du das Recht auf Beschwerde bei einer Aufsichtsbehörde (Art. 77 DSGVO). Für uns zuständig ist unter anderem die Sächsische Datenschutz- und Transparenzbeauftragte, Devrientstraße 1, 01067 Dresden, https://www.datenschutz.sachsen.de.',
     ],
   },
   {
-    title: '12. Pflichtangaben, keine automatisierten Entscheidungen',
+    title: '13. Pflichtangaben, keine automatisierten Entscheidungen',
     paragraphs: [
       'Für den Vertrag sind die dort abgefragten Angaben nötig. Ohne sie können wir die Mitgliedschaft nicht schließen.',
       'Eine automatisierte Entscheidungsfindung einschließlich Profiling im Sinne von Art. 22 DSGVO findet nicht statt.',
     ],
   },
   {
-    title: '13. Minderjährige',
+    title: '14. Minderjährige',
     paragraphs: [
-      'Mitgliedschaften unter 18 Jahren schließen wir nur mit Vertrag und Zustimmung der gesetzlichen Vertretung. Deren Kontaktdaten verarbeiten wir zur Durchführung des Vertrags (Art. 6 Abs. 1 lit. b DSGVO).',
+      'Mitgliedschaften unter 18 Jahren kommen erst mit unterschriebener Elternvollmacht zustande. Bis dahin speichern wir die Online-Anmeldung und die Kontaktdaten der gesetzlichen Vertretung zur Vorbereitung des Vertrags (Art. 6 Abs. 1 lit. b DSGVO). Bei gemeinsamer Sorge kann die Zustimmung beider Sorgeberechtigter erforderlich sein.',
     ],
   },
   {
-    title: '14. Änderung dieser Hinweise',
+    title: '15. Online-Kündigung',
     paragraphs: [
-      `Diese Datenschutzerklärung gilt ab dem ${GYM.agbStand}. Wird die Verarbeitung wesentlich geändert, passen wir den Text an und stellen die neue Fassung auf dieser Seite bereit.`,
+      `Über /kuendigen kannst du eine online abgeschlossene Mitgliedschaft kündigen oder widerrufen. Wir verarbeiten die dort angegebenen Daten zur Entgegennahme, Bestätigung und Umsetzung der Erklärung (Art. 6 Abs. 1 lit. b und c DSGVO). Die Eingangsbestätigung geht per E-Mail an dich und an ${GYM.email}.`,
+    ],
+  },
+  {
+    title: '16. Änderung dieser Hinweise',
+    paragraphs: [
+      `Diese Datenschutzerklärung gilt ab dem ${GYM.privacyStand}. Wird die Verarbeitung wesentlich geändert, passen wir den Text an und stellen die neue Fassung auf dieser Seite bereit.`,
     ],
   },
 ]
@@ -239,7 +299,7 @@ export const AGB: LegalBlock[] = [
       '1. Der Mitgliedschaftsvertrag kommt durch Unterzeichnung beziehungsweise Annahme des Mitgliedsvertrages durch das Mitglied und die KONNI MMA GYM GbR zustande. Bei einem elektronischen Vertragsschluss gelten zusätzlich die hierfür einschlägigen gesetzlichen Vorschriften.',
       '2. Beginn und Dauer der Mitgliedschaft ergeben sich aus dem jeweiligen Mitgliedsvertrag.',
       '3. Sofern ein Vertrag bereits vor der Eröffnung des Studios abgeschlossen wird, beginnt die beitragspflichtige Vertragslaufzeit grundsätzlich erst mit dem im Mitgliedsvertrag vereinbarten Vertragsbeginn beziehungsweise Eröffnungstermin, soweit keine abweichende Vereinbarung getroffen wurde.',
-      '4. Minderjährige können nur mit Zustimmung ihrer gesetzlichen Vertreter Mitglied werden. Die KONNI MMA GYM GbR kann für Minderjährige einzelne Trainingsformen, insbesondere Sparring, Kontakttraining, Würge-, Hebel- oder vergleichbare Techniken, alters- und entwicklungsabhängig beschränken oder von einer Freigabe durch den verantwortlichen Trainer abhängig machen.',
+      '4. Minderjährige können nur mit Zustimmung ihrer gesetzlichen Vertreter Mitglied werden. Bei gemeinsamer Sorge ist grundsätzlich die Zustimmung beider Sorgeberechtigter erforderlich, soweit nicht ein Sorgeberechtigter allein vertretungsberechtigt handelt. Die Online-Anmeldung eines Minderjährigen ist bis zum Vorliegen der unterschriebenen Elternvollmacht nicht wirksam; bis dahin finden weder Training noch Abbuchung statt. Die KONNI MMA GYM GbR kann für Minderjährige einzelne Trainingsformen, insbesondere Sparring, Kontakttraining, Würge-, Hebel- oder vergleichbare Techniken, alters- und entwicklungsabhängig beschränken oder von einer Freigabe durch den verantwortlichen Trainer abhängig machen.',
     ],
   },
   {
@@ -259,7 +319,7 @@ export const AGB: LegalBlock[] = [
     paragraphs: [
       '1. Die Höhe des Mitgliedsbeitrags und einer gegebenenfalls vereinbarten Anmeldegebühr ergeben sich aus dem jeweiligen Mitgliedsvertrag.',
       '2. Die Beiträge sind zu den im Mitgliedsvertrag vereinbarten Zeitpunkten fällig.',
-      '3. Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Zahlung erfolgt nach Wahl mit Karte oder Apple Pay über Stripe, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später und ist derzeit nicht eingerichtet. Die Aufnahmegebühr beträgt 19,99 €, soweit im Mitgliedsvertrag nichts anderes vereinbart ist.',
+      '3. Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Zahlung erfolgt nach Wahl mit Karte oder Apple Pay über Stripe, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später und ist derzeit nicht eingerichtet. Die Aufnahmegebühr beträgt 19,99 €, soweit im Mitgliedsvertrag nichts anderes vereinbart ist. Alle genannten Beträge sind Endpreise einschließlich der gesetzlichen Umsatzsteuer.',
       '4. Das Mitglied verpflichtet sich, für eine ausreichende Deckung des angegebenen Kontos zu sorgen.',
       '5. Entstehen durch eine vom Mitglied zu vertretende Rücklastschrift tatsächliche Bank- oder Rücklastschriftkosten, können diese in tatsächlich entstandener Höhe berechnet werden. Dem Mitglied bleibt der Nachweis gestattet, dass kein oder ein geringerer Schaden entstanden ist.',
       '6. Änderungen der Bankverbindung oder sonstiger für die Zahlungsabwicklung erforderlicher Daten sind unverzüglich mitzuteilen.',
@@ -282,7 +342,7 @@ export const AGB: LegalBlock[] = [
       '3. Die Mitgliedschaft kann mit einer Frist von einem Monat zum Ende der vereinbarten Mindestvertragslaufzeit gekündigt werden.',
       '4. Wird die Mitgliedschaft nicht fristgerecht zum Ende der Mindestvertragslaufzeit gekündigt, verlängert sie sich auf unbestimmte Zeit. Danach kann sie jederzeit mit einer Frist von einem Monat gekündigt werden.',
       '5. Die Kündigung kann insbesondere in Textform, beispielsweise per E-Mail an info@mma-in-leipzig.de, erklärt werden. Maßgeblich für die Einhaltung der Kündigungsfrist ist der Zugang der Kündigung.',
-      '6. Soweit Verbrauchern über eine Webseite der Abschluss eines unter § 312k BGB fallenden Dauerschuldverhältnisses ermöglicht wird, wird die gesetzlich erforderliche Kündigungsschaltfläche einschließlich Bestätigungsseite bereitgestellt.',
+      '6. Für online abgeschlossene Mitgliedschaften stellt die KONNI MMA GYM GbR die gesetzlich erforderliche Kündigungsschaltfläche nach § 312k BGB unter /kuendigen bereit (Button-Beschriftung „Verträge hier kündigen“), einschließlich Bestätigungsseite und Eingangsbestätigung auf einem dauerhaften Medium (Bildschirm und E-Mail).',
     ],
   },
   {
@@ -312,8 +372,9 @@ export const AGB: LegalBlock[] = [
       '1. Während einer vereinbarten Mindestvertragslaufzeit ist die KONNI MMA GYM GbR grundsätzlich an den vereinbarten Mitgliedsbeitrag gebunden, soweit nachfolgend nichts anderes wirksam vereinbart ist.',
       '2. Eine Beitragsanpassung kommt nur in Betracht, wenn sich nach Vertragsschluss Kostenpositionen, die für die vertragliche Leistungserbringung wesentlich sind, nachweisbar verändern. Hierzu können insbesondere Miet-, Energie-, Personal-, Versicherungs- oder gesetzlich verursachte Kosten gehören.',
       '3. Eine Erhöhung darf nur dem angemessenen Ausgleich tatsächlich eingetretener und für die Leistungserbringung relevanter Kostensteigerungen dienen. Kostensenkungen in denselben Kostenpositionen sind angemessen gegenzurechnen. Eine Erhöhung allein zur zusätzlichen Steigerung der Gewinnmarge ist ausgeschlossen.',
-      '4. Das Mitglied wird vor Inkrafttreten einer beabsichtigten Anpassung in Textform über Zeitpunkt, Umfang und wesentliche Gründe informiert.',
-      '5. Zwingende gesetzliche Rechte des Mitglieds bleiben unberührt.',
+      '4. Das Mitglied wird mindestens sechs Wochen vor Inkrafttreten einer beabsichtigten Anpassung in Textform über Zeitpunkt, Umfang und wesentliche Gründe informiert.',
+      '5. Erhöht die KONNI MMA GYM GbR den Mitgliedsbeitrag, kann das Mitglied den Vertrag außerordentlich mit einer Frist von einem Monat zum Zeitpunkt des Inkrafttretens der Erhöhung kündigen. Die Kündigung ist in Textform zu erklären; die Online-Kündigungsschaltfläche unter /kuendigen kann genutzt werden.',
+      '6. Zwingende gesetzliche Rechte des Mitglieds bleiben unberührt.',
     ],
   },
   {
@@ -438,10 +499,10 @@ export const AGB: LegalBlock[] = [
   {
     title: '§ 23 Videoüberwachung',
     paragraphs: [
-      '1. In gekennzeichneten Bereichen des Studios kann eine Videoüberwachung erfolgen, soweit und solange hierfür eine datenschutzrechtliche Rechtsgrundlage besteht und die gesetzlichen Voraussetzungen eingehalten werden.',
-      '2. Die Videoüberwachung erfolgt nicht auf Grundlage einer pauschalen Zustimmung zu diesen AGB. Zweck, Rechtsgrundlage, überwachte Bereiche, Speicherdauer, Empfänger beziehungsweise Kategorien von Empfängern sowie die Rechte betroffener Personen ergeben sich aus der gesonderten Datenschutzinformation zur Videoüberwachung.',
+      '1. Derzeit findet in den Räumen der KONNI MMA GYM GbR keine Videoüberwachung statt.',
+      '2. Wird künftig eine Videoüberwachung eingerichtet, erfolgt dies nur, soweit und solange eine datenschutzrechtliche Rechtsgrundlage besteht. Sie erfolgt nicht auf Grundlage einer pauschalen Zustimmung zu diesen AGB.',
       '3. Bereiche besonderer Privat- und Intimsphäre, insbesondere Umkleide-, Dusch- und Sanitärräume, werden nicht videoüberwacht.',
-      '4. Betroffene Personen werden vor Betreten eines überwachten Bereichs in geeigneter Weise auf die Videoüberwachung hingewiesen. Weitergehende Informationen werden entsprechend den gesetzlichen Transparenzpflichten bereitgestellt.',
+      '4. Vor Aufnahme einer Überwachung werden Betroffene vor Ort hingewiesen und eine ergänzende Datenschutzinformation bereitgestellt (Zweck, Rechtsgrundlage, Bereiche, Speicherdauer, Empfänger).',
       '5. Einrichtung, Ausrichtung, Betriebszeit und Speicherdauer der Kameras sind auf das für den jeweiligen zulässigen Zweck erforderliche Maß zu beschränken. Gesetzliche Datenschutzrechte bleiben unberührt.',
     ],
   },
@@ -487,7 +548,7 @@ export const AGB: LegalBlock[] = [
 ]
 
 export const WITHDRAWAL = {
-  stand: '27. September 2026',
+  stand: '15. November 2026',
   provider: [
     'KONNI MMA GYM GbR',
     'vertreten durch die Gesellschafter Konrad Dyrschka und Mehmet-Deniz Celik',

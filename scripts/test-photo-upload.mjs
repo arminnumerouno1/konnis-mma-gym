@@ -10,6 +10,7 @@ import {
   membersMissingPortrait,
   needsPortrait,
   photoRequestMailHtml,
+  photoRequestMailSubject,
   signPhotoToken,
   verifyPhotoToken,
 } from '../server/photo-upload.mjs'
@@ -32,8 +33,9 @@ const expired = signPhotoToken(secret, {
 assert(verifyPhotoToken(secret, expired).error === 'expired', 'expired token')
 
 const html = photoRequestMailHtml({ first: 'Anna', url: 'https://www.mma-in-leipzig.de/portrait?t=x' })
-assert(html.includes('Gesichtsbild') && html.includes('Warum brauchen wir das'), 'mail explains why')
+assert(html.includes('Portraitfoto fehlt noch') && html.includes('Trainingsbetrieb'), 'mail explains why')
 assert(html.includes('Portraitfoto hochladen'), 'mail has cta')
+assert(photoRequestMailSubject().includes('Foto fehlt noch'), 'subject urges open')
 
 const withPhoto = memberFromSignup({
   id: 'p1',

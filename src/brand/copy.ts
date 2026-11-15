@@ -6,7 +6,14 @@ export const COPY = {
   heroMma: 'MMA',
   heroCity: 'in Leipzig',
   heroHit: 'Vom Käfig auf die Matte.',
-  tape: 'MMA Gym in Leipzig · Wittenberger Straße 15 · Training läuft · Komm vorbei · ',
+  tape: 'MMA Gym in Leipzig · 16.–18.11. Bau-Pause · Danach richtig fertig · Wittenberger Straße 15 · ',
+  /** Visible through 2026-11-18 (Berlin). After that the banner hides. */
+  siteNoticeUntil: '2026-11-18',
+  siteNoticeKicker: 'Gute Nachrichten',
+  siteNoticeTitle: '16.–18. November · kurze Bau-Pause',
+  siteNoticeLead:
+    'Matten, Cage und der letzte Feinschliff – wir machen das Gym richtig fertig. Darum bleibt die Tür vom 16. bis 18. November zu. Ab dem 19. November trainieren wir wieder durch. Freu dich drauf.',
+
   ctaJoin: 'Mitglied werden',
   ctaTrial: 'Probetraining',
   ctaPrereg: 'Voranmelden',
@@ -35,6 +42,9 @@ export const COPY = {
   aboutZip: '04129 Leipzig',
   aboutWhen: 'Jetzt offen · Kursplan siehe unten',
   aboutClose: 'Komm vorbei und trainier mit. Wir freuen uns auf dich.',
+  aboutToPrices: 'Zu den Preisen',
+  whoToPrices: 'Tarife ansehen',
+  priceClose: 'Bereit? Dann sichere dir deinen Platz.',
   ctaJoinNow: 'Jetzt Mitglied werden',
   trainTitle: 'Die Disziplinen.',
   disciplinePlace: 'in Leipzig',
@@ -95,46 +105,75 @@ export const COPY = {
   mehmetName: 'Mehmet-Deniz Celik',
   mehmetRole: 'Mitgründer · Coach',
   mehmetBio: 'Mitgründer. Coach. Mit Konrad hat er das Gym aufgebaut.',
+  pressKicker: 'Presse',
+  pressTitle: 'Über Konrad.',
+  pressLead: 'Berichte über den Profi hinter dem Gym.',
+  pressOpen: 'Artikel öffnen',
   esnKicker: 'Partner',
+  esnAdLabel: 'Werbung',
   esnTitle: 'ESN × KONNI',
   esnLead:
-    'Konrad wird von ESN gesponsert. Mit seinem Code sparst du dauerhaft 10% auf jede Bestellung im ESN Shop.',
+    'Konrad wird von ESN gesponsert. Mit seinem Code sparst du dauerhaft 10% auf jede Bestellung im ESN Shop. Das ist Werbung für ein Partnerangebot.',
   esnCodeLabel: 'Dein Code',
   esnCopy: 'Code kopieren',
   esnCopied: 'Kopiert',
   esnCta: 'Zum ESN Shop',
-  esnHint: 'Code im Checkout einlösen. Partnerlink.',
+  esnHint: 'Werbung · Code im Checkout einlösen. Partnerlink.',
+  impressumKonrad: 'Impressum Konrad Dyrschka',
   planTitle: 'Kursplan.',
   planNote: 'Montag bis Samstag. Alle Levels und Fortgeschrittene. Änderungen möglich.',
   planEmpty: 'Kein Kurs',
   planLegendAll: 'All Levels',
   planLegendAdvanced: 'Fortgeschrittene',
   priceTitle: 'Tarife.',
+  priceFeatured: 'Meistgewählt',
   priceLead:
-    'Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Anmeldegebühr 19,99€.',
+    'Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Anmeldegebühr 19,99€. Alle Preise inkl. MwSt.',
   planIncludes: 'Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.',
   signupFeePrice: '19,99€',
   signupFeeLabel: 'Anmeldegebühr\neinmalig',
   priceFoot:
-    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 19,99 €.',
+    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 19,99 €. Alle Beträge sind Endpreise inkl. gesetzlicher Umsatzsteuer.',
+  priceTaxNote: 'Endpreis inkl. MwSt.',
+  planNoteYouth:
+    'Sparring und intensives Kontakttraining können altersabhängig eingeschränkt werden. Trainer entscheiden vor Ort.',
   trialTitle: 'Komm vorbei.',
-  preregTitle: 'Sei von Anfang an dabei.',
+  preregTitle: 'Interesse am Gym?',
   preregLead:
-    'Melde dich unverbindlich vor: Du erfährst als Erstes, wann du zum Probetraining kommen kannst, und hilfst uns, den Kursplan nach euren Zeiten zu bauen.',
-  preregButton: 'Jetzt unverbindlich voranmelden',
-  preregMeta: 'Dauert etwa zwei Minuten · kostenlos',
-  trialLead: 'Such dir einen Kurs und Tag aus. Die erste Einheit ist unverbindlich – ohne Vertrag.',
+    'Die Voranmeldung ist geschlossen. Das Studio ist offen – werde direkt Mitglied oder frag ein Probetraining an.',
+  preregButton: 'Jetzt Mitglied werden',
+  preregMeta: 'Training läuft · Wittenberger Straße 15',
+  trialLead:
+    'Such dir eine Einheit aus. Das Probetraining ist einmalig und unverbindlich – ohne Vertrag.',
   trialClosedLead:
     'Probetraining online anfragen geht gerade noch nicht. Komm vorbei oder schreib uns – wir finden eine Einheit für dich.',
   trialName: 'Name',
   trialEmail: 'E-Mail',
   trialPhone: 'Telefon',
+  trialBirth: 'Geburtsdatum',
+  trialBirthHint: 'Unter 18 brauchen wir die Zustimmung von Mutter, Vater oder Vormund.',
+  trialGuardianTitle: 'Unter 18 · Eltern',
+  trialGuardianLead:
+    'Die Eltern bekommen ein Einverständnis per Mail. Unterschreiben geht per Rücksendung oder vor Ort im Studio. Ohne Unterschrift kein Probetraining.',
+  trialGuardianName: 'Name der gesetzlichen Vertretung',
+  trialGuardianRelation: 'Beziehung',
+  trialGuardianEmail: 'E-Mail der Vertretung',
+  trialGuardianPhone: 'Telefon der Vertretung',
+  trialGuardianConsent:
+    'Ich bestätige: Mutter, Vater oder Vormund unterschreiben das Einverständnis (per Mail zurück oder vor Ort).',
   trialInterest: 'Was willst du ausprobieren?',
   trialNote: 'Nachricht (optional)',
   trialSubmit: 'Anfrage schicken',
   trialPending: 'Wird geschickt…',
   trialDone: 'Passt. Wir freuen uns auf dich und melden uns kurz mit der Bestätigung.',
-  trialNeed: 'Bitte Name, Mail, Telefon und Kurs eintragen.',
+  trialDoneMinor:
+    'Anfrage ist raus. An die Eltern-Mail geht das Einverständnis. Unterschreiben und zurücksenden — oder ein Elternteil kommt mit und unterschreibt vor Ort. Ohne Unterschrift kein Probetraining.',
+  trialNeed: 'Bitte Name, Geburtsdatum, Mail, Telefon und Kurs eintragen.',
+  trialNeedGuardian: 'Unter 18: bitte Daten der Eltern und das Häkchen setzen.',
+  trialBirthInvalid: 'Bitte ein gültiges Geburtsdatum eintragen (mindestens 6 Jahre).',
+  trialDuplicate:
+    'Für dich ist schon ein Probetraining hinterlegt. Eine Einheit reicht – melde dich bei uns, wenn du den Termin ändern willst.',
+  trialOneSlot: 'Bitte nur eine Einheit auswählen.',
   faqTitle: 'Fragen',
   contactTitle: 'Kontakt',
   hoursTitle: 'Öffnungszeiten',
@@ -174,24 +213,34 @@ export const COPY = {
   joinPageLead:
     'Gleicher Inhalt wie die Papierverträge. Du füllst aus, bestätigst AGB, Hausordnung und Widerruf und unterschreibst digital.',
   joinClosedKicker: 'Mitgliedschaft',
-  joinClosedTitle: 'Bald.',
+  joinClosedTitle: 'Gleich wieder da.',
   joinClosedLead:
-    'Online Mitglied werden geht gerade nicht. Schreib uns oder komm vorbei im Studio.',
+    'Online Mitglied werden geht gerade kurz nicht. Schreib uns oder komm vorbei im Studio – Training läuft.',
   joinClosedInvite:
-    'Dein First-50-Link bleibt. Der Platz ist für dich, sobald die Anmeldung aufgeht.',
+    'Dein persönlicher Link bleibt gültig. Schließ den Vertrag darüber ab, sobald die Seite wieder erreichbar ist.',
   joinClosedHome: 'Zur Startseite',
-  joinClosedError: 'Anmeldung ist noch nicht offen.',
+  joinClosedError: 'Anmeldung ist gerade nicht erreichbar. Bitte später noch einmal versuchen.',
   inviteLead:
-    'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 24 Monate. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, geht der Platz an die nächste Person. Nicht weiterleiten.',
+    'Dein persönlicher Sonderpreis: 89,99€ im Monat statt 99,99€, 24 Monate. Das Studio ist offen – nach dem Abschluss kannst du direkt trainieren. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, können wir den Platz an jemand anderen vergeben. Nicht weiterleiten.',
   invitePlusLead:
     'Dein Plus-Vertrag: 119€ im Monat, 6 Monate. Der Link gilt 48 Stunden und nur für deine E-Mail. Name und E-Mail sind fest. Nicht weiterleiten.',
   invitePlusLeadOpen:
     'Dein Plus-Vertrag: 119€ im Monat, 6 Monate. Der Link bleibt gültig, bis du dich angemeldet hast – kein 48-Stunden-Druck. Name und E-Mail sind fest. Nicht weiterleiten.',
+  inviteSlowStartLead:
+    'Dein Slow Start Tarif: 79,99€ im Monat, 12 Monate, 2× pro Woche. Der Link gilt 48 Stunden und nur für deine E-Mail. Name und E-Mail sind fest. Nicht weiterleiten.',
+  inviteSlowStartLeadOpen:
+    'Dein Slow Start Tarif: 79,99€ im Monat, 12 Monate, 2× pro Woche. Der Link bleibt gültig, bis du dich angemeldet hast – kein 48-Stunden-Druck. Name und E-Mail sind fest. Nicht weiterleiten.',
+  inviteStandardLead:
+    'Dein Standard Tarif: 99,99€ im Monat, 24 Monate. Der Link gilt 48 Stunden und nur für deine E-Mail. Name und E-Mail sind fest. Nicht weiterleiten.',
+  inviteStandardLeadOpen:
+    'Dein Standard Tarif: 99,99€ im Monat, 24 Monate. Der Link bleibt gültig, bis du dich angemeldet hast – kein 48-Stunden-Druck. Name und E-Mail sind fest. Nicht weiterleiten.',
   inviteBad: 'Dieser Einladungslink ist ungültig oder schon benutzt.',
   inviteExpired: 'Der Link ist abgelaufen. Schreib uns an info@mma-in-leipzig.de.',
   inviteChecking: 'Link wird geprüft…',
   inviteLockedNote: 'Name und E-Mail kommen aus der Voranmeldung. Der Sonderpreis gilt nur für dich.',
   invitePlusLockedNote: 'Name und E-Mail sind fest. Der Plus-Tarif gilt nur über diesen Link.',
+  inviteSlowStartLockedNote: 'Name und E-Mail sind fest. Der Slow Start Tarif gilt nur über diesen Link.',
+  inviteStandardLockedNote: 'Name und E-Mail sind fest. Der Standard Tarif gilt nur über diesen Link.',
   stepPlan: 'Tarif',
   stepPerson: 'Daten',
   stepLegal: 'Recht & Unterschrift',
@@ -211,16 +260,24 @@ export const COPY = {
   portraitChange: 'Anderes Foto wählen',
   place: 'Ort der Unterschrift',
   signature: 'Digitale Unterschrift',
-  minorTitle: 'Unter 18',
+  minorTitle: 'Unter 18 · Antrag',
   minorLead:
-    'Vertrag nur mit Mutter, Vater oder Vormund. Die tragen hier Name, Mail und Telefon ein und stimmen zu.',
-  minorLegalNote: 'Mitglied unter 18. Die gesetzliche Vertretung hat auf der vorigen Seite zugestimmt.',
+    'Das ist noch kein wirksamer Vertrag, sondern ein Antrag. Vertrag und Training starten erst mit unterschriebener Elternvollmacht. Hier Name, Beziehung, Mail und Telefon der gesetzlichen Vertretung eintragen. Bei gemeinsamer Sorge müssen in der Regel beide Sorgeberechtigten zustimmen (beide unterschreiben die Vollmacht oder ein Elternteil bestätigt die Zustimmung des anderen). Bis die Vollmacht bei uns liegt: keine Abbuchung, kein Training.',
+  minorLegalNote:
+    'Unter 18: Online nur Antrag. Wirksam erst mit unterschriebener Elternvollmacht. Bis dahin keine Abbuchung und kein Training. Bei gemeinsamer Sorge i. d. R. Zustimmung beider Sorgeberechtigter.',
   guardianName: 'Name der gesetzlichen Vertretung',
+  guardianRelation: 'Beziehung',
   guardianEmail: 'E-Mail der Vertretung',
   guardianPhone: 'Telefon der Vertretung',
+  successGuardianTitle: 'Antrag ist raus — Elternvollmacht fehlt noch.',
+  successGuardianLead:
+    'Wir haben den Antrag gespeichert. An die angegebene Eltern-Mail geht die Vollmacht zum Ausfüllen und Unterschreiben. Bitte vollständig ausgefüllt und unterschrieben an info@mma-in-leipzig.de zurücksenden. Solange die Vollmacht nicht da ist, wird nichts abgebucht und es gibt noch keinen wirksamen Vertrag.',
   visitDay: 'Wunschtag (Day Pass)',
-  submit: 'Mitgliedschaft verbindlich abschließen',
+  submit: 'Zahlungspflichtig Mitgliedschaft abschließen',
+  submitMinor: 'Antrag absenden — Zahlung erst nach Elternvollmacht',
   pending: 'Wird gespeichert…',
+  cancelContract: 'Verträge hier kündigen',
+  termTotalLabel: 'Gesamt Erstlaufzeit',
   back: 'Zurück',
   next: 'Weiter',
   successTitle: 'Anmeldung ist raus.',
@@ -249,7 +306,7 @@ export const COPY = {
   invalid: 'Bitte alle Pflichtfelder sauber ausfüllen.',
   error: 'Das hat nicht geklappt. Versuch es gleich noch einmal.',
   rate: 'Zu viele Versuche. Warte kurz und versuch es erneut.',
-  consentAgb: 'Ich habe die AGB (Stand 22. Oktober 2026) gelesen und akzeptiere sie.',
+  consentAgb: 'Ich habe die AGB (Stand 15. November 2026) gelesen und akzeptiere sie.',
   consentHouse: 'Ich habe die Hausordnung gelesen. Sie ist Teil des Vertrags.',
   consentWithdraw: 'Ich habe die Widerrufsbelehrung gelesen, inklusive Muster-Formular.',
   consentPrivacy: 'Ich habe die Datenschutzerklärung gelesen.',
@@ -266,10 +323,13 @@ export const COPY = {
   earlyStartNo: 'Nicht verlangt. 14 Tage Widerruf, ohne vorzeitiges Training.',
   consentPhoto: 'Optional: Ihr dürft mich auf Gym-Fotos/Videos für die Gym-Kanäle zeigen.',
   consentNews: 'Optional: Infos zu Kursplan und Gym per E-Mail.',
-  consentGuardian: 'Ich bin gesetzliche Vertretung und stimme dem Vertrag zu.',
+  consentGuardian:
+    'Ich bestätige: Die gesetzliche Vertretung erhält die Elternvollmacht und sendet sie vollständig ausgefüllt und unterschrieben zurück (bei gemeinsamer Sorge i. d. R. beide). Bis dahin wird nichts abgebucht und es entsteht noch kein wirksamer Vertrag.',
   consentSign: 'Ich unterschreibe diesen Vertrag elektronisch. Der Text gilt wie auf Papier.',
+  consentSignMinor:
+    'Ich reiche den Antrag elektronisch ein. Der Vertrag entsteht erst mit unterschriebener Elternvollmacht.',
   payNote:
-    'Monatsbeiträge mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Fällig jeweils zum 1. des Monats.',
+    'Monatsbeiträge mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Fällig jeweils zum 1. des Monats. Endpreise inkl. MwSt.',
 } as const
 
 export const FAQ = [
@@ -279,11 +339,11 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Ja. Unter Mitglied werden schließt du Slow Start, Standard, Flex oder Plus online ab. Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. des Monats. Anmeldegebühr 19,99 €.',
+    a: 'Ja. Unter Mitglied werden schließt du Slow Start, Standard, Flex oder Plus online ab. Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. des Monats. Anmeldegebühr 19,99 €. Alle Preise inkl. MwSt.',
   },
   {
     q: 'Gibt es ein Probetraining?',
-    a: 'Ja. Online wählst du einen konkreten Kurs aus dem Kursplan (Tag und Uhrzeit). Wir melden uns und bestätigen den Termin.',
+    a: 'Ja. Online wählst du einen konkreten Kurs aus dem Kursplan (Tag und Uhrzeit) und trägst dein Geburtsdatum ein. Unter 18 brauchen wir Name, Mail und Telefon von Mutter, Vater oder Vormund; die bekommen ein Einverständnis per Mail und unterschreiben zurück oder vor Ort. Ohne Unterschrift kein Probetraining. Wir melden uns und bestätigen den Termin.',
   },
   {
     q: 'Was bringe ich mit?',
@@ -291,22 +351,22 @@ export const FAQ = [
   },
   {
     q: 'Wann zahle ich?',
-    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Anmeldegebühr von 19,99 € fällt beim Vertragsschluss an.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Anmeldegebühr von 19,99 € fällt beim Vertragsschluss an (bei U18 erst nach Elternvollmacht).',
   },
   {
     q: 'Wie wird bezahlt?',
-    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei 12- und 24-Monats-Verträgen zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 19,99 €.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei allen Mitgliedschaftstarifen (6, 12 und 24 Monate) zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 19,99 €. Endpreise inkl. MwSt.',
   },
   {
     q: 'Kann ich unter 18 trainieren?',
-    a: 'Ja. Das Geburtsdatum zählt, kein extra Häkchen. Unter 18 müssen Mutter, Vater oder Vormund Name, Mail, Telefon und Zustimmung eintragen.',
+    a: 'Ja. Das Geburtsdatum zählt. Unter 18 ist die Online-Anmeldung nur ein Antrag: Wir brauchen Name, Beziehung, Mail und Telefon von Mutter, Vater oder Vormund. Die Elternvollmacht geht per Mail raus und muss unterschrieben zurück. Bei gemeinsamer Sorge i. d. R. beide. Bis dahin wird nichts abgebucht und Training startet erst nach Freigabe.',
   },
   {
-    q: 'Ich war auf der Voranmeldung. Wo ist der First-50-Preis?',
-    a: 'Die ersten 50 bekommen einen persönlichen Link per Mail. 89,99€ statt 99,99€, 24 Monate. Der Link gilt 48 Stunden und nur für die Mail aus dem Formular. Wer sich in den 48 Stunden nicht anmeldet, gibt den Platz an die nächste Person weiter. Weiterleiten bringt nichts: der Vertrag prüft Name und E-Mail.',
+    q: 'Ich war auf der Voranmeldung. Wo ist mein Sonderpreis?',
+    a: 'Wer einen persönlichen Link per Mail bekommt, kann zu 89,99€ statt 99,99€ abschließen, 24 Monate. Das Studio ist offen – nach dem Abschluss kannst du direkt trainieren. Der Link gilt 48 Stunden und nur für die Mail aus dem Formular. Weiterleiten bringt nichts: der Vertrag prüft Name und E-Mail.',
   },
   {
     q: 'Wie kündige ich?',
-    a: 'Per Mail an info@mma-in-leipzig.de. Ein Monat zum Ende der Erstlaufzeit (6, 12 oder 24 Monate). Danach jederzeit mit einem Monat Frist. Liegt der neue Hauptwohnsitz mehr als 50 Kilometer Luftlinie vom Studio entfernt, kannst du zusätzlich mit einem Monat zum Monatsende kündigen. Dafür brauchst du die amtliche Meldebescheinigung. Ein näherer Umzug reicht dafür nicht.',
+    a: 'Online über /kuendigen („Verträge hier kündigen“) oder per Mail an info@mma-in-leipzig.de. Ein Monat zum Ende der Erstlaufzeit (6, 12 oder 24 Monate). Danach jederzeit mit einem Monat Frist. Liegt der neue Hauptwohnsitz mehr als 50 Kilometer Luftlinie vom Studio entfernt, kannst du zusätzlich mit einem Monat zum Monatsende kündigen. Dafür brauchst du die amtliche Meldebescheinigung. Ein näherer Umzug reicht dafür nicht.',
   },
 ] as const

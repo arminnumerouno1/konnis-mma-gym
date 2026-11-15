@@ -41,7 +41,16 @@ function escapeHtml(value: string): string {
     .replaceAll('"', '&quot;')
 }
 
-const PAGE_PATHS = ['/', '/mitglied', '/impressum', '/datenschutz', '/agb', '/widerruf', '/hausordnung']
+const PAGE_PATHS = [
+  '/',
+  '/mitglied',
+  '/impressum',
+  '/datenschutz',
+  '/agb',
+  '/widerruf',
+  '/kuendigen',
+  '/hausordnung',
+]
 
 export function buildSeoHead(siteUrl = ''): string {
   const origin = canonicalOrigin(siteUrl)

@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { COPY, FAQ } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
+import { PRESS } from '../brand/press'
 import {
   KURSPLAN,
   KURSPLAN_DAYS,
@@ -10,7 +11,7 @@ import {
   openingHoursFromKursplan,
   trialSlots,
 } from '../brand/kursplan'
-import { PUBLIC_PLANS, TRIAL_OPEN, type Plan } from '../brand/plans'
+import { PRICE_TAX_NOTE, PUBLIC_PLANS, TRIAL_OPEN, termTotalLabel, type Plan } from '../brand/plans'
 import { submitTrial } from '../contact/api'
 
 const KURSPLAN_BY_DAY = kursplanByDay()
@@ -19,13 +20,14 @@ const TRIAL_SLOTS = trialSlots()
 import { hasExtrasConsent, onConsentChange } from '../lib/consent'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
-import { wantsSmoothScroll } from '../lib/motion'
+import { ageFromIso, wantsSmoothScroll } from '../lib/motion'
 import { useSiteMotion } from '../lib/useSiteMotion'
 import { InstagramIcon } from '../components/InstagramIcon'
 
 function PlanCard({ plan }: { plan: Plan }) {
   return (
-    <article className={`price-card accent-${plan.accent}`}>
+    <article className={`price-card accent-${plan.accent}${plan.featured ? ' is-featured' : ''}`}>
+      {plan.featured ? <p className="price-featured">{COPY.priceFeatured}</p> : null}
       <p className="price-tag">{plan.tag}</p>
       <h3>{plan.name}</h3>
       <p className="price-term">{plan.term}</p>
@@ -40,6 +42,12 @@ function PlanCard({ plan }: { plan: Plan }) {
           <span>{COPY.signupFeeLabel}</span>
         </p>
       )}
+      <p className="price-tax">{COPY.priceTaxNote}</p>
+      {termTotalLabel(plan) ? (
+        <p className="price-total">
+          {COPY.termTotalLabel}: {termTotalLabel(plan)}
+        </p>
+      ) : null}
       <ul>
         {plan.bullets.map((item) => (
           <li key={item}>{item}</li>
@@ -56,34 +64,86 @@ function TrialForm() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
+  const [birthDate, setBirthDate] = useState('')
+  const [guardianName, setGuardianName] = useState('')
+  const [guardianRelation, setGuardianRelation] = useState('Mutter')
+  const [guardianEmail, setGuardianEmail] = useState('')
+  const [guardianPhone, setGuardianPhone] = useState('')
+  const [guardianConsent, setGuardianConsent] = useState(false)
   const [slotId, setSlotId] = useState('')
   const [note, setNote] = useState('')
   const [pending, setPending] = useState(false)
-  const [done, setDone] = useState(false)
+  const [done, setDone] = useState<'adult' | 'minor' | null>(null)
   const [error, setError] = useState<string | null>(null)
+
+  const age = ageFromIso(birthDate)
+  const minor = age != null && age < 18
 
   async function onSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
-    if (name.trim().length < 2 || !email.includes('@') || phone.trim().length < 6 || !slotId) {
+    if (name.trim().length < 2 || !email.includes('@') || phone.trim().length < 6 || !slotId || !birthDate) {
       setError(COPY.trialNeed)
+      return
+    }
+    if (age == null || age < 6) {
+      setError(COPY.trialBirthInvalid)
+      return
+    }
+    if (
+      minor &&
+      (!guardianName.trim() ||
+        !guardianEmail.includes('@') ||
+        guardianPhone.trim().length < 6 ||
+        !guardianConsent)
+    ) {
+      setError(COPY.trialNeedGuardian)
       return
     }
     setPending(true)
     const honey = String(new FormData(event.currentTarget).get('company') ?? '')
-    const result = await submitTrial({ name, email, phone, slotId, note, company: honey })
+    const result = await submitTrial({
+      name,
+      email,
+      phone,
+      birthDate,
+      slotId,
+      note,
+      company: honey,
+      ...(minor
+        ? {
+            guardianName,
+            guardianRelation,
+            guardianEmail,
+            guardianPhone,
+            guardianConsent: true,
+          }
+        : {}),
+    })
     setPending(false)
     if (!result.ok) {
-      setError(result.error === 'rate' ? COPY.rate : result.error === 'slot' ? COPY.trialSlotPick : COPY.error)
+      setError(
+        result.error === 'rate'
+          ? COPY.rate
+          : result.error === 'duplicate'
+            ? COPY.trialDuplicate
+            : result.error === 'slot'
+              ? COPY.trialOneSlot
+              : result.error === 'birth'
+                ? COPY.trialBirthInvalid
+                : result.error === 'guardian'
+                  ? COPY.trialNeedGuardian
+                  : COPY.error,
+      )
       return
     }
-    setDone(true)
+    setDone(result.minor || minor ? 'minor' : 'adult')
   }
 
   if (done) {
     return (
       <p className="trial-done" role="status">
-        {COPY.trialDone}
+        {done === 'minor' ? COPY.trialDoneMinor : COPY.trialDone}
       </p>
     )
   }
@@ -95,6 +155,16 @@ function TrialForm() {
         <input value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" required />
       </label>
       <label>
+        {COPY.trialBirth}
+        <input
+          type="date"
+          value={birthDate}
+          onChange={(e) => setBirthDate(e.target.value)}
+          required
+        />
+      </label>
+      <p className="trial-hint wide">{COPY.trialBirthHint}</p>
+      <label>
         {COPY.trialEmail}
         <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
       </label>
@@ -102,6 +172,49 @@ function TrialForm() {
         {COPY.trialPhone}
         <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" required />
       </label>
+      {minor ? (
+        <div className="minor-block wide">
+          <p className="minor-kicker">{COPY.trialGuardianTitle}</p>
+          <p className="minor-lead">{COPY.trialGuardianLead}</p>
+          <div className="form-grid">
+            <label>
+              {COPY.trialGuardianName}
+              <input value={guardianName} onChange={(e) => setGuardianName(e.target.value)} required />
+            </label>
+            <label>
+              {COPY.trialGuardianRelation}
+              <select value={guardianRelation} onChange={(e) => setGuardianRelation(e.target.value)} required>
+                <option value="Mutter">Mutter</option>
+                <option value="Vater">Vater</option>
+                <option value="Beide Eltern">Beide Eltern</option>
+                <option value="Vormund">Vormund</option>
+                <option value="Andere">Andere</option>
+              </select>
+            </label>
+            <label>
+              {COPY.trialGuardianEmail}
+              <input
+                type="email"
+                value={guardianEmail}
+                onChange={(e) => setGuardianEmail(e.target.value)}
+                required
+              />
+            </label>
+            <label>
+              {COPY.trialGuardianPhone}
+              <input type="tel" value={guardianPhone} onChange={(e) => setGuardianPhone(e.target.value)} required />
+            </label>
+            <label className="check wide">
+              <input
+                type="checkbox"
+                checked={guardianConsent}
+                onChange={(e) => setGuardianConsent(e.target.checked)}
+              />
+              <span>{COPY.trialGuardianConsent}</span>
+            </label>
+          </div>
+        </div>
+      ) : null}
       <label className="wide">
         {COPY.trialSlot}
         <select value={slotId} onChange={(e) => setSlotId(e.target.value)} required>
@@ -180,14 +293,17 @@ function EsnPartner() {
   }
 
   return (
-    <section className="esn" id="esn" data-reveal aria-label="ESN Partner">
+    <section className="esn" id="esn" data-reveal aria-label="ESN Partner · Werbung">
       <div className="esn-glow" aria-hidden="true" />
       <div className="esn-inner">
         <a className="esn-brand" href={GYM.esn.url} target="_blank" rel="noopener noreferrer">
           <img src={GYM.esn.logo} alt="ESN · Elite Sports Nutrients" width={1024} height={724} />
         </a>
         <div className="esn-copy">
-          <p className="esn-kicker">{COPY.esnKicker}</p>
+          <p className="esn-kicker">
+            <span className="esn-ad-label">{COPY.esnAdLabel}</span>
+            <span>{COPY.esnKicker}</span>
+          </p>
           <h2>{COPY.esnTitle}</h2>
           <p className="esn-lead">{COPY.esnLead}</p>
           <div className="esn-deal">
@@ -196,8 +312,9 @@ function EsnPartner() {
               <span>Rabatt</span>
             </p>
             <div className="esn-code-wrap">
+              <span className="esn-ad-label esn-ad-label-code">{COPY.esnAdLabel}</span>
               <span className="esn-code-label">{COPY.esnCodeLabel}</span>
-              <p className="esn-code" aria-label={`Rabattcode ${GYM.esn.code}`}>
+              <p className="esn-code" aria-label={`Werbung · Rabattcode ${GYM.esn.code}`}>
                 {GYM.esn.code}
               </p>
               <button className="btn btn-ghost esn-copy-btn" type="button" onClick={() => void copyCode()}>
@@ -299,6 +416,20 @@ export function Home() {
         <span>{COPY.tape}</span>
       </p>
 
+      <section className="halle" aria-label="Die Halle">
+        {(
+          [
+            [GYM.hall.cage, ''],
+            [GYM.hall.floor, ''],
+            [GYM.hall.depth, ''],
+            [GYM.hall.marks, ''],
+            [GYM.hall.ropes, ''],
+          ] as const
+        ).map(([src, alt]) => (
+          <img key={src} src={src} alt={alt} width={640} height={426} />
+        ))}
+      </section>
+
       <section className="opening" id="studio" data-reveal>
         <p className="opening-kicker">{COPY.aboutKicker}</p>
         <p className="opening-date">{COPY.aboutDate}</p>
@@ -327,29 +458,10 @@ export function Home() {
         </div>
         <p className="opening-close">{COPY.aboutClose}</p>
         <div className="opening-actions">
-          <Link className="btn btn-solid btn-xl" href={href('join')}>
-            {COPY.ctaJoinNow}
+          <Link className="btn btn-ghost btn-xl" href="/#preise">
+            {COPY.aboutToPrices}
           </Link>
-          {TRIAL_OPEN ? (
-            <Link className="btn btn-ghost btn-xl" href="/#probetraining">
-              {COPY.ctaTrial}
-            </Link>
-          ) : null}
         </div>
-      </section>
-
-      <section className="halle" aria-label="Die Halle">
-        {(
-          [
-            [GYM.hall.cage, ''],
-            [GYM.hall.floor, ''],
-            [GYM.hall.depth, ''],
-            [GYM.hall.marks, ''],
-            [GYM.hall.ropes, ''],
-          ] as const
-        ).map(([src, alt]) => (
-          <img key={src} src={src} alt={alt} width={640} height={426} />
-        ))}
       </section>
 
       <section className="impact" id="training">
@@ -407,7 +519,27 @@ export function Home() {
         </article>
       </section>
 
-      <EsnPartner />
+      <section className="press" id="presse" data-reveal aria-label="Presse über Konrad Dyrschka">
+        <div className="press-head">
+          <p className="press-kicker">{COPY.pressKicker}</p>
+          <h2>{COPY.pressTitle}</h2>
+          <p className="press-lead">{COPY.pressLead}</p>
+        </div>
+        <ul className="press-grid">
+          {PRESS.map((item) => (
+            <li key={item.href}>
+              <a className="press-item" href={item.href} target="_blank" rel="noopener noreferrer">
+                <span className={`press-logo is-${item.outlet.toLowerCase()}`}>
+                  <img src={item.logo} alt={item.logoAlt} width={160} height={160} loading="lazy" />
+                </span>
+                <strong>{item.title}</strong>
+                <span className="press-line">{item.line}</span>
+                <span className="press-go">{COPY.pressOpen}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </section>
 
       <section className="who" id="wer" data-reveal>
         <p className="who-kicker">{COPY.whoKicker}</p>
@@ -422,20 +554,16 @@ export function Home() {
           ))}
         </ul>
         <div className="who-actions">
-          <Link className="btn btn-solid" href={href('join')}>
-            {COPY.ctaJoin}
+          <Link className="btn btn-solid" href="/#preise">
+            {COPY.whoToPrices}
           </Link>
-          {TRIAL_OPEN ? (
-            <Link className="btn btn-ghost" href="/#probetraining">
-              {COPY.ctaTrial}
-            </Link>
-          ) : null}
         </div>
       </section>
 
       <section className="block schedule" id="plan" data-reveal>
         <h2>{COPY.planTitle}</h2>
         <p className="lead">{COPY.planNote}</p>
+        <p className="lead">{COPY.planNoteYouth}</p>
         <div className="kursplan-legend" aria-hidden="true">
           <span className="kursplan-legend-all">{COPY.planLegendAll}</span>
           <span className="kursplan-legend-advanced">{COPY.planLegendAdvanced}</span>
@@ -511,6 +639,12 @@ export function Home() {
           ))}
         </div>
         <p className="price-foot">{COPY.priceFoot}</p>
+        <div className="price-close">
+          <p>{COPY.priceClose}</p>
+          <Link className="btn btn-solid btn-xl" href={href('join')}>
+            {COPY.ctaJoinNow}
+          </Link>
+        </div>
       </section>
 
       {TRIAL_OPEN ? (
@@ -525,6 +659,8 @@ export function Home() {
         <h2>{COPY.faqTitle}</h2>
         <FaqList />
       </section>
+
+      <EsnPartner />
 
       <section className="block contact" id="kontakt">
         <h2>{COPY.contactTitle}</h2>

@@ -2,16 +2,28 @@ import { useEffect } from 'react'
 import { CookieBanner } from './components/CookieBanner'
 import { Footer } from './components/Footer'
 import { Nav } from './components/Nav'
+import { SiteNotice } from './components/SiteNotice'
 import { useRoute } from './lib/useRoute'
 import { href, navigate, scrollPageTop } from './lib/router'
 import { Home } from './pages/Home'
 import { Join } from './pages/Join'
 import { Legal } from './pages/Legal'
+import { Cancel } from './pages/Cancel'
 import { Admin } from './pages/Admin'
 import { PortraitUpload } from './pages/PortraitUpload'
 import { Checkin } from './pages/Checkin'
 
-const LEGAL = new Set(['impressum', 'datenschutz', 'agb', 'widerruf', 'hausordnung', 'vertrag6', 'vertrag12', 'vertrag24'])
+const LEGAL = new Set([
+  'impressum',
+  'impressumKonrad',
+  'datenschutz',
+  'agb',
+  'widerruf',
+  'hausordnung',
+  'vertrag6',
+  'vertrag12',
+  'vertrag24',
+])
 
 export default function App() {
   const route = useRoute()
@@ -56,11 +68,24 @@ export default function App() {
   return (
     <div className={`shell route-${route.name}`}>
       <Nav route={route} />
+      <SiteNotice />
       {route.name === 'home' ? <Home /> : null}
       {route.name === 'join' ? <Join plan={route.plan} invite={route.invite} /> : null}
+      {route.name === 'kuendigen' ? <Cancel /> : null}
       {LEGAL.has(route.name) ? (
         <Legal
-          name={route.name as 'impressum' | 'datenschutz' | 'agb' | 'widerruf' | 'hausordnung' | 'vertrag6' | 'vertrag12' | 'vertrag24'}
+          name={
+            route.name as
+              | 'impressum'
+              | 'impressumKonrad'
+              | 'datenschutz'
+              | 'agb'
+              | 'widerruf'
+              | 'hausordnung'
+              | 'vertrag6'
+              | 'vertrag12'
+              | 'vertrag24'
+          }
         />
       ) : null}
       {route.name === 'notfound' ? (

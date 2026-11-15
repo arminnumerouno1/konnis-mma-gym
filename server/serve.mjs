@@ -4,6 +4,7 @@ import { stat } from 'node:fs/promises'
 import { extname, join, normalize, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { createContactHandler } from './contact.mjs'
+import { createCancelHandler } from './cancel.mjs'
 import { createInviteMailHandler } from './invite-mail.mjs'
 import { createOpeningMailHandler } from './opening-mail.mjs'
 import { createSignupOpenMailHandler } from './signup-open-mail.mjs'
@@ -25,6 +26,7 @@ const handleAdmin = createAdminHandler({ dataDir, env: process.env })
 const memberStore = createMemberStore({ dataDir, env: process.env })
 const handlePortrait = createPhotoUploadHandler({ env: process.env, store: memberStore })
 const handleContact = createContactHandler({ dataDir, env: process.env })
+const handleCancel = createCancelHandler({ dataDir, env: process.env })
 const handlePrereg = createPreregHandler({ dataDir, env: process.env })
 const handleInviteMail = createInviteMailHandler({ env: process.env })
 const handleOpeningMail = createOpeningMailHandler({ env: process.env })
@@ -96,6 +98,10 @@ const server = createServer((req, res) => {
   }
   if (path === '/api/kontakt') {
     void handleContact(req, res)
+    return
+  }
+  if (path === '/api/kuendigen') {
+    void handleCancel(req, res)
     return
   }
   if (path === '/api/invite-mail') {

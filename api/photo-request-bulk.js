@@ -1,5 +1,5 @@
 import { createMemberStore } from '../server/member-store.mjs'
-import { cronAuthorized } from '../server/dues-cron.mjs'
+import { cronAuthorized, cronRateLimited } from '../server/dues-cron.mjs'
 import { membersMissingPortrait, sendPhotoRequestEmail } from '../server/photo-upload.mjs'
 
 export default async function handler(req, res) {
@@ -13,6 +13,12 @@ export default async function handler(req, res) {
     res.statusCode = 401
     res.setHeader('content-type', 'application/json; charset=utf-8')
     res.end(JSON.stringify({ ok: false, error: 'auth' }))
+    return
+  }
+  if (cronRateLimited(req)) {
+    res.statusCode = 429
+    res.setHeader('content-type', 'application/json; charset=utf-8')
+    res.end(JSON.stringify({ ok: false, error: 'rate' }))
     return
   }
 

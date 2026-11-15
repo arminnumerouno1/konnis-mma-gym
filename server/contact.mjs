@@ -2,6 +2,7 @@ import {
   addTrial,
   createTrialStore,
   readTrialRequest,
+  sendTrialGuardianConsentEmail,
   sendTrialGymMail,
 } from './trial.mjs'
 
@@ -134,7 +135,12 @@ export function createContactHandler({ dataDir, env }) {
         return
       }
 
-      const { entry } = await addTrial(trials, parsed.entry)
+      const added = await addTrial(trials, parsed.entry)
+      if (!added.ok) {
+        json(res, 409, { ok: false, error: added.error || 'duplicate' })
+        return
+      }
+      const entry = added.entry
 
       const hook = env.CONTACT_WEBHOOK_URL?.trim() || env.WAITLIST_WEBHOOK_URL?.trim()
       if (hook) {
@@ -155,7 +161,26 @@ export function createContactHandler({ dataDir, env }) {
         console.error('[kontakt] trial mail failed', error)
       }
 
-      json(res, 200, { ok: true })
+      if (entry.minor) {
+        try {
+          const mailed = await sendTrialGuardianConsentEmail(env, entry)
+          if (mailed !== 'skipped') {
+            await trials.update((db) => {
+              const index = db.entries.findIndex((row) => row.id === entry.id)
+              if (index < 0) return db
+              db.entries[index] = {
+                ...db.entries[index],
+                guardianConsentMailAt: new Date().toISOString(),
+              }
+              return db
+            })
+          }
+        } catch (error) {
+          console.error('[kontakt] trial guardian consent mail failed', error)
+        }
+      }
+
+      json(res, 200, { ok: true, minor: Boolean(entry.minor) })
     } catch (error) {
       console.error('[kontakt]', error)
       if (!res.headersSent) json(res, 500, { ok: false, error: 'upstream' })

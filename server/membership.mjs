@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { inviteRevoked, inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, storedContractTerm, verifyInvite } from './invite.mjs'
 import { memberBillingStart, membershipTaken } from './member-model.mjs'
-import { sendMembershipEmails } from './membership-mail.mjs'
+import { sendGuardianMandateEmail, sendMembershipEmails } from './membership-mail.mjs'
 import { claimSignup, createMemberStore } from './member-store.mjs'
 import { attachSignupDocs } from './signup-docs.mjs'
 import { buildTransferPayload } from './transfer-due.mjs'
@@ -190,7 +190,7 @@ export function validateMembership(body, ctx = {}) {
   if (plan === 'daypass' && !DAY_PASS_OPEN) return { ok: false, error: 'plan' }
 
   let invite = null
-  if (plan === 'first50' || (plan === 'plus' && body.invite)) {
+  if (plan === 'first50' || ((plan === 'plus' || plan === 'slowstart' || plan === 'standard') && body.invite)) {
     const checked = verifyInvite(ctx.inviteSecret, body.invite)
     if (!checked.ok) return { ok: false, error: checked.error === 'expired' ? 'expired' : 'invite' }
     if (checked.payload.plan !== plan) return { ok: false, error: 'invite' }
@@ -231,10 +231,14 @@ export function validateMembership(body, ctx = {}) {
   }
 
   const minor = age < 18
+  const guardianRelation = String(body.guardianRelation ?? '').trim().slice(0, 40)
   const guardian = {
     name: String(body.guardianName ?? '').trim(),
+    relation: guardianRelation || 'Mutter / Vater / Vormund',
     email: normalizeEmail(body.guardianEmail),
     phone: String(body.guardianPhone ?? '').trim(),
+    signedAt: null,
+    signedVia: null,
   }
   if (minor) {
     if (!isValidName(guardian.name) || !isValidEmail(guardian.email) || !isValidPhone(guardian.phone)) {
@@ -283,8 +287,16 @@ export function validateMembership(body, ctx = {}) {
       plan,
       planName: meta.name,
       price: meta.price,
-      termMonths: invite?.plan === 'plus' ? 6 : invite?.term === 12 ? 12 : meta.months,
-      fee: signupFeeFor(signedDay, plan),
+      termMonths:
+        invite?.plan === 'plus'
+          ? 6
+          : invite?.plan === 'slowstart' || invite?.term === 12
+            ? 12
+            : invite?.plan === 'standard'
+              ? 24
+              : meta.months,
+      fee:
+        (plan === 'slowstart' || plan === 'standard') && invite?.start ? 0 : signupFeeFor(signedDay, plan),
       firstName,
       lastName,
       birthDate: String(body.birthDate),
@@ -329,9 +341,10 @@ async function inviteUsedRemote(env, email) {
     if (response.status === 404) return false
     if (!response.ok) return false
     const data = await response.json()
-    const tarif = String(data?.attributes?.TARIF ?? '')
     const source = String(data?.attributes?.SOURCE ?? '')
-    return /first\s*50/i.test(tarif) || source === 'mitglied-first50'
+    // Only completed First-50 memberships. Marketing / waitlist / invite-mail
+    // contacts often carry a First-50 TARIF label and must not burn the invite.
+    return source === 'mitglied-first50'
   } catch (error) {
     console.error('[mitglied] invite lookup failed', error)
     return false
@@ -351,13 +364,15 @@ async function pushBrevo(env, record) {
     TELEFON: record.phone,
   }
 
+  // Nicht auf die alte Warteliste setzen: dort hängen DOI/Automationen mit
+  // „Eröffnung steht noch aus“. Mitglieder nur als Kontakt pflegen und von der Liste nehmen.
   const response = await fetch('https://api.brevo.com/v3/contacts', {
     method: 'POST',
     headers: { 'api-key': apiKey, 'content-type': 'application/json', accept: 'application/json' },
     body: JSON.stringify({
       email: record.email,
-      listIds: [listId],
       updateEnabled: true,
+      unlinkListIds: [listId],
       attributes,
     }),
   })
@@ -498,23 +513,38 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
         const memberships = await knownSignups()
         const store = await members.load()
         const revokedInvites = store.revokedInvites
-        const plan = checked.payload.plan === 'plus' ? 'plus' : 'first50'
-        if (
-          inviteRevoked(revokedInvites, checked.payload.email, checked.payload.slot) ||
-          membershipTaken(memberships, checked.payload.email) ||
-          (plan === 'first50' &&
-            (inviteUsed(memberships, checked.payload.email) || (await inviteUsedRemote(env, checked.payload.email))))
-        ) {
+        const plan =
+          checked.payload.plan === 'plus'
+            ? 'plus'
+            : checked.payload.plan === 'slowstart'
+              ? 'slowstart'
+              : checked.payload.plan === 'standard'
+                ? 'standard'
+                : 'first50'
+        if (inviteRevoked(revokedInvites, checked.payload.email, checked.payload.slot)) {
+          json(res, 400, { ok: false, error: 'invite' })
+          return
+        }
+        if (membershipTaken(memberships, checked.payload.email)) {
+          json(res, 400, { ok: false, error: 'invite' })
+          return
+        }
+        // Local store is authoritative for GET preview. Brevo can lag / carry
+        // marketing tags and previously blocked fresh First-50 links (→ public 99€).
+        if (plan === 'first50' && inviteUsed(memberships, checked.payload.email)) {
           json(res, 400, { ok: false, error: 'invite' })
           return
         }
         const term =
           plan === 'plus'
             ? 6
-            : checked.payload.term === 12 ||
-                storedContractTerm(store.issuedFirst50, checked.payload.email, checked.payload.slot) === 12
-              ? 12
-              : 0
+            : plan === 'standard'
+              ? 24
+              : plan === 'slowstart' ||
+                  checked.payload.term === 12 ||
+                  storedContractTerm(store.issuedFirst50, checked.payload.email, checked.payload.slot) === 12
+                ? 12
+                : 0
         json(res, 200, {
           ok: true,
           invite: {
@@ -522,7 +552,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
             name: checked.payload.name,
             slot: checked.payload.slot,
             plan,
-            price: plan === 'plus' ? 119 : 89.99,
+            price: plan === 'plus' ? 119 : plan === 'slowstart' ? 79.99 : plan === 'standard' ? 99.99 : 89.99,
             ...(checked.payload.start ? { start: checked.payload.start } : {}),
             ...(term ? { term } : {}),
             ...(checked.payload.openUntilSignup ? { openUntilSignup: true } : {}),
@@ -583,13 +613,8 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
       return
     }
 
-    if (
-      checked.record.plan === 'first50' &&
-      (await inviteUsedRemote(env, checked.record.email))
-    ) {
-      json(res, 400, { ok: false, error: 'invite' })
-      return
-    }
+    // Brevo is updated after a successful signup. Do not block submit on remote
+    // tags — local membershipTaken / inviteUsed already ran in validateMembership.
 
     if (
       checked.record.plan === 'first50' &&
@@ -600,7 +625,12 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     }
 
     const record = checked.record
-    const stored = record.payMethod === 'transfer' ? record : { ...record, contractMail: 'after_payment' }
+    // U18: Zahlungsart merken, aber weder Stripe noch Überweisungsaufforderung bis Elternvollmacht da ist.
+    const stored = record.minor
+      ? { ...record, contractMail: 'guardian_pending' }
+      : record.payMethod === 'transfer'
+        ? record
+        : { ...record, contractMail: 'after_payment' }
     let claimed
     try {
       claimed = await claimSignup(members, stored)
@@ -644,30 +674,69 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
 
     }
 
-    const payment =
-      record.payMethod === 'transfer' ? await startBankTransfer(record) : await startStripeCheckout(req, record)
-    const mailRecord =
-      record.payMethod === 'transfer' && payment.transfer
-        ? { ...record, payMethod: 'transfer', transfer: payment.transfer }
-        : record
-
-    if (isMembershipMailOpen(env) && record.payMethod === 'transfer') {
-      try {
-        const mailed = await sendMembershipEmails(env, mailRecord)
-        if (mailed.member !== 'skipped') {
-          await members.update((db) => {
-            const index = db.members.findIndex((row) => row.id === record.id)
-            if (index < 0) return db
-            db.members[index] = {
-              ...db.members[index],
-              contractMail: 'sent',
-              contractMailAt: new Date().toISOString(),
-            }
-            return db
+    let payment = { payment: 'unlinked' }
+    if (record.minor) {
+      payment = { payment: 'guardian_pending' }
+      if (isMembershipMailOpen(env)) {
+        try {
+          const fresh = await members.load()
+          const storedMember = fresh.members.find((row) => row.id === record.id) || claimed.member || record
+          const mailed = await sendGuardianMandateEmail(env, {
+            ...storedMember,
+            ...record,
+            checkinCode: storedMember.checkinCode || record.checkinCode,
           })
+          if (mailed !== 'skipped') {
+            const at = new Date().toISOString()
+            await members.update((db) => {
+              const index = db.members.findIndex((row) => row.id === record.id)
+              if (index < 0) return db
+              db.members[index] = {
+                ...db.members[index],
+                contractMail: 'guardian_pending',
+                guardianMandateMailAt: at,
+              }
+              return db
+            })
+          }
+        } catch (error) {
+          console.error('[mitglied] guardian mandate mail failed', error)
         }
-      } catch (error) {
-        console.error('[mitglied] mail failed', error)
+      }
+    } else {
+      payment =
+        record.payMethod === 'transfer' ? await startBankTransfer(record) : await startStripeCheckout(req, record)
+      const mailRecord =
+        record.payMethod === 'transfer' && payment.transfer
+          ? { ...record, payMethod: 'transfer', transfer: payment.transfer }
+          : record
+
+      if (isMembershipMailOpen(env) && record.payMethod === 'transfer') {
+        try {
+          // Code sollte schon beim Anlegen gesetzt sein — absichern, damit die Vertragsmail ihn enthält.
+          const fresh = await members.load()
+          const storedMember = fresh.members.find((row) => row.id === record.id) || mailRecord
+          const mailed = await sendMembershipEmails(env, {
+            ...mailRecord,
+            checkinCode: storedMember.checkinCode || mailRecord.checkinCode,
+          })
+          if (mailed.member !== 'skipped') {
+            const at = new Date().toISOString()
+            await members.update((db) => {
+              const index = db.members.findIndex((row) => row.id === record.id)
+              if (index < 0) return db
+              db.members[index] = {
+                ...db.members[index],
+                contractMail: 'sent',
+                contractMailAt: at,
+                ...(mailed.checkinCodeIncluded ? { checkinCodeMailAt: at } : {}),
+              }
+              return db
+            })
+          }
+        } catch (error) {
+          console.error('[mitglied] mail failed', error)
+        }
       }
     }
 
