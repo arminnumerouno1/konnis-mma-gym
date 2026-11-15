@@ -5,10 +5,11 @@ import {
   sendTrialGuardianConsentEmail,
   sendTrialGymMail,
 } from './trial.mjs'
+import { clientIp, createKeyedRateLimiter, publicFormTrap } from './public-form-guard.mjs'
 
 const MAX_BODY = 8192
-const RATE_WINDOW_MS = 10 * 60 * 1000
-const RATE_MAX = 8
+const rateLimitedIp = createKeyedRateLimiter({ windowMs: 10 * 60 * 1000, max: 8 })
+const rateLimitedEmail = createKeyedRateLimiter({ windowMs: 60 * 60 * 1000, max: 3 })
 
 /** Muss mit src/brand/plans.ts TRIAL_OPEN zusammenpassen, außer TRIAL_OPEN=true/false in der Umgebung. */
 export const TRIAL_OPEN = true
@@ -18,29 +19,6 @@ export function isTrialOpen(env = {}) {
   if (raw === 'true' || raw === '1') return true
   if (raw === 'false' || raw === '0') return false
   return TRIAL_OPEN
-}
-
-/** @type {Map<string, number[]>} */
-const hits = new Map()
-
-function clientIp(req) {
-  const forwarded = req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string' && forwarded.trim()) {
-    return forwarded.split(',')[0].trim()
-  }
-  return req.socket.remoteAddress ?? 'unknown'
-}
-
-function rateLimited(ip) {
-  const now = Date.now()
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
-  if (recent.length >= RATE_MAX) {
-    hits.set(ip, recent)
-    return true
-  }
-  recent.push(now)
-  hits.set(ip, recent)
-  return false
 }
 
 function readJsonBody(req) {
@@ -108,7 +86,7 @@ export function createContactHandler({ dataDir, env }) {
         json(res, 403, { ok: false, error: 'closed' })
         return
       }
-      if (rateLimited(clientIp(req))) {
+      if (rateLimitedIp(clientIp(req))) {
         json(res, 429, { ok: false, error: 'rate' })
         return
       }
@@ -124,7 +102,8 @@ export function createContactHandler({ dataDir, env }) {
         return
       }
 
-      if (typeof body.company === 'string' && body.company.trim()) {
+      const trap = publicFormTrap(body, { minMs: 2500 })
+      if (trap) {
         json(res, 200, { ok: true })
         return
       }
@@ -132,6 +111,10 @@ export function createContactHandler({ dataDir, env }) {
       const parsed = readTrialRequest(body)
       if (!parsed.ok) {
         json(res, 400, { ok: false, error: parsed.error })
+        return
+      }
+      if (rateLimitedEmail(String(parsed.entry.email || '').toLowerCase())) {
+        json(res, 429, { ok: false, error: 'rate' })
         return
       }
 

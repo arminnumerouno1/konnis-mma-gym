@@ -10,6 +10,7 @@ export type CancelPayload = {
   note?: string
   confirm: true
   company?: string
+  formStarted?: number
 }
 
 export type CancelError = 'name' | 'email' | 'kind' | 'confirm' | 'rate' | 'invalid' | 'upstream' | 'network'

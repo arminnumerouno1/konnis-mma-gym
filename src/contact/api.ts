@@ -11,6 +11,7 @@ export async function submitTrial(input: {
   guardianPhone?: string
   guardianConsent?: boolean
   company?: string
+  formStarted?: number
 }): Promise<
   | { ok: true; minor?: boolean }
   | {

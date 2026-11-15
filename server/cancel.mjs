@@ -2,34 +2,12 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
 import { createMemberStore } from './member-store.mjs'
 import { cancelInfo } from './member-model.mjs'
+import { clientIp, createKeyedRateLimiter, publicFormTrap } from './public-form-guard.mjs'
 
 const MAX_BODY = 8192
-const RATE_WINDOW_MS = 10 * 60 * 1000
-const RATE_MAX = 6
 const FILE_NAME = 'cancellations.json'
-
-/** @type {Map<string, number[]>} */
-const hits = new Map()
-
-function clientIp(req) {
-  const forwarded = req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string' && forwarded.trim()) {
-    return forwarded.split(',')[0].trim()
-  }
-  return req.socket?.remoteAddress ?? 'unknown'
-}
-
-function rateLimited(ip) {
-  const now = Date.now()
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
-  if (recent.length >= RATE_MAX) {
-    hits.set(ip, recent)
-    return true
-  }
-  recent.push(now)
-  hits.set(ip, recent)
-  return false
-}
+const rateLimitedIp = createKeyedRateLimiter({ windowMs: 10 * 60 * 1000, max: 6 })
+const rateLimitedEmail = createKeyedRateLimiter({ windowMs: 60 * 60 * 1000, max: 3 })
 
 function readJsonBody(req) {
   return new Promise((resolve, reject) => {
@@ -122,7 +100,6 @@ function parseCancelRequest(body) {
   if (!email.includes('@') || email.length < 5) return { ok: false, error: 'email' }
   if (!KIND_LABEL[kind]) return { ok: false, error: 'kind' }
   if (!confirm) return { ok: false, error: 'confirm' }
-  if (typeof body.company === 'string' && body.company.trim()) return { ok: true, honeypot: true }
 
   return {
     ok: true,
@@ -241,7 +218,7 @@ export function createCancelHandler({ dataDir, env }) {
         json(res, 405, { ok: false, error: 'method' })
         return
       }
-      if (rateLimited(clientIp(req))) {
+      if (rateLimitedIp(clientIp(req))) {
         json(res, 429, { ok: false, error: 'rate' })
         return
       }
@@ -257,13 +234,19 @@ export function createCancelHandler({ dataDir, env }) {
         return
       }
 
+      const trap = publicFormTrap(body, { minMs: 2500 })
+      if (trap) {
+        json(res, 200, { ok: true, id: 'ok' })
+        return
+      }
+
       const parsed = parseCancelRequest(body)
       if (!parsed.ok) {
         json(res, 400, { ok: false, error: parsed.error })
         return
       }
-      if (parsed.honeypot) {
-        json(res, 200, { ok: true, id: 'ok' })
+      if (rateLimitedEmail(parsed.entry.email)) {
+        json(res, 429, { ok: false, error: 'rate' })
         return
       }
 

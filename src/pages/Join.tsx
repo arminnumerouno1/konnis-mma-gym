@@ -13,6 +13,7 @@ import {
   termTotalLabel,
   type PlanId,
 } from '../brand/plans'
+import { honeypotInputProps, useFormStarted } from '../lib/formGuard'
 import { Link } from '../lib/Link'
 import { ageFromIso } from '../lib/motion'
 import { href } from '../lib/router'
@@ -220,6 +221,7 @@ function JoinForm({ plan, invite }: JoinProps) {
     payment?: MembershipOk['payment']
     transfer?: MembershipOk['transfer']
   } | null>(null)
+  const formStarted = useFormStarted()
   const pageRef = useRef<HTMLElement>(null)
   const stepAnchorRef = useRef<HTMLOListElement>(null)
   const skipStepScroll = useRef(true)
@@ -426,6 +428,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       consents: beforeOpening ? { ...consents, earlyStart: false } : consents,
       invite: invite || undefined,
       company: honey,
+      formStarted,
       payMethod: chosen === 'daypass' ? 'card' : payMethod,
     })
     setPending(false)
@@ -1011,7 +1014,7 @@ function JoinForm({ plan, invite }: JoinProps) {
 
         <label className="honey" aria-hidden="true">
           Firma
-          <input name="company" type="text" tabIndex={-1} autoComplete="off" />
+          <input {...honeypotInputProps()} />
         </label>
 
         {error ? (

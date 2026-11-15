@@ -4514,12 +4514,15 @@ button.admin-chip {
   border-color: rgba(236, 232, 225, 0.35);
 }
 
-.checkin-hp {
+.checkin-hp,
+.form-hp {
   position: absolute;
   left: -9999px;
   opacity: 0;
   height: 0;
   width: 0;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .checkin-error {

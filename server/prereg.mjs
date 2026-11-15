@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { isValidEmail, isValidPhone, normalizeEmail } from './membership.mjs'
+import { clientIp, createKeyedRateLimiter, publicFormTrap } from './public-form-guard.mjs'
 
 export const PREREG_SPORTS = ['MMA', 'BOXEN', 'RINGEN', 'BJJ', 'K1', 'FITNESS BOXEN', 'SONSTIGES']
 export const PREREG_SOURCES = ['Instagram', 'Freunde und Bekannte', 'Tiktok', 'Google', 'Sonstiges']
@@ -21,10 +22,9 @@ export function isPreregOpen(env = {}) {
 const FILE_NAME = 'voranmeldungen.json'
 const BLOB_PATH = 'konni/voranmeldungen.json'
 const MAX_BODY = 12_000
-const RATE_WINDOW_MS = 10 * 60 * 1000
-const RATE_MAX = 6
 const NAME_RE = /^[\p{L}][\p{L}\s.'-]{1,79}$/u
-const hits = new Map()
+const rateLimitedIp = createKeyedRateLimiter({ windowMs: 10 * 60 * 1000, max: 8 })
+const rateLimitedEmail = createKeyedRateLimiter({ windowMs: 60 * 60 * 1000, max: 4 })
 
 function text(value, max) {
   return String(value ?? '')
@@ -381,24 +381,6 @@ export function preregCsv(entries) {
   return `\uFEFF${[head.map(csvCell).join(';'), ...rows].join('\r\n')}\r\n`
 }
 
-function clientIp(req) {
-  const forwarded = req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string' && forwarded.trim()) return forwarded.split(',')[0].trim()
-  return req.socket?.remoteAddress ?? 'unknown'
-}
-
-function rateLimited(ip) {
-  const now = Date.now()
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
-  if (recent.length >= RATE_MAX) {
-    hits.set(ip, recent)
-    return true
-  }
-  recent.push(now)
-  hits.set(ip, recent)
-  return false
-}
-
 function json(res, status, body) {
   res.statusCode = status
   res.setHeader('content-type', 'application/json; charset=utf-8')
@@ -445,7 +427,7 @@ export function createPreregHandler({ dataDir, env }) {
         json(res, 403, { ok: false, error: 'closed' })
         return
       }
-      if (rateLimited(clientIp(req))) {
+      if (rateLimitedIp(clientIp(req))) {
         json(res, 429, { ok: false, error: 'rate' })
         return
       }
@@ -456,13 +438,18 @@ export function createPreregHandler({ dataDir, env }) {
         json(res, 400, { ok: false, error: 'invalid' })
         return
       }
-      if (typeof body.company === 'string' && body.company.trim()) {
+      const trap = publicFormTrap(body, { minMs: 2500 })
+      if (trap) {
         json(res, 200, { ok: true })
         return
       }
       const parsed = readPrereg(body)
       if (!parsed.ok) {
         json(res, 400, { ok: false, error: parsed.error })
+        return
+      }
+      if (rateLimitedEmail(parsed.entry.email)) {
+        json(res, 429, { ok: false, error: 'rate' })
         return
       }
       const { repeat } = await addPrereg(store, parsed.entry)

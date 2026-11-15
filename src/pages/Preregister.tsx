@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
 import { InstagramIcon } from '../components/InstagramIcon'
+import { honeypotInputProps, useFormStarted } from '../lib/formGuard'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
 
@@ -75,6 +76,7 @@ export function Preregister() {
   const [tried, setTried] = useState(false)
   const [serverError, setServerError] = useState<FieldKey | null>(null)
   const [pending, setPending] = useState(false)
+  const formStarted = useFormStarted()
   const [failed, setFailed] = useState<string | null>(null)
   const [done, setDone] = useState<{ repeat: boolean } | null>(null)
   const formRef = useRef<HTMLFormElement>(null)
@@ -155,6 +157,7 @@ export function Preregister() {
           message,
           consent,
           company: honey,
+          formStarted,
         }),
       })
       const data = (await response.json()) as { ok?: boolean; error?: string; repeat?: boolean }
@@ -422,7 +425,7 @@ export function Preregister() {
 
         <label className="honey" aria-hidden="true">
           Firma
-          <input name="company" type="text" tabIndex={-1} autoComplete="off" />
+          <input {...honeypotInputProps()} />
         </label>
 
         <label className={`check prereg-consent ${errors.consent ? 'has-error' : ''}`} data-field="consent">

@@ -82,6 +82,7 @@ assert(payStatusThisMonth(day, '2026-11-03') === 'open', 'day pass unpaid')
 const paidDay = setPayment(day, { period: '2026-11-03', kind: 'day', status: 'paid' }, '2026-11-03')
 assert(payStatusThisMonth(paidDay, '2026-11-03') === 'paid', 'day pass paid')
 
+const FORM_STARTED = Date.now() - 15_000
 const tmp = mkdtempSync(join(tmpdir(), 'konni-admin-'))
 const store = createMemberStore({ dataDir: tmp, env: {} })
 await ingestSignup(store, standard)
@@ -620,6 +621,7 @@ await signupHandle(
     headers: {},
     socket: { remoteAddress: '10.9.9.9' },
     body: {
+      formStarted: FORM_STARTED,
       plan: 'flex',
       firstName: 'Olga',
       lastName: 'Online',
@@ -656,6 +658,7 @@ await signupHandle(
     headers: {},
     socket: { remoteAddress: '10.9.9.10' },
     body: {
+      formStarted: FORM_STARTED,
       plan: 'standard',
       payMethod: 'transfer',
       firstName: 'Heiko',

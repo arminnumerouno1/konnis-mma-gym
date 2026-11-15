@@ -59,6 +59,7 @@ export type MembershipInput = {
   consents: MembershipConsents
   invite?: string
   company?: string
+  formStarted?: number
   payMethod?: 'card' | 'transfer'
 }
 

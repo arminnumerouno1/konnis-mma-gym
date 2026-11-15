@@ -83,6 +83,7 @@ assert(!Buffer.from(pdfBytes).toString('latin1').includes('DE77'), 'trial consen
 
 const dataDir = join(tmpdir(), `konni-contact-${process.pid}-${Date.now()}`)
 mkdirSync(dataDir, { recursive: true })
+const FORM_STARTED = Date.now() - 15_000
 
 {
   const handle = createContactHandler({ dataDir, env: { TRIAL_OPEN: 'false' } })
@@ -94,6 +95,7 @@ mkdirSync(dataDir, { recursive: true })
       headers: {},
       socket: { remoteAddress: '127.0.0.1' },
       body: {
+        formStarted: FORM_STARTED,
         name: 'Anna Müller',
         email: 'anna@example.com',
         phone: '+49 171 1234567',
@@ -117,6 +119,7 @@ mkdirSync(dataDir, { recursive: true })
       headers: {},
       socket: { remoteAddress: '127.0.0.2' },
       body: {
+        formStarted: FORM_STARTED,
         name: 'Anna Müller',
         email: 'anna@example.com',
         phone: '+49 171 1234567',
@@ -139,6 +142,7 @@ mkdirSync(dataDir, { recursive: true })
       headers: {},
       socket: { remoteAddress: '127.0.0.3' },
       body: {
+        formStarted: FORM_STARTED,
         name: 'Anna Müller',
         email: 'anna@example.com',
         phone: '+49 171 1234567',
@@ -162,6 +166,7 @@ mkdirSync(dataDir, { recursive: true })
       headers: {},
       socket: { remoteAddress: '127.0.0.4' },
       body: {
+        formStarted: FORM_STARTED,
         name: 'Anna Müller',
         email: 'anna@example.com',
         phone: '+49 171 1234567',
@@ -193,6 +198,7 @@ mkdirSync(dataDir, { recursive: true })
       headers: {},
       socket: { remoteAddress: '127.0.0.41' },
       body: {
+        formStarted: FORM_STARTED,
         name: 'Andere Person',
         email: 'anna@example.com',
         phone: '+49 171 5555555',
@@ -212,6 +218,7 @@ mkdirSync(dataDir, { recursive: true })
       headers: {},
       socket: { remoteAddress: '127.0.0.42' },
       body: {
+        formStarted: FORM_STARTED,
         name: 'Andere Person',
         email: 'andere@example.com',
         phone: '0171 1234567',
@@ -231,6 +238,7 @@ mkdirSync(dataDir, { recursive: true })
       headers: {},
       socket: { remoteAddress: '127.0.0.43' },
       body: {
+        formStarted: FORM_STARTED,
         name: 'Anna Müller',
         email: 'anna.neu@example.com',
         phone: '+49 171 4443322',
@@ -250,6 +258,7 @@ mkdirSync(dataDir, { recursive: true })
       headers: {},
       socket: { remoteAddress: '127.0.0.44' },
       body: {
+        formStarted: FORM_STARTED,
         name: 'Clara Koch',
         email: 'clara.trial@example.com',
         phone: '+49 171 2223344',
@@ -336,6 +345,7 @@ mkdirSync(dataDir, { recursive: true })
       headers: {},
       socket: { remoteAddress: '127.0.0.6' },
       body: {
+        formStarted: FORM_STARTED,
         name: 'Ben Beispiel',
         email: 'ben@example.com',
         phone: '+49 171 9998877',
@@ -383,6 +393,7 @@ mkdirSync(dataDir, { recursive: true })
       headers: {},
       socket: { remoteAddress: '127.0.0.7' },
       body: {
+        formStarted: FORM_STARTED,
         name: 'Mia Kurz',
         email: 'mia.trial@example.com',
         phone: '+49 171 3334455',

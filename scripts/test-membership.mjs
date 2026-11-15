@@ -74,7 +74,9 @@ assert(ageOn('2099-01-01') === null, 'future')
 
 const SAMPLE_PHOTO = `data:image/jpeg;base64,${'A'.repeat(80)}`
 
+const FORM_STARTED = Date.now() - 15_000
 const base = {
+  formStarted: FORM_STARTED,
   plan: 'standard',
   firstName: 'Anna',
   lastName: 'Müller',

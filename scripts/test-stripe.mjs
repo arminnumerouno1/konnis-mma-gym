@@ -20,6 +20,8 @@ function assert(cond, message) {
   if (!cond) throw new Error(message)
 }
 
+const FORM_STARTED = Date.now() - 15_000
+
 const nov1 = berlinMidnightUnix('2026-11-01')
 assert(nov1 === Math.floor(Date.parse('2026-10-31T23:00:00.000Z') / 1000), '1 Nov 2026 is 23:00 UTC')
 assert(berlinMidnightUnix('2026-06-01') === Math.floor(Date.parse('2026-05-31T22:00:00.000Z') / 1000), 'summer offset')
@@ -162,6 +164,7 @@ await handle(
     headers: {},
     socket: { remoteAddress: '127.0.0.8' },
     body: {
+      formStarted: FORM_STARTED,
       plan: 'standard',
       firstName: 'Anna',
       lastName: 'Müller',
@@ -216,6 +219,7 @@ await bankHandle(
     headers: {},
     socket: { remoteAddress: '127.0.0.18' },
     body: {
+      formStarted: FORM_STARTED,
       plan: 'standard',
       payMethod: 'transfer',
       firstName: 'Anna',
@@ -322,6 +326,7 @@ function smtpCount() {
 }
 
 const person = {
+  formStarted: FORM_STARTED,
   plan: 'standard',
   firstName: 'Anna',
   lastName: 'Müller',

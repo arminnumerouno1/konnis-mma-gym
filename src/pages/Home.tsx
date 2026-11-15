@@ -13,6 +13,7 @@ import {
 } from '../brand/kursplan'
 import { PUBLIC_PLANS, TRIAL_OPEN, termTotalLabel, type Plan } from '../brand/plans'
 import { submitTrial } from '../contact/api'
+import { honeypotInputProps, useFormStarted } from '../lib/formGuard'
 
 const KURSPLAN_BY_DAY = kursplanByDay()
 const OPENING_HOURS = openingHoursFromKursplan()
@@ -75,6 +76,7 @@ function TrialForm() {
   const [pending, setPending] = useState(false)
   const [done, setDone] = useState<'adult' | 'minor' | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const formStarted = useFormStarted()
 
   const age = ageFromIso(birthDate)
   const minor = age != null && age < 18
@@ -110,6 +112,7 @@ function TrialForm() {
       slotId,
       note,
       company: honey,
+      formStarted,
       ...(minor
         ? {
             guardianName,
@@ -232,7 +235,7 @@ function TrialForm() {
       </label>
       <label className="honey" aria-hidden="true">
         Firma
-        <input name="company" type="text" tabIndex={-1} autoComplete="off" />
+        <input {...honeypotInputProps()} />
       </label>
       {error ? (
         <p className="form-error" role="alert">

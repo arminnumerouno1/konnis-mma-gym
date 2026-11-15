@@ -1,13 +1,11 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
+import { clientIp, createKeyedRateLimiter, publicFormTrap } from './public-form-guard.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const MAX_BODY = 4096
-const RATE_WINDOW_MS = 10 * 60 * 1000
-const RATE_MAX = 8
-
-/** @type {Map<string, number[]>} */
-const hits = new Map()
+const rateLimitedIp = createKeyedRateLimiter({ windowMs: 10 * 60 * 1000, max: 8 })
+const rateLimitedEmail = createKeyedRateLimiter({ windowMs: 60 * 60 * 1000, max: 3 })
 
 /**
  * @param {string} raw
@@ -30,32 +28,6 @@ export function isValidEmail(email) {
  */
 export function isValidName(name) {
   return name.length >= 2 && name.length <= 80
-}
-
-/**
- * @param {import('node:http').IncomingMessage} req
- */
-function clientIp(req) {
-  const forwarded = req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string' && forwarded.trim()) {
-    return forwarded.split(',')[0].trim()
-  }
-  return req.socket.remoteAddress ?? 'unknown'
-}
-
-/**
- * @param {string} ip
- */
-function rateLimited(ip) {
-  const now = Date.now()
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
-  if (recent.length >= RATE_MAX) {
-    hits.set(ip, recent)
-    return true
-  }
-  recent.push(now)
-  hits.set(ip, recent)
-  return false
 }
 
 /**
@@ -256,8 +228,7 @@ export function createWaitlistHandler({ dataDir, env }) {
       return
     }
 
-    const ip = clientIp(req)
-    if (rateLimited(ip)) {
+    if (rateLimitedIp(clientIp(req))) {
       json(res, 429, { ok: false, error: 'rate' })
       return
     }
@@ -273,7 +244,8 @@ export function createWaitlistHandler({ dataDir, env }) {
       return
     }
 
-    if (typeof body.company === 'string' && body.company.trim()) {
+    const trap = publicFormTrap(body, { minMs: 2500 })
+    if (trap) {
       json(res, 200, { ok: true, confirmation: 'saved' })
       return
     }
@@ -293,6 +265,10 @@ export function createWaitlistHandler({ dataDir, env }) {
     }
     if (!isValidEmail(email)) {
       json(res, 400, { ok: false, error: 'email' })
+      return
+    }
+    if (rateLimitedEmail(email)) {
+      json(res, 429, { ok: false, error: 'rate' })
       return
     }
 

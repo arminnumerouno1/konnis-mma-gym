@@ -9,7 +9,9 @@ function assert(cond, message) {
   if (!cond) throw new Error(message)
 }
 
+const FORM_STARTED = Date.now() - 15_000
 const valid = {
+  formStarted: FORM_STARTED,
   name: 'Lena Schmidt',
   age: '17',
   email: 'Lena@Example.com',

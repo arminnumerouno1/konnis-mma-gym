@@ -1,27 +1,12 @@
+import { clientIp, createKeyedRateLimiter } from './public-form-guard.mjs'
+
 const PHOTON = 'https://photon.komoot.io/api/'
 const LEIPZIG = { lat: 51.34, lon: 12.37 }
-const RATE_WINDOW_MS = 60 * 1000
-const RATE_MAX = 90
 const CACHE_MAX = 400
 const TIMEOUT_MS = 3500
+const rateLimited = createKeyedRateLimiter({ windowMs: 60 * 1000, max: 40 })
 
-const hits = new Map()
 const cache = new Map()
-
-function clientIp(req) {
-  const forwarded = req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string' && forwarded.trim()) return forwarded.split(',')[0].trim()
-  return req.socket?.remoteAddress ?? 'unknown'
-}
-
-function rateLimited(ip) {
-  const now = Date.now()
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
-  recent.push(now)
-  hits.set(ip, recent)
-  if (hits.size > 5000) hits.clear()
-  return recent.length > RATE_MAX
-}
 
 function reply(res, status, body, maxAge = 0) {
   res.statusCode = status

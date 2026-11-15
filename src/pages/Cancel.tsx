@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { COPY } from '../brand/copy'
 import { GYM } from '../brand/gym'
+import { honeypotInputProps, useFormStarted } from '../lib/formGuard'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
 import { submitCancellation, type CancelKind, type CancelOk } from '../membership/cancel-api'
@@ -52,11 +53,13 @@ export function Cancel() {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const [result, setResult] = useState<CancelOk | null>(null)
+  const formStarted = useFormStarted()
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
     setError('')
     setPending(true)
+    const honey = String(new FormData(event.currentTarget as HTMLFormElement).get('company') ?? '')
     const response = await submitCancellation({
       firstName,
       lastName,
@@ -66,6 +69,8 @@ export function Cancel() {
       kind,
       note: note || undefined,
       confirm: true,
+      company: honey,
+      formStarted,
     })
     setPending(false)
     if (!response.ok) {
@@ -228,7 +233,7 @@ export function Cancel() {
 
         <label className="honey" aria-hidden="true">
           Firma
-          <input name="company" type="text" tabIndex={-1} autoComplete="off" />
+          <input {...honeypotInputProps()} />
         </label>
 
         {error ? (

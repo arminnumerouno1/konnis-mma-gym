@@ -11,6 +11,7 @@ import { createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
 import { trainingHasStarted } from './opening.mjs'
 import { signupFeeFor } from './signup-fee.mjs'
 import { PHOTO_MAX, PHOTO_MIME_RE } from './photo-data.mjs'
+import { clientIp, createKeyedRateLimiter, publicFormTrap } from './public-form-guard.mjs'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 const PHONE_RE = /^[+0-9][0-9 ()/-]{5,24}$/
@@ -18,8 +19,8 @@ const NAME_RE = /^[\p{L}][\p{L}\s.'-]{1,79}$/u
 const ZIP_RE = /^\d{5}$/
 /** Membership JSON plus compressed portrait (data-URL). Must stay under PHOTO_MAX + form fields. */
 const MAX_BODY = 220_000
-const RATE_WINDOW_MS = 10 * 60 * 1000
-const RATE_MAX = 6
+const rateLimitedIp = createKeyedRateLimiter({ windowMs: 10 * 60 * 1000, max: 6 })
+const rateLimitedEmail = createKeyedRateLimiter({ windowMs: 60 * 60 * 1000, max: 3 })
 const PLAN_IDS = ['slowstart', 'standard', 'flex', 'plus', 'daypass', 'first50']
 /** Online-Day-Pass. false lehnt die Tageskarte ab. Muss zu src/brand/plans.ts DAY_PASS_OPEN passen. */
 const DAY_PASS_OPEN = false
@@ -52,9 +53,6 @@ const PLAN_META = {
   daypass: { name: 'Day Pass', price: 19.99, months: null },
   first50: { name: 'First 50', price: 89.99, months: 24 },
 }
-
-/** @type {Map<string, number[]>} */
-const hits = new Map()
 
 export function normalizeEmail(raw) {
   return String(raw ?? '')
@@ -91,26 +89,6 @@ export function ageOn(birthDate, at = new Date()) {
   const monthDiff = at.getUTCMonth() - (month - 1)
   if (monthDiff < 0 || (monthDiff === 0 && at.getUTCDate() < day)) age -= 1
   return age
-}
-
-function clientIp(req) {
-  const forwarded = req.headers['x-forwarded-for']
-  if (typeof forwarded === 'string' && forwarded.trim()) {
-    return forwarded.split(',')[0].trim()
-  }
-  return req.socket.remoteAddress ?? 'unknown'
-}
-
-function rateLimited(ip) {
-  const now = Date.now()
-  const recent = (hits.get(ip) ?? []).filter((t) => now - t < RATE_WINDOW_MS)
-  if (recent.length >= RATE_MAX) {
-    hits.set(ip, recent)
-    return true
-  }
-  recent.push(now)
-  hits.set(ip, recent)
-  return false
 }
 
 async function readBody(req) {
@@ -580,8 +558,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
       return
     }
 
-    const ip = clientIp(req)
-    if (rateLimited(ip)) {
+    if (rateLimitedIp(clientIp(req))) {
       json(res, 429, { ok: false, error: 'rate' })
       return
     }
@@ -594,6 +571,12 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
         ok: false,
         error: 'invalid',
       })
+      return
+    }
+
+    const trap = publicFormTrap(body, { minMs: 3000 })
+    if (trap) {
+      json(res, 200, { ok: true, confirmation: 'saved', remainingFirst50: 0 })
       return
     }
 
@@ -611,6 +594,10 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     }
     if (!checked.ok) {
       json(res, checked.error === 'duplicate' ? 409 : 400, { ok: false, error: checked.error })
+      return
+    }
+    if (rateLimitedEmail(checked.record.email)) {
+      json(res, 429, { ok: false, error: 'rate' })
       return
     }
 
