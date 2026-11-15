@@ -11,7 +11,7 @@ import {
   openingHoursFromKursplan,
   trialSlots,
 } from '../brand/kursplan'
-import { PRICE_TAX_NOTE, PUBLIC_PLANS, TRIAL_OPEN, termTotalLabel, type Plan } from '../brand/plans'
+import { PUBLIC_PLANS, TRIAL_OPEN, termTotalLabel, type Plan } from '../brand/plans'
 import { submitTrial } from '../contact/api'
 
 const KURSPLAN_BY_DAY = kursplanByDay()
