@@ -3,13 +3,35 @@ import { createReadStream } from 'node:fs'
 import { stat } from 'node:fs/promises'
 import { extname, join, normalize, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createContactHandler } from './contact.mjs'
+import { createCancelHandler } from './cancel.mjs'
+import { createInviteMailHandler } from './invite-mail.mjs'
+import { createOpeningMailHandler } from './opening-mail.mjs'
+import { createSignupOpenMailHandler } from './signup-open-mail.mjs'
+import { createMembershipHandler } from './membership.mjs'
+import { createAdminHandler } from './admin.mjs'
+import { createMemberStore } from './member-store.mjs'
+import { createPhotoUploadHandler } from './photo-upload.mjs'
 import { createWaitlistHandler } from './waitlist.mjs'
+import { createPreregHandler } from './prereg.mjs'
+import { createCheckinHandler } from './checkin.mjs'
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)))
 const dist = join(root, 'dist')
 const dataDir = join(root, 'data')
 const port = Number(process.env.PORT || 43177)
 const handleWaitlist = createWaitlistHandler({ dataDir, env: process.env })
+const handleMembership = createMembershipHandler({ dataDir, env: process.env })
+const handleAdmin = createAdminHandler({ dataDir, env: process.env })
+const memberStore = createMemberStore({ dataDir, env: process.env })
+const handlePortrait = createPhotoUploadHandler({ env: process.env, store: memberStore })
+const handleContact = createContactHandler({ dataDir, env: process.env })
+const handleCancel = createCancelHandler({ dataDir, env: process.env })
+const handlePrereg = createPreregHandler({ dataDir, env: process.env })
+const handleInviteMail = createInviteMailHandler({ env: process.env })
+const handleOpeningMail = createOpeningMailHandler({ env: process.env })
+const handleSignupOpenMail = createSignupOpenMailHandler({ env: process.env })
+const handleCheckin = createCheckinHandler({ dataDir, env: process.env })
 
 const MIME = {
   '.css': 'text/css; charset=utf-8',
@@ -19,6 +41,7 @@ const MIME = {
   '.jpg': 'image/jpeg',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
+  '.pdf': 'application/pdf',
   '.map': 'application/json; charset=utf-8',
   '.png': 'image/png',
   '.svg': 'image/svg+xml',
@@ -52,8 +75,49 @@ async function sendFile(res, file) {
 
 const server = createServer((req, res) => {
   const url = req.url ?? '/'
-  if (url.split('?')[0] === '/api/waitlist') {
+  const path = url.split('?')[0]
+  if (path === '/api/waitlist') {
     void handleWaitlist(req, res)
+    return
+  }
+  if (path === '/api/mitglied') {
+    void handleMembership(req, res)
+    return
+  }
+  if (path === '/api/admin') {
+    void handleAdmin(req, res)
+    return
+  }
+  if (path === '/api/portrait') {
+    void handlePortrait(req, res)
+    return
+  }
+  if (path === '/api/voranmeldung') {
+    void handlePrereg(req, res)
+    return
+  }
+  if (path === '/api/kontakt') {
+    void handleContact(req, res)
+    return
+  }
+  if (path === '/api/kuendigen') {
+    void handleCancel(req, res)
+    return
+  }
+  if (path === '/api/invite-mail') {
+    void handleInviteMail(req, res)
+    return
+  }
+  if (path === '/api/opening-mail') {
+    void handleOpeningMail(req, res)
+    return
+  }
+  if (path === '/api/signup-open-mail') {
+    void handleSignupOpenMail(req, res)
+    return
+  }
+  if (path === '/api/checkin') {
+    void handleCheckin(req, res)
     return
   }
 

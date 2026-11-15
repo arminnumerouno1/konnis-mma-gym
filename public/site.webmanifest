@@ -1,14 +1,14 @@
 {
-  "name": "KONNI MMA GYM Leipzig",
-  "short_name": "KONNI MMA",
-  "description": "MMA-Gym in Leipzig von Konrad Dyrschka. MMA, Grappling und Striking.",
+  "name": "MMA Gym in Leipzig | KONNI MMA GYM",
+  "short_name": "MMA Leipzig",
+  "description": "MMA Gym in Leipzig: MMA, Ringen, BJJ, Boxen und Kick- & Thai-Boxen im KONNI MMA GYM.",
   "lang": "de",
   "dir": "ltr",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#050505",
-  "theme_color": "#050505",
+  "background_color": "#070707",
+  "theme_color": "#070707",
   "icons": [
     {
       "src": "/favicon-48x48.png",

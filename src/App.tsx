@@ -1,90 +1,101 @@
-import { useEffect, useLayoutEffect, useState } from 'react'
-import { Experience } from './experience/Experience'
-import { detectQuality, prefersReducedMotion, type QualityLevel } from './lib/quality'
-import { Overlay } from './overlay/Overlay'
-import { Loader } from './overlay/Loader'
-import { ViewToggle } from './overlay/ViewToggle'
-import { useScrollExperience } from './scroll/useScrollExperience'
-import { useExperience } from './store'
+import { useEffect } from 'react'
+import { CookieBanner } from './components/CookieBanner'
+import { Footer } from './components/Footer'
+import { Nav } from './components/Nav'
+import { SiteNotice } from './components/SiteNotice'
+import { useRoute } from './lib/useRoute'
+import { href, navigate, scrollPageTop } from './lib/router'
+import { Home } from './pages/Home'
+import { Join } from './pages/Join'
+import { Legal } from './pages/Legal'
+import { Cancel } from './pages/Cancel'
+import { Admin } from './pages/Admin'
+import { PortraitUpload } from './pages/PortraitUpload'
+import { Checkin } from './pages/Checkin'
 
-function isNarrowScreen() {
-  return window.innerWidth < 780
-}
+const LEGAL = new Set([
+  'impressum',
+  'impressumKonrad',
+  'datenschutz',
+  'agb',
+  'widerruf',
+  'hausordnung',
+  'vertrag6',
+  'vertrag12',
+  'vertrag24',
+])
 
 export default function App() {
-  const ready = useExperience((s) => s.ready)
-  const compact = useExperience((s) => s.compact)
-  const setCompact = useExperience((s) => s.setCompact)
-  const [boot, setBoot] = useState(false)
-  const [quality, setQuality] = useState<QualityLevel>('medium')
-  const [reduced, setReduced] = useState(false)
-  const [phone, setPhone] = useState(false)
-
-  useLayoutEffect(() => {
-    const apply = () => setCompact(phone || isNarrowScreen())
-    apply()
-    window.addEventListener('resize', apply)
-    return () => window.removeEventListener('resize', apply)
-  }, [phone, setCompact])
+  const route = useRoute()
 
   useEffect(() => {
-    setQuality(detectQuality())
-    setReduced(prefersReducedMotion())
-    const media = window.matchMedia('(prefers-reduced-motion: reduce)')
-    const onChange = () => setReduced(media.matches)
-    media.addEventListener('change', onChange)
-
-    let cancelled = false
-    const start = async () => {
-      try {
-        await Promise.all([
-          document.fonts.load('400 16px "Bebas Neue"'),
-          document.fonts.load('400 16px "Barlow Condensed"'),
-        ])
-      } catch {
-        /* fonts still usable via fallback */
-      }
-      if (!cancelled) {
-        requestAnimationFrame(() => setBoot(true))
-      }
-    }
-    void start()
-    return () => {
-      cancelled = true
-      media.removeEventListener('change', onChange)
-    }
+    window.history.scrollRestoration = 'manual'
   }, [])
 
-  useScrollExperience(reduced, ready)
+  useEffect(() => {
+    if (route.name !== 'prereg') return
+    navigate(href('join'))
+  }, [route.name])
 
-  const togglePhone = () => {
-    setPhone((current) => {
-      const next = !current
-      setQuality(next ? 'low' : detectQuality())
-      setCompact(next || isNarrowScreen())
-      return next
-    })
+  useEffect(() => {
+    if (route.name === 'prereg') return
+    if (route.hash) return
+    scrollPageTop()
+    const frame = window.requestAnimationFrame(() => scrollPageTop())
+    return () => window.cancelAnimationFrame(frame)
+  }, [route.hash, route.name, route.path])
+
+  if (route.name === 'admin') {
+    return <Admin />
   }
 
-  const shell = ['app', phone ? 'is-phone' : '', compact ? 'is-compact' : ''].filter(Boolean).join(' ')
+  if (route.name === 'portrait') {
+    return (
+      <div className="shell route-portrait">
+        <PortraitUpload token={route.token} />
+      </div>
+    )
+  }
+
+  if (route.name === 'checkin') {
+    return (
+      <div className="shell route-checkin">
+        <Checkin />
+      </div>
+    )
+  }
 
   return (
-    <div className={shell}>
-      <div className={phone ? 'phone-stage' : undefined}>
-        <div className={phone ? 'phone-bezel' : undefined}>
-          <div className="viewport">
-            {boot && (
-              <Experience key={phone ? 'phone' : 'desktop'} quality={quality} reducedMotion={reduced} />
-            )}
-            <Overlay reducedMotion={reduced} compact={compact} />
-            <div className="film-grain" />
-            <div className="film-vignette" />
-            <Loader visible={!ready} />
-          </div>
-        </div>
-      </div>
-      {!reduced && <div id="scroll-track" className="scroll-track" />}
-      {(phone || !compact) && <ViewToggle phone={phone} onToggle={togglePhone} />}
+    <div className={`shell route-${route.name}`}>
+      <Nav route={route} />
+      <SiteNotice />
+      {route.name === 'home' ? <Home /> : null}
+      {route.name === 'join' ? <Join plan={route.plan} invite={route.invite} /> : null}
+      {route.name === 'kuendigen' ? <Cancel /> : null}
+      {LEGAL.has(route.name) ? (
+        <Legal
+          name={
+            route.name as
+              | 'impressum'
+              | 'impressumKonrad'
+              | 'datenschutz'
+              | 'agb'
+              | 'widerruf'
+              | 'hausordnung'
+              | 'vertrag6'
+              | 'vertrag12'
+              | 'vertrag24'
+          }
+        />
+      ) : null}
+      {route.name === 'notfound' ? (
+        <main className="page">
+          <h1>Seite nicht da.</h1>
+          <p>Zurück auf die Startseite und neu zielen.</p>
+        </main>
+      ) : null}
+      <Footer />
+      <CookieBanner />
     </div>
   )
 }

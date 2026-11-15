@@ -24,6 +24,14 @@ id_rsa.pub
 credentials.json
 secrets.json
 data/waitlist.json
+data/memberships.json
+data/members.json
+data/docs/
+data/member-photos/
+data/contacts.json
+data/first50-*
+data/voranmeldung*
+data/opening-mail-sent.json
 
 # Editor directories and files
 .vscode/*
@@ -35,3 +43,5 @@ data/waitlist.json
 *.njsproj
 *.sln
 *.sw?
+.env*
+.vercel

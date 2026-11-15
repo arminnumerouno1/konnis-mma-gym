@@ -1,0 +1,699 @@
+import { inflateSync } from 'node:zlib'
+import { mkdirSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { PDFDocument } from 'pdf-lib'
+import {
+  ageOn,
+  createMembershipHandler,
+  first50Taken,
+  isSignupOpen,
+  isMembershipMailOpen,
+  MEMBERSHIP_MAIL,
+  SIGNUP_OPEN,
+  validateMembership,
+} from '../server/membership.mjs'
+import {
+  checkinCodeMailBlock,
+  guardianMandateMailHtml,
+  guardianMandateMailSubject,
+  membershipCopyHtml,
+  membershipMailSubject,
+  paperReturnMailHtml,
+  paperReturnMailSubject,
+  priceChangeMailHtml,
+  priceChangeMailSubject,
+} from '../server/membership-mail.mjs'
+import { buildContractPdf, buildGuardianMandatePdf, membershipPdfAttachments } from '../server/membership-pdf.mjs'
+import { billingHeld, guardianMissing, memberFromSignup, openDuesOf } from '../server/member-model.mjs'
+import { createMemberStore } from '../server/member-store.mjs'
+import { makeInvitePayload, signInvite } from '../server/invite.mjs'
+
+function assert(cond, message) {
+  if (!cond) throw new Error(message)
+}
+
+function pdfText(bytes) {
+  const raw = Buffer.from(bytes)
+  const latin = raw.toString('latin1')
+  const parts = []
+  const re = /\/Length\s+(\d+)\s*>>\s*stream\r?\n/g
+  let match
+  while ((match = re.exec(latin))) {
+    const start = match.index + match[0].length
+    const chunk = raw.subarray(start, start + Number(match[1]))
+    try {
+      parts.push(inflateSync(chunk).toString('latin1'))
+    } catch {
+      parts.push(chunk.toString('latin1'))
+    }
+  }
+  return parts
+    .join('\n')
+    .replace(/<([0-9A-Fa-f\s]+)>/g, (_, hex) => {
+      const clean = hex.replace(/\s/g, '')
+      if (!clean || clean.length % 2) return ''
+      let out = ''
+      for (let i = 0; i < clean.length; i += 2) out += String.fromCharCode(Number.parseInt(clean.slice(i, i + 2), 16))
+      return out
+    })
+}
+
+assert(SIGNUP_OPEN === true, 'signup open')
+assert(isSignupOpen({}) === true, 'open default')
+assert(isSignupOpen({ SIGNUP_OPEN: 'true' }) === true, 'env override open')
+assert(isSignupOpen({ SIGNUP_OPEN: 'false' }) === false, 'env override closed')
+assert(MEMBERSHIP_MAIL === true, 'signup sends the contract mail')
+assert(isMembershipMailOpen({}) === true, 'mail on by default')
+assert(isMembershipMailOpen({ MEMBERSHIP_MAIL: 'true' }) === true, 'mail env on')
+assert(isMembershipMailOpen({ MEMBERSHIP_MAIL: 'false' }) === false, 'mail env off')
+
+assert(ageOn('2000-01-15') !== null, 'age parses')
+assert(ageOn('1990-13-01') === null, 'bad month')
+assert(ageOn('2099-01-01') === null, 'future')
+
+const SAMPLE_PHOTO = `data:image/jpeg;base64,${'A'.repeat(80)}`
+
+const base = {
+  plan: 'standard',
+  firstName: 'Anna',
+  lastName: 'Müller',
+  birthDate: '1994-04-12',
+  street: 'Wittenberger Straße 15',
+  zip: '04129',
+  city: 'Leipzig',
+  email: 'anna@example.com',
+  phone: '+49 171 1234567',
+  place: 'Leipzig',
+  signature: 'Anna Müller',
+  photoData: SAMPLE_PHOTO,
+  consents: {
+    agb: true,
+    hausordnung: true,
+    widerruf: true,
+    privacy: true,
+    health: true,
+    sign: true,
+  },
+}
+
+const ok = validateMembership(base, {})
+assert(ok.ok && ok.record?.plan === 'standard' && ok.record.photoData === SAMPLE_PHOTO, 'valid standard with portrait')
+const noPhoto = validateMembership({ ...base, photoData: '' }, {})
+assert(!noPhoto.ok && noPhoto.error === 'photo', 'portrait is required')
+const badPhoto = validateMembership({ ...base, photoData: 'not-an-image' }, {})
+assert(!badPhoto.ok && badPhoto.error === 'photo', 'portrait must be a data image')
+
+const plusOk = validateMembership({ ...base, plan: 'plus', email: 'plus@example.com' }, {})
+assert(plusOk.ok && plusOk.record?.plan === 'plus' && plusOk.record.price === 119 && plusOk.record.termMonths === 6, 'valid plus')
+
+const again = validateMembership(
+  { ...base, plan: 'flex', email: 'Anna@example.com' },
+  { memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'active' }] },
+)
+assert(!again.ok && again.error === 'duplicate', 'same email cannot sign up twice')
+const afterCancel = validateMembership(base, {
+  memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'cancelled' }],
+})
+assert(afterCancel.ok, 'cancelled member can sign up again')
+const afterWithdrawal = validateMembership(base, {
+  memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'withdrawn' }],
+})
+assert(afterWithdrawal.ok, 'withdrawn member can sign up again')
+const other = validateMembership(
+  { ...base, email: 'neu@example.com' },
+  { memberships: [{ email: 'anna@example.com', plan: 'standard', status: 'active' }] },
+)
+assert(other.ok, 'different email still signs up')
+
+const earlyBlocked = validateMembership(
+  { ...base, consents: { ...base.consents, earlyStart: true } },
+  { now: new Date('2026-10-03T12:00:00Z') },
+)
+assert(earlyBlocked.ok && earlyBlocked.record?.consents.earlyStart === false, 'no early training before 2 november')
+const earlyLater = validateMembership(
+  { ...base, consents: { ...base.consents, earlyStart: true } },
+  { now: new Date('2026-11-03T12:00:00Z') },
+)
+assert(earlyLater.ok && earlyLater.record?.consents.earlyStart === true, 'early start can be requested after opening')
+
+const honey = validateMembership({ ...base, company: 'bot' }, {})
+assert(honey.ok && honey.honey, 'honeypot')
+
+const looseSign = validateMembership({ ...base, signature: 'Anna M' }, {})
+assert(looseSign.ok && looseSign.record?.signature === 'Anna M', 'signature need not match the name')
+const emptySign = validateMembership({ ...base, signature: ' ' }, {})
+assert(!emptySign.ok && emptySign.error === 'signature', 'signature still required')
+
+const gone = validateMembership({ ...base, plan: 'first50' }, {})
+assert(!gone.ok && gone.error === 'invite', 'first50 needs invite')
+const januaryToken = signInvite(
+  'test-invite-secret-key',
+  makeInvitePayload({ email: 'anna@example.com', name: 'Anna Müller', slot: 12, start: '2027-01-01' }),
+)
+const januarySignup = validateMembership(
+  { ...base, plan: 'first50', invite: januaryToken },
+  { inviteSecret: 'test-invite-secret-key' },
+)
+assert(januarySignup.ok && januarySignup.record?.startDate === '2027-01-01' && januarySignup.record?.termMonths === 24, 'january invite stores the contract start')
+const shortToken = signInvite(
+  'test-invite-secret-key',
+  makeInvitePayload({ email: 'anna@example.com', name: 'Anna Müller', slot: 81, start: '2027-01-01', term: 12 }),
+)
+const shortSignup = validateMembership(
+  { ...base, plan: 'first50', invite: shortToken },
+  { inviteSecret: 'test-invite-secret-key' },
+)
+assert(
+  shortSignup.ok && shortSignup.record?.termMonths === 12 && shortSignup.record?.price === 89.99 && shortSignup.record?.startDate === '2027-01-01',
+  'twelve month invite keeps the first50 price',
+)
+
+const kid = validateMembership(
+  {
+    ...base,
+    birthDate: '2014-01-01',
+    guardianName: 'Tim Müller',
+    guardianEmail: 'tim@example.com',
+    guardianPhone: '03411234567',
+    guardianConsent: true,
+  },
+  {},
+)
+assert(kid.ok && kid.record?.minor, 'minor with guardian')
+assert(kid.record?.guardian?.signedAt == null, 'online minor has no signedAt yet')
+assert(kid.record?.guardian?.relation, 'guardian relation stored')
+
+const kidMember = memberFromSignup(kid.record, '2026-11-12')
+assert(kidMember.status === 'received', 'unsigned minor stays received')
+assert(guardianMissing(kidMember) && billingHeld(kidMember), 'unsigned minor holds billing')
+assert(openDuesOf(kidMember, '2026-11-12').openCount === 0, 'no open dues without vollmacht')
+assert(!kidMember.guardian?.signedVia, 'online checkbox is not a paper signature')
+
+const kidNoGuard = validateMembership({ ...base, birthDate: '2014-01-01' }, {})
+assert(!kidNoGuard.ok && kidNoGuard.error === 'guardian', 'minor needs guardian')
+
+const day = validateMembership({ ...base, plan: 'daypass', visitDay: '2026-10-02' }, {})
+assert(!day.ok && day.error === 'plan', 'day pass is not offered online')
+
+const transfer = validateMembership({ ...base, payMethod: 'transfer' }, {})
+assert(transfer.ok && transfer.record?.payMethod === 'transfer', 'monthly bank transfer')
+const transferDay = validateMembership({ ...base, plan: 'daypass', visitDay: '2026-11-02', payMethod: 'transfer' }, {})
+assert(!transferDay.ok && transferDay.error === 'plan', 'day pass stays closed online')
+
+assert(first50Taken([{ plan: 'first50' }, { plan: 'standard' }, { plan: 'first50', status: 'cancelled' }, { plan: 'first50', status: 'withdrawn' }]) === 1, 'count')
+
+const mailRecord = {
+  firstName: 'Anna',
+  lastName: 'Müller',
+  birthDate: '1994-04-12',
+  street: 'Wittenberger Straße 15',
+  zip: '04129',
+  city: 'Leipzig',
+  email: 'anna@example.com',
+  phone: '+49 171 1234567',
+  plan: 'first50',
+  planName: 'First 50',
+  price: 89.99,
+  termMonths: 24,
+  place: 'Leipzig',
+  signature: 'Anna Müller',
+  createdAt: '2026-09-28T19:00:00.000Z',
+  consents: { earlyStart: true },
+}
+const mail = membershipCopyHtml(mailRecord)
+assert(mail.includes('First 50') && mail.includes('89,99') && mail.includes('Anna Müller'), 'mail copy')
+assert(
+  mail.includes('Schön, dass du dabei bist') &&
+    mail.includes('Sonderpreis') &&
+    mail.includes('Studio ist offen') &&
+    mail.includes('Konrad und Mehmet') &&
+    !mail.includes('einer der Ersten') &&
+    !mail.includes('Die ersten 50'),
+  'first50 welcome',
+)
+assert(!mail.includes('von Anfang an'), 'first50 mail has no pre-opening phrasing')
+assert(membershipMailSubject(mailRecord).includes('Sonderpreis'), 'first50 subject')
+const januaryMail = membershipCopyHtml({ ...mailRecord, startDate: '2027-01-01' })
+assert(januaryMail.includes('1. Januar 2027') && januaryMail.includes('Vorher wird nichts berechnet'), 'january contract mail')
+const shortContractMail = membershipCopyHtml({ ...mailRecord, termMonths: 12, startDate: '2027-01-01' })
+assert(shortContractMail.includes('12 Monate') && !shortContractMail.includes('24 Monate'), 'twelve month contract mail')
+assert(!januaryMail.includes('1. November 2026'), 'january contract mail has no november charge')
+assert(mail.includes('jeweils zum 1. des Monats fällig'), 'fee due on the first')
+assert(mail.includes('Vorher gibt es kein Training'), 'mail says training starts at opening')
+assert(!mail.includes('Vorzeitiger Leistungsbeginn ausdrücklich verlangt'), 'pre-opening mail drops the early-start demand')
+const transferMail = membershipCopyHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', payMethod: 'transfer' })
+assert(transferMail.includes('DE77 8605 5592 1090 4292 70'), 'transfer mail has the gym iban')
+assert(transferMail.includes('WELADE8LXXX') && transferMail.includes('Stadt- und Kreissparkasse Leipzig'), 'transfer mail names the bank')
+assert(transferMail.includes('erste Überweisung ist am 1. November 2026'), 'first transfer date')
+assert(!mail.includes('<script') && mail.includes('Wittenberger'), 'mail escaped')
+const priceNote = priceChangeMailHtml({ ...mailRecord, plan: 'standard', planName: 'Standard', payMethod: 'transfer', price: 89.99, startDate: '2026-11-02' })
+assert(priceNote.includes('89,99€') && priceNote.includes('DE77 8605 5592 1090 4292 70') && priceNote.includes('1. November 2026'), 'price note names the new amount and the account')
+assert(priceChangeMailSubject({ price: 89.99 }).includes('89,99€'), 'price note subject')
+const paperReturn = paperReturnMailHtml({ ...mailRecord, payMethod: 'transfer', startDate: '2026-11-02' })
+assert(paperReturn.includes('89,99€') && paperReturn.includes('Banküberweisung') && paperReturn.includes('DE77 8605 5592 1090 4292 70'), 'paper return mail names price and account')
+assert(paperReturn.includes('unterschrieben zurück') && paperReturn.includes('info@mma-in-leipzig.de') && paperReturn.includes('1. November 2026'), 'paper return mail asks for the signed contract')
+assert(paperReturnMailSubject().includes('Unterschreiben'), 'paper return subject')
+assert(!membershipMailSubject({ ...mailRecord, plan: 'standard', planName: 'Standard' }).includes('Sonderpreis'), 'standard subject')
+
+const attachedMail = membershipCopyHtml(
+  {
+    firstName: 'Anna',
+    lastName: 'Müller',
+    plan: 'first50',
+    planName: 'First 50',
+    price: 89.99,
+    termMonths: 24,
+  },
+  { attached: true },
+)
+assert(attachedMail.includes('Mitgliedsvertrag.pdf') && attachedMail.includes('Widerrufsbelehrung.pdf'), 'mail names pdfs')
+assert(attachedMail.includes('Schön, dass du dabei bist') && attachedMail.includes('PDF bei'), 'first50 attached welcome')
+
+const standardMail = membershipCopyHtml({
+  ...mailRecord,
+  plan: 'standard',
+  planName: 'Standard',
+  price: 99.99,
+  payMethod: 'card',
+  checkinCode: 'R7GH7D',
+})
+assert(standardMail.includes('Willkommen') && !standardMail.includes('einer der Ersten'), 'standard welcome')
+assert(standardMail.includes('DE77 8605 5592 1090 4292 70'), 'card mail names the transfer account')
+assert(standardMail.includes('SEPA-Lastschrift kommt später'), 'card mail says sepa comes later')
+assert(standardMail.includes('Aufnahmegebühr') && standardMail.includes('0,00 €'), 'mail states the signup fee amount')
+assert(standardMail.includes('Mitgliedsvertrag') || standardMail.includes('Vertrag'), 'card mail mentions the contract')
+assert(
+  standardMail.includes('Dein Check-in-Code') &&
+    standardMail.includes('R7GH7D') &&
+    standardMail.includes('/checkin'),
+  'contract mail always includes check-in code',
+)
+assert(
+  checkinCodeMailBlock({ checkinCode: 'R7GH7D' }).includes('R7GH7D') &&
+    !checkinCodeMailBlock({}).includes('Check-in'),
+  'checkin block only when code exists',
+)
+assert(
+  standardMail.includes('<strong>Werbung</strong>') &&
+    standardMail.includes('Kleine Extra-Info von Konrad') &&
+    standardMail.includes('Code: <strong>KONNI</strong>') &&
+    standardMail.includes('https://www.esn.com/instagram/KONNI/aktion') &&
+    standardMail.includes('10%') &&
+    standardMail.includes('Partnerangebot'),
+  'signup mail includes labeled ESN partner code',
+)
+assert(!membershipCopyHtml(mailRecord, { forGym: true }).includes('Kleine Extra-Info von Konrad'), 'gym copy skips ESN pitch')
+assert(
+  membershipCopyHtml({ ...mailRecord, checkinCode: 'AB12CD' }, { forGym: true }).includes('AB12CD'),
+  'gym contract copy includes check-in code',
+)
+
+const dayMail = membershipCopyHtml({
+  ...mailRecord,
+  plan: 'daypass',
+  planName: 'Day Pass',
+  price: 19.99,
+  termMonths: null,
+  visitDay: '2026-11-02',
+  payMethod: 'card',
+})
+assert(!dayMail.includes('Aufnahmegebühr') && !dayMail.includes('49 €'), 'day pass mail has no signup fee')
+assert(dayMail.includes('Day Pass wird mit Karte oder Apple Pay bezahlt'), 'day pass mail names card payment')
+
+const sample = {
+  firstName: 'Anna',
+  lastName: 'Müller',
+  birthDate: '1994-04-12',
+  street: 'Wittenberger Straße 15',
+  zip: '04129',
+  city: 'Leipzig',
+  email: 'anna@example.com',
+  phone: '+49 171 1234567',
+  plan: 'first50',
+  planName: 'First 50',
+  price: 89.99,
+  termMonths: 24,
+  place: 'Leipzig',
+  signature: 'Anna Müller',
+  createdAt: '2026-09-28T19:00:00.000Z',
+  consents: { earlyStart: true },
+  inviteSlot: 7,
+}
+
+const files = await membershipPdfAttachments(sample)
+assert(files.length === 2, 'two pdfs')
+assert(files[0].name === 'Mitgliedsvertrag.pdf', 'contract name')
+assert(files[1].name === 'Widerrufsbelehrung.pdf', 'withdrawal name')
+
+const contractBytes = Buffer.from(files[0].content, 'base64')
+assert(contractBytes.subarray(0, 5).toString() === '%PDF-', 'contract header')
+const contractPdf = await PDFDocument.load(contractBytes)
+assert(contractPdf.getPageCount() >= 1, 'contract pages')
+assert(String(contractPdf.getTitle() || '').includes('Mitgliedsvertrag'), 'contract title')
+assert(String(contractPdf.getSubject() || '').includes('Anna Müller'), 'contract subject')
+const contractText = pdfText(contractBytes)
+assert(contractText.includes('DE77') && contractText.includes('8605') && contractText.includes('4292 70'), 'card contract contains the gym iban')
+assert(contractText.includes('WELADE8LXXX'), 'card contract contains the bic')
+assert(contractText.includes('SEPA-Lastschrift kommt später'), 'card contract says sepa comes later')
+assert(contractText.includes('Aufnahmegebühr') && contractText.includes('0,00 EUR'), 'signup fee amount is on the contract')
+assert(contractText.includes('Vorher gibt es kein Training'), 'contract refuses training before start')
+assert(contractText.includes('mehr als 50 Kilometer') && contractText.includes('Meldebescheinigung'), 'contract states the 50 km relocation right')
+assert(
+  contractText.includes('Alle Kurse') &&
+    contractText.includes('Einheiten') &&
+    contractText.includes('inklusive') &&
+    contractText.includes('zwei Einheiten pro Woche'),
+  'contract includes all classes without a weekly limit',
+)
+const transferPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard', planName: 'Standard', payMethod: 'transfer' }))
+const transferText = pdfText(transferPdf)
+assert(transferText.includes('Banküberweisung') && transferText.includes('DE77 8605') && transferText.includes('4292 70'), 'transfer contract contains the gym account')
+const paperPdf = Buffer.from(await buildContractPdf({ ...sample, plan: 'standard', planName: 'Standard', payMethod: 'transfer' }, { paper: true }))
+const paperText = pdfText(paperPdf)
+assert(paperText.includes('DE77 8605') && paperText.includes('4292 70'), 'paper contract contains the gym account')
+assert(paperText.includes('Aufnahmegebühr') && paperText.includes('0,00 EUR'), 'paper membership states the signup fee')
+assert(!paperText.includes('Gym-Unterschrift-Test'), 'unsigned paper contract leaves the gym line blank')
+const plusPdf = Buffer.from(
+  await buildContractPdf({
+    ...sample,
+    plan: 'plus',
+    planName: 'Plus',
+    price: 119,
+    termMonths: 6,
+    payMethod: 'card',
+    inviteSlot: undefined,
+  }),
+)
+const plusText = pdfText(plusPdf)
+assert(plusText.includes('Plus') && plusText.includes('119,00 EUR') && plusText.includes('6 Monate'), 'plus contract states price and term')
+assert(
+  plusText.includes('Alle Kurse') && plusText.includes('Einheiten') && plusText.includes('zwei Einheiten pro Woche'),
+  'plus contract includes all classes without a weekly limit',
+)
+const slowPdf = Buffer.from(
+  await buildContractPdf({
+    ...sample,
+    plan: 'slowstart',
+    planName: 'Slow Start Tarif',
+    price: 79.99,
+    termMonths: 12,
+    payMethod: 'card',
+    inviteSlot: undefined,
+  }),
+)
+const slowText = pdfText(slowPdf)
+assert(
+  slowText.includes('Slow Start Tarif') && slowText.includes('79,99 EUR') && slowText.includes('12 Monate'),
+  'slow start contract states price and term',
+)
+assert(
+  slowText.includes('zwei Kurse') && slowText.includes('Einheiten pro Woche') && !slowText.includes('nicht auf zwei Einheiten'),
+  'slow start contract limits to two units per week',
+)
+assert(slowText.includes('Aufnahmegebühr') && slowText.includes('0,00 EUR'), 'slow start states the signup fee')
+const openPaper = Buffer.from(
+  await buildContractPdf(
+    {
+      firstName: 'Kevin',
+      lastName: 'Müller',
+      email: 'muellerkevin237@gmail.com',
+      plan: 'first50',
+      planName: 'First 50',
+      price: 89.99,
+      termMonths: 24,
+      payMethod: 'transfer',
+      startDate: '2026-11-02',
+    },
+    { paper: true, returnCopy: true },
+  ),
+)
+const openPaperText = pdfText(openPaper)
+assert(openPaperText.includes('geboren ______________________________'), 'open paper contract leaves the birth date blank')
+assert(
+  openPaperText.includes('Telefon') && openPaperText.includes('______________________________'),
+  'open paper contract leaves the phone blank',
+)
+assert(openPaperText.includes('zurücksenden') && openPaperText.includes('89,99 EUR') && openPaperText.includes('Banküberweisung'), 'open paper contract is the transfer copy')
+const signedPaper = Buffer.from(
+  await buildContractPdf(
+    {
+      ...sample,
+      plan: 'standard',
+      planName: 'Standard',
+      payMethod: 'card',
+      signature: 'Mitglied-Unterschrift-Test',
+      gymSignature: 'Gym-Unterschrift-Test',
+      bank: { holder: 'Anna Müller', iban: 'DE89370400440532013000', mandateSignature: 'Konto-Unterschrift-Test' },
+    },
+    { paper: true },
+  ),
+)
+const signedPaperText = pdfText(signedPaper)
+assert(signedPaperText.includes('Mitglied-Unterschrift-Test'), 'paper contract shows the member signature')
+assert(signedPaperText.includes('Gym-Unterschrift-Test'), 'paper contract shows the gym signature')
+assert(signedPaperText.includes('Konto-Unterschrift-Test'), 'paper contract shows the account-holder signature')
+
+const dayPdf = Buffer.from(
+  await buildContractPdf({
+    ...sample,
+    plan: 'daypass',
+    planName: 'Day Pass',
+    price: 19.99,
+    termMonths: null,
+    visitDay: '2026-11-02',
+    payMethod: 'card',
+    inviteSlot: undefined,
+  }),
+)
+const dayText = pdfText(dayPdf)
+assert(dayText.includes('Day Pass') && !dayText.includes('Aufnahmegebühr') && !dayText.includes('49,00 EUR'), 'day pass contract has no signup fee')
+const dayPaper = Buffer.from(
+  await buildContractPdf(
+    {
+      ...sample,
+      plan: 'daypass',
+      planName: 'Day Pass',
+      price: 19.99,
+      termMonths: null,
+      visitDay: '2026-11-02',
+      payMethod: 'card',
+      inviteSlot: undefined,
+    },
+    { paper: true },
+  ),
+)
+assert(!pdfText(dayPaper).includes('Aufnahmegebühr'), 'paper day pass has no signup fee')
+
+const withdrawalBytes = Buffer.from(files[1].content, 'base64')
+assert(withdrawalBytes.subarray(0, 5).toString() === '%PDF-', 'withdrawal header')
+const withdrawalPdf = await PDFDocument.load(withdrawalBytes)
+assert(withdrawalPdf.getPageCount() >= 1, 'withdrawal pages')
+const officialWithdrawal = readFileSync(new URL('../public/legal/widerrufsbelehrung.pdf', import.meta.url))
+const bundledWithdrawal = readFileSync(new URL('../server/assets/widerrufsbelehrung.pdf', import.meta.url))
+assert(officialWithdrawal.equals(bundledWithdrawal), 'bundled withdrawal matches public pdf')
+assert(withdrawalBytes.equals(officialWithdrawal), 'mail attaches official withdrawal')
+
+const minorFiles = await membershipPdfAttachments({
+  ...sample,
+  firstName: 'Leo',
+  lastName: 'Hartmann',
+  signature: 'Leo Hartmann',
+  birthDate: '2012-05-01',
+  minor: true,
+  guardian: { name: 'Kim Hartmann', email: 'kim@example.com', phone: '03411234567' },
+})
+const minorPdf = await PDFDocument.load(Buffer.from(minorFiles[0].content, 'base64'))
+assert(String(minorPdf.getSubject() || '').includes('Leo Hartmann'), 'minor subject')
+
+const mandateRecord = {
+  ...sample,
+  firstName: 'Leo',
+  lastName: 'Hartmann',
+  birthDate: '2012-05-01',
+  minor: true,
+  payMethod: 'transfer',
+  guardian: {
+    name: 'Kim Hartmann',
+    relation: 'Mutter',
+    email: 'kim@example.com',
+    phone: '03411234567',
+  },
+}
+const mandateBytes = await buildGuardianMandatePdf(mandateRecord)
+assert(Buffer.from(mandateBytes).subarray(0, 5).toString() === '%PDF-', 'vollmacht header')
+const mandateText = pdfText(mandateBytes)
+assert(mandateText.includes('Elternvollmacht') && mandateText.includes('Leo Hartmann'), 'vollmacht names child')
+assert(mandateText.includes('abgebucht') && mandateText.includes('Vollmacht'), 'vollmacht holds billing')
+assert(
+  mandateText.includes('Banküberweisung') &&
+    mandateText.includes('DE77 8605 5592 1090 4292 70') &&
+    mandateText.includes('überweisen'),
+  'vollmacht names transfer account',
+)
+const mandateCard = await buildGuardianMandatePdf({ ...mandateRecord, payMethod: 'card' })
+const mandateCardText = pdfText(mandateCard)
+assert(
+  mandateCardText.includes('Apple Pay') && mandateCardText.includes('Stripe') && !mandateCardText.includes('DE77 8605'),
+  'card vollmacht has no transfer iban block',
+)
+assert(guardianMandateMailSubject(mandateRecord).includes('Leo Hartmann'), 'vollmacht mail subject')
+assert(
+  guardianMandateMailHtml(mandateRecord).includes('vollständig ausgefüllt') &&
+    guardianMandateMailHtml(mandateRecord).includes('nichts abgebucht'),
+  'vollmacht mail asks for signed return',
+)
+
+function mockRes() {
+  const captured = { status: 0, body: '' }
+  const res = {
+    get headersSent() {
+      return captured.status !== 0
+    },
+    statusCode: 0,
+    setHeader() {},
+    end(payload) {
+      captured.status = this.statusCode
+      captured.body = String(payload ?? '')
+    },
+  }
+  return { res, captured }
+}
+
+const dataDir = join(tmpdir(), `konni-mem-${process.pid}`)
+mkdirSync(dataDir, { recursive: true })
+{
+  const handle = createMembershipHandler({ dataDir, env: { SIGNUP_OPEN: 'false' } })
+  const { res, captured } = mockRes()
+  await handle({ method: 'POST', url: '/api/mitglied', headers: {}, socket: { remoteAddress: '127.0.0.1' } }, res)
+  const parsed = JSON.parse(captured.body)
+  assert(captured.status === 403 && parsed.ok === false && parsed.error === 'closed', 'handler rejects closed signup')
+}
+
+{
+  const calls = []
+  const previous = globalThis.fetch
+  globalThis.fetch = async (url, init) => {
+    calls.push({ url: String(url), body: String(init?.body || '') })
+    return { ok: true, status: 200, json: async () => ({}), text: async () => '' }
+  }
+  try {
+    const handle = createMembershipHandler({
+      dataDir,
+      env: { BREVO_API_KEY: 'xkeysib-test', BREVO_LIST_ID: '9' },
+    })
+    const { res, captured } = mockRes()
+    await handle(
+      {
+        method: 'POST',
+        url: '/api/mitglied',
+        headers: { 'content-type': 'application/json' },
+        body: { ...base, email: 'offen@example.com' },
+        socket: { remoteAddress: '127.0.0.8' },
+      },
+      res,
+    )
+    const parsed = JSON.parse(captured.body)
+    assert(captured.status === 200 && parsed.ok === true && parsed.confirmation === 'listed', 'signup lists the member')
+    const mails = calls.filter((call) => call.url.includes('/smtp/email'))
+    assert(mails.length === 0, 'card signup does not mail the contract before stripe')
+    const filed = (await createMemberStore({ dataDir, env: {} }).load()).members.find((row) => row.email === 'offen@example.com')
+    assert(filed?.docs?.contract?.name === 'Mitgliedsvertrag.pdf', 'stripe signup files the contract in admin')
+    assert(filed?.payMethod === 'card', 'stripe signup keeps card')
+    assert(filed?.contractMail === 'after_payment', 'card contract mail waits for stripe')
+  } finally {
+    globalThis.fetch = previous
+  }
+}
+
+{
+  const handle = createMembershipHandler({ dataDir, env: { MEMBERSHIP_MAIL: 'false' } })
+  const first = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/mitglied',
+      headers: { 'content-type': 'application/json' },
+      body: { ...base, email: 'doppelt@example.com', payMethod: 'transfer' },
+      socket: { remoteAddress: '127.0.0.21' },
+    },
+    first.res,
+  )
+  const firstBody = JSON.parse(first.captured.body)
+  assert(first.captured.status === 200 && firstBody.ok === true, 'first signup stored')
+  const second = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/mitglied',
+      headers: { 'content-type': 'application/json' },
+      body: { ...base, plan: 'flex', email: 'Doppelt@example.com', payMethod: 'transfer' },
+      socket: { remoteAddress: '127.0.0.22' },
+    },
+    second.res,
+  )
+  const secondBody = JSON.parse(second.captured.body)
+  assert(second.captured.status === 409 && secondBody.error === 'duplicate', 'second signup refused')
+  const rows = (await createMemberStore({ dataDir, env: {} }).load()).members.filter((row) => row.email === 'doppelt@example.com')
+  assert(rows.length === 1 && rows[0].plan === 'standard', 'first contract stays')
+}
+
+{
+  const secret = 'test-invite-secret-key'
+  const token = signInvite(secret, makeInvitePayload({ email: 'dome@example.com', name: 'Dominic Jagobert', slot: 86 }))
+  const fresh = signInvite(secret, makeInvitePayload({ email: 'nora@example.com', name: 'Nora Freund', slot: 87 }))
+  const store = createMemberStore({ dataDir, env: {} })
+  await store.update((db) => {
+    db.revokedInvites = [{ email: 'dome@example.com', slot: 86 }]
+    return db
+  })
+  const loaded = await createMemberStore({ dataDir, env: {} }).load()
+  assert(loaded.revokedInvites.length === 1 && loaded.members.length >= 1, 'revoked invites stay next to the members')
+  const handle = createMembershipHandler({ dataDir, env: { INVITE_SECRET: secret, SIGNUP_OPEN: 'true', MEMBERSHIP_MAIL: 'false' } })
+  const blocked = mockRes()
+  await handle(
+    {
+      method: 'GET',
+      url: `/api/mitglied?invite=${encodeURIComponent(token)}`,
+      headers: {},
+      socket: { remoteAddress: '127.0.0.30' },
+    },
+    blocked.res,
+  )
+  const blockedBody = JSON.parse(blocked.captured.body)
+  assert(blocked.captured.status === 400 && blockedBody.error === 'invite', 'revoked first50 link does not open')
+  const open = mockRes()
+  await handle(
+    {
+      method: 'GET',
+      url: `/api/mitglied?invite=${encodeURIComponent(fresh)}`,
+      headers: {},
+      socket: { remoteAddress: '127.0.0.32' },
+    },
+    open.res,
+  )
+  const openBody = JSON.parse(open.captured.body)
+  assert(open.captured.status === 200 && openBody.invite.email === 'nora@example.com', 'another first50 link still opens')
+  const post = mockRes()
+  await handle(
+    {
+      method: 'POST',
+      url: '/api/mitglied',
+      headers: { 'content-type': 'application/json' },
+      body: {
+        ...base,
+        plan: 'first50',
+        firstName: 'Dominic',
+        lastName: 'Jagobert',
+        email: 'dome@example.com',
+        invite: token,
+      },
+      socket: { remoteAddress: '127.0.0.31' },
+    },
+    post.res,
+  )
+  const postBody = JSON.parse(post.captured.body)
+  assert(post.captured.status === 400 && postBody.error === 'invite', 'revoked first50 link cannot sign up')
+}
+
+console.log('membership tests ok')
