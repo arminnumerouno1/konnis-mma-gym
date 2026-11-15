@@ -3,6 +3,7 @@ import { DEFAULT_BILLING_START, openDuesOf } from './member-model.mjs'
 import { createMemberStore } from './member-store.mjs'
 import { sendReminderEmail } from './membership-mail.mjs'
 import { berlinIsoDate } from './opening.mjs'
+import { secretsEqual } from './ops-auth.mjs'
 
 const REMINDER_COOLDOWN_MS = 5 * 24 * 60 * 60 * 1000
 const BATCH = 40
@@ -17,15 +18,6 @@ export function nextDunningStage(reminders = []) {
   if (last.stage === 'reminder') return 'mahnung1'
   if (last.stage === 'mahnung1') return 'mahnung2'
   return 'mahnung2'
-}
-
-function secretsEqual(a, b) {
-  const left = String(a ?? '')
-  const right = String(b ?? '')
-  if (!left || left.length !== right.length) return false
-  let diff = 0
-  for (let i = 0; i < left.length; i += 1) diff |= left.charCodeAt(i) ^ right.charCodeAt(i)
-  return diff === 0
 }
 
 export function cronAuthorized(req, env) {

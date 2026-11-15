@@ -13,6 +13,7 @@ import {
   buildCheckoutFields,
   checkoutSchedule,
   createCheckoutSession,
+  signCheckoutConfirm,
 } from '../server/stripe-checkout.mjs'
 
 function assert(cond, message) {
@@ -379,7 +380,13 @@ try {
     return { status: captured.status, data: JSON.parse(captured.body) }
   }
 
-  const openConfirm = await postStripe(null, { sign: false, rawBody: JSON.stringify({ sessionId: 'cs_open' }) })
+  const openDenied = await postStripe(null, { sign: false, rawBody: JSON.stringify({ sessionId: 'cs_open' }) })
+  assert(openDenied.status === 403 && openDenied.data.error === 'confirm', 'client confirm needs signed token')
+  const openToken = signCheckoutConfirm(whsec, mailMemberId)
+  const openConfirm = await postStripe(null, {
+    sign: false,
+    rawBody: JSON.stringify({ sessionId: 'cs_open', confirm: openToken }),
+  })
   assert(openConfirm.status === 200 && openConfirm.data.mailed === false, 'open checkout does not mail')
   assert(smtpCount() === 0, 'cancel lookup sends no contract mail')
 
@@ -457,7 +464,11 @@ try {
   assert(again.data.mail === 'already', 'contract mail is not sent twice')
   assert(smtpCount() === 2, 'repeat webhook stays quiet')
 
-  const confirm = await postStripe(null, { sign: false, rawBody: JSON.stringify({ sessionId: 'cs_mail' }) })
+  const confirmToken = signCheckoutConfirm(whsec, mailMemberId)
+  const confirm = await postStripe(null, {
+    sign: false,
+    rawBody: JSON.stringify({ sessionId: 'cs_mail', confirm: confirmToken }),
+  })
   assert(confirm.status === 200 && confirm.data.mailed === false, 'return confirm does not mail again')
   assert(smtpCount() === 2, 'return confirm stays quiet')
 

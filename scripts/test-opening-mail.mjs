@@ -49,14 +49,33 @@ function mockRes() {
 }
 
 {
-  const handle = createOpeningMailHandler({ env: { INVITE_SECRET: 'test-invite-secret-key', BREVO_API_KEY: 'x' } })
+  const handle = createOpeningMailHandler({
+    env: { ADMIN_SECRET: 'test-admin-secret-xx', BREVO_API_KEY: 'x' },
+  })
   const { res, captured } = mockRes()
   await handle(
     { method: 'POST', url: '/api/opening-mail', headers: {}, socket: { remoteAddress: '127.0.0.1' }, body: { email: 'armin@example.com' } },
     res,
   )
   const parsed = JSON.parse(captured.body)
-  assert(captured.status === 403 && parsed.error === 'invite', 'opening mail needs secret')
+  assert(captured.status === 403 && parsed.error === 'invite', 'opening mail needs ops secret in body')
+
+  const inviteOnly = createOpeningMailHandler({
+    env: { INVITE_SECRET: 'test-invite-secret-key', BREVO_API_KEY: 'x' },
+  })
+  const denied = mockRes()
+  await inviteOnly(
+    {
+      method: 'POST',
+      url: '/api/opening-mail',
+      headers: {},
+      socket: { remoteAddress: '127.0.0.2' },
+      body: { email: 'armin@example.com', secret: 'test-invite-secret-key' },
+    },
+    denied.res,
+  )
+  const deniedBody = JSON.parse(denied.captured.body)
+  assert(denied.captured.status === 403 && deniedBody.error === 'invite', 'INVITE_SECRET no longer authorizes opening mail')
 }
 
 console.log('opening mail tests ok')

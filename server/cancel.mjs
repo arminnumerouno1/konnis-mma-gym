@@ -277,16 +277,21 @@ export function createCancelHandler({ dataDir, env }) {
         const db = await store.load()
         const email = parsed.entry.email
         const full = `${parsed.entry.firstName} ${parsed.entry.lastName}`.toLowerCase()
+        const lastName = parsed.entry.lastName.toLowerCase()
         const hit =
           db.members.find((row) => {
-            if (parsed.entry.memberId && row.id === parsed.entry.memberId) return true
-            return false
+            if (!parsed.entry.memberId || row.id !== parsed.entry.memberId) return false
+            // memberId alone is not enough — require matching email (IDOR harden).
+            return String(row.email || '').toLowerCase() === email
           }) ||
           db.members.find((row) => {
             if (String(row.email || '').toLowerCase() !== email) return false
             if (['cancelled', 'withdrawn', 'expired'].includes(row.status)) return false
             const name = `${row.firstName || ''} ${row.lastName || ''}`.trim().toLowerCase()
-            return !name || name === full || name.includes(parsed.entry.lastName.toLowerCase())
+            const rowLast = String(row.lastName || '')
+              .trim()
+              .toLowerCase()
+            return !name || name === full || (rowLast && rowLast === lastName)
           })
 
         if (hit) {

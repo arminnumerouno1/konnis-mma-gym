@@ -1488,7 +1488,10 @@ const inviteLogin = await (async () => {
   )
   return { status: captured.status, data: captured.body ? JSON.parse(captured.body) : {} }
 })()
-assert(inviteLogin.status === 200 && inviteLogin.data.ok, 'legacy INVITE_SECRET still unlocks when ADMIN_SECRET is unset')
+assert(
+  inviteLogin.status === 503 && inviteLogin.data.error === 'config',
+  'INVITE_SECRET must not unlock admin when ADMIN_SECRET is unset',
+)
 
 const secureLogin = await call({
   method: 'POST',

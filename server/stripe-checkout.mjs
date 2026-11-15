@@ -1,5 +1,44 @@
 /** Erste volle Monatsabbuchung. Muss zum Hinweis in src/brand/plans.ts passen. */
+import { createHmac, timingSafeEqual } from 'node:crypto'
 import { memberBillingStart } from './member-model.mjs'
+
+const CONFIRM_TTL_S = 7 * 24 * 60 * 60
+
+/** One-time-ish return token so /api/stripe client confirm cannot be replayed from session_id alone. */
+export function signCheckoutConfirm(secret, memberId, nowMs = Date.now()) {
+  const key = String(secret || '').trim()
+  const mid = String(memberId || '').trim()
+  if (!key || !mid) return ''
+  const exp = Math.floor(nowMs / 1000) + CONFIRM_TTL_S
+  const payload = Buffer.from(JSON.stringify({ m: mid, exp })).toString('base64url')
+  const sig = createHmac('sha256', key).update(payload).digest('base64url')
+  return `${payload}.${sig}`
+}
+
+export function verifyCheckoutConfirm(secret, token, memberId, nowMs = Date.now()) {
+  const key = String(secret || '').trim()
+  const mid = String(memberId || '').trim()
+  const raw = String(token || '').trim()
+  if (!key || !mid || !raw) return false
+  const [payload, sig] = raw.split('.')
+  if (!payload || !sig) return false
+  const expected = createHmac('sha256', key).update(payload).digest('base64url')
+  const left = Buffer.from(sig)
+  const right = Buffer.from(expected)
+  if (left.length !== right.length || !timingSafeEqual(left, right)) return false
+  try {
+    const data = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
+    if (String(data?.m || '') !== mid) return false
+    if (!Number.isFinite(data?.exp) || data.exp < Math.floor(nowMs / 1000)) return false
+    return true
+  } catch {
+    return false
+  }
+}
+
+export function checkoutConfirmSecret(env) {
+  return env?.STRIPE_WEBHOOK_SECRET?.trim() || env?.STRIPE_SECRET_KEY?.trim() || ''
+}
 
 export const BILLING_START = '2026-11-01'
 const TRIAL_LEAD_S = 48 * 60 * 60
@@ -150,18 +189,22 @@ export function siteOrigin(req, env = {}) {
   return 'https://www.mma-in-leipzig.de'
 }
 
-export function buildCheckoutFields({ member, origin, nowMs = Date.now() }) {
+export function buildCheckoutFields({ member, origin, nowMs = Date.now(), confirmSecret = '' } = {}) {
   const cents = PLAN_CENTS[member?.plan]
   if (!cents || !member?.id) return { error: 'plan' }
   if (!member.email && !member.stripe?.customerId) return { error: 'email' }
   const schedule = checkoutSchedule(nowMs, { plan: member.plan, billingStart: memberBillingStart(member) })
   if (schedule.skip) return { skip: schedule.skip, schedule }
   const name = `KONNI MMA GYM · ${member.planName || PLAN_NAMES[member.plan] || member.plan}`
+  const confirm = signCheckoutConfirm(confirmSecret, member.id, nowMs)
+  const successQs = confirm
+    ? `zahlung=ok&session_id={CHECKOUT_SESSION_ID}&confirm=${encodeURIComponent(confirm)}`
+    : 'zahlung=ok&session_id={CHECKOUT_SESSION_ID}'
   const fields = {
     mode: schedule.mode,
     client_reference_id: member.id,
     locale: 'de',
-    success_url: `${origin}/mitglied?zahlung=ok&session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${origin}/mitglied?${successQs}`,
     cancel_url: `${origin}/mitglied?zahlung=abgebrochen`,
     'metadata[memberId]': member.id,
     'metadata[plan]': member.plan,
@@ -219,8 +262,15 @@ async function postSession(fetchImpl, secret, fields) {
   return data
 }
 
-export async function createCheckoutSession({ secret, member, origin, nowMs = Date.now(), fetchImpl = fetch }) {
-  const built = buildCheckoutFields({ member, origin, nowMs })
+export async function createCheckoutSession({
+  secret,
+  member,
+  origin,
+  nowMs = Date.now(),
+  fetchImpl = fetch,
+  confirmSecret = '',
+} = {}) {
+  const built = buildCheckoutFields({ member, origin, nowMs, confirmSecret })
   if (built.error) return { ok: false, error: built.error }
   if (built.skip) return { ok: true, skipped: built.skip, billingStart: built.schedule.billingStart, chargeNow: false }
   try {
@@ -270,7 +320,7 @@ export async function createBillingPortalSession({
 }
 
 /** Preferiert Kundenportal, sonst neuer Checkout-Link. */
-export async function createPaymentRetryUrl({ secret, member, origin, fetchImpl = fetch }) {
+export async function createPaymentRetryUrl({ secret, member, origin, fetchImpl = fetch, confirmSecret = '' } = {}) {
   const customerId = member?.stripe?.customerId
   if (customerId) {
     const portal = await createBillingPortalSession({
@@ -281,7 +331,7 @@ export async function createPaymentRetryUrl({ secret, member, origin, fetchImpl 
     })
     if (portal.ok) return { ok: true, url: portal.url, kind: 'portal' }
   }
-  const checkout = await createCheckoutSession({ secret, member, origin, fetchImpl })
+  const checkout = await createCheckoutSession({ secret, member, origin, fetchImpl, confirmSecret })
   if (checkout.ok && checkout.url) return { ok: true, url: checkout.url, kind: 'checkout' }
   return { ok: false, error: checkout.error || 'stripe', detail: checkout.detail }
 }

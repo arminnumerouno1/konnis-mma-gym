@@ -85,14 +85,14 @@ const friday = new Date('2026-11-06T17:10:00.000Z')
 const slot = currentSlot(friday)
 assert(slot, 'slot for perform')
 
-const testCode = await performCheckin(
+const blocked = await performCheckin(
   { members: [member], trials: [], checkins: [] },
   { code: '123456', slotId: slot.id, now: friday },
 )
-assert(testCode.ok && testCode.entry.name === 'Armin Test', 'fixed test code 123456')
+assert(!blocked.ok && blocked.error === 'code', 'hardcoded 123456 bypass is removed')
 
 const first = await performCheckin(
-  { members: [member], trials: [], checkins: [testCode.entry] },
+  { members: [member], trials: [], checkins: [] },
   { code: member.checkinCode, slotId: slot.id, now: friday },
 )
 assert(first.ok && !first.already, 'first checkin ok')
@@ -155,7 +155,8 @@ const postOk = await call(handle, {
   socket: { remoteAddress: '10.0.0.10' },
   body: { code: member.checkinCode.toLowerCase(), slotId: slot.id },
 })
-assert(postOk.status === 200 && postOk.data.ok && postOk.data.already, 'door post finds existing')
+assert(postOk.status === 200 && postOk.data.ok, 'door post accepts stored member code')
+assert(postOk.data.already || postOk.data.name === 'Alex Check', 'door post resolves the member')
 
 const admin = createAdminHandler({ dataDir: tmp, env: { ADMIN_SECRET: secret } })
 const login = await call(admin, {

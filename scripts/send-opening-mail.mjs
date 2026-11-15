@@ -108,7 +108,11 @@ Ohne --confirm-all geht kein Massenversand.
 }
 
 const apiKey = process.env.BREVO_API_KEY?.trim()
-const secret = process.env.INVITE_SECRET?.trim()
+const secret =
+  process.env.MAIL_OPS_SECRET?.trim() ||
+  process.env.CRON_SECRET?.trim() ||
+  process.env.ADMIN_SECRET?.trim() ||
+  ''
 const sender = process.env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
 const origin = String(process.env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de').replace(/\/+$/, '')
 const site = origin.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : origin
@@ -122,7 +126,7 @@ async function deliver({ to, name, first, test }) {
     return
   }
   if (!secret) {
-    console.error('Weder BREVO_API_KEY noch INVITE_SECRET. Test geht über die Live-API mit INVITE_SECRET.')
+    console.error('Weder BREVO_API_KEY noch MAIL_OPS_SECRET/CRON_SECRET/ADMIN_SECRET für die Live-API.')
     process.exit(1)
   }
   await sendViaApi({ origin: site, secret, to, name, test })

@@ -17,7 +17,8 @@ function escapeMail(value) {
 }
 
 function secretOf(env) {
-  const value = env.INVITE_SECRET?.trim() || env.ADMIN_SECRET?.trim() || ''
+  // Prefer dedicated photo secret; INVITE_SECRET kept so outstanding portrait links still verify.
+  const value = env.PHOTO_TOKEN_SECRET?.trim() || env.INVITE_SECRET?.trim() || ''
   return value.length >= 16 ? value : ''
 }
 

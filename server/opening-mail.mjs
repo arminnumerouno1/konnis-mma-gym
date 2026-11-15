@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
+import { opsMailAuthorized } from './ops-auth.mjs'
 
 function escapeMail(value) {
   return String(value ?? '')
@@ -157,9 +158,8 @@ export function createOpeningMailHandler({ env }) {
         return
       }
 
-      const secret = env.INVITE_SECRET
       const apiKey = env.BREVO_API_KEY?.trim()
-      if (!secretsMatch(body.secret, secret) || !apiKey) {
+      if (!opsMailAuthorized(body.secret, env) || !apiKey) {
         if (rateLimited(clientIp(req))) {
           json(res, 429, { ok: false, error: 'rate' })
           return

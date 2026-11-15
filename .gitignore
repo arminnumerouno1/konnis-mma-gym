@@ -32,6 +32,8 @@ data/contacts.json
 data/first50-*
 data/voranmeldung*
 data/opening-mail-sent.json
+data-hugo-*/
+tmp-artifacts/
 
 # Editor directories and files
 .vscode/*

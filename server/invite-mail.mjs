@@ -1,5 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 import { mailProofMatches } from './mail-proof.mjs'
+import { opsMailAuthorized } from './ops-auth.mjs'
 import { tmpdir } from 'node:os'
 import { isValidEmail, normalizeEmail } from './membership.mjs'
 import { membershipTaken } from './member-model.mjs'
@@ -363,12 +364,12 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
         return
       }
 
-      const secret = env.INVITE_SECRET
+      const inviteSecret = env.INVITE_SECRET
       const apiKey = env.BREVO_API_KEY?.trim()
       const sender = env.BREVO_SENDER?.trim() || 'info@mma-in-leipzig.de'
 
       if (body.one === true) {
-        if (!mailProofMatches(body.proof, env) || !apiKey || !secret) {
+        if (!mailProofMatches(body.proof, env) || !apiKey || !inviteSecret) {
           json(res, 403, { ok: false, error: 'invite' })
           return
         }
@@ -417,7 +418,7 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
         }
         const site = String(env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de').replace(/\/+$/, '')
         const origin = site.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : site
-        const token = signInvite(secret, makeInvitePayload({ email, name, slot, start, term }))
+        const token = signInvite(inviteSecret, makeInvitePayload({ email, name, slot, start, term }))
         const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
         const first = name.split(' ')[0] || name
         try {
@@ -440,7 +441,8 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
         return
       }
 
-      if (!secretsMatch(body.secret, secret) || !apiKey) {
+      // HTTP auth uses ops secrets — not INVITE_SECRET (that only signs invite links).
+      if (!opsMailAuthorized(body.secret, env) || !apiKey || !inviteSecret) {
         json(res, 403, { ok: false, error: 'invite' })
         return
       }
@@ -468,7 +470,7 @@ export function createInviteMailHandler({ env, fetchImpl = fetch, loadMembers = 
 
       const site = String(env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de').replace(/\/+$/, '')
       const origin = site.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : site
-      const token = signInvite(secret, makeInvitePayload({ email, name, slot }))
+      const token = signInvite(inviteSecret, makeInvitePayload({ email, name, slot }))
       const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
       const first = name.split(' ')[0] || name
       const test = body.test === true

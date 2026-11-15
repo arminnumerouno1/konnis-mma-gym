@@ -428,6 +428,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
       member: record,
       origin: siteOrigin(req, env),
       fetchImpl,
+      confirmSecret: env.STRIPE_WEBHOOK_SECRET?.trim() || secret,
     })
     if (session.skipped) return { payment: 'later', billingStart: session.billingStart }
     if (!session.ok || !session.url) {

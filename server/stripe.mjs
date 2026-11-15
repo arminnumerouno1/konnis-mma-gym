@@ -3,7 +3,12 @@ import { checkoutSettled, sendContractMailOnce } from './contract-mail.mjs'
 import { isoDate, setPayment } from './member-model.mjs'
 import { createMemberStore } from './member-store.mjs'
 import { sendPaymentFailedEmail } from './membership-mail.mjs'
-import { createPaymentRetryUrl, siteOrigin } from './stripe-checkout.mjs'
+import {
+  checkoutConfirmSecret,
+  createPaymentRetryUrl,
+  siteOrigin,
+  verifyCheckoutConfirm,
+} from './stripe-checkout.mjs'
 
 const TOLERANCE_S = 300
 const MAX_BODY = 1_000_000
@@ -308,6 +313,7 @@ export function createStripeHandler({
           member,
           origin: siteOrigin({ headers: {} }, env),
           fetchImpl,
+          confirmSecret: checkoutConfirmSecret(env) || secret,
         })
         if (retry.ok) {
           retryUrl = retry.url
@@ -350,6 +356,7 @@ export function createStripeHandler({
       return
     }
     const sessionId = String(body?.sessionId || '')
+    const confirm = String(body?.confirm || '')
     if (!/^cs_[A-Za-z0-9]+$/.test(sessionId)) {
       reply(res, 400, { ok: false, error: 'invalid' })
       return
@@ -369,6 +376,12 @@ export function createStripeHandler({
     } catch (error) {
       console.error('[stripe] session lookup failed', error)
       reply(res, 502, { ok: false, error: 'stripe' })
+      return
+    }
+    const memberId = String(session?.metadata?.memberId || session?.client_reference_id || '')
+    const confirmKey = checkoutConfirmSecret(env) || key
+    if (!verifyCheckoutConfirm(confirmKey, confirm, memberId)) {
+      reply(res, 403, { ok: false, error: 'confirm' })
       return
     }
     if (!checkoutSettled(session)) {

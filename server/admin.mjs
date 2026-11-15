@@ -120,19 +120,9 @@ const PLAN_META = {
 const hits = new Map()
 
 function adminSecret(env) {
+  // Dedicated desk password only — never fall back to INVITE_SECRET (invite/photo signing key).
   const dedicated = env.ADMIN_SECRET?.trim() || ''
-  if (dedicated.length >= 16) return dedicated
-  // Temporary bridge so a missing ADMIN_SECRET does not lock the desk out.
-  // INVITE_SECRET is a signing key — set a dedicated ADMIN_SECRET in production.
-  const legacy = env.INVITE_SECRET?.trim() || ''
-  if (legacy.length >= 16) {
-    if (!adminSecret._warned) {
-      console.error('[admin] ADMIN_SECRET missing; temporarily using INVITE_SECRET. Set a dedicated ADMIN_SECRET.')
-      adminSecret._warned = true
-    }
-    return legacy
-  }
-  return ''
+  return dedicated.length >= 16 ? dedicated : ''
 }
 
 function secretsEqual(left, right) {
@@ -1099,29 +1089,36 @@ export function createAdminHandler({
           if (wanted && full === wanted) return true
           return false
         })
+        // Proof-only lookups skip door codes and address/birth PII; full desk session keeps them.
         json(res, 200, {
           ok: true,
           count: found.length,
-          members: found.map((row) => ({
-            id: row.id,
-            name: `${row.firstName || ''} ${row.lastName || ''}`.trim(),
-            email: row.email,
-            phone: row.phone || null,
-            status: row.status,
-            plan: row.plan,
-            planName: row.planName,
-            startDate: row.startDate || null,
-            checkinCode: row.checkinCode || null,
-            payMethod: row.payMethod || null,
-            inviteSlot: row.inviteSlot ?? null,
-            cancelledAt: row.cancelledAt || null,
-            cancelEffectiveOn: row.cancelEffectiveOn || null,
-            street: row.street || null,
-            zip: row.zip || null,
-            city: row.city || null,
-            birthDate: row.birthDate || null,
-            hasPhoto: Boolean(row.photoData),
-          })),
+          members: found.map((row) => {
+            const base = {
+              id: row.id,
+              name: `${row.firstName || ''} ${row.lastName || ''}`.trim(),
+              email: row.email,
+              status: row.status,
+              plan: row.plan,
+              planName: row.planName,
+              startDate: row.startDate || null,
+              payMethod: row.payMethod || null,
+              inviteSlot: row.inviteSlot ?? null,
+              cancelledAt: row.cancelledAt || null,
+              cancelEffectiveOn: row.cancelEffectiveOn || null,
+              hasPhoto: Boolean(row.photoData),
+            }
+            if (proofOnly) return base
+            return {
+              ...base,
+              phone: row.phone || null,
+              checkinCode: row.checkinCode || null,
+              street: row.street || null,
+              zip: row.zip || null,
+              city: row.city || null,
+              birthDate: row.birthDate || null,
+            }
+          }),
         })
         return
       }
@@ -1692,6 +1689,7 @@ export function createAdminHandler({
           member: current,
           origin: siteOrigin(req, env),
           fetchImpl,
+          confirmSecret: env.STRIPE_WEBHOOK_SECRET?.trim() || secretKey,
         })
         if (!session.ok || !session.url) {
           console.error('[admin] stripe checkout failed', session.detail || session.error)
@@ -2091,6 +2089,7 @@ export function createAdminHandler({
           member: current,
           origin: siteOrigin(req, env),
           fetchImpl,
+          confirmSecret: env.STRIPE_WEBHOOK_SECRET?.trim() || secretKey,
         })
         if (!session.ok || !session.url) {
           console.error('[admin] pay link failed', session.detail || session.error)

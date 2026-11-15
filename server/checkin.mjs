@@ -262,44 +262,31 @@ export async function performCheckin(
   } else {
     const normalized = normalizeCheckinCode(code)
     if (!isValidCheckinCode(normalized)) return { ok: false, error: 'code' }
-    // Temporary desk test code for Armin — remove after door test.
-    if (normalized === '123456') {
+    // Match only stored member/trial codes — never invent a hard-coded bypass.
+    // Existing checkinCode values on members are never rewritten here.
+    const member = (members || []).find(
+      (row) => activeMember(row) && normalizeCheckinCode(row.checkinCode) === normalized,
+    )
+    if (member) {
+      person = memberPerson(member, isoDate(now))
+    } else {
+      const trial = (trials || []).find(
+        (row) =>
+          normalizeCheckinCode(row.checkinCode) === normalized &&
+          (row.status === 'bestaetigt' || row.status === 'gekommen' || row.status === 'neu'),
+      )
+      if (!trial) return { ok: false, error: 'code' }
+      if (trialGuardianMissing(trial)) return { ok: false, error: 'guardian' }
       person = {
-        kind: 'member',
-        memberId: 'test-123456',
-        trialId: null,
-        name: 'Armin Test',
-        email: null,
+        kind: 'trial',
+        memberId: null,
+        trialId: trial.id,
+        name: trial.name,
+        email: trial.email,
         plan: null,
         openDues: 0,
         openCount: 0,
         hasPhoto: false,
-      }
-    } else {
-      const member = (members || []).find(
-        (row) => activeMember(row) && normalizeCheckinCode(row.checkinCode) === normalized,
-      )
-      if (member) {
-        person = memberPerson(member, isoDate(now))
-      } else {
-        const trial = (trials || []).find(
-          (row) =>
-            normalizeCheckinCode(row.checkinCode) === normalized &&
-            (row.status === 'bestaetigt' || row.status === 'gekommen' || row.status === 'neu'),
-        )
-        if (!trial) return { ok: false, error: 'code' }
-        if (trialGuardianMissing(trial)) return { ok: false, error: 'guardian' }
-        person = {
-          kind: 'trial',
-          memberId: null,
-          trialId: trial.id,
-          name: trial.name,
-          email: trial.email,
-          plan: null,
-          openDues: 0,
-          openCount: 0,
-          hasPhoto: false,
-        }
       }
     }
   }
