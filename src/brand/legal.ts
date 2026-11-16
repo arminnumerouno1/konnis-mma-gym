@@ -19,6 +19,7 @@ export const IMPRESSUM = {
     { label: 'WhatsApp', value: GYM.phone },
     { label: 'E-Mail', value: GYM.email },
     { label: 'E-Mail (Verträge)', value: GYM.legalEmail },
+    { label: 'USt-IdNr.', value: GYM.vatId },
     {
       label: 'Inhaltlich verantwortlich',
       value: `${GYM.partners[0]}, ${GYM_ADDRESS} (gemäß § 18 Abs. 2 MStV)`,
@@ -36,7 +37,7 @@ export const IMPRESSUM = {
       paragraphs: [
         'Die KONNI MMA GYM GbR ist nicht ins Handelsregister eingetragen. Eine Handelsregisternummer ist daher nicht anzugeben.',
         'Die ausgewiesenen Preise sind Endpreise einschließlich der gesetzlichen Umsatzsteuer.',
-        'Eine Umsatzsteuer-Identifikationsnummer nach § 27a UStG wird hier angegeben, sobald sie vorliegt bzw. sobald sie mitgeteilt werden soll.',
+        `Umsatzsteuer-Identifikationsnummer gemäß § 27a UStG: ${GYM.vatId}.`,
         'Eine Wirtschaftsidentifikationsnummer nach § 139c AO wird hier angegeben, sobald sie vorliegt.',
       ],
     },

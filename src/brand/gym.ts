@@ -19,6 +19,8 @@ export const GYM = {
   mehmetInstagramHandle: '@memosch__',
   openingDate: '2026-11-02',
   partners: ['Konrad Dyrschka', 'Mehmet-Deniz Celik'] as const,
+  /** Umsatzsteuer-Identifikationsnummer (§ 27a UStG) */
+  vatId: 'DE465785228',
   agbStand: '15. November 2026',
   agbDate: '15.11.2026',
   privacyStand: '15. November 2026',
