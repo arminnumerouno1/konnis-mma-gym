@@ -45,7 +45,7 @@ const ERRORS: Record<MembershipError, string> = {
   signature: 'Bitte die Unterschrift eintragen.',
   photo: 'Bitte ein Portraitfoto hochladen, auf dem dein Gesicht klar zu erkennen ist.',
   visit: 'Bitte einen Tag für den Day Pass wählen.',
-  pay: 'Banküberweisung gibt es für den Day Pass nicht. Bitte Karte oder Apple Pay wählen.',
+  pay: 'Bitte Karte, Apple Pay oder SEPA-Lastschrift wählen.',
   rate: COPY.rate,
   closed: COPY.joinClosedError,
   upstream: COPY.error,
@@ -214,12 +214,10 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [consents, setConsents] = useState(emptyConsents)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [payMethod, setPayMethod] = useState<'card' | 'transfer'>('card')
   const [done, setDone] = useState<{
     id?: string
     at: string
     payment?: MembershipOk['payment']
-    transfer?: MembershipOk['transfer']
   } | null>(null)
   const formStarted = useFormStarted()
   const pageRef = useRef<HTMLElement>(null)
@@ -317,7 +315,6 @@ function JoinForm({ plan, invite }: JoinProps) {
       name: `${firstName} ${lastName}`,
       at: done.at,
       payment: done.payment,
-      transfer: done.transfer,
     }
   }, [selected, done, firstName, lastName])
 
@@ -429,7 +426,7 @@ function JoinForm({ plan, invite }: JoinProps) {
       invite: invite || undefined,
       company: honey,
       formStarted,
-      payMethod: chosen === 'daypass' ? 'card' : payMethod,
+      payMethod: 'card',
     })
     setPending(false)
     if (!result.ok) {
@@ -444,7 +441,6 @@ function JoinForm({ plan, invite }: JoinProps) {
       id: result.id,
       at: new Date().toISOString(),
       payment: result.payment,
-      transfer: result.transfer,
     })
     window.scrollTo(0, 0)
   }
@@ -459,87 +455,6 @@ function JoinForm({ plan, invite }: JoinProps) {
         </p>
         {summary.payment === 'later' ? (
           <p className="lead">{summary.plan.id === 'daypass' ? COPY.payDayLater : deferredPaymentNote(contractStart) || COPY.payLater}</p>
-        ) : null}
-        {summary.payment === 'transfer' && summary.transfer ? (
-          <div className="transfer-box">
-            {summary.transfer.prorated ? (
-              <p className="lead">
-                Das ist ein <strong>anteiliger Beitrag</strong> für den Rest dieses Monats — nicht der volle
-                Monatsbeitrag. Überweise jetzt{' '}
-                {(summary.transfer.amount / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                {summary.transfer.nextFullDue
-                  ? `, ab dem ${new Date(`${summary.transfer.nextFullDue}T12:00:00`).toLocaleDateString('de-DE', { day: 'numeric', month: 'long', year: 'numeric' })} dann den vollen Monatsbeitrag.`
-                  : ', danach zum 1. den vollen Monatsbeitrag.'}{' '}
-                Den Vertrag schicken wir dir per E-Mail.
-              </p>
-            ) : (
-              <p className="lead">{deferredPaymentNote(contractStart) || COPY.payTransferDone}</p>
-            )}
-            <dl>
-              <div>
-                <dt>{summary.transfer.prorated ? 'Jetzt überweisen (anteilig)' : 'Betrag'}</dt>
-                <dd>
-                  {(summary.transfer.amount / 100).toLocaleString('de-DE', { style: 'currency', currency: 'EUR' })}
-                  {summary.transfer.prorated ? '' : ' (erste Überweisung)'}
-                </dd>
-              </div>
-              {summary.transfer.prorated && summary.transfer.prorateAmount != null ? (
-                <div>
-                  <dt>Anteiliger Beitrag</dt>
-                  <dd>
-                    {(summary.transfer.prorateAmount / 100).toLocaleString('de-DE', {
-                      style: 'currency',
-                      currency: 'EUR',
-                    })}
-                  </dd>
-                </div>
-              ) : null}
-              {summary.transfer.feeAmount ? (
-                <div>
-                  <dt>Aufnahmegebühr</dt>
-                  <dd>
-                    {(summary.transfer.feeAmount / 100).toLocaleString('de-DE', {
-                      style: 'currency',
-                      currency: 'EUR',
-                    })}
-                  </dd>
-                </div>
-              ) : null}
-              {summary.transfer.monthAmount != null ? (
-                <div>
-                  <dt>Voller Monatsbeitrag ab dem nächsten 1.</dt>
-                  <dd>
-                    {(summary.transfer.monthAmount / 100).toLocaleString('de-DE', {
-                      style: 'currency',
-                      currency: 'EUR',
-                    })}
-                  </dd>
-                </div>
-              ) : null}
-              {summary.transfer.purpose ? (
-                <div>
-                  <dt>Verwendungszweck</dt>
-                  <dd>{summary.transfer.purpose}</dd>
-                </div>
-              ) : null}
-              <div>
-                <dt>Kontoinhaber</dt>
-                <dd>{summary.transfer.holder}</dd>
-              </div>
-              <div>
-                <dt>IBAN</dt>
-                <dd>{summary.transfer.iban.replace(/(.{4})/g, '$1 ').trim()}</dd>
-              </div>
-              <div>
-                <dt>BIC</dt>
-                <dd>{summary.transfer.bic}</dd>
-              </div>
-              <div>
-                <dt>Bank</dt>
-                <dd>{summary.transfer.bank}</dd>
-              </div>
-            </dl>
-          </div>
         ) : null}
         {summary.payment === 'unlinked' || !summary.payment ? <p className="lead">{COPY.payUnlinked}</p> : null}
         <article className="contract-sheet">
@@ -917,33 +832,10 @@ function JoinForm({ plan, invite }: JoinProps) {
             ) : null}
             <p className="field-hint">{PRICE_TAX_NOTE}</p>
             {minor ? <p>{COPY.minorLegalNote}</p> : null}
-            <fieldset className="pay-pick">
-              <legend>Zahlungsweise</legend>
-              <label className="check">
-                <input
-                  type="radio"
-                  name="payMethod"
-                  checked={payMethod === 'card' || chosen === 'daypass'}
-                  onChange={() => setPayMethod('card')}
-                />
-                <span>{COPY.payCard}</span>
-              </label>
-              {chosen !== 'daypass' ? (
-                <label className="check">
-                  <input
-                    type="radio"
-                    name="payMethod"
-                    checked={payMethod === 'transfer'}
-                    onChange={() => setPayMethod('transfer')}
-                  />
-                  <span>{COPY.payTransfer}</span>
-                </label>
-              ) : null}
-            </fieldset>
+            <p>
+              <strong>Zahlungsweise:</strong> {COPY.payCard}
+            </p>
             <p>{chosen === 'daypass' ? COPY.payDayNote : deferredPaymentNote(contractStart) || PAYMENT_NOTE}</p>
-            {chosen !== 'daypass' && payMethod === 'transfer' && !contractStart && !minor ? (
-              <p>{COPY.payTransferNote}</p>
-            ) : null}
             {contractStart ? <p>Dein Vertrag beginnt am {germanStart(contractStart)}.</p> : null}
             <label className="check">
               <input type="checkbox" checked={consents.agb} onChange={() => toggleConsent('agb')} />

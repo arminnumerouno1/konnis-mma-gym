@@ -242,14 +242,13 @@ const deskTransfer = await call({
     photoData: DESK_PHOTO,
   },
 })
-assert(deskTransfer.status === 200 && deskTransfer.data.member.payMethod === 'transfer', 'desk member can pay by transfer')
-assert(deskTransfer.data.member.transfer.iban === 'DE77860555921090429270', 'desk transfer stores the gym iban')
-assert(!deskTransfer.data.member.bank, 'desk transfer does not invent a member iban')
-assert(deskTransfer.data.member.docs.payment.name === 'Banküberweisung.pdf', 'desk transfer files the payment notice')
-assert(!deskTransfer.data.member.docs.contract, 'desk contract stays for the signed paper upload')
+assert(deskTransfer.status === 200 && deskTransfer.data.member.payMethod === 'card', 'desk create ignores transfer and uses stripe')
+assert(!deskTransfer.data.member.transfer, 'desk create does not store transfer notice')
+assert(!deskTransfer.data.member.docs?.payment, 'desk create has no bank transfer pdf')
+assert(!deskTransfer.data.member.docs?.contract, 'desk contract stays for the signed paper upload')
 const deskList = await call({ method: 'GET', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' } })
 const lina = deskList.data.members.find((row) => row.email === 'lina.berg@example.com')
-assert(lina && lina.payMethod === 'transfer' && !lina.bankMissing, 'desk transfer is not flagged for missing bank details')
+assert(lina && lina.payMethod === 'card', 'desk member is stored as card')
 
 const pay = await call({
   method: 'POST',
@@ -678,7 +677,9 @@ await signupHandle(
   transferRes.res,
 )
 assert(transferRes.captured.status === 200, `transfer signup accepted ${transferRes.captured.body}`)
-const transferId = JSON.parse(transferRes.captured.body).id
+const transferJoined = JSON.parse(transferRes.captured.body)
+assert(transferJoined.payment === 'checkout' || transferJoined.payment === 'unlinked' || transferJoined.payment === 'later', 'online transfer request becomes stripe')
+const transferId = transferJoined.id
 const bare = memberFromSignup(
   {
     id: 'bare-transfer',
@@ -703,7 +704,7 @@ const bare = memberFromSignup(
   },
   '2026-10-03',
 )
-assert(!bankMissing(bare), 'transfer member does not need a sepa mandate')
+assert(!bankMissing(bare), 'legacy transfer member does not need a sepa mandate')
 const cardOnly = memberFromSignup(
   {
     ...bare,
@@ -726,16 +727,16 @@ await store.update((db) => {
 })
 const transferList = await call({ method: 'GET', url: '/api/admin', headers: { cookie }, socket: { remoteAddress: '10.0.0.3' } })
 const heiko = transferList.data.members.find((row) => row.id === transferId)
-assert(heiko && heiko.payMethod === 'transfer' && !heiko.bankMissing, 'transfer signup is not flagged for missing bank details')
+assert(heiko && heiko.payMethod === 'card' && !heiko.bankMissing, 'online transfer request is stored as card')
 const heikoDetail = await call({
   method: 'GET',
   url: `/api/admin?id=${transferId}`,
   headers: { cookie },
   socket: { remoteAddress: '10.0.0.3' },
 })
-assert(heikoDetail.data.member.docs.contract.name === 'Mitgliedsvertrag.pdf', 'transfer detail has the contract')
-assert(heikoDetail.data.member.docs.payment.name === 'Banküberweisung.pdf', 'transfer detail has the payment notice')
-assert(heikoDetail.data.member.transfer.iban === 'DE77860555921090429270', 'gym iban on the member')
+assert(heikoDetail.data.member.docs.contract.name === 'Mitgliedsvertrag.pdf', 'card detail has the contract')
+assert(!heikoDetail.data.member.docs.payment, 'new signup has no bank transfer notice')
+assert(!heikoDetail.data.member.transfer, 'new signup has no gym transfer payload')
 const backfill = await call({
   method: 'GET',
   url: '/api/admin?id=bare-transfer',
@@ -938,7 +939,8 @@ assert(
 const posted = new URLSearchParams(capturedCheckout.at(-1) || '')
 assert(posted.get('mode') === 'subscription', 'admin link opens subscription')
 assert(posted.get('line_items[0][price_data][unit_amount]') === '8999', 'first50 cents')
-assert(posted.get('payment_method_types[0]') === 'card' && !posted.get('payment_method_types[1]'), 'card only')
+assert(posted.get('payment_method_types[0]') === 'card', 'card payment type')
+assert(posted.get('payment_method_types[1]') === 'sepa_debit', 'sepa debit payment type')
 assert(posted.get('line_items[0][price_data][recurring][interval]') === 'month', 'monthly')
 
 const dropId = fresh.data.member.id

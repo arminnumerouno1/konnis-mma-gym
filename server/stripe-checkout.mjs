@@ -209,6 +209,7 @@ export function buildCheckoutFields({ member, origin, nowMs = Date.now(), confir
     'metadata[memberId]': member.id,
     'metadata[plan]': member.plan,
     'payment_method_types[0]': 'card',
+    'payment_method_types[1]': 'sepa_debit',
     'line_items[0][quantity]': '1',
     'line_items[0][price_data][currency]': 'eur',
     'line_items[0][price_data][unit_amount]': String(cents),

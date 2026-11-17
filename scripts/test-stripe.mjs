@@ -6,7 +6,6 @@ import { checkoutSettled } from '../server/contract-mail.mjs'
 import { createMembershipHandler } from '../server/membership.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
 import { createStripeHandler } from '../server/stripe.mjs'
-import { GYM_BANK } from '../server/gym-bank.mjs'
 import {
   PLAN_CENTS,
   berlinMidnightUnix,
@@ -55,7 +54,7 @@ assert(earlyFields.fields['line_items[0][price_data][unit_amount]'] === '9999', 
 assert(earlyFields.fields.mode === 'subscription', 'subscription mode')
 assert(earlyFields.fields['metadata[memberId]'] === 'mem_1', 'member metadata')
 assert(earlyFields.fields['payment_method_types[0]'] === 'card', 'card enables apple pay')
-assert(!earlyFields.fields['payment_method_types[1]'], 'no sepa debit')
+assert(earlyFields.fields['payment_method_types[1]'] === 'sepa_debit', 'sepa debit enabled')
 
 const close = nov1 * 1000 - 47 * 60 * 60 * 1000
 const closePlan = checkoutSchedule(close, { plan: 'flex' })
@@ -118,8 +117,8 @@ const openedSession = await createCheckoutSession({
 assert(openedSession.ok && openedSession.url.includes('checkout.stripe.com'), 'card checkout opens')
 assert(seen.length === 1, 'checkout is requested once')
 const postedCheckout = new URLSearchParams(seen[0] || '')
-assert(postedCheckout.get('payment_method_types[0]') === 'card' && !postedCheckout.get('payment_method_types[1]'), 'card only, no sepa')
-assert(![...postedCheckout.values()].includes('sepa_debit'), 'sepa is not requested')
+assert(postedCheckout.get('payment_method_types[0]') === 'card', 'card payment type')
+assert(postedCheckout.get('payment_method_types[1]') === 'sepa_debit', 'sepa debit payment type')
 assert(postedCheckout.get('customer') === 'cus_abc12345' && !postedCheckout.get('customer_email'), 'existing customer is reused')
 assert(postedCheckout.get('success_url')?.includes('session_id={CHECKOUT_SESSION_ID}'), 'return can confirm the session')
 assert(postedCheckout.get('cancel_url')?.includes('zahlung=abgebrochen'), 'cancel url stays on the site')
@@ -208,7 +207,12 @@ const bankHandle = createMembershipHandler({
   env: { SIGNUP_OPEN: 'true', STRIPE_SECRET_KEY: 'sk_test_example', MEMBERSHIP_MAIL: 'false' },
   fetchImpl: async (url, init) => {
     bankCalls.push({ url: String(url), method: init?.method || 'GET', body: String(init?.body || '') })
-    return { ok: true, async json() { return { id: 'unused' } } }
+    return {
+      ok: true,
+      async json() {
+        return { id: 'cs_transfer_ignored', url: 'https://checkout.stripe.com/c/pay/cs_transfer_ignored' }
+      },
+    }
   },
 })
 const bankRes = mockRes()
@@ -239,34 +243,18 @@ await bankHandle(
   bankRes.res,
 )
 const bankJoined = JSON.parse(bankRes.captured.body)
-assert(bankRes.captured.status === 200 && bankJoined.payment === 'transfer', 'signup returns transfer')
-assert(bankJoined.transfer.iban === GYM_BANK.iban, 'gym iban returned')
-assert(bankJoined.transfer.bic === 'WELADE8LXXX', 'sparkasse bic')
-assert(bankJoined.transfer.holder === 'KONNI MMA GYM GbR', 'gym holder')
-assert(bankJoined.transfer.bank === GYM_BANK.bank, 'sparkasse name')
-assert(Number.isFinite(bankJoined.transfer.amount) && bankJoined.transfer.amount > 0, 'transfer amount in cents')
-assert(bankJoined.transfer.monthAmount === 9999, 'full month cents stored')
-assert(typeof bankJoined.transfer.purpose === 'string' && bankJoined.transfer.purpose.includes('KONNI'), 'purpose set')
-assert(typeof bankJoined.transfer.prorated === 'boolean', 'prorated flag set')
-if (bankJoined.transfer.prorated) {
-  assert(bankJoined.transfer.prorateAmount < 9999, 'mid-month share is below full month')
-  assert(bankJoined.transfer.nextFullDue && /-01$/.test(bankJoined.transfer.nextFullDue), 'next full due is a 1st')
-}
-assert(!bankJoined.checkoutUrl, 'transfer does not open card checkout')
-assert(bankCalls.length === 0, 'transfer does not call stripe')
+assert(bankRes.captured.status === 200 && bankJoined.payment === 'checkout', 'payMethod transfer is ignored for stripe checkout')
+assert(bankJoined.checkoutUrl?.includes('checkout.stripe.com'), 'transfer request still opens stripe')
+assert(!bankJoined.transfer, 'no transfer payload on new signup')
+assert(bankCalls.length === 1, 'stripe checkout is created')
 const bankDb = await createMemberStore({ dataDir: bankDir, env: {} }).load()
 const bankStored = bankDb.members.find((row) => row.id === bankJoined.id)
-assert(bankStored.payMethod === 'transfer', 'member pay method stored')
-assert(bankStored.transfer.iban === GYM_BANK.iban, 'gym iban stored')
-assert(bankStored.transfer.amount === bankJoined.transfer.amount, 'stored amount matches response')
-assert(bankStored.transfer.purpose === bankJoined.transfer.purpose, 'purpose stored')
-assert(!bankStored.stripe?.subscriptionId, 'no stripe subscription for transfer')
+assert(bankStored.payMethod === 'card', 'member pay method stored as card')
+assert(!bankStored.transfer, 'no gym transfer notice stored')
 assert(bankStored.docs?.contract?.name === 'Mitgliedsvertrag.pdf', 'signed contract stored')
-assert(bankStored.docs?.payment?.name === 'Banküberweisung.pdf', 'transfer notice stored')
+assert(!bankStored.docs?.payment, 'no bank transfer notice on new signup')
 const contractFile = await createMemberStore({ dataDir: bankDir, env: {} }).getDoc(bankStored.docs.contract.path)
-const paymentFile = await createMemberStore({ dataDir: bankDir, env: {} }).getDoc(bankStored.docs.payment.path)
 assert(contractFile?.subarray(0, 5).toString() === '%PDF-', 'contract file is a pdf')
-assert(paymentFile?.subarray(0, 5).toString() === '%PDF-', 'transfer notice is a pdf')
 
 assert(checkoutSettled({ object: 'checkout.session', status: 'open', payment_status: 'unpaid' }) === false, 'open checkout is not settled')
 assert(checkoutSettled({ object: 'checkout.session', status: 'expired', payment_status: 'unpaid' }) === false, 'expired checkout is not settled')
@@ -478,6 +466,7 @@ try {
   assert(smtpCount() === 2, 'return confirm stays quiet')
 
   const transferRes = mockRes()
+  const beforeTransferMail = smtpCount()
   await mailHandle(
     {
       method: 'POST',
@@ -489,10 +478,12 @@ try {
     transferRes.res,
   )
   const transferJoined = JSON.parse(transferRes.captured.body)
-  assert(transferRes.captured.status === 200 && transferJoined.payment === 'transfer', 'transfer signup has no stripe step')
-  assert(smtpCount() === 4, 'transfer mails the contract immediately')
+  assert(transferRes.captured.status === 200 && transferJoined.payment === 'checkout', 'transfer request still opens stripe')
+  assert(transferJoined.checkoutUrl?.includes('checkout.stripe.com'), 'transfer request returns checkout url')
+  assert(smtpCount() === beforeTransferMail, 'stripe signup does not mail contract before payment')
   const transferMember = (await createMemberStore({ dataDir: mailDir, env: {} }).load()).members.find((row) => row.id === transferJoined.id)
-  assert(transferMember.contractMail === 'sent', 'transfer mail is marked sent')
+  assert(transferMember.payMethod === 'card', 'transfer request stores card pay method')
+  assert(transferMember.contractMail === 'after_payment', 'contract mail waits for stripe payment')
 } finally {
   globalThis.fetch = previousFetch
 }

@@ -3,10 +3,9 @@ import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
 import { inviteRevoked, inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, storedContractTerm, verifyInvite } from './invite.mjs'
 import { memberBillingStart, membershipTaken } from './member-model.mjs'
-import { sendGuardianMandateEmail, sendMembershipEmails } from './membership-mail.mjs'
+import { sendGuardianMandateEmail } from './membership-mail.mjs'
 import { claimSignup, createMemberStore } from './member-store.mjs'
 import { attachSignupDocs } from './signup-docs.mjs'
-import { buildTransferPayload } from './transfer-due.mjs'
 import { createCheckoutSession, siteOrigin } from './stripe-checkout.mjs'
 import { trainingHasStarted } from './opening.mjs'
 import { signupFeeFor } from './signup-fee.mjs'
@@ -251,8 +250,9 @@ export function validateMembership(body, ctx = {}) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(visitDay)) return { ok: false, error: 'visit' }
   }
 
-  const payMethod = body.payMethod === 'transfer' ? 'transfer' : 'card'
-  if (payMethod === 'transfer' && plan === 'daypass') return { ok: false, error: 'pay' }
+  // Neue Online-Abschlüsse nur noch über Stripe (Karte / Apple Pay / SEPA).
+  // Banküberweisung bleibt für Bestand, wird hier nicht mehr angenommen.
+  const payMethod = 'card'
 
   const meta = PLAN_META[plan]
   const signedDay = new Date().toISOString().slice(0, 10)
@@ -436,42 +436,6 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     return { payment: 'checkout', checkoutUrl: session.url, billingStart: session.billingStart }
   }
 
-  async function startBankTransfer(record, nowMs = Date.now()) {
-    const transfer = buildTransferPayload(record, nowMs)
-    try {
-      await members.update((db) => {
-        const index = db.members.findIndex((row) => row.id === record.id)
-        if (index < 0) return db
-        const current = db.members[index]
-        let payments = Array.isArray(current.payments) ? current.payments : []
-        if (transfer.prorated && transfer.firstDueDate) {
-          const period = transfer.firstDueDate.slice(0, 7)
-          payments = payments.map((row) =>
-            row.kind === 'month' && row.period === period && row.status !== 'paid'
-              ? {
-                  ...row,
-                  amount: transfer.prorateAmount / 100,
-                  note: row.note || 'Anteiliger Erstmonat',
-                }
-              : row,
-          )
-        }
-        db.members[index] = {
-          ...current,
-          payMethod: 'transfer',
-          transfer,
-          payments,
-          updatedAt: new Date().toISOString(),
-        }
-        return db
-      })
-    } catch (error) {
-      console.error('[mitglied] bank transfer save failed', error)
-    }
-    const billingStart = transfer.prorated ? transfer.nextFullDue : transfer.firstDueDate
-    return { payment: 'transfer', billingStart, transfer }
-  }
-
   async function runMembership(req, res) {
     if (req.method === 'OPTIONS') {
       res.statusCode = 204
@@ -613,12 +577,10 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
     }
 
     const record = checked.record
-    // U18: Zahlungsart merken, aber weder Stripe noch Überweisungsaufforderung bis Elternvollmacht da ist.
+    // U18: weder Stripe noch Abbuchung bis Elternvollmacht da ist.
     const stored = record.minor
       ? { ...record, contractMail: 'guardian_pending' }
-      : record.payMethod === 'transfer'
-        ? record
-        : { ...record, contractMail: 'after_payment' }
+      : { ...record, contractMail: 'after_payment' }
     let claimed
     try {
       claimed = await claimSignup(members, stored)
@@ -692,40 +654,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
         }
       }
     } else {
-      payment =
-        record.payMethod === 'transfer' ? await startBankTransfer(record) : await startStripeCheckout(req, record)
-      const mailRecord =
-        record.payMethod === 'transfer' && payment.transfer
-          ? { ...record, payMethod: 'transfer', transfer: payment.transfer }
-          : record
-
-      if (isMembershipMailOpen(env) && record.payMethod === 'transfer') {
-        try {
-          // Code sollte schon beim Anlegen gesetzt sein — absichern, damit die Vertragsmail ihn enthält.
-          const fresh = await members.load()
-          const storedMember = fresh.members.find((row) => row.id === record.id) || mailRecord
-          const mailed = await sendMembershipEmails(env, {
-            ...mailRecord,
-            checkinCode: storedMember.checkinCode || mailRecord.checkinCode,
-          })
-          if (mailed.member !== 'skipped') {
-            const at = new Date().toISOString()
-            await members.update((db) => {
-              const index = db.members.findIndex((row) => row.id === record.id)
-              if (index < 0) return db
-              db.members[index] = {
-                ...db.members[index],
-                contractMail: 'sent',
-                contractMailAt: at,
-                ...(mailed.checkinCodeIncluded ? { checkinCodeMailAt: at } : {}),
-              }
-              return db
-            })
-          }
-        } catch (error) {
-          console.error('[mitglied] mail failed', error)
-        }
-      }
+      payment = await startStripeCheckout(req, record)
     }
 
     json(res, 200, {
@@ -736,7 +665,6 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
       payment: payment.payment,
       ...(payment.checkoutUrl ? { checkoutUrl: payment.checkoutUrl } : {}),
       ...(payment.billingStart ? { billingStart: payment.billingStart } : {}),
-      ...(payment.transfer ? { transfer: payment.transfer } : {}),
     })
   }
 }

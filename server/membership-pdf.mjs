@@ -279,10 +279,10 @@ function contractParagraphs(record) {
     access,
     record.payMethod === 'transfer'
       ? `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst per Banküberweisung auf das Konto der ${GYM_BANK.holder}. ${account}. Die erste Überweisung ist am ${when} fällig. Aufnahmegebühr: ${feeEuro}.`
-      : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Die erste Abbuchung ist am ${when} fällig. Aufnahmegebühr: ${feeEuro}. Banküberweisung ist ebenfalls möglich: ${account}.`,
+      : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Die erste Abbuchung ist am ${when} fällig. Aufnahmegebühr: ${feeEuro}.`,
     record.payMethod === 'transfer'
-      ? 'Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Karte oder Apple Pay über Stripe ist die andere Zahlungsart. SEPA-Lastschrift kommt später und ist in diesem Vertrag nicht erteilt. Kommt eine Überweisung nicht an, gelten die Regeln zum Zahlungsverzug.'
-      : 'Kartenzahlung läuft über Stripe. Banküberweisung auf das oben genannte Konto ist ebenfalls möglich. SEPA-Lastschrift kommt später. Ein Lastschriftmandat gibt es nur, wenn das extra vereinbart wird. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.',
+      ? 'Ein Dauerauftrag auf dasselbe Konto deckt die folgenden Monate. Karte, Apple Pay oder SEPA-Lastschrift über Stripe ist die andere Zahlungsart. Kommt eine Überweisung nicht an, gelten die Regeln zum Zahlungsverzug.'
+      : 'Die Zahlung läuft über Stripe (Karte, Apple Pay oder SEPA-Lastschrift). Das SEPA-Lastschriftmandat wird im Stripe-Checkout erteilt. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe berechnet werden.',
     termLine,
     'Hausordnung gilt. Eigenverantwortliche Gesundheitsprüfung. Haftung nach Gesetz. Minderjährige brauchen die Zustimmung aller erforderlichen gesetzlichen Vertreter. AGB Stand 22.10.2026 und Hausordnung sind Teil des Vertrags.',
   ]
@@ -491,7 +491,7 @@ async function buildPaperContractPdf(record, creditorId, { returnCopy = false } 
   if (record.plan !== 'daypass' && record.payMethod === 'transfer') {
     writer.heading('5. Zahlungsart Banküberweisung')
     writer.para(
-      'Das Mitglied überweist den Beitrag selbst. SEPA-Lastschrift kommt später und wird mit diesem Vertrag nicht erteilt.',
+      'Das Mitglied überweist den Beitrag selbst. SEPA-Lastschrift über Stripe ist die andere Zahlungsart und wird mit diesem Vertrag nicht erteilt.',
     )
     writer.kv('Kontoinhaber', GYM_BANK.holder)
     writer.kv('IBAN', spaceGymIban(GYM_BANK.iban))
@@ -499,21 +499,30 @@ async function buildPaperContractPdf(record, creditorId, { returnCopy = false } 
     writer.kv('Bank', GYM_BANK.bank)
     writer.para(`Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisung ist am ${chargeLabel(record)} fällig.`)
   } else if (record.plan !== 'daypass') {
-    writer.heading('5. SEPA-Lastschriftmandat')
+    writer.heading('5. Zahlung über Stripe')
     writer.para(
-      `Banküberweisung ist jetzt möglich auf ${GYM_BANK.holder}, IBAN ${spaceGymIban(GYM_BANK.iban)}, BIC ${GYM_BANK.bic}, ${GYM_BANK.bank}. SEPA-Lastschrift kommt später. Dieses Mandat nur ausfüllen, wenn die Lastschrift extra vereinbart wird.`,
+      'Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Bei SEPA-Lastschrift erteilst du das Mandat im Stripe-Checkout; ein separates Papier-Mandat ist nicht erforderlich.',
     )
     writer.kv('Zahlungsempfänger', 'KONNI MMA GYM GbR, Wittenberger Straße 15, 04129 Leipzig')
-    writer.kv('Gläubiger-Identifikationsnummer', creditorId || 'wird vor dem ersten Einzug mitgeteilt')
-    writer.kv('Mandatsreferenz', bank.mandateRef || blank)
-    writer.kv('Kontoinhaber/in', bank.holder || blank)
-    writer.kv('IBAN', bank.iban ? spacedIban(bank.iban) : blank)
-    writer.kv('BIC', bank.bic || (bank.iban ? 'nicht nötig bei deutscher IBAN' : blank))
-    writer.para(
-      'Ich ermächtige die KONNI MMA GYM GbR, Zahlungen von meinem Konto mittels Lastschrift einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von der KONNI MMA GYM GbR auf mein Konto gezogenen Lastschriften einzulösen. Hinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem Kreditinstitut vereinbarten Bedingungen.',
-    )
-    writer.para(`Ort, Datum: ${record.place || 'Leipzig'}, ${captured && bank.mandateSignature ? formatWhen(record.createdAt) || formatIsoDate(record.createdAt) : blank}`)
-    signLine(writer, `Unterschrift Kontoinhaber/in${bank.holder ? ` (${bank.holder})` : ''}`, captured ? bank.mandateSignature : '')
+    writer.para(`Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am ${chargeLabel(record)} fällig.`)
+    if (bank.iban || bank.mandateSignature) {
+      writer.gap(6)
+      writer.para(
+        'Zusätzliche Kontodaten (falls vor Ort erfasst). Das verbindliche SEPA-Mandat entsteht bei Stripe, sofern Lastschrift gewählt wird.',
+      )
+      writer.kv('Gläubiger-Identifikationsnummer', creditorId || 'wird vor dem ersten Einzug mitgeteilt')
+      writer.kv('Mandatsreferenz', bank.mandateRef || blank)
+      writer.kv('Kontoinhaber/in', bank.holder || blank)
+      writer.kv('IBAN', bank.iban ? spacedIban(bank.iban) : blank)
+      writer.kv('BIC', bank.bic || (bank.iban ? 'nicht nötig bei deutscher IBAN' : blank))
+      if (bank.mandateSignature) {
+        writer.para(
+          'Ich ermächtige die KONNI MMA GYM GbR, Zahlungen von meinem Konto mittels Lastschrift einzuziehen. Zugleich weise ich mein Kreditinstitut an, die von der KONNI MMA GYM GbR auf mein Konto gezogenen Lastschriften einzulösen. Hinweis: Ich kann innerhalb von acht Wochen, beginnend mit dem Belastungsdatum, die Erstattung des belasteten Betrages verlangen. Es gelten dabei die mit meinem Kreditinstitut vereinbarten Bedingungen.',
+        )
+        writer.para(`Ort, Datum: ${record.place || 'Leipzig'}, ${captured ? formatWhen(record.createdAt) || formatIsoDate(record.createdAt) : blank}`)
+        signLine(writer, `Unterschrift Kontoinhaber/in${bank.holder ? ` (${bank.holder})` : ''}`, captured ? bank.mandateSignature : '')
+      }
+    }
   }
 
   return writer.bytes()
@@ -669,7 +678,7 @@ export async function buildGuardianMandatePdf(record) {
   writer.kv('E-Mail', 'info@mma-in-leipzig.de')
   writer.kv('Telefon', '+49 1522 1872354')
   writer.para(
-    'Ohne diese unterschriebene Vollmacht kommt kein wirksamer Mitgliedsvertrag mit einem Minderjährigen zustande. Bis die vollständige, unterschriebene Vollmacht beim Studio vorliegt, findet kein Training statt und es wird nichts abgebucht (weder Karte/Apple Pay noch Überweisungspflicht noch Lastschrift).',
+    'Ohne diese unterschriebene Vollmacht kommt kein wirksamer Mitgliedsvertrag mit einem Minderjährigen zustande. Bis die vollständige, unterschriebene Vollmacht beim Studio vorliegt, findet kein Training statt und es wird nichts abgebucht (weder Karte/Apple Pay noch SEPA-Lastschrift über Stripe noch Überweisungspflicht).',
   )
 
   writer.heading('1. Minderjähriges Mitglied')
@@ -686,7 +695,7 @@ export async function buildGuardianMandatePdf(record) {
     writer.kv('Aufnahmegebühr', `${Number(record.fee ?? 0).toFixed(2).replace('.', ',')} EUR`)
   }
   const byTransfer = record.payMethod === 'transfer'
-  writer.kv('Gewünschte Zahlungsart', byTransfer ? 'Banküberweisung' : 'Karte / Apple Pay (Stripe)')
+  writer.kv('Gewünschte Zahlungsart', byTransfer ? 'Banküberweisung' : 'Karte / Apple Pay / SEPA-Lastschrift (Stripe)')
   writer.kv('Beginn', formatIsoDate(record.startDate) || 'laut Vertrag')
   if (byTransfer) {
     writer.gap(4)
@@ -701,7 +710,7 @@ export async function buildGuardianMandatePdf(record) {
     if (record.transfer?.purpose) writer.kv('Verwendungszweck', record.transfer.purpose)
   } else {
     writer.para(
-      'Zahlung mit Karte oder Apple Pay: Nach Freigabe der Vollmacht schickt das Studio einen Stripe-Zahlungslink. Bis dahin wird nichts abgebucht.',
+      'Zahlung mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe: Nach Freigabe der Vollmacht schickt das Studio einen Stripe-Zahlungslink. Bis dahin wird nichts abgebucht.',
     )
   }
 
@@ -726,7 +735,7 @@ export async function buildGuardianMandatePdf(record) {
     )
   } else {
     writer.para(
-      'Ich / wir ermächtige / ermächtigen die KONNI MMA GYM GbR, nach Vorliegen dieser unterschriebenen Vollmacht den Mitgliedsbeitrag und ggf. die Aufnahmegebühr per Karte oder Apple Pay über Stripe einzuziehen. Bis dahin darf nichts abgebucht werden.',
+      'Ich / wir ermächtige / ermächtigen die KONNI MMA GYM GbR, nach Vorliegen dieser unterschriebenen Vollmacht den Mitgliedsbeitrag und ggf. die Aufnahmegebühr per Karte, Apple Pay oder SEPA-Lastschrift über Stripe einzuziehen. Bis dahin darf nichts abgebucht werden.',
     )
   }
   writer.para(

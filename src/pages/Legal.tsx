@@ -291,15 +291,12 @@ function Contract({ months }: { months: 6 | 12 | 24 }) {
         <p>{CONTRACT_ACCESS.unlimited}</p>
       )}
       <p>
-        Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe,
-        oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC
-        WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. Aufnahmegebühr: 19,99 €. Alle Preise sind Endpreise inkl.
-        gesetzlicher Umsatzsteuer.
+        Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift
+        über Stripe. Aufnahmegebühr: 19,99 €. Alle Preise sind Endpreise inkl. gesetzlicher Umsatzsteuer.
       </p>
       <p>
-        SEPA-Lastschrift kommt später und ist derzeit nicht eingerichtet. Ein Lastschriftmandat gibt es nur, wenn das
-        extra vereinbart wird. Rücklastschriftkosten, die du zu vertreten hast, können in tatsächlich entstandener Höhe
-        berechnet werden.
+        Bei SEPA-Lastschrift erteilst du das Mandat im Stripe-Checkout. Rücklastschriftkosten, die du zu vertreten hast,
+        können in tatsächlich entstandener Höhe berechnet werden.
       </p>
       <h2>3. Laufzeit und Kündigung</h2>
       <p>
