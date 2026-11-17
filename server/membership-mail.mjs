@@ -119,11 +119,9 @@ Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Überweisu
 ${accountLines()}<br>
 SEPA-Lastschrift kommt später.</p>`
   }
-  return `<p><strong>Deine Zahlungsart: Karte oder Apple Pay</strong><br>
+  return `<p><strong>Deine Zahlungsart: Karte, Apple Pay oder SEPA-Lastschrift</strong><br>
 Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am ${dueOn(record)}.<br>
-Banküberweisung ist ebenfalls möglich:<br>
-${accountLines()}<br>
-SEPA-Lastschrift kommt später.</p>`
+Die Zahlung läuft über Stripe. Bei SEPA-Lastschrift erteilst du das Mandat im Checkout.</p>`
 }
 
 function memberLead(record, { attached = false } = {}) {
@@ -249,12 +247,12 @@ ${guardian}
 ${bankBlock(record)}
 <p>${
   record.plan === 'daypass'
-    ? 'Der Day Pass wird mit Karte oder Apple Pay bezahlt.'
+    ? 'Der Day Pass wird mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe bezahlt.'
     : record.payMethod === 'transfer'
       ? record.transfer?.prorated
         ? 'Bitte überweise den oben genannten <strong>anteiligen Beitrag</strong> selbst auf das Konto. Ab dem nächsten 1. dann den vollen Monatsbeitrag.'
         : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du überweist ihn selbst auf das Konto oben.'
-      : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay über Stripe. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später.'
+      : 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe.'
 }</p>
 <p>AGB Stand 22. Oktober 2026 und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.</p>
 ${forGym ? '' : files}
@@ -350,7 +348,7 @@ ${monthLine}
 <p><strong>Konto</strong><br>
 ${accountLines()}<br>
 Verwendungszweck: <strong>${purpose}</strong></p>
-<p>SEPA-Lastschrift kommt später. Wenn etwas unklar ist, einfach kurz an info@mma-in-leipzig.de schreiben.</p>
+<p>Wenn etwas unklar ist, einfach kurz an info@mma-in-leipzig.de schreiben.</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
 </div>`
 }

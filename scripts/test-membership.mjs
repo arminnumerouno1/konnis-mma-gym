@@ -199,7 +199,7 @@ const day = validateMembership({ ...base, plan: 'daypass', visitDay: '2026-10-02
 assert(!day.ok && day.error === 'plan', 'day pass is not offered online')
 
 const transfer = validateMembership({ ...base, payMethod: 'transfer' }, {})
-assert(transfer.ok && transfer.record?.payMethod === 'transfer', 'monthly bank transfer')
+assert(transfer.ok && transfer.record?.payMethod === 'card', 'transfer request becomes stripe card')
 const transferDay = validateMembership({ ...base, plan: 'daypass', visitDay: '2026-11-02', payMethod: 'transfer' }, {})
 assert(!transferDay.ok && transferDay.error === 'plan', 'day pass stays closed online')
 
@@ -281,8 +281,10 @@ const standardMail = membershipCopyHtml({
   checkinCode: 'R7GH7D',
 })
 assert(standardMail.includes('Willkommen') && !standardMail.includes('einer der Ersten'), 'standard welcome')
-assert(standardMail.includes('DE77 8605 5592 1090 4292 70'), 'card mail names the transfer account')
-assert(standardMail.includes('SEPA-Lastschrift kommt später'), 'card mail says sepa comes later')
+assert(standardMail.includes('SEPA-Lastschrift'), 'card mail names sepa debit')
+assert(standardMail.includes('Stripe'), 'card mail names stripe')
+assert(!standardMail.includes('SEPA-Lastschrift kommt später'), 'card mail no longer delays sepa')
+assert(!standardMail.includes('Banküberweisung ist ebenfalls möglich'), 'card mail drops bank transfer offer')
 assert(standardMail.includes('Aufnahmegebühr') && standardMail.includes('0,00 €'), 'mail states the signup fee amount')
 assert(standardMail.includes('Mitgliedsvertrag') || standardMail.includes('Vertrag'), 'card mail mentions the contract')
 assert(
@@ -321,7 +323,7 @@ const dayMail = membershipCopyHtml({
   payMethod: 'card',
 })
 assert(!dayMail.includes('Aufnahmegebühr') && !dayMail.includes('49 €'), 'day pass mail has no signup fee')
-assert(dayMail.includes('Day Pass wird mit Karte oder Apple Pay bezahlt'), 'day pass mail names card payment')
+assert(dayMail.includes('Day Pass wird mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe bezahlt'), 'day pass mail names stripe payment')
 
 const sample = {
   firstName: 'Anna',
@@ -355,9 +357,9 @@ assert(contractPdf.getPageCount() >= 1, 'contract pages')
 assert(String(contractPdf.getTitle() || '').includes('Mitgliedsvertrag'), 'contract title')
 assert(String(contractPdf.getSubject() || '').includes('Anna Müller'), 'contract subject')
 const contractText = pdfText(contractBytes)
-assert(contractText.includes('DE77') && contractText.includes('8605') && contractText.includes('4292 70'), 'card contract contains the gym iban')
-assert(contractText.includes('WELADE8LXXX'), 'card contract contains the bic')
-assert(contractText.includes('SEPA-Lastschrift kommt später'), 'card contract says sepa comes later')
+assert(contractText.includes('SEPA-Lastschrift') && contractText.includes('Stripe'), 'card contract names sepa via stripe')
+assert(!contractText.includes('SEPA-Lastschrift kommt später'), 'card contract no longer delays sepa')
+assert(!contractText.includes('Banküberweisung ist ebenfalls möglich'), 'card contract drops bank transfer offer')
 assert(contractText.includes('Aufnahmegebühr') && contractText.includes('0,00 EUR'), 'signup fee amount is on the contract')
 assert(contractText.includes('Vorher gibt es kein Training'), 'contract refuses training before start')
 assert(contractText.includes('mehr als 50 Kilometer') && contractText.includes('Meldebescheinigung'), 'contract states the 50 km relocation right')

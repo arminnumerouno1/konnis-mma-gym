@@ -163,7 +163,7 @@ export const SIGNUP_FEE_FREE_UNTIL = '2026-11-02'
 /** Erste volle Monatsabbuchung. Muss zu server/stripe-checkout.mjs BILLING_START passen. */
 export const FIRST_CHARGE = '2026-11-01'
 export const PAYMENT_NOTE =
-  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 19,99 €. Alle Preise sind Endpreise inkl. gesetzlicher Umsatzsteuer.'
+  'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Aufnahmegebühr 19,99 €. Alle Preise sind Endpreise inkl. gesetzlicher Umsatzsteuer.'
 
 /** Kurzhinweis für Preisstellen (Karten, Join, Fußzeilen). */
 export const PRICE_TAX_NOTE = 'Endpreise inkl. gesetzlicher Umsatzsteuer (MwSt.).'

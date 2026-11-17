@@ -536,7 +536,8 @@ function createDeskMember(body, today) {
   if (minor && !body.guardian) return { ok: false, error: 'guardian' }
   const guardianRead = readGuardian(body.guardian, null, minor)
   if (!guardianRead.ok) return guardianRead
-  const payMethod = plan !== 'daypass' && body.payMethod === 'transfer' ? 'transfer' : 'card'
+  // Neue Tresen-Anmeldungen nur noch Stripe (Karte / Apple Pay / SEPA). Transfer bleibt Bestand.
+  const payMethod = 'card'
   const holderFallback = minor ? guardianRead.guardian.name : `${firstName} ${lastName}`
   const bankRead =
     plan === 'daypass' || payMethod === 'transfer' ? { ok: true, bank: null } : readBank(body.bank, null, id, holderFallback)

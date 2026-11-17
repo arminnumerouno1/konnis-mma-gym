@@ -133,7 +133,7 @@ export const COPY = {
   signupFeePrice: '19,99€',
   signupFeeLabel: 'Anmeldegebühr\neinmalig',
   priceFoot:
-    'Karte oder Apple Pay, oder Banküberweisung auf das Konto der KONNI MMA GYM GbR. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. Anmeldegebühr 19,99 €. Alle Beträge sind Endpreise inkl. gesetzlicher Umsatzsteuer.',
+    'Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Beitrag jeweils zum 1. Anmeldegebühr 19,99 €. Alle Beträge sind Endpreise inkl. gesetzlicher Umsatzsteuer.',
   priceTaxNote: 'Endpreis inkl. MwSt.',
   planNoteYouth:
     'Sparring und intensives Kontakttraining können altersabhängig eingeschränkt werden. Trainer entscheiden vor Ort.',
@@ -282,25 +282,25 @@ export const COPY = {
   next: 'Weiter',
   successTitle: 'Anmeldung ist raus.',
   successLead:
-    'Wir haben deinen Vertrag. Bei Banküberweisung gehen die PDF-Kopie und die Widerrufsbelehrung an deine Mail. Bei Karte oder Apple Pay erst, wenn die Zahlung bei Stripe abgeschlossen ist. Unten die Zusammenfassung. Widerruf: 14 Tage.',
+    'Wir haben deinen Vertrag. Die PDF-Kopie und die Widerrufsbelehrung gehen an deine Mail, sobald die Zahlung bei Stripe (Karte, Apple Pay oder SEPA-Lastschrift) abgeschlossen ist. Unten die Zusammenfassung. Widerruf: 14 Tage.',
   payTransfer: 'Banküberweisung',
-  payCard: 'Karte oder Apple Pay',
+  payCard: 'Karte, Apple Pay oder SEPA-Lastschrift',
   payTransferNote:
-    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Kontodaten stehen nach dem Abschluss hier, im Vertrag und in der E-Mail. SEPA-Lastschrift kommt später.',
+    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe.',
   payTransferDone:
-    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Überweise auf das Konto der KONNI MMA GYM GbR. Den Vertrag schicken wir dir per E-Mail. SEPA-Lastschrift kommt später.',
+    'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Den Vertrag schicken wir dir per E-Mail.',
   payLater:
     'Deine Anmeldung ist da. Abgebucht wird zum 1. des Monats. Den Link zur Zahlung schicken wir dir.',
   payDayLater:
     'Dein Day Pass ist gespeichert. Die Zahlung läuft über Stripe.',
   payDayNote:
-    'Der Day Pass ist eine Tageskarte für 19,99 €. Es gibt keine Anmeldegebühr. Du zahlst mit Karte oder Apple Pay.',
+    'Der Day Pass ist eine Tageskarte für 19,99 €. Es gibt keine Anmeldegebühr. Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe.',
   payUnlinked:
     'Deine Anmeldung ist da. Der Zahlungslink konnte gerade nicht erzeugt werden. Wir schicken ihn dir.',
   payReturnOk:
-    'Danke. Dein Vertrag ist gespeichert und liegt in der E-Mail. Beitrag jeweils zum 1. des Monats. Banküberweisung ist ebenfalls möglich. SEPA-Lastschrift kommt später.',
+    'Danke. Dein Vertrag ist gespeichert und liegt in der E-Mail. Beitrag jeweils zum 1. des Monats. Zahlung mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe.',
   payReturnOkNow:
-    'Danke. Dein Vertrag ist gespeichert. Die Zahlung läuft über Stripe. Den laufenden Monat ziehen wir jetzt ein, danach immer zum 1.',
+    'Danke. Dein Vertrag ist gespeichert. Die Zahlung läuft über Stripe (Karte, Apple Pay oder SEPA-Lastschrift). Den laufenden Monat ziehen wir jetzt ein, danach immer zum 1.',
   payReturnCancel:
     'Die Zahlung wurde abgebrochen. Die Mail mit dem Vertrag geht nicht raus. Deine Anmeldung bleibt gespeichert. Wir schicken dir einen neuen Link, oder du meldest dich im Studio.',
   invalid: 'Bitte alle Pflichtfelder sauber ausfüllen.',
@@ -329,7 +329,7 @@ export const COPY = {
   consentSignMinor:
     'Ich reiche den Antrag elektronisch ein. Der Vertrag entsteht erst mit unterschriebener Elternvollmacht.',
   payNote:
-    'Monatsbeiträge mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Fällig jeweils zum 1. des Monats. Endpreise inkl. MwSt.',
+    'Monatsbeiträge mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Fällig jeweils zum 1. des Monats. Endpreise inkl. MwSt.',
 } as const
 
 export const FAQ = [
@@ -339,7 +339,7 @@ export const FAQ = [
   },
   {
     q: 'Kann ich schon Mitglied werden?',
-    a: 'Ja. Unter Mitglied werden schließt du Slow Start, Standard, Flex oder Plus online ab. Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Monatsbeiträge zahlst du mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später. Beitrag jeweils zum 1. des Monats. Anmeldegebühr 19,99 €. Alle Preise inkl. MwSt.',
+    a: 'Ja. Unter Mitglied werden schließt du Slow Start, Standard, Flex oder Plus online ab. Slow Start Tarif: 2 Kurse/Einheiten pro Woche für 79,99€, 12 Monate. Standard, Flex und Plus: alle Kurse, so oft du willst. Monatsbeiträge zahlst du mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Beitrag jeweils zum 1. des Monats. Anmeldegebühr 19,99 €. Alle Preise inkl. MwSt.',
   },
   {
     q: 'Gibt es ein Probetraining?',
@@ -355,7 +355,7 @@ export const FAQ = [
   },
   {
     q: 'Wie wird bezahlt?',
-    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei allen Mitgliedschaftstarifen (6, 12 und 24 Monate) zahlst du mit Karte, Apple Pay oder per Banküberweisung auf das Konto der KONNI MMA GYM GbR, IBAN DE77 8605 5592 1090 4292 70, BIC WELADE8LXXX, Stadt- und Kreissparkasse Leipzig. SEPA-Lastschrift kommt später. Aufnahmegebühr 19,99 €. Endpreise inkl. MwSt.',
+    a: 'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei allen Mitgliedschaftstarifen (6, 12 und 24 Monate) zahlst du mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Aufnahmegebühr 19,99 €. Endpreise inkl. MwSt.',
   },
   {
     q: 'Kann ich unter 18 trainieren?',

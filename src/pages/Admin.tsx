@@ -3823,7 +3823,7 @@ function MemberPane({
             target="_blank"
             rel="noreferrer"
           >
-            Vertrag{member.plan !== 'daypass' && member.payMethod !== 'transfer' ? ' + SEPA-Mandat' : ''} zum Unterschreiben drucken
+            Vertrag zum Unterschreiben drucken
           </a>
         )}
         {member.payMethod === 'transfer' && member.docs?.payment ? (
@@ -4033,8 +4033,8 @@ function MemberPane({
           <h3>{member.bank?.iban ? 'Kontodaten für Lastschrift' : 'Zahlung: Karte / Apple Pay'}</h3>
           <p className="admin-muted">
             {member.bank?.iban
-              ? 'SEPA-Lastschrift kommt später. Das Mandat ist nur vollständig, wenn die Unterschrift da ist.'
-              : 'Das Mitglied zahlt mit Karte, Apple Pay oder Google Pay über Stripe. Eine IBAN ist dafür nicht nötig. SEPA-Lastschrift kommt später und kann hier erfasst werden, sobald sie vereinbart ist.'}
+              ? 'Papier-Mandat nur vollständig, wenn die Unterschrift da ist. Online läuft SEPA über Stripe Checkout.'
+              : 'Das Mitglied zahlt mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Eine IBAN auf dem Papiervertrag ist dafür nicht nötig; bei SEPA wird das Mandat im Checkout erteilt.'}
           </p>
           <BankFields value={bank} onChange={setBank} holderHint={holderHint} />
           <div className="admin-inline">
@@ -4152,7 +4152,7 @@ function MemberPane({
               : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Erste Abbuchung ${deDate(member.stripe?.billingStart || member.startDate)}.`}
             {member.stripe?.subscriptionId
               ? ' Das Abo ist verknüpft. Die Monate färben sich, sobald die Rechnung kommt.'
-              : ' Das Mitglied zahlt auf der Stripe-Seite mit Karte oder Apple Pay. Banküberweisung ist die andere Möglichkeit. SEPA-Lastschrift kommt später und wird im Checkout nicht angezeigt. Der Link gilt 24 Stunden.'}
+              : ' Das Mitglied zahlt auf der Stripe-Seite mit Karte, Apple Pay oder SEPA-Lastschrift. Der Link gilt 24 Stunden.'}
           </p>
           {member.stripe?.subscriptionId ? null : (
             <div className="admin-inline">
@@ -4742,7 +4742,6 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
   const [photoData, setPhotoData] = useState<string | null>(null)
   const [bank, setBank] = useState<BankForm>(EMPTY_BANK)
   const [guardian, setGuardian] = useState<GuardianForm>(EMPTY_GUARDIAN)
-  const [payMethod, setPayMethod] = useState<'card' | 'transfer'>('card')
   const [signatures, setSignatures] = useState<DeskSignatures>({
     place: 'Leipzig',
     signature: '',
@@ -4790,15 +4789,12 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
         visitDay,
         startDate,
         photoData,
-        payMethod: plan === 'daypass' ? 'card' : payMethod,
+        payMethod: 'card',
         place: signatures.place,
         signature: signatures.signature,
         gymSignature: signatures.gymSignature,
         secondGuardianSignature: signatures.secondGuardianSignature,
-        bank:
-          plan === 'daypass' || payMethod === 'transfer'
-            ? undefined
-            : { ...bank, mandateSignature: signatures.mandateSignature },
+        bank: plan === 'daypass' ? undefined : { ...bank, mandateSignature: signatures.mandateSignature },
         guardian: minor ? { ...guardian, signature: signatures.guardianSignature } : undefined,
       }),
     })
@@ -4897,48 +4893,17 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
       {plan !== 'daypass' ? (
         <section className="admin-block">
           <h3>Zahlungsweise</h3>
-          <fieldset className="pay-pick">
-            <label className="check">
-              <input
-                type="radio"
-                name="deskPay"
-                checked={payMethod === 'card'}
-                onChange={() => setPayMethod('card')}
-              />
-              <span>Karte oder Apple Pay</span>
-            </label>
-            <label className="check">
-              <input
-                type="radio"
-                name="deskPay"
-                checked={payMethod === 'transfer'}
-                onChange={() => setPayMethod('transfer')}
-              />
-              <span>Banküberweisung, das Mitglied überweist selbst</span>
-            </label>
-          </fieldset>
-          <p className="admin-muted">
-            Banküberweisung ist möglich. SEPA-Lastschrift kommt später. Der Beitrag ist jeweils zum 1. des Monats fällig.
+          <p>
+            <strong>Karte, Apple Pay oder SEPA-Lastschrift</strong> über Stripe. Der Beitrag ist jeweils zum 1. des
+            Monats fällig.
           </p>
-          {payMethod === 'transfer' ? (
-            <p>
-              KONNI MMA GYM GbR
-              <br />
-              DE77 8605 5592 1090 4292 70 · WELADE8LXXX · Stadt- und Kreissparkasse Leipzig
-              <br />
-              <span className="admin-muted">Diese Kontodaten stehen im Vertrag.</span>
-            </p>
-          ) : (
-            <>
-              <h3>Kontodaten für Lastschrift</h3>
-              <p className="admin-muted">
-                {minor ? 'Bei unter 18 zahlt meist ein Elternteil: dann dessen Namen als Kontoinhaber. ' : ''}
-                SEPA-Lastschrift kommt später. Die Kontodaten können jetzt schon erfasst werden, oder erst wenn das
-                Mandat extra vereinbart wird. Nach dem Anlegen den Vertrag drucken und unterschreiben lassen.
-              </p>
-              <BankFields value={bank} onChange={setBank} holderHint={holderHint} />
-            </>
-          )}
+          <h3>Kontodaten (optional)</h3>
+          <p className="admin-muted">
+            {minor ? 'Bei unter 18 zahlt meist ein Elternteil: dann dessen Namen als Kontoinhaber. ' : ''}
+            Online wird SEPA im Stripe-Checkout erteilt. Kontodaten hier sind optional für den Papiervertrag. Nach dem
+            Anlegen den Vertrag drucken und unterschreiben lassen.
+          </p>
+          <BankFields value={bank} onChange={setBank} holderHint={holderHint} />
         </section>
       ) : null}
 
@@ -4952,7 +4917,7 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
           value={signatures}
           onChange={setSignatures}
           minor={minor}
-          mandate={plan !== 'daypass' && payMethod === 'card' && Boolean(bank.iban) && bank.mandateSigned}
+          mandate={plan !== 'daypass' && Boolean(bank.iban) && bank.mandateSigned}
           required
         />
       </section>

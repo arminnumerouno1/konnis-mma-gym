@@ -66,7 +66,7 @@ export function signupOpenMailHtml({ first = '' } = {}) {
 </tr>
 </table>
 <p>Das Studio ist offen. Training läuft. Der Beitrag ist jeweils zum 1. des Monats fällig.</p>
-<p>Du zahlst mit Karte oder Apple Pay, oder per Banküberweisung. SEPA-Lastschrift kommt später.</p>
+<p>Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe.</p>
 <p style="margin:28px 0 0"><a href="${join}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Mitglied werden</a></p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>
