@@ -2,7 +2,7 @@ import { createHmac } from 'node:crypto'
 import { mkdtempSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { checkoutSettled } from '../server/contract-mail.mjs'
+import { checkoutComplete, checkoutSettled } from '../server/contract-mail.mjs'
 import { createMembershipHandler } from '../server/membership.mjs'
 import { createMemberStore } from '../server/member-store.mjs'
 import { createStripeHandler } from '../server/stripe.mjs'
@@ -258,7 +258,9 @@ assert(contractFile?.subarray(0, 5).toString() === '%PDF-', 'contract file is a 
 
 assert(checkoutSettled({ object: 'checkout.session', status: 'open', payment_status: 'unpaid' }) === false, 'open checkout is not settled')
 assert(checkoutSettled({ object: 'checkout.session', status: 'expired', payment_status: 'unpaid' }) === false, 'expired checkout is not settled')
-assert(checkoutSettled({ object: 'checkout.session', status: 'complete', payment_status: 'unpaid' }) === false, 'unpaid checkout is not settled')
+assert(checkoutSettled({ object: 'checkout.session', status: 'complete', payment_status: 'unpaid' }) === false, 'unpaid sepa checkout is not settled yet')
+assert(checkoutComplete({ object: 'checkout.session', status: 'complete', payment_status: 'unpaid' }) === true, 'unpaid sepa checkout is complete for contract mail')
+assert(checkoutComplete({ object: 'checkout.session', status: 'open', payment_status: 'unpaid' }) === false, 'open checkout is not complete')
 assert(checkoutSettled({ object: 'checkout.session', status: 'complete', payment_status: 'paid' }) === true, 'paid checkout is settled')
 assert(
   checkoutSettled({ object: 'checkout.session', status: 'complete', payment_status: 'no_payment_required' }) === true,
@@ -409,12 +411,37 @@ try {
         status: 'complete',
         mode: 'subscription',
         payment_status: 'unpaid',
+        customer: 'cus_SEPA',
+        subscription: 'sub_SEPA',
         metadata: { memberId: mailMemberId },
       },
     },
   })
-  assert(unpaid.data.handled === true && !unpaid.data.mail, 'unpaid completion does not mail')
-  assert(smtpCount() === 0, 'unpaid stripe session sends no contract mail')
+  assert(unpaid.data.handled === true && unpaid.data.mail === 'sent', 'sepa unpaid completion still mails the contract')
+  assert(smtpCount() === 2, 'sepa completion mails member and gym')
+  const afterSepa = (await createMemberStore({ dataDir: mailDir, env: {} }).load()).members.find((row) => row.id === mailMemberId)
+  assert(afterSepa.contractMail === 'sent', 'sepa unpaid completion marks contract mail sent')
+  assert(afterSepa.stripe?.subscriptionId === 'sub_SEPA', 'sepa completion links the subscription')
+
+  const asyncPaid = await postStripe({
+    id: 'evt_async_paid',
+    type: 'checkout.session.async_payment_succeeded',
+    data: {
+      object: {
+        object: 'checkout.session',
+        id: 'cs_unpaid',
+        status: 'complete',
+        mode: 'subscription',
+        payment_status: 'paid',
+        amount_total: 11998,
+        customer: 'cus_SEPA',
+        subscription: 'sub_SEPA',
+        metadata: { memberId: mailMemberId },
+      },
+    },
+  })
+  assert(asyncPaid.data.handled === true && asyncPaid.data.mail === 'already', 'async sepa success does not mail twice')
+  assert(smtpCount() === 2, 'async success keeps prior mail count')
 
   const done = await postStripe({
     id: 'evt_done',
@@ -432,8 +459,8 @@ try {
       },
     },
   })
-  assert(done.data.mail === 'sent', 'settled checkout mails the contract')
-  assert(smtpCount() === 2, 'contract mail goes to member and gym after payment')
+  assert(done.data.mail === 'already', 'later settled checkout keeps the sepa contract mail')
+  assert(smtpCount() === 2, 'contract mail stays at member and gym')
   const sentMails = mailCalls.filter((call) => call.url.includes('/smtp/email'))
   assert(sentMails.every((call) => call.body.includes('Mitgliedsvertrag.pdf')), 'settled mail attaches the contract')
   assert(sentMails.some((call) => call.body.includes('anna-cancel@example.com')), 'settled mail reaches the member')

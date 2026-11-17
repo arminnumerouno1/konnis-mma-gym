@@ -8,10 +8,18 @@ function mailOpen(env = {}) {
   return true
 }
 
-/** Checkout ist durch: bezahlt, oder Karte hinterlegt und noch nichts fällig. Abbruch zählt nicht. */
-export function checkoutSettled(session) {
+/** Checkout-Formular ist abgeschlossen (inkl. SEPA mit noch offener Abbuchung). Abbruch zählt nicht. */
+export function checkoutComplete(session) {
   if (!session || session.object !== 'checkout.session') return false
-  if (session.status && session.status !== 'complete') return false
+  return !session.status || session.status === 'complete'
+}
+
+/**
+ * Zahlung ist durch: bezahlt, oder noch nichts fällig (z. B. Trial).
+ * SEPA mit payment_status "unpaid" ist hier noch nicht settled — dafür async_payment_succeeded / invoice.paid.
+ */
+export function checkoutSettled(session) {
+  if (!checkoutComplete(session)) return false
   return session.payment_status === 'paid' || session.payment_status === 'no_payment_required'
 }
 

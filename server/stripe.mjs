@@ -1,5 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto'
-import { checkoutSettled, sendContractMailOnce } from './contract-mail.mjs'
+import { checkoutComplete, sendContractMailOnce } from './contract-mail.mjs'
 import { isoDate, setPayment } from './member-model.mjs'
 import { createMemberStore } from './member-store.mjs'
 import { sendPaymentFailedEmail } from './membership-mail.mjs'
@@ -270,10 +270,20 @@ function reply(res, status, body) {
   res.end(JSON.stringify(body))
 }
 
-async function deliverSettledMail(store, env, result, session) {
-  if (!result?.handled || !checkoutSettled(session)) return result
+async function deliverContractMail(store, env, result, session) {
+  // Vertragsmail schon bei abgeschlossenem Checkout (auch SEPA unpaid): Mandat/Karte ist da.
+  // Beitrag/Aufnahmegebühr bleibt über payment_status paid / async_payment_succeeded / invoice.paid.
+  if (!result?.handled || !checkoutComplete(session)) return result
   const mail = await sendContractMailOnce(store, env, result.memberId)
   return { ...result, mail: mail.sent ? 'sent' : mail.reason }
+}
+
+function isCheckoutSessionEvent(type) {
+  return (
+    type === 'checkout.session.completed' ||
+    type === 'checkout.session.async_payment_succeeded' ||
+    type === 'checkout.session.async_payment_failed'
+  )
 }
 
 const FAIL_MAIL_COOLDOWN_MS = 3 * 24 * 60 * 60 * 1000
@@ -384,7 +394,7 @@ export function createStripeHandler({
       reply(res, 403, { ok: false, error: 'confirm' })
       return
     }
-    if (!checkoutSettled(session)) {
+    if (!checkoutComplete(session)) {
       reply(res, 200, { ok: true, mailed: false })
       return
     }
@@ -398,7 +408,7 @@ export function createStripeHandler({
       return
     }
     try {
-      const mailed = await deliverSettledMail(store, env, result, session)
+      const mailed = await deliverContractMail(store, env, result, session)
       reply(res, 200, { ok: true, mailed: mailed.mail === 'sent' })
     } catch (error) {
       console.error('[stripe] contract mail failed', error)
@@ -433,21 +443,31 @@ export function createStripeHandler({
       reply(res, 400, { ok: false, error: 'invalid' })
       return
     }
-    if (!INVOICE_STATUS[event?.type] && event?.type !== 'checkout.session.completed') {
+    if (!INVOICE_STATUS[event?.type] && !isCheckoutSessionEvent(event?.type)) {
       reply(res, 200, { ok: true, handled: false, reason: 'ignored' })
       return
     }
     let result = null
     await store.update((db) => {
-      result = applyStripeEvent(db, event)
+      // async_payment_* carries the same Checkout Session object; reuse completed linking + fee logic.
+      const normalized =
+        event?.type === 'checkout.session.async_payment_succeeded' ||
+        event?.type === 'checkout.session.async_payment_failed'
+          ? { ...event, type: 'checkout.session.completed' }
+          : event
+      result = applyStripeEvent(db, normalized)
       return db
     })
     if (result && !result.handled && result.reason === 'unmatched') {
       console.warn('[stripe] no member for', event.type, event.data?.object?.id, event.data?.object?.customer_email)
     }
-    if (event?.type === 'checkout.session.completed' && checkoutSettled(event.data?.object)) {
+    if (
+      (event?.type === 'checkout.session.completed' ||
+        event?.type === 'checkout.session.async_payment_succeeded') &&
+      checkoutComplete(event.data?.object)
+    ) {
       try {
-        result = await deliverSettledMail(store, env, result, event.data.object)
+        result = await deliverContractMail(store, env, result, event.data.object)
       } catch (error) {
         console.error('[stripe] contract mail failed', error)
         reply(res, 500, { ok: false, error: 'mail' })
