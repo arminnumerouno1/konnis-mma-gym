@@ -323,4 +323,138 @@ const monthRow = afterFee.payments.find((row) => row.kind === 'month' && row.per
 assert(feeRow?.status === 'paid' && feeRow.amount === 19.99, 'fee payment closed from invoice')
 assert(monthRow?.status === 'paid' && monthRow.amount === 67.32, 'month amount excludes fee')
 
+// Fee line first (Stripe often orders Aufnahmegebühr above the proration line).
+const feeFirstDb = {
+  members: [
+    ensurePayments(
+      {
+        ...withFee,
+        id: 'fee-first-1',
+        email: 'fee-first@example.com',
+        stripe: { customerId: 'cus_fee_first' },
+      },
+      '2026-11-17',
+    ),
+  ],
+}
+const feeFirst = applyStripeEvent(
+  feeFirstDb,
+  {
+    type: 'invoice.paid',
+    data: {
+      object: {
+        object: 'invoice',
+        id: 'in_fee_first',
+        number: 'INV-FEE-FIRST',
+        customer: 'cus_fee_first',
+        amount_due: 5517,
+        status: 'paid',
+        paid: true,
+        lines: {
+          data: [
+            {
+              amount: 1999,
+              description: 'KONNI MMA GYM · Aufnahmegebühr',
+              period: { start: Math.floor(Date.parse('2026-11-17T19:00:00+01:00') / 1000) },
+            },
+            {
+              amount: 3518,
+              description: 'Zeit auf KONNI MMA GYM · Slow Start Tarif vom 17 Nov 2026 bis 30 Nov 2026',
+              period: {
+                start: Math.floor(Date.parse('2026-11-17T19:00:00+01:00') / 1000),
+                end: Math.floor(Date.parse('2026-12-01T00:00:00+01:00') / 1000),
+              },
+            },
+          ],
+        },
+      },
+    },
+  },
+  '2026-11-17',
+)
+assert(feeFirst.handled && feeFirst.period === '2026-11', 'fee-first invoice uses membership period')
+const afterFeeFirst = feeFirstDb.members[0]
+assert(
+  afterFeeFirst.payments.find((row) => row.kind === 'month' && row.period === '2026-11')?.amount === 35.18,
+  'fee-first invoice keeps prorated month amount',
+)
+assert(afterFeeFirst.payments.find((row) => row.kind === 'fee')?.status === 'paid', 'fee-first invoice pays fee')
+
+// Paid Checkout must mark fee + prorated month even if invoice.paid never arrives.
+const checkoutProrateMember = ensurePayments(
+  {
+    ...withFee,
+    id: 'checkout-prorate-1',
+    email: 'checkout-prorate@example.com',
+    fee: 19.99,
+  },
+  '2026-11-17',
+)
+const checkoutProrateDb = { members: [{ ...checkoutProrateMember }] }
+const checkoutProrate = applyStripeEvent(
+  checkoutProrateDb,
+  {
+    type: 'checkout.session.completed',
+    data: {
+      object: {
+        object: 'checkout.session',
+        id: 'cs_prorate_paid',
+        mode: 'subscription',
+        payment_status: 'paid',
+        amount_total: 5517,
+        created: Math.floor(Date.parse('2026-11-17T19:20:00+01:00') / 1000),
+        customer: 'cus_prorate',
+        subscription: 'sub_prorate',
+        metadata: { memberId: 'checkout-prorate-1' },
+        client_reference_id: 'checkout-prorate-1',
+      },
+    },
+  },
+  '2026-11-17',
+)
+assert(checkoutProrate.handled === true, 'paid prorate checkout is handled')
+const afterCheckoutProrate = checkoutProrateDb.members[0]
+assert(afterCheckoutProrate.stripe?.subscriptionId === 'sub_prorate', 'prorate checkout links subscription')
+assert(
+  afterCheckoutProrate.payments.find((row) => row.kind === 'fee')?.status === 'paid',
+  'prorate checkout marks fee paid',
+)
+assert(
+  afterCheckoutProrate.payments.find((row) => row.kind === 'month' && row.period === '2026-11')?.status === 'paid' &&
+    afterCheckoutProrate.payments.find((row) => row.kind === 'month' && row.period === '2026-11')?.amount === 35.18,
+  'prorate checkout marks November paid at Stripe amount',
+)
+
+const reopen = applyStripeEvent(
+  checkoutProrateDb,
+  {
+    type: 'invoice.finalized',
+    data: {
+      object: {
+        object: 'invoice',
+        id: 'in_prorate_late',
+        customer: 'cus_prorate',
+        amount_due: 5517,
+        status: 'open',
+        lines: {
+          data: [
+            {
+              amount: 3518,
+              description: 'KONNI MMA GYM · Slow Start Tarif',
+              period: { start: Math.floor(Date.parse('2026-11-17T19:00:00+01:00') / 1000) },
+            },
+          ],
+        },
+      },
+    },
+  },
+  '2026-11-17',
+)
+assert(reopen.handled && reopen.status === 'paid', 'late open invoice does not reopen paid month')
+assert(
+  checkoutProrateDb.members[0].payments.find((row) => row.kind === 'month' && row.period === '2026-11')?.status ===
+    'paid',
+  'November stays paid after late finalized',
+)
+
 console.log('dues extra tests ok')

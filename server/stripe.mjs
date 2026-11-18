@@ -56,8 +56,34 @@ function invoiceMemberId(invoice) {
 }
 
 function invoicePeriod(invoice) {
-  const start = invoice.lines?.data?.[0]?.period?.start || invoice.period_end || invoice.created
+  const lines = Array.isArray(invoice?.lines?.data) ? invoice.lines.data : []
+  // Prefer the membership/proration line — Aufnahmegebühr is often first and must not hide the month.
+  const monthLine = lines.find((line) => !lineLooksLikeSignupFee(line) && Number.isFinite(line?.period?.start))
+  const anyLine = lines.find((line) => Number.isFinite(line?.period?.start))
+  const start =
+    monthLine?.period?.start ||
+    anyLine?.period?.start ||
+    invoice.period_start ||
+    invoice.period_end ||
+    invoice.created
   return Number.isFinite(start) ? berlinYm(start) : null
+}
+
+/** Month/proration cents on an invoice, excluding Aufnahmegebühr lines. null = unknown / use amount_due. */
+export function invoiceMonthCents(invoice) {
+  const lines = Array.isArray(invoice?.lines?.data) ? invoice.lines.data : []
+  if (!lines.length) return null
+  const monthLines = lines.filter((line) => !lineLooksLikeSignupFee(line))
+  if (!monthLines.length) return 0
+  const hasAmount = monthLines.some((line) => Number.isFinite(Number(line.amount)))
+  if (!hasAmount) return null
+  return monthLines.reduce((sum, line) => sum + Math.max(0, Math.round(Number(line.amount) || 0)), 0)
+}
+
+function sessionPeriod(session, today) {
+  const created = Number(session?.created)
+  if (Number.isFinite(created) && created > 0) return berlinYm(created)
+  return berlinYm(Math.floor(Date.parse(`${today}T12:00:00Z`) / 1000))
 }
 
 export function findMemberIndex(members, invoice) {
@@ -167,15 +193,18 @@ function applyCheckoutCompleted(db, event, today) {
       today,
     )
   }
-  // Card checkout settles immediately as "paid". Subscription first invoices can also
+  // Card/Apple Pay settles immediately as "paid". Subscription first invoices can also
   // land as "no_payment_required" when only a later cycle charges — still mark fee if
   // the session total clearly includes the Aufnahmegebühr (one-time line at checkout).
+  // Prorated first months are charged on the same paid Checkout; do not wait for invoice.paid
+  // alone — that webhook can race or miss, leaving November open while Stripe already collected.
   const feeDue = Number(member.fee) || 0
+  const feeCents = Math.round(feeDue * 100)
   const sessionTotal = Number.isFinite(session.amount_total) ? Math.round(session.amount_total) : null
   const feeLikelyPaid =
     feeDue > 0 &&
     (session.payment_status === 'paid' ||
-      (session.payment_status === 'no_payment_required' && sessionTotal != null && sessionTotal >= Math.round(feeDue * 100)))
+      (session.payment_status === 'no_payment_required' && sessionTotal != null && sessionTotal >= feeCents))
   if (feeLikelyPaid && feeStillOpen(member)) {
     next = markSignupFeePaid(next, {
       note: `Aufnahmegebühr Stripe ${session.id}`,
@@ -183,6 +212,25 @@ function applyCheckoutCompleted(db, event, today) {
       amount: feeDue,
       today,
     })
+  }
+  if (session.payment_status === 'paid' && session.mode === 'subscription' && sessionTotal != null) {
+    const monthCents = Math.max(0, sessionTotal - (feeDue > 0 ? feeCents : 0))
+    if (monthCents > 0) {
+      const period = sessionPeriod(session, today)
+      next = setPayment(
+        next,
+        {
+          period,
+          kind: 'month',
+          status: 'paid',
+          note: `Stripe ${session.id}`,
+          source: 'stripe',
+          ref: `${session.id}:month`,
+          amount: monthCents / 100,
+        },
+        today,
+      )
+    }
   }
   db.members[index] = next
   return { handled: true, memberId: member.id, linked: true, charged: Boolean(paidDay) }
@@ -208,8 +256,8 @@ export function applyStripeEvent(db, event, today = isoDate()) {
   if (!period) return { handled: false, reason: 'period' }
   const member = db.members[index]
   const current = (member.payments ?? []).find((row) => row.kind === 'month' && row.period === period)
-  // Never downgrade a paid Stripe row back to open for the same invoice.
-  if (current?.status === 'paid' && status === 'open' && (!current.ref || current.ref === invoice.id)) {
+  // Never downgrade a paid month back to open (Checkout may have marked it before invoice.finalized).
+  if (current?.status === 'paid' && status === 'open') {
     return { handled: true, memberId: member.id, period, status: 'paid' }
   }
   const customer = typeof invoice.customer === 'string' ? invoice.customer : invoice.customer?.id
@@ -217,23 +265,32 @@ export function applyStripeEvent(db, event, today = isoDate()) {
     ? { ...member, stripe: { ...(member.stripe ?? {}), customerId: customer } }
     : member
   const feeCents = status === 'paid' ? invoiceSignupFeeCents(invoice, member.fee) : 0
+  const monthCents = invoiceMonthCents(invoice)
   const totalDue = Number.isFinite(invoice.amount_due) ? Math.round(invoice.amount_due) : null
-  const amount =
-    totalDue == null ? null : Math.round(totalDue - (feeCents > 0 && feeStillOpen(member) ? feeCents : 0)) / 100
-  let next = setPayment(
-    withStripe,
-    {
-      period,
-      kind: 'month',
-      status,
-      note: `Stripe ${invoice.number || invoice.id}`,
-      source: 'stripe',
-      ref: invoice.id,
-      amount,
-    },
-    today,
-  )
-  if (status === 'paid' && feeCents > 0 && feeStillOpen(member)) {
+  const amountCents =
+    monthCents != null
+      ? monthCents
+      : totalDue == null
+        ? null
+        : Math.max(0, totalDue - (feeCents > 0 && feeStillOpen(member) ? feeCents : 0))
+  let next = withStripe
+  // Fee-only invoices must not overwrite the month with 0 € paid.
+  if (!(status === 'paid' && amountCents === 0)) {
+    next = setPayment(
+      next,
+      {
+        period,
+        kind: 'month',
+        status,
+        note: `Stripe ${invoice.number || invoice.id}`,
+        source: 'stripe',
+        ref: invoice.id,
+        amount: amountCents == null ? null : amountCents / 100,
+      },
+      today,
+    )
+  }
+  if (status === 'paid' && feeCents > 0 && feeStillOpen(next)) {
     next = markSignupFeePaid(next, {
       note: `Aufnahmegebühr Stripe ${invoice.number || invoice.id}`,
       ref: `${invoice.id}:fee`,
