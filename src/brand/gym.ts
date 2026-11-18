@@ -30,6 +30,7 @@ export const GYM = {
     'https://www.openstreetmap.org/export/embed.html?bbox=12.3846%2C51.3564%2C12.3886%2C51.3585&layer=mapnik&marker=51.3574773%2C12.3866214',
   logo: '/brand/konni-logo-ui.webp',
   konrad: '/brand/konrad.png',
+  konradCage: '/brand/konrad-cage.jpg',
   mehmet: '/brand/mehmet.png',
   esn: {
     name: 'ESN',

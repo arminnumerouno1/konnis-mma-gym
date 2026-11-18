@@ -1,5 +1,6 @@
 import { COPY, FAQ } from './copy.ts'
 import { GYM, GYM_ADDRESS } from './gym.ts'
+import { KONRAD } from './konrad.ts'
 import { KURSPLAN, KURSPLAN_DAYS, KURSPLAN_TIMES, kursLevelLabel } from './kursplan.ts'
 import { PUBLIC_PLANS } from './plans.ts'
 
@@ -9,14 +10,14 @@ export const SEO = {
   title: 'MMA Gym in Leipzig | KONNI MMA GYM | BJJ & Boxen',
   shortTitle: 'MMA Leipzig',
   description:
-    'MMA Gym in Leipzig: MMA, Ringen, BJJ, Boxen und Kick- & Thai-Boxen im KONNI MMA GYM. Wittenberger Straße 15. Jetzt Mitglied werden.',
+    'MMA Gym in Leipzig von Konrad Dyrschka: MMA, Ringen, BJJ, Boxen und Kick- & Thai-Boxen im KONNI MMA GYM. Wittenberger Straße 15. Jetzt Mitglied werden.',
   ogImagePath: '/og-image.jpg',
   ogImageAlt: 'KONNI MMA GYM Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka.',
   locale: 'de_DE',
   siteName: 'KONNI MMA GYM',
   themeColor: '#070707',
   keywords:
-    'MMA in Leipzig, Ringen in Leipzig, BJJ in Leipzig, Boxen in Leipzig, Kick- & Thai-Boxen in Leipzig, MMA Gym Leipzig, MMA Training Leipzig, Kickboxen Leipzig, Thai-Boxen Leipzig, Kampfsport Leipzig, KONNI MMA GYM, Konrad Dyrschka, Mitgliedschaft MMA Leipzig',
+    'Konrad Dyrschka, Konrad Dyrschka Leipzig, Konrad Dyrschka MMA, Konrad Dyrschka OKTAGON, MMA in Leipzig, Ringen in Leipzig, BJJ in Leipzig, Boxen in Leipzig, Kick- & Thai-Boxen in Leipzig, MMA Gym Leipzig, MMA Training Leipzig, Kickboxen Leipzig, Thai-Boxen Leipzig, Kampfsport Leipzig, KONNI MMA GYM, Mitgliedschaft MMA Leipzig',
 } as const
 
 export function canonicalOrigin(envUrl = ''): string {
@@ -87,11 +88,54 @@ export function buildSeoHead(siteUrl = ''): string {
       },
       areaServed: { '@type': 'City', name: 'Leipzig' },
       sport: ['Mixed Martial Arts', 'MMA', 'Wrestling', 'Brazilian Jiu-Jitsu', 'Boxing', 'Kickboxing', 'Muay Thai'],
-      founder: GYM.partners.map((name: string) => ({
+      founder: [
+        {
+          '@type': 'Person',
+          name: KONRAD.fullName,
+          givenName: KONRAD.givenName,
+          familyName: KONRAD.familyName,
+          jobTitle: KONRAD.jobTitle,
+          birthDate: KONRAD.birthDate,
+          birthPlace: { '@type': 'Place', name: KONRAD.birthPlace },
+          nationality: KONRAD.nationality,
+          height: `${KONRAD.heightCm} cm`,
+          image: `${origin}${KONRAD.photo}`,
+          url: `${pageUrl}#konrad-dyrschka`,
+          sameAs: [...KONRAD.sameAs],
+          worksFor: { '@type': 'Organization', name: SEO.siteName },
+          description: COPY.konradSectionLead,
+        },
+        {
+          '@type': 'Person',
+          name: GYM.partners[1],
+          jobTitle: 'Gesellschafter · Coach',
+        },
+      ],
+      employee: {
         '@type': 'Person',
-        name,
-        jobTitle: name === 'Konrad Dyrschka' ? 'MMA-Profi' : 'Gesellschafter',
-      })),
+        name: KONRAD.fullName,
+        jobTitle: 'Head Coach',
+        url: `${pageUrl}#konrad-dyrschka`,
+      },
+    },
+    {
+      '@type': 'Person',
+      '@id': `${pageUrl}#konrad-dyrschka`,
+      name: KONRAD.fullName,
+      givenName: KONRAD.givenName,
+      familyName: KONRAD.familyName,
+      alternateName: ['Konrad Dyrschka MMA', 'Dyrschka'],
+      jobTitle: KONRAD.jobTitle,
+      birthDate: KONRAD.birthDate,
+      birthPlace: { '@type': 'Place', name: KONRAD.birthPlace, addressCountry: 'DE' },
+      nationality: KONRAD.nationality,
+      height: `${KONRAD.heightCm} cm`,
+      image: `${origin}${KONRAD.photo}`,
+      url: `${pageUrl}#konrad-dyrschka`,
+      sameAs: [...KONRAD.sameAs],
+      worksFor: { '@type': 'SportsActivityLocation', name: SEO.siteName, url: pageUrl },
+      description: COPY.konradSectionLead,
+      knowsAbout: ['Mixed Martial Arts', 'Wrestling', 'OKTAGON', 'KSW', 'EMC', 'MMA Coaching'],
     },
   ]
 
@@ -182,6 +226,7 @@ export function buildSeoBody(): string {
       <a href="/#training">${escapeHtml(COPY.navTraining)}</a>
       <a href="/#plan">${escapeHtml(COPY.navPlan)}</a>
       <a href="/#team">${escapeHtml(COPY.navTeam)}</a>
+      <a href="/#konrad-dyrschka">${escapeHtml(COPY.konradName)}</a>
       <a href="/#preise">${escapeHtml(COPY.navPlans)}</a>
       <a href="/#kontakt">${escapeHtml(COPY.navContact)}</a>
       <a href="/mitglied">${escapeHtml(COPY.ctaJoin)}</a>
@@ -200,6 +245,12 @@ ${about}
 ${disciplines}
     <h2>${escapeHtml(COPY.teamTitle)}</h2>
     <p>${escapeHtml(COPY.teamLead)} ${escapeHtml(COPY.konradName)}, ${escapeHtml(COPY.konradRole)}. ${escapeHtml(COPY.konradBio)} ${escapeHtml(COPY.mehmetName)}, ${escapeHtml(COPY.mehmetRole)}. ${escapeHtml(COPY.mehmetBio)}</p>
+    <h2>${escapeHtml(COPY.konradSectionTitle)}</h2>
+    <p>${escapeHtml(COPY.konradSectionLead)}</p>
+${COPY.konradSectionParas.map((para) => `    <p>${escapeHtml(para)}</p>`).join('\n')}
+    <p><strong>${escapeHtml(KONRAD.record)}</strong> Pro-Rekord · ${escapeHtml(KONRAD.recordNote)}. OKTAGON ${escapeHtml(KONRAD.oktagonRecord)}. ${KONRAD.currentStreak} Siege in Folge. ${KONRAD.koTkoWins} KO/TKO.</p>
+    <h3>${escapeHtml(COPY.konradSectionMilestonesTitle)}</h3>
+${KONRAD.milestones.map((item) => `    <p><strong>${escapeHtml(item.label)}:</strong> ${escapeHtml(item.text)}</p>`).join('\n')}
     <h2>${escapeHtml(COPY.whoTitle)} ${escapeHtml(COPY.whoKicker)}</h2>
     <p>${escapeHtml(COPY.whoLead)}</p>
 ${people}
