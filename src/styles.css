@@ -537,7 +537,11 @@ p,
 .halle img:nth-child(2) { object-position: center 40%; }
 .halle img:nth-child(3) { object-position: center 55%; }
 .halle img:nth-child(4) { object-position: center 42%; }
-.halle img:nth-child(5) { object-position: 30% 18%; }
+.halle img:nth-child(5) {
+  object-fit: contain;
+  object-position: center;
+  background: #050505;
+}
 
 .opening-kicker {
   margin: 0 0 8px;
@@ -3170,8 +3174,10 @@ p,
 
   .halle img:last-child {
     grid-column: 1 / -1;
-    height: 148px;
-    object-position: 28% 12%;
+    height: 168px;
+    object-fit: contain;
+    object-position: center;
+    background: #050505;
   }
 
   .hero-logo-wrap {

@@ -45,7 +45,7 @@ export const GYM = {
     floor: '/brand/halle/floor.jpg',
     depth: '/brand/halle/depth.jpg',
     marks: '/brand/halle/marks.jpg',
-    ropes: '/brand/halle/halle-kaefig-unten.jpg',
+    ropes: '/brand/halle/halle-kaefig-logo-strip.jpg',
   },
   hoursNote: 'Anhand des Kursplans. Feiertage und Änderungen möglich.',
   siteBy: {
