@@ -49,7 +49,7 @@ export const GYM = {
   hoursNote: 'Anhand des Kursplans. Feiertage und Änderungen möglich.',
   siteBy: {
     name: 'Armin Scholtz',
-    url: 'https://energie-berater-plus.de',
+    url: 'https://www.scholtz-webdesign.de/',
   },
 } as const
 

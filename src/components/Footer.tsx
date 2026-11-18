@@ -92,6 +92,11 @@ export function Footer() {
       </div>
       <p className="footer-copy">
         © {new Date().getFullYear()} {GYM.legalName}
+        {' · '}
+        Website von{' '}
+        <a href={GYM.siteBy.url} target="_blank" rel="noopener noreferrer">
+          {GYM.siteBy.name}
+        </a>
       </p>
     </footer>
   )

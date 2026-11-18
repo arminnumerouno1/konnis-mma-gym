@@ -2924,6 +2924,17 @@ p,
   font-size: 14px;
 }
 
+.footer-copy a {
+  color: #d8d2c8;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footer-copy a:hover,
+.footer-copy a:focus-visible {
+  color: #fff;
+}
+
 .imprint a {
   color: var(--ink);
   text-decoration: none;
