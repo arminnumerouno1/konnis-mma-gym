@@ -22,11 +22,11 @@ export function Nav({ route }: NavProps) {
 
   const links = [
     { href: '/#training', label: COPY.navTraining },
-    { href: '/#team', label: COPY.navTeam },
-    { href: '/#konrad-dyrschka', label: 'Konrad' },
     { href: '/#plan', label: COPY.navPlan },
     { href: '/#preise', label: COPY.navPlans },
     ...(TRIAL_OPEN ? [{ href: '/#probetraining', label: COPY.navTrial }] : []),
+    { href: '/#team', label: COPY.navTeam },
+    { href: '/#konrad-dyrschka', label: 'Konrad' },
     { href: '/#kontakt', label: COPY.navContact },
   ]
 

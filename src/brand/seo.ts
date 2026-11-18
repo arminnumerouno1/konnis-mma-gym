@@ -225,9 +225,9 @@ export function buildSeoBody(): string {
       <a href="/">${escapeHtml(COPY.gymName)}</a>
       <a href="/#training">${escapeHtml(COPY.navTraining)}</a>
       <a href="/#plan">${escapeHtml(COPY.navPlan)}</a>
+      <a href="/#preise">${escapeHtml(COPY.navPlans)}</a>
       <a href="/#team">${escapeHtml(COPY.navTeam)}</a>
       <a href="/#konrad-dyrschka">${escapeHtml(COPY.konradName)}</a>
-      <a href="/#preise">${escapeHtml(COPY.navPlans)}</a>
       <a href="/#kontakt">${escapeHtml(COPY.navContact)}</a>
       <a href="/mitglied">${escapeHtml(COPY.ctaJoin)}</a>
       <a href="/impressum">${escapeHtml(COPY.impressum)}</a>
@@ -240,9 +240,19 @@ export function buildSeoBody(): string {
     <p>MMA Gym in Leipzig: ${escapeHtml(COPY.gymName)} von ${escapeHtml(GYM.partners[0])} und ${escapeHtml(GYM.partners[1])} an der ${escapeHtml(GYM_ADDRESS)}. MMA in Leipzig, Ringen in Leipzig, BJJ in Leipzig, Boxen in Leipzig und Kick- &amp; Thai-Boxen in Leipzig. ${escapeHtml(COPY.heroHit)} ${escapeHtml(COPY.ctaJoinNow)}.</p>
 ${about}
     <p>${escapeHtml(COPY.aboutClose.replace('🥊', '').trim())} ${escapeHtml(COPY.aboutStreet)}, ${escapeHtml(COPY.aboutZip)}. ${escapeHtml(COPY.aboutWhen)}.</p>
+    <h2>${escapeHtml(COPY.whoTitle)} ${escapeHtml(COPY.whoKicker)}</h2>
+    <p>${escapeHtml(COPY.whoLead)}</p>
+${people}
     <h2>${escapeHtml(COPY.trainTitle)} MMA Training Leipzig</h2>
     <p>Im ${escapeHtml(COPY.gymName)} Leipzig trainierst du MMA in Leipzig, Ringen in Leipzig, BJJ in Leipzig, Boxen in Leipzig und Kick- &amp; Thai-Boxen in Leipzig.</p>
 ${disciplines}
+    <h2>${escapeHtml(COPY.planTitle)}</h2>
+    <p>${escapeHtml(COPY.planNote)}</p>
+${kursplanRows}
+    <h2>${escapeHtml(COPY.priceTitle)} Mitglied werden</h2>
+    <p>${escapeHtml(COPY.priceLead)} ${escapeHtml(COPY.priceFoot)}</p>
+${plans}
+    <p><a href="/mitglied">${escapeHtml(COPY.ctaJoinNow)}</a></p>
     <h2>${escapeHtml(COPY.teamTitle)}</h2>
     <p>${escapeHtml(COPY.teamLead)} ${escapeHtml(COPY.konradName)}, ${escapeHtml(COPY.konradRole)}. ${escapeHtml(COPY.konradBio)} ${escapeHtml(COPY.mehmetName)}, ${escapeHtml(COPY.mehmetRole)}. ${escapeHtml(COPY.mehmetBio)}</p>
     <h2>${escapeHtml(COPY.konradSectionTitle)}</h2>
@@ -251,16 +261,6 @@ ${COPY.konradSectionParas.map((para) => `    <p>${escapeHtml(para)}</p>`).join('
     <p><strong>${escapeHtml(KONRAD.record)}</strong> Pro-Rekord · ${escapeHtml(KONRAD.recordNote)}. OKTAGON ${escapeHtml(KONRAD.oktagonRecord)}. ${KONRAD.currentStreak} Siege in Folge. ${KONRAD.koTkoWins} KO/TKO.</p>
     <h3>${escapeHtml(COPY.konradSectionMilestonesTitle)}</h3>
 ${KONRAD.milestones.map((item) => `    <p><strong>${escapeHtml(item.label)}:</strong> ${escapeHtml(item.text)}</p>`).join('\n')}
-    <h2>${escapeHtml(COPY.whoTitle)} ${escapeHtml(COPY.whoKicker)}</h2>
-    <p>${escapeHtml(COPY.whoLead)}</p>
-${people}
-    <h2>${escapeHtml(COPY.planTitle)}</h2>
-    <p>${escapeHtml(COPY.planNote)}</p>
-${kursplanRows}
-    <h2>${escapeHtml(COPY.priceTitle)} Mitglied werden</h2>
-    <p>${escapeHtml(COPY.priceLead)} ${escapeHtml(COPY.priceFoot)}</p>
-${plans}
-    <p><a href="/mitglied">${escapeHtml(COPY.ctaJoinNow)}</a></p>
     <h2>${escapeHtml(COPY.faqTitle)}</h2>
 ${faq}
     <h2>${escapeHtml(COPY.contactTitle)}</h2>

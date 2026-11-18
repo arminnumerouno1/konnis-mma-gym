@@ -468,6 +468,25 @@ export function Home() {
         </div>
       </section>
 
+      <section className="who" id="wer" data-reveal>
+        <p className="who-kicker">{COPY.whoKicker}</p>
+        <h2>{COPY.whoTitle}</h2>
+        <p className="who-lead">{COPY.whoLead}</p>
+        <ul className="who-grid">
+          {COPY.whoPeople.map(([name, text]) => (
+            <li key={name}>
+              <h3>{name}</h3>
+              <p>{text}</p>
+            </li>
+          ))}
+        </ul>
+        <div className="who-actions">
+          <Link className="btn btn-solid" href="/#preise">
+            {COPY.whoToPrices}
+          </Link>
+        </div>
+      </section>
+
       <section className="impact" id="training">
         <p className="impact-kicker">{COPY.trainTitle}</p>
         {COPY.disciplines.map((item, index) => (
@@ -481,6 +500,101 @@ export function Home() {
           </article>
         ))}
       </section>
+
+      <section className="block schedule" id="plan" data-reveal>
+        <h2>{COPY.planTitle}</h2>
+        <p className="lead">{COPY.planNote}</p>
+        <p className="lead">{COPY.planNoteYouth}</p>
+        <div className="kursplan-legend" aria-hidden="true">
+          <span className="kursplan-legend-all">{COPY.planLegendAll}</span>
+          <span className="kursplan-legend-advanced">{COPY.planLegendAdvanced}</span>
+        </div>
+        <div className="schedule-frame">
+          <div className="kursplan-scroll kursplan-desktop">
+            <table className="kursplan-table">
+              <thead>
+                <tr>
+                  <th scope="col">Zeit</th>
+                  {KURSPLAN_DAYS.map((day) => (
+                    <th key={day.id} scope="col">
+                      {day.label}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {KURSPLAN_TIMES.map((time, rowIndex) => (
+                  <tr key={time}>
+                    <th scope="row">{time}</th>
+                    {KURSPLAN[rowIndex].map((cell, dayIndex) => {
+                      const day = KURSPLAN_DAYS[dayIndex]
+                      if (!cell) {
+                        return (
+                          <td key={day.id} className="kursplan-empty">
+                            <span>{COPY.planEmpty}</span>
+                          </td>
+                        )
+                      }
+                      return (
+                        <td key={day.id} className={`kursplan-slot accent-${cell.accent}`}>
+                          {cell.when ? <span className="kursplan-when">{cell.when}</span> : null}
+                          <strong>{cell.title}</strong>
+                          <span className={`kursplan-level is-${cell.level}`}>{kursLevelLabel(cell.level)}</span>
+                        </td>
+                      )
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <div className="kursplan-mobile">
+            {KURSPLAN_BY_DAY.map(({ day, entries }) => (
+              <article key={day.id} className={`kursplan-day day-${day.id}`}>
+                <h3>{day.label}</h3>
+                {entries.length ? (
+                  <ul>
+                    {entries.map((entry) => (
+                      <li key={`${day.id}-${entry.time}-${entry.slot.title}`} className={`kursplan-slot accent-${entry.slot.accent}`}>
+                        <span className="kursplan-when">{entry.time}</span>
+                        <strong>{entry.slot.title}</strong>
+                        <span className={`kursplan-level is-${entry.slot.level}`}>{kursLevelLabel(entry.slot.level)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="kursplan-empty">{COPY.planEmpty}</p>
+                )}
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="block pricing" id="preise" data-reveal>
+        <h2>{COPY.priceTitle}</h2>
+        <p className="lead">{COPY.priceLead}</p>
+        <div className="price-grid">
+          {PUBLIC_PLANS.map((plan) => (
+            <PlanCard key={plan.id} plan={plan} />
+          ))}
+        </div>
+        <p className="price-foot">{COPY.priceFoot}</p>
+        <div className="price-close">
+          <p>{COPY.priceClose}</p>
+          <Link className="btn btn-solid btn-xl" href={href('join')}>
+            {COPY.ctaJoinNow}
+          </Link>
+        </div>
+      </section>
+
+      {TRIAL_OPEN ? (
+        <section className="block trial" id="probetraining" data-reveal>
+          <h2>{COPY.trialTitle}</h2>
+          <p className="lead">{COPY.trialLead}</p>
+          <TrialForm />
+        </section>
+      ) : null}
 
       <section className="duo" id="team">
         <article className="duo-card">
@@ -586,120 +700,6 @@ export function Home() {
           ))}
         </ul>
       </section>
-
-      <section className="who" id="wer" data-reveal>
-        <p className="who-kicker">{COPY.whoKicker}</p>
-        <h2>{COPY.whoTitle}</h2>
-        <p className="who-lead">{COPY.whoLead}</p>
-        <ul className="who-grid">
-          {COPY.whoPeople.map(([name, text]) => (
-            <li key={name}>
-              <h3>{name}</h3>
-              <p>{text}</p>
-            </li>
-          ))}
-        </ul>
-        <div className="who-actions">
-          <Link className="btn btn-solid" href="/#preise">
-            {COPY.whoToPrices}
-          </Link>
-        </div>
-      </section>
-
-      <section className="block schedule" id="plan" data-reveal>
-        <h2>{COPY.planTitle}</h2>
-        <p className="lead">{COPY.planNote}</p>
-        <p className="lead">{COPY.planNoteYouth}</p>
-        <div className="kursplan-legend" aria-hidden="true">
-          <span className="kursplan-legend-all">{COPY.planLegendAll}</span>
-          <span className="kursplan-legend-advanced">{COPY.planLegendAdvanced}</span>
-        </div>
-        <div className="schedule-frame">
-          <div className="kursplan-scroll kursplan-desktop">
-            <table className="kursplan-table">
-              <thead>
-                <tr>
-                  <th scope="col">Zeit</th>
-                  {KURSPLAN_DAYS.map((day) => (
-                    <th key={day.id} scope="col">
-                      {day.label}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {KURSPLAN_TIMES.map((time, rowIndex) => (
-                  <tr key={time}>
-                    <th scope="row">{time}</th>
-                    {KURSPLAN[rowIndex].map((cell, dayIndex) => {
-                      const day = KURSPLAN_DAYS[dayIndex]
-                      if (!cell) {
-                        return (
-                          <td key={day.id} className="kursplan-empty">
-                            <span>{COPY.planEmpty}</span>
-                          </td>
-                        )
-                      }
-                      return (
-                        <td key={day.id} className={`kursplan-slot accent-${cell.accent}`}>
-                          {cell.when ? <span className="kursplan-when">{cell.when}</span> : null}
-                          <strong>{cell.title}</strong>
-                          <span className={`kursplan-level is-${cell.level}`}>{kursLevelLabel(cell.level)}</span>
-                        </td>
-                      )
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="kursplan-mobile">
-            {KURSPLAN_BY_DAY.map(({ day, entries }) => (
-              <article key={day.id} className={`kursplan-day day-${day.id}`}>
-                <h3>{day.label}</h3>
-                {entries.length ? (
-                  <ul>
-                    {entries.map((entry) => (
-                      <li key={`${day.id}-${entry.time}-${entry.slot.title}`} className={`kursplan-slot accent-${entry.slot.accent}`}>
-                        <span className="kursplan-when">{entry.time}</span>
-                        <strong>{entry.slot.title}</strong>
-                        <span className={`kursplan-level is-${entry.slot.level}`}>{kursLevelLabel(entry.slot.level)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="kursplan-empty">{COPY.planEmpty}</p>
-                )}
-              </article>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="block pricing" id="preise" data-reveal>
-        <h2>{COPY.priceTitle}</h2>
-        <p className="lead">{COPY.priceLead}</p>
-        <div className="price-grid">
-          {PUBLIC_PLANS.map((plan) => (
-            <PlanCard key={plan.id} plan={plan} />
-          ))}
-        </div>
-        <p className="price-foot">{COPY.priceFoot}</p>
-        <div className="price-close">
-          <p>{COPY.priceClose}</p>
-          <Link className="btn btn-solid btn-xl" href={href('join')}>
-            {COPY.ctaJoinNow}
-          </Link>
-        </div>
-      </section>
-
-      {TRIAL_OPEN ? (
-        <section className="block trial" id="probetraining" data-reveal>
-          <h2>{COPY.trialTitle}</h2>
-          <p className="lead">{COPY.trialLead}</p>
-          <TrialForm />
-        </section>
-      ) : null}
 
       <section className="block faq" id="faq">
         <h2>{COPY.faqTitle}</h2>
