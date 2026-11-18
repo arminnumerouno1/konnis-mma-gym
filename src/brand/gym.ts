@@ -41,7 +41,7 @@ export const GYM = {
   },
   hall: {
     cage: '/brand/halle/cage.jpg',
-    cageStrip: '/brand/halle/halle-01-kaefig.jpg',
+    cageStrip: '/brand/halle/halle-kaefig-weit.jpg',
     floor: '/brand/halle/floor.jpg',
     depth: '/brand/halle/depth.jpg',
     marks: '/brand/halle/marks.jpg',

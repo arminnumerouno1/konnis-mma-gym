@@ -515,7 +515,7 @@ p,
   padding: 80px 6vw 88px;
   background:
     linear-gradient(180deg, rgba(8, 8, 8, 0.86), rgba(8, 8, 8, 0.94)),
-    url('/brand/halle/halle-01-kaefig.jpg') 35% 40% / cover no-repeat;
+    url('/brand/halle/cage.jpg') 68% 36% / cover no-repeat;
 }
 
 .halle {
@@ -533,7 +533,7 @@ p,
   filter: brightness(0.78) contrast(1.08) saturate(0.92);
 }
 
-.halle img:nth-child(1) { object-position: center 42%; }
+.halle img:nth-child(1) { object-position: 40% 48%; }
 .halle img:nth-child(2) { object-position: center 40%; }
 .halle img:nth-child(3) { object-position: center 55%; }
 .halle img:nth-child(4) { object-position: center 42%; }
