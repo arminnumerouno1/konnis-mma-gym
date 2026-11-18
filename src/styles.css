@@ -1041,7 +1041,7 @@ p,
   min-height: 72vh;
   object-fit: cover;
   object-position: center 18%;
-  filter: brightness(0.88) contrast(1.08) saturate(0.86);
+  filter: brightness(1.02) contrast(1.04) saturate(0.92);
 }
 
 .konrad-profile-copy {
