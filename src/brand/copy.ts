@@ -6,9 +6,9 @@ export const COPY = {
   heroMma: 'MMA',
   heroCity: 'in Leipzig',
   heroHit: 'Vom Käfig auf die Matte.',
-  tape: 'MMA Gym in Leipzig · 16.–18.11. Bau-Pause · Danach richtig fertig · Wittenberger Straße 15 · ',
-  /** Visible through 2026-11-18 (Berlin). After that the banner hides. */
-  siteNoticeUntil: '2026-11-18',
+  tape: 'MMA Gym in Leipzig · Wittenberger Straße 15 · Training läuft · ',
+  /** Banner hidden when today (Berlin) is after this date. */
+  siteNoticeUntil: '2026-11-15',
   siteNoticeKicker: 'Gute Nachrichten',
   siteNoticeTitle: '16.–18. November · kurze Bau-Pause',
   siteNoticeLead:
