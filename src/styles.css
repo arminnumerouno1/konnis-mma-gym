@@ -530,8 +530,14 @@ p,
   width: 100%;
   height: 168px;
   object-fit: cover;
-  filter: brightness(0.68) contrast(1.05);
+  filter: brightness(0.78) contrast(1.08) saturate(0.92);
 }
+
+.halle img:nth-child(1) { object-position: center 45%; }
+.halle img:nth-child(2) { object-position: center 40%; }
+.halle img:nth-child(3) { object-position: center 55%; }
+.halle img:nth-child(4) { object-position: center 42%; }
+.halle img:nth-child(5) { object-position: center 35%; }
 
 .opening-kicker {
   margin: 0 0 8px;

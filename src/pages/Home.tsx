@@ -422,14 +422,14 @@ export function Home() {
       <section className="halle" aria-label="Die Halle">
         {(
           [
-            [GYM.hall.cage, ''],
-            [GYM.hall.floor, ''],
-            [GYM.hall.depth, ''],
-            [GYM.hall.marks, ''],
-            [GYM.hall.ropes, ''],
+            [GYM.hall.cage, 'MMA-Käfig in der KONNI Arena'],
+            [GYM.hall.floor, 'Trainingsfläche mit Hex-Licht'],
+            [GYM.hall.depth, 'Blick durch die Halle'],
+            [GYM.hall.marks, 'KONNI MMA Wandlogo'],
+            [GYM.hall.ropes, 'Käfig-Detail mit Gym-Logo'],
           ] as const
         ).map(([src, alt]) => (
-          <img key={src} src={src} alt={alt} width={640} height={426} />
+          <img key={src} src={src} alt={alt} width={640} height={480} loading="lazy" />
         ))}
       </section>
 
