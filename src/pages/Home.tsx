@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { COPY, FAQ } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
+import { KONRAD } from '../brand/konrad'
 import { PRESS } from '../brand/press'
 import {
   KURSPLAN,
@@ -520,6 +521,48 @@ export function Home() {
             <p>{COPY.mehmetBio}</p>
           </div>
         </article>
+      </section>
+
+      <section
+        className="konrad-profile"
+        id="konrad-dyrschka"
+        data-reveal
+        aria-label="Konrad Dyrschka – MMA-Profi und Head Coach"
+      >
+        <div className="konrad-profile-media">
+          <img
+            src={GYM.konradCage}
+            alt="Konrad Dyrschka im MMA-Käfig des KONNI MMA GYM Leipzig"
+            width={1179}
+            height={1329}
+            loading="lazy"
+          />
+        </div>
+        <div className="konrad-profile-copy">
+          <p className="konrad-profile-kicker">{COPY.konradSectionKicker}</p>
+          <h2>{COPY.konradSectionTitle}</h2>
+          <p className="konrad-profile-lead">{COPY.konradSectionLead}</p>
+          {COPY.konradSectionParas.map((para) => (
+            <p key={para.slice(0, 32)}>{para}</p>
+          ))}
+          <p className="konrad-profile-stats" aria-label="Kampfrekord Konrad Dyrschka">
+            <strong>{KONRAD.record}</strong>
+            <span>Pro-Rekord · {KONRAD.recordNote}</span>
+            <strong>{KONRAD.oktagonRecord}</strong>
+            <span>OKTAGON</span>
+            <strong>{KONRAD.currentStreak}</strong>
+            <span>Siege in Folge</span>
+          </p>
+          <h3>{COPY.konradSectionMilestonesTitle}</h3>
+          <ul className="konrad-milestones">
+            {KONRAD.milestones.map((item) => (
+              <li key={item.label}>
+                <strong>{item.label}</strong>
+                <span>{item.text}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
 
       <section className="press" id="presse" data-reveal aria-label="Presse über Konrad Dyrschka">

@@ -1019,6 +1019,133 @@ p,
   margin-top: 36px;
 }
 
+.konrad-profile {
+  display: grid;
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  gap: 0;
+  background:
+    linear-gradient(110deg, rgba(6, 7, 9, 0.2), rgba(6, 7, 9, 0.92) 48%, #070707 100%),
+    #070707;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.konrad-profile-media {
+  min-height: 72vh;
+  background: #0a0a0a;
+}
+
+.konrad-profile-media img {
+  width: 100%;
+  height: 100%;
+  min-height: 72vh;
+  object-fit: cover;
+  object-position: center 18%;
+  filter: brightness(0.88) contrast(1.08) saturate(0.86);
+}
+
+.konrad-profile-copy {
+  padding: 56px 6vw 64px 48px;
+  align-self: center;
+}
+
+.konrad-profile-kicker {
+  margin: 0 0 10px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+  font-size: 13px;
+}
+
+.konrad-profile-copy h2 {
+  margin: 0 0 18px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(52px, 8vw, 96px);
+  line-height: 0.9;
+  letter-spacing: 0.02em;
+}
+
+.konrad-profile-lead {
+  margin: 0 0 18px;
+  max-width: 36rem;
+  font-size: 22px;
+  line-height: 1.35;
+  color: #e8e2d8;
+}
+
+.konrad-profile-copy > p {
+  margin: 0 0 14px;
+  max-width: 38rem;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.konrad-profile-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 16px;
+  margin: 28px 0 32px;
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  max-width: 28rem;
+}
+
+.konrad-profile-stats strong {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 34px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+
+.konrad-profile-stats span {
+  align-self: center;
+  color: var(--muted);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.konrad-profile-copy h3 {
+  margin: 0 0 14px;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.konrad-milestones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-width: 40rem;
+}
+
+.konrad-milestones li {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 12px 18px;
+  padding: 12px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.konrad-milestones li:last-child {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.konrad-milestones strong {
+  color: #fff;
+  font-size: 15px;
+}
+
+.konrad-milestones span {
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.4;
+}
+
 .duo {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -2953,8 +3080,22 @@ p,
   .trial-form,
   .contact-grid,
   .footer-grid,
-  .duo {
+  .duo,
+  .konrad-profile {
     grid-template-columns: 1fr;
+  }
+
+  .konrad-profile-media img {
+    min-height: 56vh;
+  }
+
+  .konrad-profile-copy {
+    padding: 36px 6vw 48px;
+  }
+
+  .konrad-milestones li {
+    grid-template-columns: 1fr;
+    gap: 4px;
   }
 
   .footer-top {
