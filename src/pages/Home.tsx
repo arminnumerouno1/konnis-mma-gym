@@ -423,7 +423,7 @@ export function Home() {
       <section className="halle" aria-label="Die Halle">
         {(
           [
-            [GYM.hall.cage, 'MMA-Käfig in der KONNI Arena'],
+            [GYM.hall.cageStrip, 'MMA-Käfig in der KONNI Arena'],
             [GYM.hall.floor, 'Trainingsfläche mit Hex-Licht'],
             [GYM.hall.depth, 'Blick durch die Halle'],
             [GYM.hall.marks, 'KONNI MMA Wandlogo'],
