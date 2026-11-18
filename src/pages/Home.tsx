@@ -427,7 +427,7 @@ export function Home() {
             [GYM.hall.floor, 'Trainingsfläche mit Hex-Licht'],
             [GYM.hall.depth, 'Blick durch die Halle'],
             [GYM.hall.marks, 'KONNI MMA Wandlogo'],
-            [GYM.hall.ropes, 'Käfig-Detail mit Gym-Logo'],
+            [GYM.hall.ropes, 'MMA-Käfig frontal mit Hex-Licht'],
           ] as const
         ).map(([src, alt]) => (
           <img key={src} src={src} alt={alt} width={640} height={480} loading="lazy" />
