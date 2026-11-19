@@ -5,8 +5,6 @@ export type LegalBlock = {
   paragraphs: string[]
 }
 
-export const ODR_URL = 'https://ec.europa.eu/consumers/odr/'
-
 export const IMPRESSUM = {
   eyebrow: 'Angaben gemäß § 5 DDG',
   title: 'Impressum',
@@ -50,16 +48,15 @@ export const IMPRESSUM = {
     {
       title: 'Haftung für Inhalte',
       paragraphs: [
-        'Als Diensteanbieter sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte auf diesen Seiten nach den allgemeinen Gesetzen verantwortlich.',
-        'Nach §§ 8 bis 10 DDG sind wir nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur Entfernung oder Sperrung der Nutzung von Informationen nach den allgemeinen Gesetzen bleiben unberührt.',
-        'Eine Haftung hierfür ist erst ab dem Zeitpunkt der Kenntnis einer konkreten Rechtsverletzung möglich. Bei Bekanntwerden entsprechender Rechtsverletzungen entfernen wir diese Inhalte umgehend.',
+        'Für die von uns selbst bereitgestellten Inhalte auf diesen Seiten sind wir nach den allgemeinen Gesetzen verantwortlich.',
+        'Eine allgemeine Pflicht zur laufenden Überwachung fremder Informationen, die Nutzer übermitteln oder speichern, besteht nicht. Sobald wir von einer konkreten Rechtsverletzung Kenntnis erlangen, prüfen wir den Hinweis und entfernen oder sperren die betreffenden Inhalte unverzüglich, soweit wir dazu verpflichtet und technisch in der Lage sind.',
       ],
     },
     {
       title: 'Haftung für Links',
       paragraphs: [
-        'Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Für diese fremden Inhalte können wir keine Gewähr übernehmen. Verantwortlich ist stets der jeweilige Anbieter oder Betreiber der verlinkten Seiten.',
-        'Die verlinkten Seiten wurden zum Zeitpunkt der Verlinkung auf mögliche Rechtsverstöße geprüft. Rechtswidrige Inhalte waren dabei nicht erkennbar. Eine dauerhafte Kontrolle ohne konkreten Hinweis auf eine Rechtsverletzung ist nicht zumutbar. Bei Bekanntwerden von Rechtsverletzungen entfernen wir derartige Links umgehend.',
+        'Unser Angebot enthält Links zu externen Websites Dritter, auf deren Inhalte wir keinen Einfluss haben. Für diese fremden Inhalte übernehmen wir keine Gewähr. Verantwortlich ist stets der jeweilige Anbieter oder Betreiber der verlinkten Seiten.',
+        'Zum Zeitpunkt der Verlinkung haben wir die Seiten auf erkennbare Rechtsverstöße geprüft. Eine dauerhafte Kontrolle ohne konkreten Hinweis ist nicht zumutbar. Bei Bekanntwerden von Rechtsverletzungen entfernen wir derartige Links umgehend.',
       ],
     },
     {
@@ -71,17 +68,10 @@ export const IMPRESSUM = {
       ],
     },
     {
-      title: 'Online-Streitbeilegung',
-      paragraphs: [
-        'Die Europäische Kommission stellt eine Plattform zur Online-Streitbeilegung (OS) bereit. Verbraucher können diese Plattform für die außergerichtliche Beilegung von Streitigkeiten aus Online-Kaufverträgen oder Online-Dienstleistungsverträgen nutzen.',
-        `OS-Plattform: ${ODR_URL}`,
-        `Unsere E-Mail-Adresse lautet ${GYM.email}.`,
-      ],
-    },
-    {
       title: 'Verbraucherstreitbeilegung',
       paragraphs: [
         'Wir sind nicht verpflichtet und nicht bereit, an Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle teilzunehmen.',
+        `Zuständige Kontaktadresse für Beschwerden: ${GYM.email}.`,
       ],
     },
   ],
@@ -119,8 +109,8 @@ export const IMPRESSUM_KONRAD = {
     {
       title: 'Haftung für Inhalte',
       paragraphs: [
-        'Als Diensteanbieter bin ich gemäß § 7 Abs. 1 DDG für eigene Inhalte auf meinen Kanälen nach den allgemeinen Gesetzen verantwortlich.',
-        'Nach §§ 8 bis 10 DDG bin ich nicht verpflichtet, übermittelte oder gespeicherte fremde Informationen zu überwachen oder nach Umständen zu forschen, die auf eine rechtswidrige Tätigkeit hinweisen. Verpflichtungen zur Entfernung oder Sperrung der Nutzung von Informationen nach den allgemeinen Gesetzen bleiben unberührt.',
+        'Für die von mir selbst bereitgestellten Inhalte auf meinen Kanälen bin ich nach den allgemeinen Gesetzen verantwortlich.',
+        'Eine allgemeine Pflicht zur laufenden Überwachung fremder Informationen besteht nicht. Bei Kenntnis einer konkreten Rechtsverletzung prüfe ich den Hinweis und entferne oder sperre die betreffenden Inhalte unverzüglich, soweit ich dazu verpflichtet und in der Lage bin.',
       ],
     },
   ],
@@ -137,10 +127,11 @@ export const PRIVACY: LegalBlock[] = [
   {
     title: '2. Hosting und Server-Logfiles',
     paragraphs: [
-      'Die Website wird über einen Hosting-Dienstleister bereitgestellt. Derzeit ist das Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, USA. Der Hoster verarbeitet in unserem Auftrag technisch notwendige Daten zur Auslieferung der Seiten (Art. 28 DSGVO).',
-      'Beim Aufruf entstehen Server-Logfiles, insbesondere IP-Adresse, Zeitpunkt, aufgerufene Datei, übertragene Datenmenge, Browsertyp und gegebenenfalls die zuvor besuchte Seite. Zweck sind Bereitstellung, Stabilität, Sicherheit und Missbrauchsabwehr (Art. 6 Abs. 1 lit. f DSGVO). Die Speicherdauer richtet sich nach den technischen Vorgaben des Hosters und ist auf das Erforderliche begrenzt.',
-      'Soweit dabei Daten in die USA übermittelt werden, stützt sich das auf den EU-US Data Privacy Framework und/oder geeignete Garantien nach Art. 46 DSGVO.',
-      'Adressvorschläge im Anmeldeformular: Wenn du eine Straße eintippst, fragt unser Server den Geocoding-Dienst Photon der komoot GmbH (Potsdam) auf Basis von OpenStreetMap nach passenden Adressen. Übermittelt wird nur der eingetippte Text, nicht deine IP-Adresse und keine weiteren Formulardaten. Zweck ist eine schnelle, fehlerfreie Eingabe (Art. 6 Abs. 1 lit. b und f DSGVO).',
+      'Die Website und die technische Mitgliederverwaltung laufen über den Hosting-Dienstleister Vercel Inc., 440 N Barranca Ave #4133, Covina, CA 91723, USA (Art. 28 DSGVO, Auftragsverarbeitung).',
+      'Beim Aufruf entstehen Server-Logfiles, insbesondere IP-Adresse, Zeitpunkt, aufgerufene Datei, übertragene Datenmenge, Browsertyp und gegebenenfalls die zuvor besuchte Seite. Zweck sind Bereitstellung, Stabilität, Sicherheit und Missbrauchsabwehr (Art. 6 Abs. 1 lit. f DSGVO). Die konkrete Speicherdauer der Logs richtet sich nach den technischen Vorgaben von Vercel; eine eigene, fest konfigurierte Log-Frist ist in diesem Projekt nicht hinterlegt.',
+      'Mitglieds-, Vertrags-, Dokumenten- und Portraitdaten speichern wir zusätzlich über Vercel Blob (Objektspeicher des Hosters), einschließlich technischer Sicherungskopien. Zweck ist der Betrieb von Vertrag, Studioverwaltung und Nachweis (Art. 6 Abs. 1 lit. b und c DSGVO).',
+      'Soweit dabei Daten in Drittländer (insbesondere die USA) übermittelt werden, stützt sich das — soweit anwendbar — auf geeignete Garantien nach Art. 46 DSGVO (z. B. EU-Standardvertragsklauseln) und/oder auf die Teilnahme am EU-US Data Privacy Framework. Maßgeblich sind die aktuellen Hinweise und Zertifizierungen von Vercel.',
+      'Adressvorschläge im Anmeldeformular: Wenn du eine Straße eintippst, fragt unser Server den Geocoding-Dienst Photon der komoot GmbH (Potsdam) auf Basis von OpenStreetMap nach passenden Adressen. Übermittelt wird nur der eingetippte Suchtext. Zweck ist eine schnelle, fehlerfreie Adresseingabe (Art. 6 Abs. 1 lit. b und f DSGVO).',
     ],
   },
   {
@@ -152,7 +143,7 @@ export const PRIVACY: LegalBlock[] = [
       'Optionale Dienste setzen wir nur, wenn du „Alle an“ wählst oder die optionale Kategorie einschaltest und speicherst. Aktuell ist das die eingebettete OpenStreetMap-Karte auf der Kontaktseite. Rechtsgrundlage sind dann Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG.',
       'Die Einwilligung kannst du jederzeit über „Cookies“ im Footer oder über „Auswahl ändern“ auf dieser Seite widerrufen oder anpassen. Der Widerruf gilt ab dem Zeitpunkt der Änderung. Die Rechtmäßigkeit bis dahin bleibt unberührt.',
       'Ohne optionale Zustimmung setzen wir keine Analyse-, Werbe- oder Marketing-Cookies und keine Tracking-Pixel. Es gibt kein Google Analytics, kein Meta-Pixel und keine eingebetteten Social-Plugins. Schriftarten liegen lokal auf unserem Server.',
-      'Instagram und Google Maps sind auf der Website nur als normale Links. Beim Klick verlässt du unsere Seite; es gelten die Hinweise der jeweiligen Anbieter. Eingebettete Inhalte Dritter laden wir erst, wenn du optionale Dienste erlaubt hast.',
+      'Instagram und OpenStreetMap sind auf der Website als normale Links nutzbar. Beim Klick verlässt du unsere Seite; es gelten die Hinweise der jeweiligen Anbieter. Die eingebettete OpenStreetMap-Karte laden wir erst, wenn du optionale Dienste erlaubt hast.',
       'Technische Zustände wie Scrollposition oder Formulareingaben können vorübergehend in deinem Browser bleiben, soweit das für die jeweilige Funktion nötig ist.',
     ],
   },
@@ -161,8 +152,8 @@ export const PRIVACY: LegalBlock[] = [
     paragraphs: [
       `Schreibst du uns per Formular, E-Mail oder Telefon, verarbeiten wir die angegebenen Daten zur Bearbeitung und Antwort (Art. 6 Abs. 1 lit. b DSGVO bei vorvertraglicher Anfrage, sonst Art. 6 Abs. 1 lit. f DSGVO).`,
       `Das Probetraining-Formular erfasst Name, Geburtsdatum, E-Mail, Telefon, gewünschten Kursplan-Slot (Tag, Uhrzeit, Kurs) und optional eine Nachricht. Bei Minderjährigen zusätzlich Name, Beziehung, E-Mail und Telefon der gesetzlichen Vertretung sowie den Stand des Einverständnisses. Die Angaben gehen an ${GYM.email} und liegen in der Mitgliederverwaltung, damit wir den Termin bestätigen, das Eltern-Einverständnis prüfen und die Anwesenheit abhaken können.`,
-      `Die öffentliche Voranmeldung ist geschlossen. Neue Interessenten schließen den Vertrag unter /mitglied. Bereits abgegebene Voranmeldungen (Name, Alter, E-Mail, optional Telefon, Sportarten, Erfahrung, Trainingszeiten, Interesse am Sonderpreis, wie du von uns erfahren hast, dein Ziel und optional eine Nachricht) bleiben in unserer Mitgliederverwaltung (Hosting und Speicher bei Vercel), damit wir das Training planen können. Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Du kannst sie jederzeit per Mail an ${GYM.email} widerrufen; dann löschen wir deine Voranmeldung. Wirst du kein Mitglied, löschen wir sie spätestens zwölf Monate nach Eingang.`,
-      'Bietest du uns WhatsApp an oder nutzt du unseren WhatsApp-Link, werden Inhalte und Metadaten über WhatsApp Ireland Limited / Meta verarbeitet. WhatsApp hat eigene Datenschutzhinweise. Die Nutzung ist freiwillig; du kannst uns stattdessen per E-Mail oder Telefon erreichen.',
+      `Die öffentliche Voranmeldung ist geschlossen. Neue Interessenten schließen den Vertrag unter /mitglied. Bereits abgegebene Voranmeldungen (Name, Alter, E-Mail, optional Telefon, Sportarten, Erfahrung, Trainingszeiten, Interesse am Sonderpreis, wie du von uns erfahren hast, dein Ziel und optional eine Nachricht) bleiben in unserer Mitgliederverwaltung (Speicher bei Vercel Blob), damit wir das Training planen können. Rechtsgrundlage ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO). Du kannst sie jederzeit per Mail an ${GYM.email} widerrufen; dann löschen wir deine Voranmeldung. Wirst du kein Mitglied, löschen wir sie spätestens zwölf Monate nach Eingang.`,
+      'WhatsApp ist auf der Website nur als Link (wa.me) eingebunden, keine Chat-Widget-Integration. Nutzt du den Link oder schreibst uns über WhatsApp, werden Inhalte und Metadaten über WhatsApp Ireland Limited / Meta verarbeitet. WhatsApp hat eigene Datenschutzhinweise. Die Nutzung ist freiwillig; du kannst uns stattdessen per E-Mail oder Telefon erreichen.',
       'Anfragen löschen wir, sobald die Sache erledigt ist und keine Aufbewahrungspflicht entgegensteht.',
     ],
   },
@@ -170,7 +161,7 @@ export const PRIVACY: LegalBlock[] = [
     title: '5. Mitgliedschaft und Day Pass',
     paragraphs: [
       'Beim Online-Vertrag verarbeiten wir die angegebenen Vertragsdaten: Name, Geburtsdatum, Anschrift, E-Mail, Telefon, Tarif, Bestätigungen, digitale Unterschrift, ein Portraitfoto zur Identifikation beim Training sowie bei Minderjährigen die Daten der gesetzlichen Vertretung. Das Portraitfoto ist Pflichtbestandteil der Anmeldung und dient ausschließlich der Zuordnung der Person im Studio (kein biometrisches Matching, keine automatisierte Gesichtserkennung). Fehlt es bei bestehenden Mitgliedern, können wir per E-Mail einen persönlichen Upload-Link senden; das Foto wird dann genauso gespeichert und genutzt. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO (Vertrag) und Art. 6 Abs. 1 lit. c DSGVO, soweit gesetzliche Aufbewahrung gilt. Das Portraitfoto löschen wir in der Regel spätestens zwölf Monate nach Vertragsende, sofern keine Streit-, Sicherheits- oder gesetzlichen Aufbewahrungsgründe eine längere Speicherung erfordern. Vertrags- und Buchhaltungsunterlagen ohne Lichtbild bleiben davon unberührt.',
-      'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die Zahlung erfolgt mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe (siehe Abschnitt 6).',
+      'Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Bei Online-Abschluss über die Website erfolgt die Zahlung mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe (siehe Abschnitt 6). Eine Banküberweisung wird online nicht mehr als neue Zahlungsart angeboten; bestehende Überweisungs-Mitglieder können weiterhin so geführt werden.',
       'Ohne diese Daten kommt kein Online-Vertrag zustande. Die Daten bleiben für die Vertragsdauer und danach so lange, wie handels- und steuerrechtliche Pflichten das verlangen — in der Regel bis zu zehn Jahre nach Vertragsende.',
       `Änderungen von Anschrift, E-Mail, Bankverbindung und Zahlweg bitte zeitnah an ${GYM.legalEmail}.`,
       'Check-in an der Tür: Über den QR-Code und deinen persönlichen Check-in-Code erfassen wir Anwesenheit im jeweiligen Kursplan-Slot (Zeitpunkt, Name, Mitglied oder Probetraining, Slot). Offene Beiträge speichern wir nur für die Verwaltung, nicht auf dem Check-in-Bildschirm. Zweck ist Trainingsbetrieb und Zahlungskontrolle (Art. 6 Abs. 1 lit. b und f DSGVO). Check-in-Einträge löschen wir in der Regel nach spätestens 90 Tagen, sofern keine längere Aufbewahrung nötig ist.',
@@ -179,9 +170,10 @@ export const PRIVACY: LegalBlock[] = [
   {
     title: '6. Zahlung über Stripe',
     paragraphs: [
-      'Für Kartenzahlungen, Apple Pay und SEPA-Lastschrift (Mitgliedschaft, Day Pass, Aufnahmegebühr und laufende Monatsbeiträge) setzen wir den Zahlungsdienstleister Stripe ein. Vertragspartner und Ansprechpartner in der EU ist Stripe Payments Europe, Limited, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, D02 H210, Irland, sowie verbundene Unternehmen der Stripe-Gruppe, soweit für die Zahlungsabwicklung erforderlich.',
+      'Für Kartenzahlungen, Apple Pay und SEPA-Lastschrift (Mitgliedschaft, Day Pass, Aufnahmegebühr und laufende Monatsbeiträge) setzen wir den Zahlungsdienstleister Stripe ein. Im technischen Checkout der Website sind die Zahlungsarten „card“ (inkl. Apple Pay, soweit vom Gerät unterstützt) und „sepa_debit“ freigeschaltet. Ob SEPA-Lastschrift in deinem Einzelfall im Stripe-Checkout erscheint, hängt zusätzlich von der Freischaltung und den Vorgaben in unserem Stripe-Konto sowie von Stripe ab.',
+      'Vertragspartner und Ansprechpartner in der EU ist Stripe Payments Europe, Limited, 1 Grand Canal Street Lower, Grand Canal Dock, Dublin, D02 H210, Irland, sowie verbundene Unternehmen der Stripe-Gruppe, soweit für die Zahlungsabwicklung erforderlich.',
       'Zu Stripe können insbesondere folgende Daten übermittelt bzw. dort verarbeitet werden: Name, E-Mail-Adresse, Rechnungs- und Transaktionsdaten, Tarif bzw. Leistungsbeschreibung, Betrag, Währung, Zeitpunkt der Zahlung, Zahlungsstatus, Geräte- und Sicherheitsdaten zur Betrugsprävention sowie die von dir eingegebenen Zahlungsdaten (z. B. Kartennummer, Ablaufdatum, CVC; bei Apple Pay die von Apple bereitgestellten Token; bei SEPA-Lastschrift IBAN und das im Stripe-Checkout erteilte Lastschriftmandat). Die vollständige Kartennummer aus dem Stripe-Checkout speichern wir nicht selbst.',
-      'Bei uns liegen zur Vertrags- und Buchhaltungsabwicklung vor allem: Stripe-Kundennummer (Customer-ID), Abo- bzw. Checkout-Referenzen, Zahlungsstatus je Periode und, soweit vorhanden, Beleg-/Rechnungsinformationen.',
+      'Bei uns liegen zur Vertrags- und Buchhaltungsabwicklung vor allem: Stripe-Kundennummer (Customer-ID), Abo- bzw. Checkout-Referenzen, Zahlungsstatus je Periode und, soweit vorhanden, Beleg-/Rechnungsinformationen. Ereignisse zur Zahlung (Webhooks) verarbeiten wir serverseitig, um Mitgliedschaft und Beitragsstatus zu aktualisieren.',
       'Rechtsgrundlage für die Weitergabe und Verarbeitung zur Zahlungsabwicklung ist Art. 6 Abs. 1 lit. b DSGVO (Erfüllung des Mitgliedschafts- bzw. Kaufvertrags). Zusätzlich kann Art. 6 Abs. 1 lit. f DSGVO greifen, soweit Stripe und wir ein berechtigtes Interesse an sicheren, effizienten Zahlungen und der Verhinderung von Missbrauch haben und deine Interessen nicht überwiegen. Soweit handels- und steuerrechtliche Aufbewahrungspflichten bestehen, stützt sich die Speicherung auch auf Art. 6 Abs. 1 lit. c DSGVO.',
       'Stripe nimmt bei der Datenverarbeitung eine Doppelrolle ein: Als Auftragsverarbeiter (Art. 28 DSGVO) verarbeitet Stripe Zahlungsdaten nach unseren Weisungen, um Transaktionen durchzuführen. Als eigener Verantwortlicher verarbeitet Stripe Daten außerdem für eigene Zwecke, insbesondere zur Erfüllung gesetzlicher und regulatorischer Pflichten (z. B. Geldwäscheprävention, Betrugsbekämpfung, Sicherheits- und Compliance-Maßnahmen). Auf diese eigene Verarbeitung haben wir keinen Einfluss; es gelten die Hinweise von Stripe.',
       'Zwischen uns und Stripe besteht eine Datenverarbeitungsvereinbarung (Stripe DPA) einschließlich Regelungen zu internationalen Datenübermittlungen. Soweit Stripe personenbezogene Daten in Drittländer (insbesondere USA oder Indien) übermittelt oder dort verarbeitet, erfolgt dies auf Grundlage geeigneter Garantien nach Art. 46 DSGVO, insbesondere EU-Standardvertragsklauseln, und — soweit anwendbar — dem EU-US Data Privacy Framework.',
@@ -200,8 +192,8 @@ export const PRIVACY: LegalBlock[] = [
   {
     title: '8. Videoüberwachung',
     paragraphs: [
-      'Derzeit findet in den Räumen der KONNI MMA GYM GbR keine Videoüberwachung statt.',
-      'Sollte künftig eine Videoüberwachung eingerichtet werden, erfolgt das nur mit vorheriger Kennzeichnung vor Ort und einer ergänzenden Datenschutzinformation (Zweck, Rechtsgrundlage, Bereiche, Speicherdauer, Empfänger). Umkleide-, Dusch- und Sanitärräume werden nicht videoüberwacht. Eine pauschale Zustimmung in den AGB ersetzt diese Hinweise nicht.',
+      'Nach dem aktuellen Stand dieses Website-Projekts und der AGB findet in den Räumen der KONNI MMA GYM GbR keine Videoüberwachung statt. Ob vor Ort Kameras betrieben werden, kann die Website allein nicht beweisen; maßgeblich ist die tatsächliche Kennzeichnung und Information im Studio.',
+      'Sollte eine Videoüberwachung eingerichtet werden, erfolgt das nur mit vorheriger Kennzeichnung vor Ort und einer ergänzenden Datenschutzinformation (Zweck, Rechtsgrundlage, Bereiche, Speicherdauer, Empfänger). Umkleide-, Dusch- und Sanitärräume werden nicht videoüberwacht. Eine pauschale Zustimmung in den AGB ersetzt diese Hinweise nicht.',
     ],
   },
   {
@@ -210,14 +202,14 @@ export const PRIVACY: LegalBlock[] = [
       `Wir verlinken unseren Instagram-Account ${GYM.instagramHandle} (${GYM.instagram}). Beim Klick verlässt du unsere Website. Es gelten die Hinweise von Meta Platforms Ireland Limited.`,
       'Auf unserer Seite ist kein Instagram-Plugin und kein eingebetteter Feed aktiv. Ohne Klick und ohne optionale Cookie-Zustimmung werden keine Daten an Instagram übertragen.',
       'Die Studioadresse verlinken wir auf OpenStreetMap. Der bloße Link überträgt keine Daten an OpenStreetMap.',
-      'Wenn du optionale Dienste erlaubst, laden wir zusätzlich eine Karte von openstreetmap.org. Dabei kann die OpenStreetMap Foundation (St John’s Innovation Centre, Cowley Road, Cambridge CB4 0WS, Vereinigtes Königreich) deine IP-Adresse, technische Browserdaten und eigene Cookies verarbeiten. Hinweise der OSM Foundation: https://wiki.osmfoundation.org/wiki/Privacy_Policy',
+      'Wenn du optionale Dienste erlaubst, laden wir zusätzlich eine Karte von openstreetmap.org in einem eingebetteten Rahmen. Dabei kann die OpenStreetMap Foundation (St John’s Innovation Centre, Cowley Road, Cambridge CB4 0WS, Vereinigtes Königreich) deine IP-Adresse, technische Browserdaten und eigene Cookies verarbeiten. Hinweise der OSM Foundation: https://wiki.osmfoundation.org/wiki/Privacy_Policy',
       'Rechtsgrundlage für die eingebettete Karte ist deine Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 25 Abs. 1 TDDDG). Ohne diese Zustimmung bleibt es beim normalen Link. Die Einwilligung kannst du über Cookies im Footer jederzeit ändern. Nach dem Widerruf laden wir die Karte nicht mehr. Cookies, die OpenStreetMap selbst gesetzt hat, kannst du nur in deinem Browser löschen.',
     ],
   },
   {
     title: '10. Empfänger und Auftragsverarbeitung',
     paragraphs: [
-      'Empfänger können sein: unser Hosting-Dienstleister (derzeit Vercel), der E-Mail-Dienstleister (soweit eingesetzt, derzeit Brevo), Stripe Payments Europe, Limited sowie verbundene Stripe-Unternehmen für die Zahlungsabwicklung, unsere Bank sowie Stellen, denen wir gesetzlich zur Auskunft verpflichtet sind.',
+      'Empfänger können sein: unser Hosting- und Speicherdienstleister (derzeit Vercel inkl. Vercel Blob), der E-Mail-Dienstleister (soweit eingesetzt, derzeit Brevo / Sendinblue SAS), Stripe Payments Europe, Limited sowie verbundene Stripe-Unternehmen für die Zahlungsabwicklung, unsere Bank sowie Stellen, denen wir gesetzlich zur Auskunft verpflichtet sind.',
       'Soweit Dienstleister als Auftragsverarbeiter tätig werden, geschieht das auf Grundlage von Verträgen nach Art. 28 DSGVO. Bei Stripe gilt zusätzlich die Stripe-Datenverarbeitungsvereinbarung (siehe Abschnitt 6).',
       'Eine Übermittlung zu eigenen Werbezwecken an Dritte findet nicht statt.',
     ],
@@ -225,7 +217,7 @@ export const PRIVACY: LegalBlock[] = [
   {
     title: '11. Speicherdauer',
     paragraphs: [
-      'Wir speichern personenbezogene Daten nur so lange, wie es für den jeweiligen Zweck nötig ist oder das Gesetz uns eine Frist setzt. Vertrags- und Buchhaltungsunterlagen in der Regel bis zu zehn Jahre, Korrespondenz oft kürzer, Logs nur technisch nötig.',
+      'Wir speichern personenbezogene Daten nur so lange, wie es für den jeweiligen Zweck nötig ist oder das Gesetz uns eine Frist setzt. Vertrags- und Buchhaltungsunterlagen in der Regel bis zu zehn Jahre, Korrespondenz oft kürzer. Server-Logs und technische Speicherdauern beim Hoster richten sich nach dessen Systemen; eine eigene, feste Log-Frist ist hier nicht konfiguriert.',
     ],
   },
   {

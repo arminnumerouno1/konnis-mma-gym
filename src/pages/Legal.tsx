@@ -8,7 +8,6 @@ import {
   HOUSE_RULES,
   IMPRESSUM,
   IMPRESSUM_KONRAD,
-  ODR_URL,
   PRIVACY,
   WITHDRAWAL,
 } from '../brand/legal'
@@ -180,18 +179,9 @@ function Impressum() {
       {IMPRESSUM.blocks.map((block) => (
         <section key={block.title}>
           <h2>{block.title}</h2>
-          {block.paragraphs.map((p) =>
-            p.startsWith('OS-Plattform:') ? (
-              <p key={p}>
-                OS-Plattform:{' '}
-                <a href={ODR_URL} target="_blank" rel="noreferrer">
-                  {ODR_URL}
-                </a>
-              </p>
-            ) : (
-              <p key={p}>{p}</p>
-            ),
-          )}
+          {block.paragraphs.map((p) => (
+            <p key={p}>{p}</p>
+          ))}
         </section>
       ))}
     </>

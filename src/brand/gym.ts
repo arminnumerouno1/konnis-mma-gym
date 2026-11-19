@@ -23,7 +23,7 @@ export const GYM = {
   vatId: 'DE465785228',
   agbStand: '15. November 2026',
   agbDate: '15.11.2026',
-  privacyStand: '15. November 2026',
+  privacyStand: '19. November 2026',
   mapsUrl:
     'https://www.openstreetmap.org/search?query=Wittenberger%20Stra%C3%9Fe%2015%2C%2004129%20Leipzig',
   mapsEmbed:
