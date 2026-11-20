@@ -6,7 +6,7 @@ export const SLOWSTART_ID = 'slowstart'
 export const STANDARD_ID = 'standard'
 export const INVITE_PLAN_IDS = [FIRST50_ID, PLUS_ID, SLOWSTART_ID, STANDARD_ID]
 export const FIRST50_LIMIT = 50
-/** Extra personal seats past the original fifty. They stay First 50 in price, without a “Platz N von 50”. */
+/** Extra personal seats past the original fifty. They stay Family & Friends Tarif in price, without a “Platz N von 50”. */
 export const FIRST50_SLOT_MAX = 400
 /** Slots through this number were already mailed. The desk sender starts after them. */
 export const FIRST50_ISSUED_THROUGH = 65

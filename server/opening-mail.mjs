@@ -51,7 +51,7 @@ export function openingMailHtml({ first = '' } = {}) {
 <td style="padding:12px 0;text-align:right"><strong>19,99€</strong></td>
 </tr>
 </table>
-<p>First-50-Plätze laufen über persönlichen Link. Alle anderen melden sich unter <a href="${join}">mma-in-leipzig.de/mitglied</a> an.</p>
+<p>Family-&amp;-Friends-Plätze laufen über persönlichen Link. Alle anderen melden sich unter <a href="${join}">mma-in-leipzig.de/mitglied</a> an.</p>
 <p>Aktuelles und Kursplan auch auf Instagram: <a href="https://www.instagram.com/konnimmagym/" style="color:#c4121a;font-weight:bold">@konnimmagym</a>.</p>
 <p style="margin:28px 0 0"><a href="${join}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Mitglied werden</a></p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>

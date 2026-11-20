@@ -58,7 +58,7 @@ const PLAN_NAMES = {
   flex: 'Flex',
   plus: 'Plus',
   daypass: 'Day Pass',
-  first50: 'First 50',
+  first50: 'Family & Friends Tarif',
 }
 
 function berlinOffsetMinutes(date) {

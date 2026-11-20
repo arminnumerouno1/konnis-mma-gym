@@ -213,7 +213,7 @@ export function membershipCopyHtml(record, { forGym = false, attached = false, s
     ? '<p>Angehängt: <strong>Mitgliedsvertrag.pdf</strong> und <strong>Widerrufsbelehrung.pdf</strong>.</p>'
     : '<p><a href="https://www.mma-in-leipzig.de/legal/widerrufsbelehrung.pdf">Widerrufsbelehrung als PDF</a></p>'
   const lead = forGym
-    ? `<p>Neue Mitgliedschaft über die Website.${attached ? ' Vertrag und Widerrufsbelehrung liegen als PDF bei.' : ''}${isFirst50(record) ? ' First 50, Sonderpreis 89,99€.' : ''}</p>`
+    ? `<p>Neue Mitgliedschaft über die Website.${attached ? ' Vertrag und Widerrufsbelehrung liegen als PDF bei.' : ''}${isFirst50(record) ? ' Family & Friends Tarif, Sonderpreis 89,99€.' : ''}</p>`
     : `${memberLead(record, { attached })}${checkin}${esnPartnerBlock()}${memberSignoff()}`
 
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
@@ -406,7 +406,7 @@ export function paperReturnMailHtml(record) {
   const price = escapeMail(Number(record.price).toFixed(2).replace('.', ','))
   const months = escapeMail(String(record.termMonths || 24))
   const when = escapeMail(dueOn(record))
-  const plan = escapeMail(record.planName || 'First 50')
+  const plan = escapeMail(record.planName || 'Family & Friends Tarif')
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>Hi ${first},</p>
 <p>der Anmeldelink hat bei dir nicht funktioniert. Deshalb liegt dein Vertrag als PDF bei.</p>

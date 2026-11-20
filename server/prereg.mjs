@@ -330,7 +330,7 @@ function csvCell(value) {
 export function preregCsv(entries) {
   const head = [
     'Nr. Google-Liste',
-    'First 50',
+    'Family & Friends',
     'Preis laut Liste',
     'Hinweise Liste',
     'Eingang Website',

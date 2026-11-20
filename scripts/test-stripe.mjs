@@ -43,7 +43,7 @@ const earlyFields = buildCheckoutFields({
 })
 assert(earlyFields.fields['subscription_data[trial_end]'] === String(nov1), 'trial_end set')
 const januaryFields = buildCheckoutFields({
-  member: { id: 'mem_jan', plan: 'first50', planName: 'First 50', email: 'martin@example.com', startDate: '2027-01-01' },
+  member: { id: 'mem_jan', plan: 'first50', planName: 'Family & Friends Tarif', email: 'martin@example.com', startDate: '2027-01-01' },
   origin: 'https://www.mma-in-leipzig.de',
   nowMs: early,
 })

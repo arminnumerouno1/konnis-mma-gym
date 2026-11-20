@@ -260,7 +260,7 @@ function JoinForm({ plan, invite }: JoinProps) {
             ? COPY.inviteStandardLeadOpen
             : COPY.inviteStandardLead
           : contractTerm === 12
-            ? 'Dein First-50-Platz: 89,99€ im Monat statt 99,99€, 12 Monate. Das ist ein Sondervertrag. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, geht der Platz an die nächste Person. Nicht weiterleiten.'
+            ? 'Dein Family & Friends Tarif: 89,99€ im Monat statt 99,99€, 12 Monate. Das ist ein Sondervertrag. Der Link gilt 48 Stunden und nur für deine E-Mail. Nutzt du ihn nicht, geht der Platz an die nächste Person. Nicht weiterleiten.'
             : COPY.inviteLead
 
   useEffect(() => {

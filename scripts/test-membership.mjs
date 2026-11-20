@@ -215,7 +215,7 @@ const mailRecord = {
   email: 'anna@example.com',
   phone: '+49 171 1234567',
   plan: 'first50',
-  planName: 'First 50',
+  planName: 'Family & Friends Tarif',
   price: 89.99,
   termMonths: 24,
   place: 'Leipzig',
@@ -224,7 +224,7 @@ const mailRecord = {
   consents: { earlyStart: true },
 }
 const mail = membershipCopyHtml(mailRecord)
-assert(mail.includes('First 50') && mail.includes('89,99') && mail.includes('Anna Müller'), 'mail copy')
+assert(mail.includes('Family & Friends Tarif') && mail.includes('89,99') && mail.includes('Anna Müller'), 'mail copy')
 assert(
   mail.includes('Schön, dass du dabei bist') &&
     mail.includes('Sonderpreis') &&
@@ -263,7 +263,7 @@ const attachedMail = membershipCopyHtml(
     firstName: 'Anna',
     lastName: 'Müller',
     plan: 'first50',
-    planName: 'First 50',
+    planName: 'Family & Friends Tarif',
     price: 89.99,
     termMonths: 24,
   },
@@ -335,7 +335,7 @@ const sample = {
   email: 'anna@example.com',
   phone: '+49 171 1234567',
   plan: 'first50',
-  planName: 'First 50',
+  planName: 'Family & Friends Tarif',
   price: 89.99,
   termMonths: 24,
   place: 'Leipzig',
@@ -423,7 +423,7 @@ const openPaper = Buffer.from(
       lastName: 'Müller',
       email: 'muellerkevin237@gmail.com',
       plan: 'first50',
-      planName: 'First 50',
+      planName: 'Family & Friends Tarif',
       price: 89.99,
       termMonths: 24,
       payMethod: 'transfer',

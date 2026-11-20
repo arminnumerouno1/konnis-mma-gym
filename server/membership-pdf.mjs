@@ -354,7 +354,7 @@ export async function buildContractPdf(record, { paper = false, creditorId = '',
   writer.kv('Vertragsschluss', formatWhen(record.createdAt))
   if (record.visitDay) writer.kv('Day Pass', formatIsoDate(record.visitDay))
   const seat = first50SeatLabel(record.inviteSlot)
-  if (seat) writer.kv('First 50', `Persönlicher ${seat}`)
+  if (seat) writer.kv('Family & Friends Tarif', `Persönlicher ${seat}`)
   for (const block of contractParagraphs(record)) writer.para(block)
 
   writer.heading('3. Erklärungen')
@@ -463,7 +463,7 @@ async function buildPaperContractPdf(record, creditorId, { returnCopy = false } 
   }
   writer.kv('Beginn', formatIsoDate(record.startDate))
   const paperSeat = first50SeatLabel(record.inviteSlot)
-  if (paperSeat) writer.kv('First 50', `Persönlicher ${paperSeat}`)
+  if (paperSeat) writer.kv('Family & Friends Tarif', `Persönlicher ${paperSeat}`)
   for (const block of contractParagraphs(record)) writer.para(block)
 
   writer.heading('3. Erklärungen')

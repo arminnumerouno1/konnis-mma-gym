@@ -810,7 +810,7 @@ const withdrawnReport = buildReport(
         {
           id: 'rw',
           plan: 'first50',
-          planName: 'First 50',
+          planName: 'Family & Friends Tarif',
           price: 89.99,
           termMonths: 24,
           firstName: 'M',

@@ -124,7 +124,7 @@ export const PLANS: Plan[] = [
 
 export const FIRST50: Plan = {
   id: 'first50',
-  name: 'First 50',
+  name: 'Family & Friends Tarif',
   tag: 'Nur per Einladung',
   price: '89,99',
   priceValue: 89.99,
@@ -137,7 +137,7 @@ export const FIRST50: Plan = {
   includes: INCLUDES_ALL,
   bullets: [
     '89,99€ statt 99,99€',
-    'Nur für die Voranmeldung, persönlicher Link',
+    'Nur für Family & Friends, persönlicher Link',
     'Beitrag jeweils zum 1.',
   ],
   contract: '24',

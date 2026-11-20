@@ -1333,7 +1333,7 @@ function Report({
             {view.byPlan.slowstart ?? 0} · {view.byPlan.standard} · {view.byPlan.flex} · {view.byPlan.plus} ·{' '}
             {view.byPlan.first50}
           </strong>
-          <span>Slow Start · Standard · Flex · Plus · First 50</span>
+          <span>Slow Start · Standard · Flex · Plus · Family & Friends</span>
         </article>
         <article>
           <strong>{view.minors}</strong>
@@ -1485,7 +1485,7 @@ function preregSummary(row: Prereg) {
   if (row.sports.length) parts.push(row.sports.map(sportLabel).join(', '))
   if (row.offer) parts.push(`Eröffnungspreis ${OFFER_LABEL[row.offer]}`)
   if (row.listNo != null) {
-    parts.push(`Google-Liste Nr. ${row.listNo}${row.first50 ? ' · First 50' : ''}`)
+    parts.push(`Google-Liste Nr. ${row.listNo}${row.first50 ? ' · Family & Friends' : ''}`)
   }
   return parts.join(' · ')
 }
@@ -1614,7 +1614,7 @@ function PreregPane({
             <dt>Google-Voranmeldung (Excel-Liste)</dt>
             <dd>
               Nr. {entry.listNo}
-              {entry.first50 ? ' · First 50' : ' · Warteliste'}
+              {entry.first50 ? ' · Family & Friends' : ' · Warteliste'}
               {entry.price != null ? ` · ${euro(entry.price)}` : ''}
               {entry.openingMail ? ' · Eröffnungsmail verschickt' : ''}
             </dd>
@@ -1768,7 +1768,7 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
               <strong>
                 {stats.fromWebsite} / {stats.fromList}
               </strong>
-              <span>Website / Google-Liste ({stats.first50} First 50)</span>
+              <span>Website / Google-Liste ({stats.first50} Family & Friends)</span>
             </article>
             <article>
               <strong>
@@ -1851,7 +1851,7 @@ function Preregs({ onFresh }: { onFresh: (count: number) => void }) {
           <option value="">Alle Herkünfte</option>
           <option value="website">Über die Website</option>
           <option value="liste">Google-Liste (Excel)</option>
-          <option value="first50">First 50</option>
+          <option value="first50">Family & Friends</option>
           <option value="warteliste">Warteliste</option>
         </select>
         <select value={offer} onChange={(event) => setOffer(event.target.value)}>
@@ -3058,7 +3058,7 @@ export function Admin() {
           <option value="standard">Standard</option>
           <option value="flex">Flex</option>
           <option value="plus">Plus</option>
-          <option value="first50">First 50</option>
+          <option value="first50">Family & Friends</option>
           <option value="daypass">Day Pass</option>
         </select>
         <select value={status} onChange={(event) => setStatus(event.target.value)}>
@@ -3711,7 +3711,7 @@ function MemberPane({
         </div>
         {member.inviteSlot ? (
           <div>
-            <dt>First 50</dt>
+            <dt>Family & Friends</dt>
             <dd>Platz {member.inviteSlot}</dd>
           </div>
         ) : null}
@@ -4512,7 +4512,7 @@ function BroadcastMailer() {
             <option value="standard">Standard</option>
             <option value="flex">Flex</option>
             <option value="plus">Plus</option>
-            <option value="first50">First 50</option>
+            <option value="first50">Family & Friends</option>
             <option value="daypass">Day Pass</option>
           </select>
         </label>
@@ -4631,14 +4631,14 @@ function First50Sender() {
       setError(errorText(data.error))
       return
     }
-    setNote(`First-50-Link raus an ${data.email}. 89,99€, 48 Stunden, Name fest.`)
+    setNote(`Family-&-Friends-Link raus an ${data.email}. 89,99€, 48 Stunden, Name fest.`)
     setName('')
     setEmail('')
   }
 
   return (
     <form className="admin-card" onSubmit={(event) => void onSubmit(event)}>
-      <h2>First-50-Link</h2>
+      <h2>Family & Friends Link</h2>
       <p className="admin-muted">
         89,99€, 24 Monate. Name und E-Mail sind fest, der Link gilt 48 Stunden. Die Mail geht nur raus, wenn du hier auf
         Senden klickst.
@@ -4822,7 +4822,7 @@ function CreateMember({ onDone }: { onDone: (id: string) => Promise<void> }) {
             <option value="standard">Standard 24 Monate</option>
             <option value="flex">Flex 12 Monate</option>
             <option value="plus">Plus 6 Monate</option>
-            <option value="first50">First 50</option>
+            <option value="first50">Family & Friends</option>
             <option value="daypass">Day Pass</option>
           </select>
         </label>

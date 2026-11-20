@@ -115,7 +115,7 @@ const PLAN_META = {
   flex: { name: 'Flex', price: 109.99, months: 12 },
   plus: { name: 'Plus', price: 119, months: 6 },
   daypass: { name: 'Day Pass', price: 19.99, months: null },
-  first50: { name: 'First 50', price: 89.99, months: 24 },
+  first50: { name: 'Family & Friends Tarif', price: 89.99, months: 24 },
 }
 const hits = new Map()
 
@@ -624,7 +624,7 @@ function paperReturnRecord(issuedRows) {
     lastName,
     email: normalizeEmail(preferred.email),
     plan: 'first50',
-    planName: 'First 50',
+    planName: 'Family & Friends Tarif',
     price: 89.99,
     termMonths: contractTerm(preferred.term) || 24,
     fee: signupFeeFor(deferred || '2026-11-02', 'first50'),

@@ -37,7 +37,7 @@ export const PLAN_LABELS = {
   flex: 'Flex',
   plus: 'Plus',
   daypass: 'Day Pass',
-  first50: 'First 50',
+  first50: 'Family & Friends Tarif',
 }
 export const STATUS_LABELS = {
   received: 'Angemeldet',
@@ -451,6 +451,7 @@ export function publicMember(member, today = isoDate(), withPhoto = false) {
   const { photoData, ...rest } = ready
   return {
     ...rest,
+    planName: PLAN_LABELS[ready.plan] || ready.planName,
     hasPhoto: Boolean(photoData),
     photoData: withPhoto ? photoData || null : undefined,
     payThisMonth: payStatusThisMonth(ready, today),
