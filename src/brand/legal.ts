@@ -143,7 +143,7 @@ export const PRIVACY: LegalBlock[] = [
       'Optionale Dienste setzen wir nur, wenn du „Alle an“ wählst oder die optionale Kategorie einschaltest und speicherst. Aktuell ist das die eingebettete OpenStreetMap-Karte auf der Kontaktseite. Rechtsgrundlage sind dann Art. 6 Abs. 1 lit. a DSGVO und § 25 Abs. 1 TDDDG.',
       'Die Einwilligung kannst du jederzeit über „Cookies“ im Footer oder über „Auswahl ändern“ auf dieser Seite widerrufen oder anpassen. Der Widerruf gilt ab dem Zeitpunkt der Änderung. Die Rechtmäßigkeit bis dahin bleibt unberührt.',
       'Ohne optionale Zustimmung setzen wir keine Analyse-, Werbe- oder Marketing-Cookies und keine Tracking-Pixel. Es gibt kein Google Analytics, kein Meta-Pixel und keine eingebetteten Social-Plugins. Schriftarten liegen lokal auf unserem Server.',
-      'Instagram und OpenStreetMap sind auf der Website als normale Links nutzbar. Beim Klick verlässt du unsere Seite; es gelten die Hinweise der jeweiligen Anbieter. Die eingebettete OpenStreetMap-Karte laden wir erst, wenn du optionale Dienste erlaubt hast.',
+      'Instagram, Google (Unternehmensprofil/Rezensionen) und OpenStreetMap sind auf der Website als normale Links nutzbar. Beim Klick verlässt du unsere Seite; es gelten die Hinweise der jeweiligen Anbieter. Die eingebettete OpenStreetMap-Karte laden wir erst, wenn du optionale Dienste erlaubt hast. Ein Google-Rezensions-Widget oder Google-Skript ist nicht eingebunden.',
       'Technische Zustände wie Scrollposition oder Formulareingaben können vorübergehend in deinem Browser bleiben, soweit das für die jeweilige Funktion nötig ist.',
     ],
   },

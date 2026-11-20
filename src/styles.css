@@ -1225,6 +1225,126 @@ p,
   border-block: 1px solid var(--line);
 }
 
+.reviews {
+  padding: clamp(56px, 8vw, 88px) clamp(20px, 5vw, 64px);
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(243, 198, 58, 0.08), transparent 55%),
+    #080808;
+  border-bottom: 1px solid var(--line);
+}
+
+.reviews-head {
+  max-width: 36rem;
+  margin: 0 auto clamp(32px, 5vw, 48px);
+  text-align: center;
+}
+
+.reviews-kicker {
+  margin: 0 0 10px;
+  color: var(--gold);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 13px;
+}
+
+.reviews-head h2 {
+  margin: 0 0 10px;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: clamp(44px, 7vw, 80px);
+  line-height: 0.9;
+  letter-spacing: 0.03em;
+}
+
+.reviews-lead {
+  margin: 0 auto 18px;
+  max-width: 32ch;
+  color: var(--muted);
+  font-size: clamp(17px, 2vw, 20px);
+  line-height: 1.35;
+}
+
+.reviews-score {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 12px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.reviews-score strong {
+  color: var(--ink);
+  font-size: 22px;
+  letter-spacing: 0.02em;
+}
+
+.reviews-stars,
+.review-stars {
+  color: var(--gold);
+  letter-spacing: 0.08em;
+  font-size: 15px;
+  line-height: 1;
+}
+
+.reviews-grid {
+  list-style: none;
+  margin: 0 auto;
+  padding: 0;
+  max-width: 1100px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(18px, 3vw, 28px);
+}
+
+.review-card {
+  margin: 0;
+  height: 100%;
+  padding: 22px 20px 24px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.review-meta {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.review-meta figcaption {
+  display: grid;
+  gap: 2px;
+}
+
+.review-meta strong {
+  font-size: 16px;
+}
+
+.review-meta span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.review-card blockquote {
+  margin: 0;
+}
+
+.review-card blockquote p {
+  margin: 0;
+  color: #e8e8e8;
+  font-size: clamp(15px, 1.6vw, 17px);
+  line-height: 1.45;
+}
+
+.reviews-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin-top: clamp(28px, 4vw, 40px);
+}
+
 .press-head {
   max-width: 34rem;
   margin: 0 auto clamp(36px, 5vw, 52px);
@@ -3131,6 +3251,11 @@ p,
   }
 
   .press-grid {
+    grid-template-columns: 1fr;
+    max-width: 28rem;
+  }
+
+  .reviews-grid {
     grid-template-columns: 1fr;
     max-width: 28rem;
   }

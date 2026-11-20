@@ -3,6 +3,7 @@ import { COPY, FAQ } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
 import { KONRAD } from '../brand/konrad'
 import { PRESS } from '../brand/press'
+import { GOOGLE_REVIEWS } from '../brand/reviews'
 import {
   KURSPLAN,
   KURSPLAN_DAYS,
@@ -699,6 +700,51 @@ export function Home() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="reviews" id="rezensionen" data-reveal aria-label="Google-Rezensionen">
+        <div className="reviews-head">
+          <p className="reviews-kicker">{COPY.reviewsKicker}</p>
+          <h2>{COPY.reviewsTitle}</h2>
+          <p className="reviews-lead">{COPY.reviewsLead}</p>
+          <p className="reviews-score" aria-label={`${GOOGLE_REVIEWS.ratingLabel} von 5, ${GOOGLE_REVIEWS.countLabel}`}>
+            <span className="reviews-stars" aria-hidden="true">
+              {'★★★★★'}
+            </span>
+            <strong>{GOOGLE_REVIEWS.ratingLabel}</strong>
+            <span>
+              {COPY.reviewsOnGoogle} · {GOOGLE_REVIEWS.countLabel}
+            </span>
+          </p>
+        </div>
+        <ul className="reviews-grid">
+          {GOOGLE_REVIEWS.quotes.map((item) => (
+            <li key={item.name}>
+              <figure className="review-card">
+                <div className="review-meta">
+                  <span className="review-stars" aria-hidden="true">
+                    {'★★★★★'}
+                  </span>
+                  <figcaption>
+                    <strong>{item.name}</strong>
+                    <span>{COPY.reviewsSource}</span>
+                  </figcaption>
+                </div>
+                <blockquote>
+                  <p>{item.text}</p>
+                </blockquote>
+              </figure>
+            </li>
+          ))}
+        </ul>
+        <div className="reviews-actions">
+          <a className="btn btn-solid" href={GYM.googleReviews} target="_blank" rel="noopener noreferrer">
+            {COPY.reviewsReadAll}
+          </a>
+          <a className="btn btn-ghost" href={GYM.googleProfile} target="_blank" rel="noopener noreferrer">
+            {COPY.reviewsWrite}
+          </a>
+        </div>
       </section>
 
       <section className="block faq" id="faq">

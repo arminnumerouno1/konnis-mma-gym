@@ -77,7 +77,7 @@ export function buildSeoHead(siteUrl = ''): string {
       url: pageUrl,
       email: GYM.email,
       telephone: GYM.phone,
-      sameAs: [GYM.instagram, GYM.whatsapp],
+      sameAs: [GYM.instagram, GYM.whatsapp, GYM.googleProfile],
       address: {
         '@type': 'PostalAddress',
         streetAddress: GYM.street,
@@ -87,6 +87,13 @@ export function buildSeoHead(siteUrl = ''): string {
         addressCountry: 'DE',
       },
       areaServed: { '@type': 'City', name: 'Leipzig' },
+      aggregateRating: {
+        '@type': 'AggregateRating',
+        ratingValue: '5',
+        bestRating: '5',
+        worstRating: '1',
+        ratingCount: '169',
+      },
       sport: ['Mixed Martial Arts', 'MMA', 'Wrestling', 'Brazilian Jiu-Jitsu', 'Boxing', 'Kickboxing', 'Muay Thai'],
       founder: [
         {

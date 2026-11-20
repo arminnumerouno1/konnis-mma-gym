@@ -28,6 +28,9 @@ export const GYM = {
     'https://www.openstreetmap.org/search?query=Wittenberger%20Stra%C3%9Fe%2015%2C%2004129%20Leipzig',
   mapsEmbed:
     'https://www.openstreetmap.org/export/embed.html?bbox=12.3846%2C51.3564%2C12.3886%2C51.3585&layer=mapnik&marker=51.3574773%2C12.3866214',
+  /** Google Unternehmensprofil — nur Link, kein Embed. */
+  googleProfile: 'https://share.google/00Lw4PnXTlsVnnkKO',
+  googleReviews: 'https://www.google.com/search?q=KONNI+MMA+GYM+Leipzig&kgmid=/g/11zy1q9d8k',
   logo: '/brand/konni-logo-ui.webp',
   konrad: '/brand/konrad.png',
   konradCage: '/brand/konrad-cage.jpg',
