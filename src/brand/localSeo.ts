@@ -3,6 +3,8 @@ import { GYM } from './gym'
 import { KONRAD } from './konrad'
 import { GOOGLE_REVIEWS } from './reviews'
 
+const GYM_ADDRESS_LINE = `${GYM.street}, ${GYM.zip} ${GYM.city}`
+
 export type LocalHubId = 'mmaLeipzig' | 'kampfsportLeipzig'
 
 export type LocalFaq = { q: string; a: string }
@@ -12,9 +14,7 @@ export type LocalHub = {
   path: string
   title: string
   description: string
-  /** SEO H1 — Keyword drin, Ton wie Startseite. */
   h1: string
-  /** Kleine Zeile über dem H1, kein Scramble-Kicker-Klischee. */
   stamp: string
   hit: string
   lead: string[]
@@ -27,147 +27,166 @@ export type LocalHub = {
   schedule: string[]
   placeTitle: string
   place: string[]
-  /** Stadtteile/Umland als Fließtext-Namen (SEO), ohne km-Tabelle. */
   placeNames: string
   voiceTitle: string
   faqs: LocalFaq[]
   closeTitle: string
   close: string
   related: { id: LocalHubId; label: string }[]
+  /** Extra copy only rendered on the MMA hub. */
+  coachTitle?: string
+  coachParas?: string[]
+  weekAsideStamp: string
+  weekAsideTitle: string
+  weekAsideParas: string[]
 }
 
 export const LOCAL_HUBS: Record<LocalHubId, LocalHub> = {
   mmaLeipzig: {
     id: 'mmaLeipzig',
     path: '/mma-leipzig',
-    title: 'MMA Leipzig · Cage-Training mit Konrad Dyrschka | KONNI',
-    description: `MMA Leipzig im KONNI MMA GYM: Cage, Matte und Coaching von ${KONRAD.fullName} (OKTAGON ${KONRAD.oktagonRecord}). ${GYM.street}. Mitglied werden.`,
-    stamp: 'KONNI MMA GYM · Wittenberger Straße',
-    h1: 'MMA Leipzig',
+    title: 'MMA Leipzig · Training mit Konrad Dyrschka | KONNI MMA GYM',
+    description: `MMA in Leipzig im KONNI MMA GYM: Cage, Kursplan und Training mit ${KONRAD.fullName}. ${GYM.street}, ${GYM.zip}. Jetzt Mitglied werden.`,
+    stamp: 'KONNI MMA GYM',
+    h1: 'MMA in Leipzig',
     hit: 'Vom Käfig auf die Matte.',
     lead: [
-      `Wenn du in Leipzig MMA suchst, landest du oft bei Listen und Versprechen. Hier ist der Unterschied konkret: ein Cage in der Halle, ein Head Coach, der selbst noch kämpft – und ein Plan, der Einsteiger und Leute mit Ring-Erfahrung zusammenbringt.`,
-      `${KONRAD.fullName} bringt ${KONRAD.record} und OKTAGON ${KONRAD.oktagonRecord} mit auf die Matte. Nicht als Poster an der Wand. Als jemand, der die Stunde mitgestaltet.`,
+      `Im KONNI MMA GYM an der ${GYM.street} trainierst du MMA mit Cage in der Halle. Head Coach ist ${KONRAD.fullName} – aktiver MMA-Profi und Mitgründer.`,
+      `Es gibt MMA Basic, MMA und Sparring. Einsteiger und Fortgeschrittene trainieren hier. Vorerfahrung brauchst du nicht.`,
     ],
     heroImage: GYM.hall.cage,
     heroAlt: `Cage im KONNI MMA GYM, ${GYM.street} Leipzig`,
-    storyTitle: 'So fühlt sich MMA hier an',
+    storyTitle: 'Was du trainierst',
     story: [
-      'Du kommst rein, ziehst die Latschen an, und die Matte ist schon warm. Manche starten mit MMA Basic, andere steigen direkt in die Abend-Einheit. Niemand muss „kämpferisch“ wirken, um willkommen zu sein.',
-      'Im Training mischst du Stand und Boden: Schläge, Tritte, Takedowns, Clinch, Kontrolle. Der Cage ist kein Deko-Stück – wenn Clinch am Gitter drankommt, stehst du dort, wo Konrad auch steht.',
-      'Samstags Sparring für alle, die den Druck wollen. Unter der Woche Technik und Tempo. Du entscheidest, wie weit du gehst.',
+      'Stand und Boden in einer Einheit: Schläge, Tritte, Takedowns, Clinch und Kontrolle am Boden.',
+      'Der Cage steht in der Halle. Clinch am Gitter und Cage-Arbeit gehören dazu, wenn es im Plan steht.',
+      'Du musst nicht kämpfen wollen. Viele kommen für Technik und Fitness. Wer kämpfen will, trainiert mit einem Coach, der selbst im Cage steht.',
     ],
     beats: [
       {
-        title: 'Ohne Kampfambitionen',
-        text: 'Technik, Kondition, Kopf frei. Viele bleiben genau dort – und trainieren trotzdem ernst.',
+        title: 'Einsteiger',
+        text: 'MMA Basic und All Levels. Sag vorher Bescheid, dann passen wir die Stunde an.',
       },
       {
-        title: 'Mit Cage vor Augen',
-        text: 'Wer kämpfen will, hat einen Coach mit OKTAGON, KSW und EMC im Lebenslauf. Kein Theoriewissen aus YouTube.',
+        title: 'Mit Erfahrung',
+        text: 'Abend-MMA und Sparring am Samstag. Tempo und Druck, wenn du sie suchst.',
       },
       {
         title: 'Mitbringen',
-        text: 'Shirt, kurze Hose, Handtuch, Latschen. Handschuhe und Schoner, sobald du sie brauchst – vorher reicht nachfragen.',
+        text: 'T-Shirt, kurze Hose, Handtuch, Latschen. Handschuhe und Schoner, wenn du welche hast.',
       },
     ],
-    scheduleNote: 'MMA im Wochenplan – Auszug',
+    scheduleNote: 'MMA im Kursplan',
     schedule: [
-      'Mo 10:00 · BJJ NoGi / MMA',
-      'Mo 19:30 · MMA Basic',
-      'Di 19:30 · MMA',
-      'Fr 17:00 · MMA',
-      'Sa 10:00 · Sparring',
+      'Montag 10:00 – 11:30 · BJJ NoGi / MMA',
+      'Montag 19:30 – 21:00 · MMA Basic',
+      'Dienstag 19:30 – 21:00 · MMA',
+      'Freitag 17:00 – 18:00 · MMA',
+      'Samstag 10:00 – 11:30 · Sparring',
     ],
-    placeTitle: 'Nord-Leipzig, kurze Wege',
+    placeTitle: 'Adresse',
     place: [
-      `Die Halle steht an der ${GYM.street} in ${GYM.zip} – Leipziger Norden, Richtung Schönefeld. Kein West-Industriehof, kein Umzug „bald irgendwann“: Training läuft hier.`,
-      `Konrad kommt aus ${KONRAD.birthPlace}. Darum kennen wir die Wege aus dem Umland – und freuen uns, wenn die Matte voller wird.`,
+      `${GYM.street}, ${GYM.zip} ${GYM.city}. Im Norden, Richtung Schönefeld.`,
+      `Konrad kommt aus ${KONRAD.birthPlace}. Aus dem Umland und aus Stadtteilen wie Gohlis, Eutritzsch oder dem Zentrum ist es nicht weit.`,
     ],
-    placeNames: `Schönefeld, Eutritzsch, Gohlis, Mockau, Volkmarsdorf, Zentrum, Reudnitz, und aus dem Umland ${KONRAD.birthPlace}, Taucha, Borsdorf, Markkleeberg`,
-    voiceTitle: 'Was Leute sagen',
+    placeNames: `Schönefeld, Eutritzsch, Gohlis, Mockau, Volkmarsdorf, Zentrum, Reudnitz, ${KONRAD.birthPlace}, Taucha, Borsdorf, Markkleeberg`,
+    voiceTitle: 'Was Mitglieder sagen',
     faqs: [
       {
-        q: 'Wo trainiert man MMA in Leipzig bei KONNI?',
-        a: `Wittenberger Straße 15, 04129 Leipzig. Cage in der Halle, Kursplan auf der Startseite, Vertrag online unter Mitglied werden. Head Coach: ${KONRAD.fullName}.`,
+        q: 'Wo kann ich in Leipzig MMA trainieren?',
+        a: `Im KONNI MMA GYM, ${GYM.street}, ${GYM.zip} ${GYM.city}. Cage in der Halle. Kursplan auf der Startseite. Mitgliedschaft online unter Mitglied werden.`,
       },
       {
-        q: 'Kann ich als Anfänger mit MMA anfangen?',
-        a: 'Ja. MMA Basic und All-Levels-Einheiten sind dafür da. Sag vorher Bescheid – dann wissen wir, worauf wir achten.',
+        q: 'Ist MMA für Anfänger geeignet?',
+        a: 'Ja. Sag uns vorher Bescheid, dann passen wir die Einheit an. Du brauchst keine Vorerfahrung.',
       },
       {
-        q: 'Trainiert Konrad wirklich mit?',
-        a: `${KONRAD.fullName} ist Mitgründer und Head Coach, Rekord ${KONRAD.record}, OKTAGON ${KONRAD.oktagonRecord}. Er steht im Gym – nicht nur im Impressum.`,
+        q: 'Wer ist der Head Coach?',
+        a: `${KONRAD.fullName}, MMA-Profi, Rekord ${KONRAD.record}, OKTAGON ${KONRAD.oktagonRecord}. Mitgründer des Gyms. Dazu Mehmet-Deniz Celik.`,
       },
       {
-        q: 'Brauche ich schon MMA-Erfahrung?',
-        a: 'Nein. Boxen, Ringen oder BJJ helfen, sind aber kein Muss. Regelmäßig kommen zählt mehr als die Vorgeschichte.',
+        q: 'Gibt es einen Cage?',
+        a: 'Ja. Im KONNI MMA GYM steht ein MMA-Cage.',
       },
     ],
-    closeTitle: 'Platz auf der Matte',
-    close: 'Bereit? Dann sichere dir deinen Platz – Slow Start, Standard, Flex oder Plus. Training läuft.',
+    closeTitle: 'Mitglied werden',
+    close: 'Bereit? Dann sichere dir deinen Platz. Training läuft.',
     related: [{ id: 'kampfsportLeipzig', label: 'Kampfsport in Leipzig' }],
+    coachTitle: `${KONRAD.fullName}`,
+    coachParas: [
+      `Geboren in ${KONRAD.birthPlace}. Pro seit 2013. Rekord ${KONRAD.record}${KONRAD.recordNote ? ` (${KONRAD.recordNote})` : ''}. ${KONRAD.koTkoWins} KO/TKO, ${KONRAD.currentStreak} Siege in Folge. Bei OKTAGON ${KONRAD.oktagonRecord}.`,
+      'Er ist Mitgründer und Head Coach. Seine Erfahrung aus dem Käfig kommt direkt ins Training – in MMA, Ringen und dem Alltag auf der Matte.',
+    ],
+    weekAsideStamp: 'Halle',
+    weekAsideTitle: 'Cage, Matte, Säcke',
+    weekAsideParas: [`${GYM_ADDRESS_LINE}. Der Käfig steht in der Halle.`],
   },
   kampfsportLeipzig: {
     id: 'kampfsportLeipzig',
     path: '/kampfsport-leipzig',
-    title: 'Kampfsport Leipzig · MMA, BJJ, Boxen & K1 | KONNI MMA GYM',
-    description: `Kampfsport Leipzig: MMA, Ringen, BJJ, Boxen und Kick- & Thai-Boxen im KONNI MMA GYM mit ${KONRAD.fullName}. ${GYM.street}. Jetzt Mitglied werden.`,
-    stamp: 'Ein Gym · fünf Disziplinen',
-    h1: 'Kampfsport Leipzig',
-    hit: 'Nicht nur eine Sportart. Ein Ort.',
+    title: 'Kampfsport in Leipzig · MMA, BJJ, Boxen & K1 | KONNI',
+    description: `Kampfsport in Leipzig: MMA, Ringen, BJJ, Boxen und Kick- & Thai-Boxen im KONNI MMA GYM. Mit ${KONRAD.fullName}. ${GYM.street}. Jetzt Mitglied werden.`,
+    stamp: 'KONNI MMA GYM',
+    h1: 'Kampfsport in Leipzig',
+    hit: 'MMA, Ringen, BJJ, Boxen, K1.',
     lead: [
-      `Kampfsport in Leipzig heißt bei uns: du brauchst dich nicht zwischen Matte und Pratzen zu entscheiden. MMA, Ringen, BJJ No-Gi, Boxen und Kick- & Thai-Boxen laufen unter einem Dach – mit einem Team, das aus dem Cage kommt.`,
-      `Google sieht ${GOOGLE_REVIEWS.ratingLabel} bei ${GOOGLE_REVIEWS.countLabel}. Wir sehen lieber, wer Dienstag abends wiederkommt.`,
+      `Im KONNI MMA GYM trainierst du MMA, Ringen, BJJ No-Gi, Boxen und Kick- & Thai-Boxen. Ein Gym, ein Kursplan, ${GYM.street} in Leipzig.`,
+      `${KONRAD.fullName} und Mehmet-Deniz Celik haben das Studio aufgebaut. Die Türen sind offen – Training läuft. Google: ${GOOGLE_REVIEWS.ratingLabel} bei ${GOOGLE_REVIEWS.countLabel}.`,
     ],
     heroImage: GYM.hall.floor,
-    heroAlt: `Trainingsfläche KONNI MMA GYM Leipzig`,
-    storyTitle: 'Was hier zusammenkommt',
+    heroAlt: `Trainingsfläche im KONNI MMA GYM Leipzig`,
+    storyTitle: 'Für wen',
     story: [
-      'Manche starten mit Boxen, weil die Hände klar sind. Andere wollen zuerst Boden. Wieder andere wollen MMA von Tag eins. Bei KONNI musst du dich nicht festnageln – die Mitgliedschaft trägt den Wechsel mit.',
-      `${KONRAD.fullName} und Mehmet-Deniz Celik haben das Studio gebaut, weil Leipzig ein Gym verdient, in dem Profi-Anspruch und Alltagstraining dieselbe Tür nutzen.`,
-      'Anfänger, Studierende, Leute nach der Schicht, Fortgeschrittene: Die Matte ist für alle. Unter 18 mit Elternvollmacht.',
+      'Das Gym ist für alle da, die Lust auf Training haben. Egal, ob du gerade anfängst, schon Erfahrung hast, studierst oder nach der Arbeit kommst.',
+      'Du kannst mit einer Disziplin starten und später eine zweite dazunehmen. Bei Standard, Flex und Plus sind alle Kurse dabei. Slow Start hält dich bei zwei Einheiten pro Woche.',
+      'Unter 18 geht nur mit Elternvollmacht. Vorerfahrung brauchst du nicht.',
     ],
     beats: COPY.disciplines.map((d) => ({
-      title: `${d.name} ${COPY.disciplinePlace}`,
+      title: `${d.name} in Leipzig`,
       text: `${d.tagline} ${d.text}`,
     })),
-    scheduleNote: 'Die Woche in Stichworten',
+    scheduleNote: 'Was in der Woche läuft',
     schedule: [
       'MMA · MMA Basic · Sparring',
-      'BJJ No-Gi an mehreren Abenden',
+      'BJJ No-Gi',
       'Boxen Basic & Fortgeschrittene',
       'Ringen',
       'K1 / Kick- & Thai-Boxen',
     ],
-    placeTitle: 'Hier trainierst du',
+    placeTitle: 'Adresse',
     place: [
-      `${GYM.street}, ${GYM.zip} ${GYM.city}. Norden der Stadt, Cage und Matte, Kursplan von Montag bis Samstag.`,
-      'Wenn du aus dem Westen oder Süden kommst: Die Fahrt lohnt sich, sobald du einmal die Halle von innen gesehen hast. Wenn du aus dem Norden kommst: Du bist fast schon da.',
+      `${GYM.street}, ${GYM.zip} ${GYM.city}. Kursplan von Montag bis Samstag.`,
+      'Erreichbar aus Gohlis, Eutritzsch, Schönefeld, dem Zentrum und dem Umland – unter anderem aus Schkeuditz, Taucha und Markkleeberg.',
     ],
     placeNames: `Gohlis, Eutritzsch, Schönefeld-Abtnaundorf, Mockau, Zentrum, Plagwitz, Lindenau, Connewitz, ${KONRAD.birthPlace}, Taucha, Markkleeberg`,
-    voiceTitle: 'Stimmen aus dem Gym',
+    voiceTitle: 'Was Mitglieder sagen',
     faqs: [
       {
-        q: 'Welche Kampfsportarten gibt es bei KONNI in Leipzig?',
-        a: 'MMA, Ringen, BJJ No-Gi, Boxen und Kick- & Thai-Boxen / K1. Details stehen im Kursplan auf der Startseite.',
+        q: 'Welche Kampfsportarten kann ich bei euch trainieren?',
+        a: 'MMA, Ringen, BJJ No-Gi, Boxen und Kick- & Thai-Boxen / K1. Der Wochenplan steht auf der Startseite.',
       },
       {
-        q: 'Was kostet die Mitgliedschaft?',
-        a: 'Slow Start 79,99€ (2×/Woche), Standard 99,99€, Flex 109,99€, Plus 119€. Anmeldegebühr 19,99€. Karte, Apple Pay oder SEPA über Stripe.',
+        q: 'Was kostet Kampfsport bei KONNI?',
+        a: 'Slow Start 79,99€ (2 Kurse/Woche, 12 Monate), Standard 99,99€ (24 Monate), Flex 109,99€ (12 Monate), Plus 119€ (6 Monate). Anmeldegebühr 19,99€. Karte, Apple Pay oder SEPA über Stripe.',
       },
       {
-        q: 'Für wen ist das Gym gedacht?',
-        a: 'Für Einsteiger ohne Vorerfahrung und für Leute, die schon kämpfen. Atmosphäre ohne Ego-Theater – Anspruch trotzdem.',
+        q: 'Wo ist das Gym?',
+        a: `${GYM.street}, ${GYM.zip} ${GYM.city}.`,
       },
       {
-        q: 'Wie starte ich?',
-        a: 'Online Mitglied werden oder Probetraining anfragen. Adresse: Wittenberger Straße 15. Fragen per Mail oder Telefon.',
+        q: 'Gibt es ein Probetraining?',
+        a: 'Ja. Online wählst du einen Kurs aus dem Kursplan. Unter 18 brauchen wir die Elternvollmacht.',
       },
     ],
-    closeTitle: 'Dann komm.',
-    close: 'Suchst du Kampfsport in Leipzig, der nach Gym riecht und nicht nach Franchise? Hier ist die Tür.',
-    related: [{ id: 'mmaLeipzig', label: 'MMA Leipzig' }],
+    closeTitle: 'Mitglied werden',
+    close: 'Training läuft. Wir freuen uns auf dich auf der Matte.',
+    related: [{ id: 'mmaLeipzig', label: 'MMA in Leipzig' }],
+    weekAsideStamp: KONRAD.givenName,
+    weekAsideTitle: 'Head Coach',
+    weekAsideParas: [
+      `${KONRAD.fullName} ist aktiver MMA-Profi und Mitgründer. Rekord ${KONRAD.record}, OKTAGON ${KONRAD.oktagonRecord}.`,
+      'Gemeinsam mit Mehmet führt er das Gym.',
+    ],
   },
 }
 

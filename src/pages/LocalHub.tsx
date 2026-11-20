@@ -13,7 +13,6 @@ type Props = { hub: LocalHubId }
 
 export function LocalHub({ hub }: Props) {
   const page = LOCAL_HUBS[hub]
-  const isMma = hub === 'mmaLeipzig'
 
   useEffect(() => {
     applyPageMeta({
@@ -96,7 +95,7 @@ export function LocalHub({ hub }: Props) {
         ))}
       </section>
 
-      {isMma ? (
+      {page.coachTitle && page.coachParas ? (
         <section className="hub-konrad-band">
           <img
             src={GYM.konradCage}
@@ -106,26 +105,19 @@ export function LocalHub({ hub }: Props) {
             loading="lazy"
           />
           <div>
-            <p className="hub-stamp">{KONRAD.fullName}</p>
-            <h2>Head Coach aus dem Käfig</h2>
-            <p>
-              Geboren in {KONRAD.birthPlace}. Pro seit 2013. Rekord {KONRAD.record}
-              {KONRAD.recordNote ? ` (${KONRAD.recordNote})` : ''}. {KONRAD.koTkoWins} KO/TKO,{' '}
-              {KONRAD.currentStreak} Siege in Folge. Bei OKTAGON {KONRAD.oktagonRecord} – und hier
-              Mitgründer.
-            </p>
-            <p>
-              MMA Leipzig ohne echten Cage-Bezug bleibt Theorie. Bei KONNI steht der Coach, der die
-              europäischen Karten kennt, auf derselben Matte wie du.
-            </p>
+            <p className="hub-stamp">Head Coach</p>
+            <h2>{page.coachTitle}</h2>
+            {page.coachParas.map((para) => (
+              <p key={para.slice(0, 40)}>{para}</p>
+            ))}
             <Link className="btn btn-ghost" href={`${href('home')}#konrad-dyrschka`}>
-              Konrad Dyrschka
+              Mehr zu Konrad
             </Link>
           </div>
         </section>
       ) : null}
 
-      <section className={`hub-beats${isMma ? '' : ' hub-beats-disciplines'}`}>
+      <section className={`hub-beats${hub === 'kampfsportLeipzig' ? ' hub-beats-disciplines' : ''}`}>
         {page.beats.map((beat) => (
           <article key={beat.title}>
             <h3>{beat.title}</h3>
@@ -142,29 +134,15 @@ export function LocalHub({ hub }: Props) {
               <li key={row}>{row}</li>
             ))}
           </ul>
-          <Link href={`${href('home')}#kursplan`}>Vollständigen Kursplan öffnen</Link>
+          <Link href={`${href('home')}#kursplan`}>Zum Kursplan</Link>
         </div>
-        {!isMma ? (
-          <div className="hub-week-aside">
-            <p className="hub-stamp">{KONRAD.givenName}</p>
-            <h3>Der rote Faden</h3>
-            <p>
-              {KONRAD.fullName} kommt übers Ringen, kämpft Pro und führt das Gym mit Mehmet. Kampfsport
-              Leipzig mit Gesicht – nicht mit Logo-Wand.
-            </p>
-            <p>
-              {KONRAD.record} · OKTAGON {KONRAD.oktagonRecord}
-            </p>
-          </div>
-        ) : (
-          <div className="hub-week-aside">
-            <p className="hub-stamp">Halle</p>
-            <h3>Cage · Matte · Säcke</h3>
-            <p>
-              {GYM_ADDRESS}. Du siehst den Käfig, wenn du reinkommst – nicht erst auf der Website.
-            </p>
-          </div>
-        )}
+        <div className="hub-week-aside">
+          <p className="hub-stamp">{page.weekAsideStamp}</p>
+          <h3>{page.weekAsideTitle}</h3>
+          {page.weekAsideParas.map((para) => (
+            <p key={para.slice(0, 40)}>{para}</p>
+          ))}
+        </div>
       </section>
 
       <section className="hub-voice">
@@ -190,13 +168,11 @@ export function LocalHub({ hub }: Props) {
         {page.place.map((para) => (
           <p key={para.slice(0, 40)}>{para}</p>
         ))}
-        <p className="hub-place-names">
-          Aus der Nähe und weiter: {page.placeNames}.
-        </p>
+        <p className="hub-place-names">Ortsteile und Umland: {page.placeNames}.</p>
       </section>
 
       <section className="hub-faq">
-        <h2>Kurz beantwortet</h2>
+        <h2>{COPY.faqTitle}</h2>
         <div className="faq-list">
           {page.faqs.map((item) => (
             <div className="faq-item" key={item.q}>
