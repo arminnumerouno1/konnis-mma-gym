@@ -8,10 +8,12 @@ import { href, navigate, scrollPageTop } from './lib/router'
 import { Home } from './pages/Home'
 import { Join } from './pages/Join'
 import { Legal } from './pages/Legal'
+import { LocalHub } from './pages/LocalHub'
 import { Cancel } from './pages/Cancel'
 import { Admin } from './pages/Admin'
 import { PortraitUpload } from './pages/PortraitUpload'
 import { Checkin } from './pages/Checkin'
+import { resetHomeMeta } from './lib/pageMeta'
 
 const LEGAL = new Set([
   'impressum',
@@ -45,6 +47,10 @@ export default function App() {
     return () => window.cancelAnimationFrame(frame)
   }, [route.hash, route.name, route.path])
 
+  useEffect(() => {
+    if (route.name === 'home') resetHomeMeta()
+  }, [route.name])
+
   if (route.name === 'admin') {
     return <Admin />
   }
@@ -71,6 +77,8 @@ export default function App() {
       <SiteNotice />
       {route.name === 'home' ? <Home /> : null}
       {route.name === 'join' ? <Join plan={route.plan} invite={route.invite} /> : null}
+      {route.name === 'mmaLeipzig' ? <LocalHub hub="mmaLeipzig" /> : null}
+      {route.name === 'kampfsportLeipzig' ? <LocalHub hub="kampfsportLeipzig" /> : null}
       {route.name === 'kuendigen' ? <Cancel /> : null}
       {LEGAL.has(route.name) ? (
         <Legal

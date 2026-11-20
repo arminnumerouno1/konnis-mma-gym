@@ -45,6 +45,8 @@ function escapeHtml(value: string): string {
 const PAGE_PATHS = [
   '/',
   '/mitglied',
+  '/mma-leipzig',
+  '/kampfsport-leipzig',
   '/impressum',
   '/datenschutz',
   '/agb',

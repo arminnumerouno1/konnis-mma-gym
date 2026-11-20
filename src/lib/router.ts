@@ -1,6 +1,8 @@
 export type RouteName =
   | 'home'
   | 'join'
+  | 'mmaLeipzig'
+  | 'kampfsportLeipzig'
   | 'portrait'
   | 'checkin'
   | 'prereg'
@@ -29,6 +31,8 @@ export type Route = {
 export const PATHS: Record<Exclude<RouteName, 'notfound'>, string> = {
   home: '/',
   join: '/mitglied',
+  mmaLeipzig: '/mma-leipzig',
+  kampfsportLeipzig: '/kampfsport-leipzig',
   portrait: '/portrait',
   checkin: '/checkin',
   prereg: '/voranmeldung',

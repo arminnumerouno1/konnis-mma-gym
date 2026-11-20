@@ -1,5 +1,6 @@
 import { COPY } from '../brand/copy'
 import { GYM, GYM_ADDRESS } from '../brand/gym'
+import { LOCAL_HUB_FOOTER } from '../brand/localSeo'
 import { openConsentSettings } from '../lib/consent'
 import { Link } from '../lib/Link'
 import { href } from '../lib/router'
@@ -35,6 +36,22 @@ export function Footer() {
             <br />
             <a href={GYM.phoneHref}>{GYM.phone}</a>
           </p>
+        </div>
+        <div>
+          <p className="footer-kicker">Training in Leipzig</p>
+          <ul>
+            {LOCAL_HUB_FOOTER.map((item) => (
+              <li key={item.id}>
+                <Link href={href(item.id)}>{item.label}</Link>
+              </li>
+            ))}
+            <li>
+              <Link href={`${href('home')}#kursplan`}>Kursplan</Link>
+            </li>
+            <li>
+              <Link href={href('join')}>{COPY.ctaJoin}</Link>
+            </li>
+          </ul>
         </div>
         <div>
           <p className="footer-kicker">{COPY.legalNav}</p>

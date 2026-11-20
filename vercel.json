@@ -59,6 +59,9 @@
   ],
   "rewrites": [
     { "source": "/mitglied", "destination": "/index.html" },
+    { "source": "/mma-leipzig", "destination": "/index.html" },
+    { "source": "/kampfsport-leipzig", "destination": "/index.html" },
+
     { "source": "/portrait", "destination": "/index.html" },
     { "source": "/checkin", "destination": "/index.html" },
     { "source": "/verwaltung", "destination": "/index.html" },
