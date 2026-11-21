@@ -87,9 +87,9 @@ export const LOCAL_HUBS: Record<LocalHubId, LocalHub> = {
     placeTitle: 'Adresse',
     place: [
       `${GYM.street}, ${GYM.zip} ${GYM.city}. Im Norden, Richtung Schönefeld.`,
-      `Konrad kommt aus ${KONRAD.birthPlace}. Aus dem Umland und aus Stadtteilen wie Gohlis, Eutritzsch oder dem Zentrum ist es nicht weit.`,
+      'Aus Stadtteilen wie Gohlis, Eutritzsch oder dem Zentrum und aus dem Umland ist es nicht weit.',
     ],
-    placeNames: `Schönefeld, Eutritzsch, Gohlis, Mockau, Volkmarsdorf, Zentrum, Reudnitz, ${KONRAD.birthPlace}, Taucha, Borsdorf, Markkleeberg`,
+    placeNames: `Schönefeld, Eutritzsch, Gohlis, Mockau, Volkmarsdorf, Zentrum, Reudnitz, Schkeuditz, Taucha, Borsdorf, Markkleeberg`,
     voiceTitle: 'Was Mitglieder sagen',
     faqs: [
       {
