@@ -4649,60 +4649,72 @@ function InviteSender() {
   }
 
   return (
-    <form className="admin-card" onSubmit={(event) => void onSubmit(event)}>
+    <form className="admin-card admin-invite" onSubmit={(event) => void onSubmit(event)}>
       <h2>Tarif-Link senden</h2>
       <p className="admin-muted">
-        Tarif, Vertragsstart und Anmeldegebühr einzeln einstellen. Der Link schreibt Start und Gebühr fest in den Token –
-        Stripe startet die Zahlung erst ab dem gewählten 1. und berechnet die Gebühr nur, wenn sie hier auf Ja steht.
+        Angebot festlegen, Empfänger eintragen, senden. Stripe übernimmt Start und Gebühr aus dem Link.
       </p>
-      <div className="admin-grid">
-        <label>
-          Tarif
-          <select
-            value={plan}
-            onChange={(event) => {
-              const next = event.target.value as Exclude<PlanId, 'daypass'>
-              setPlan(next)
-              if (next === 'first50') setWaiveFee(true)
-            }}
-          >
-            <option value="slowstart">Slow Start Tarif · 79,99€</option>
-            <option value="standard">Standard · 99,99€</option>
-            <option value="flex">Flex · 109,99€</option>
-            <option value="plus">Plus · 119€</option>
-            <option value="first50">Family & Friends · 89,99€</option>
-          </select>
-        </label>
-        <label>
-          Vertragsstart (1. des Monats)
-          <input
-            type="date"
-            value={start}
-            onChange={(event) => setStart(event.target.value)}
-            required={needsStart}
-          />
-        </label>
-        <label>
-          Anmeldegebühr
-          <select value={waiveFee ? 'no' : 'yes'} onChange={(event) => setWaiveFee(event.target.value === 'no')}>
-            <option value="no">Nein · 0 €</option>
-            <option value="yes">Ja · 19,99 €</option>
-          </select>
-        </label>
-        <label>
-          Name
-          <input value={name} onChange={(event) => setName(event.target.value)} required />
-        </label>
-        <label>
-          E-Mail
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-        </label>
+
+      <div className="admin-invite-block">
+        <p className="admin-invite-label">Angebot</p>
+        <div className="admin-invite-offer">
+          <label>
+            Tarif
+            <select
+              value={plan}
+              onChange={(event) => {
+                const next = event.target.value as Exclude<PlanId, 'daypass'>
+                setPlan(next)
+                if (next === 'first50') setWaiveFee(true)
+              }}
+            >
+              <option value="slowstart">Slow Start Tarif · 79,99€</option>
+              <option value="standard">Standard · 99,99€</option>
+              <option value="flex">Flex · 109,99€</option>
+              <option value="plus">Plus · 119€</option>
+              <option value="first50">Family & Friends · 89,99€</option>
+            </select>
+          </label>
+          <label>
+            Vertragsstart
+            <input
+              type="date"
+              value={start}
+              onChange={(event) => setStart(event.target.value)}
+              required={needsStart}
+            />
+          </label>
+          <label>
+            Anmeldegebühr
+            <select value={waiveFee ? 'no' : 'yes'} onChange={(event) => setWaiveFee(event.target.value === 'no')}>
+              <option value="no">Nein · 0 €</option>
+              <option value="yes">Ja · 19,99 €</option>
+            </select>
+          </label>
+        </div>
       </div>
+
+      <div className="admin-invite-block">
+        <p className="admin-invite-label">Empfänger</p>
+        <div className="admin-invite-person">
+          <label>
+            Name
+            <input value={name} onChange={(event) => setName(event.target.value)} required />
+          </label>
+          <label>
+            E-Mail
+            <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+          </label>
+        </div>
+      </div>
+
       {error ? <p className="admin-error">{error}</p> : null}
       {note ? <p className="admin-muted">{note}</p> : null}
-      <button className="btn btn-solid" type="submit" disabled={busy}>
-        Link senden
-      </button>
+      <div className="admin-invite-actions">
+        <button className="btn btn-solid" type="submit" disabled={busy}>
+          Link senden
+        </button>
+      </div>
     </form>
   )
 }

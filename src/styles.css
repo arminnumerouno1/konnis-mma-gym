@@ -4501,6 +4501,56 @@ p,
   gap: 10px;
 }
 
+.admin-invite {
+  gap: 16px;
+}
+
+.admin-invite-block {
+  display: grid;
+  gap: 10px;
+  padding-top: 4px;
+}
+
+.admin-invite-label {
+  margin: 0;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-invite-offer {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+}
+
+.admin-invite-person {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.admin-invite-actions {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.admin-invite-actions .btn {
+  min-width: 200px;
+}
+
+@media (max-width: 980px) {
+  .admin-invite-offer,
+  .admin-invite-person {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-invite-actions .btn {
+    width: 100%;
+  }
+}
+
 .admin-empty {
   padding: 40px 12px;
 }
