@@ -202,7 +202,7 @@ export function plusInviteHtml({ first, name, email, url, start = '', openUntilS
   const deferred = contractStart(start)
   const when = deferred ? germanDate(deferred) : germanDate('2026-12-01')
   const validity = openUntilSignup
-    ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong> – kein 48-Stunden-Druck. Nur für dich.'
+    ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong>.'
     : 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.'
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 <p>Hi ${who},</p>
@@ -229,11 +229,11 @@ export function slowstartInviteHtml({ first, name, email, url, start = '', openU
   const deferred = contractStart(start)
   const when = deferred ? germanDate(deferred) : germanDate('2026-12-01')
   const validity = openUntilSignup
-    ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong> – kein 48-Stunden-Druck. Nur für dich.'
+    ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong>.'
     : 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.'
   const untilStart = feeWaived
-    ? 'Bis dahin trainierst du bei uns mit – ohne Monatsbeitrag und ohne Aufnahmegebühr.'
-    : `Bis dahin trainierst du bei uns mit – ohne Monatsbeitrag. ${feeMailLine(false)}`
+    ? 'Bis dahin trainierst du kostenlos mit.'
+    : `Bis dahin trainierst du kostenlos mit. ${feeMailLine(false)}`
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 <p>Hi ${who},</p>
 <p>hier ist dein persönlicher Link für den <strong>Slow Start Tarif</strong>: <strong>79,99€</strong> im Monat, <strong>12 Monate</strong>, 2 Kurse / Einheiten pro Woche.</p>
@@ -258,11 +258,11 @@ export function standardInviteHtml({ first, name, email, url, start = '', openUn
   const deferred = contractStart(start)
   const when = deferred ? germanDate(deferred) : germanDate('2026-12-01')
   const validity = openUntilSignup
-    ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong> – kein 48-Stunden-Druck. Nur für dich.'
+    ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong>.'
     : 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.'
   const untilStart = feeWaived
-    ? 'Bis dahin trainierst du bei uns mit – ohne Monatsbeitrag und ohne Aufnahmegebühr.'
-    : `Bis dahin trainierst du bei uns mit – ohne Monatsbeitrag. ${feeMailLine(false)}`
+    ? 'Bis dahin trainierst du kostenlos mit.'
+    : `Bis dahin trainierst du kostenlos mit. ${feeMailLine(false)}`
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 <p>Hi ${who},</p>
 <p>hier ist dein persönlicher Link für den Tarif <strong>Standard</strong>: <strong>99,99€</strong> im Monat, <strong>24 Monate</strong>. Alle Kurse inklusive – so oft du willst.</p>
@@ -295,10 +295,10 @@ export function deskInviteHtml({
   const price =
     meta.price % 1 === 0 ? `${meta.price}€` : `${String(meta.price).replace('.', ',')}€`
   const validity = openUntilSignup
-    ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong> – kein 48-Stunden-Druck. Nur für dich.'
+    ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong>.'
     : 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.'
   const startBlock = deferred
-    ? `<p>Dein Vertrag beginnt am <strong>${escapeMail(when)}</strong>. Die erste Zahlung ist an dem Tag. Bis dahin trainierst du mit – ohne Monatsbeitrag.</p>`
+    ? `<p>Dein Vertrag beginnt am <strong>${escapeMail(when)}</strong>. Die erste Zahlung ist an dem Tag. Bis dahin trainierst du kostenlos mit.</p>`
     : '<p>Das Studio ist offen. Über den Link schließt du ab und kannst direkt mittrainieren.</p>'
   const extra =
     plan === SLOWSTART_ID ? ' 2 Kurse / Einheiten pro Woche.' : plan === FIRST50_ID ? ' 89,99€ statt 99,99€.' : ''
