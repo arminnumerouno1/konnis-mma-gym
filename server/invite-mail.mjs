@@ -8,6 +8,8 @@ import { createMemberStore } from './member-store.mjs'
 import {
   FIRST50_ID,
   FIRST50_SLOT_MAX,
+  FLEX_ID,
+  INVITE_PLAN_META,
   PLUS_ID,
   SLOWSTART_ID,
   STANDARD_ID,
@@ -17,6 +19,12 @@ import {
   normalizePersonName,
   signInvite,
 } from './invite.mjs'
+
+function feeMailLine(feeWaived) {
+  return feeWaived
+    ? 'Die Aufnahmegebühr beträgt 0 €.'
+    : 'Die Aufnahmegebühr beträgt 19,99 €.'
+}
 import { germanDate } from './member-model.mjs'
 import { sendMembershipEmails } from './membership-mail.mjs'
 
@@ -186,7 +194,7 @@ export function plusInviteSubject() {
   return 'Dein Plus-Vertrag ab Dezember · KONNI MMA GYM'
 }
 
-export function plusInviteHtml({ first, name, email, url, start = '', openUntilSignup = false } = {}) {
+export function plusInviteHtml({ first, name, email, url, start = '', openUntilSignup = false, feeWaived = false } = {}) {
   const who = escapeMail(first)
   const full = escapeMail(name)
   const mail = escapeMail(email)
@@ -204,7 +212,7 @@ export function plusInviteHtml({ first, name, email, url, start = '', openUntilS
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
 <p>Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.</p>
-<p>Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Die Aufnahmegebühr beträgt 19,99 €.</p>
+<p>Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. ${feeMailLine(feeWaived)}</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>`
 }
@@ -213,7 +221,7 @@ export function slowstartInviteSubject() {
   return 'Dein Slow Start Tarif ab Dezember · KONNI MMA GYM'
 }
 
-export function slowstartInviteHtml({ first, name, email, url, start = '', openUntilSignup = false } = {}) {
+export function slowstartInviteHtml({ first, name, email, url, start = '', openUntilSignup = false, feeWaived = true } = {}) {
   const who = escapeMail(first)
   const full = escapeMail(name)
   const mail = escapeMail(email)
@@ -223,10 +231,13 @@ export function slowstartInviteHtml({ first, name, email, url, start = '', openU
   const validity = openUntilSignup
     ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong> – kein 48-Stunden-Druck. Nur für dich.'
     : 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.'
+  const untilStart = feeWaived
+    ? 'Bis dahin trainierst du bei uns mit – ohne Monatsbeitrag und ohne Aufnahmegebühr.'
+    : `Bis dahin trainierst du bei uns mit – ohne Monatsbeitrag. ${feeMailLine(false)}`
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 <p>Hi ${who},</p>
 <p>hier ist dein persönlicher Link für den <strong>Slow Start Tarif</strong>: <strong>79,99€</strong> im Monat, <strong>12 Monate</strong>, 2 Kurse / Einheiten pro Woche.</p>
-<p>Dein Vertrag beginnt am <strong>${escapeMail(when)}</strong>. Die erste Zahlung ist an dem Tag. Bis dahin trainierst du bei uns mit – ohne Monatsbeitrag und ohne Aufnahmegebühr.</p>
+<p>Dein Vertrag beginnt am <strong>${escapeMail(when)}</strong>. Die erste Zahlung ist an dem Tag. ${untilStart}</p>
 <p>${validity}</p>
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
@@ -239,7 +250,7 @@ export function standardInviteSubject() {
   return 'Dein Standard Tarif ab Dezember · KONNI MMA GYM'
 }
 
-export function standardInviteHtml({ first, name, email, url, start = '', openUntilSignup = false } = {}) {
+export function standardInviteHtml({ first, name, email, url, start = '', openUntilSignup = false, feeWaived = true } = {}) {
   const who = escapeMail(first)
   const full = escapeMail(name)
   const mail = escapeMail(email)
@@ -249,14 +260,56 @@ export function standardInviteHtml({ first, name, email, url, start = '', openUn
   const validity = openUntilSignup
     ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong> – kein 48-Stunden-Druck. Nur für dich.'
     : 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.'
+  const untilStart = feeWaived
+    ? 'Bis dahin trainierst du bei uns mit – ohne Monatsbeitrag und ohne Aufnahmegebühr.'
+    : `Bis dahin trainierst du bei uns mit – ohne Monatsbeitrag. ${feeMailLine(false)}`
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
 <p>Hi ${who},</p>
 <p>hier ist dein persönlicher Link für den Tarif <strong>Standard</strong>: <strong>99,99€</strong> im Monat, <strong>24 Monate</strong>. Alle Kurse inklusive – so oft du willst.</p>
-<p>Dein Vertrag beginnt am <strong>${escapeMail(when)}</strong>. Die erste Zahlung ist an dem Tag. Bis dahin trainierst du bei uns mit – ohne Monatsbeitrag und ohne Aufnahmegebühr.</p>
+<p>Dein Vertrag beginnt am <strong>${escapeMail(when)}</strong>. Die erste Zahlung ist an dem Tag. ${untilStart}</p>
 <p>${validity}</p>
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
 <p>Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+</div>`
+}
+
+export function deskInviteHtml({
+  first,
+  name,
+  email,
+  url,
+  plan,
+  start = '',
+  openUntilSignup = false,
+  feeWaived = true,
+} = {}) {
+  const meta = INVITE_PLAN_META[plan] || INVITE_PLAN_META.first50
+  const who = escapeMail(first)
+  const full = escapeMail(name)
+  const mail = escapeMail(email)
+  const href = escapeMail(url)
+  const deferred = contractStart(start)
+  const when = deferred ? germanDate(deferred) : ''
+  const price =
+    meta.price % 1 === 0 ? `${meta.price}€` : `${String(meta.price).replace('.', ',')}€`
+  const validity = openUntilSignup
+    ? 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. <strong>Der Link bleibt gültig, bis du dich angemeldet hast</strong> – kein 48-Stunden-Druck. Nur für dich.'
+    : 'Über den Link schließt du den Vertrag online ab. Name und E-Mail sind fest. Der Link gilt <strong>48 Stunden</strong> und nur für dich.'
+  const startBlock = deferred
+    ? `<p>Dein Vertrag beginnt am <strong>${escapeMail(when)}</strong>. Die erste Zahlung ist an dem Tag. Bis dahin trainierst du mit – ohne Monatsbeitrag.</p>`
+    : '<p>Das Studio ist offen. Über den Link schließt du ab und kannst direkt mittrainieren.</p>'
+  const extra =
+    plan === SLOWSTART_ID ? ' 2 Kurse / Einheiten pro Woche.' : plan === FIRST50_ID ? ' 89,99€ statt 99,99€.' : ''
+  return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.5;max-width:640px">
+<p>Hi ${who},</p>
+<p>hier ist dein persönlicher Link für den Tarif <strong>${escapeMail(meta.name)}</strong>: <strong>${escapeMail(price)}</strong> im Monat, <strong>${meta.months} Monate</strong>.${extra}</p>
+${startBlock}
+<p>${validity}</p>
+<p>${full} · ${mail}</p>
+<p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
+<p>Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. ${feeMailLine(feeWaived)}</p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>`
 }
@@ -272,6 +325,7 @@ export async function deliverFirst50Invite({
   term = 0,
   lastChance = false,
   openUntilSignup = false,
+  feeWaived = null,
 }) {
   const secret = env.INVITE_SECRET
   const apiKey = env.BREVO_API_KEY?.trim()
@@ -279,38 +333,53 @@ export async function deliverFirst50Invite({
   if (!apiKey || !secret) return { ok: false, error: 'mail_off' }
   const site = String(env.VITE_SITE_URL?.trim() || 'https://www.mma-in-leipzig.de').replace(/\/+$/, '')
   const origin = site.includes('mma-in-leipzig.de') ? 'https://www.mma-in-leipzig.de' : site
-  const planId =
-    plan === PLUS_ID
-      ? PLUS_ID
-      : plan === SLOWSTART_ID
-        ? SLOWSTART_ID
-        : plan === STANDARD_ID
-          ? STANDARD_ID
-          : FIRST50_ID
+  const planId = INVITE_PLAN_META[plan] ? plan : FIRST50_ID
   const keepOpen =
-    (planId === PLUS_ID || planId === SLOWSTART_ID || planId === STANDARD_ID) && openUntilSignup === true
+    (planId === PLUS_ID ||
+      planId === SLOWSTART_ID ||
+      planId === STANDARD_ID ||
+      planId === FLEX_ID) &&
+    openUntilSignup === true
+  const waived =
+    feeWaived === true || feeWaived === false
+      ? feeWaived
+      : planId === FIRST50_ID
+        ? true
+        : Boolean(contractStart(start))
   const token = signInvite(
     secret,
-    makeInvitePayload({ email, name, slot, plan: planId, start, term, openUntilSignup: keepOpen }),
+    makeInvitePayload({
+      email,
+      name,
+      slot,
+      plan: planId,
+      start,
+      term,
+      openUntilSignup: keepOpen,
+      feeWaived: waived,
+    }),
   )
   const url = `${origin}/mitglied?invite=${encodeURIComponent(token)}`
   const first = name.split(' ')[0] || name
-  const subject =
-    planId === PLUS_ID
-      ? plusInviteSubject()
-      : planId === SLOWSTART_ID
-        ? slowstartInviteSubject()
-        : planId === STANDARD_ID
-          ? standardInviteSubject()
-          : first50InviteSubject({ test: false, lastChance })
-  const html =
-    planId === PLUS_ID
-      ? plusInviteHtml({ first, name, email, url, start, openUntilSignup: keepOpen })
-      : planId === SLOWSTART_ID
-        ? slowstartInviteHtml({ first, name, email, url, start, openUntilSignup: keepOpen })
-        : planId === STANDARD_ID
-          ? standardInviteHtml({ first, name, email, url, start, openUntilSignup: keepOpen })
-          : first50InviteHtml({ first, name, email, url, start, term, lastChance })
+  const deferredStart = contractStart(start)
+  const meta = INVITE_PLAN_META[planId]
+  const subject = lastChance
+    ? first50InviteSubject({ test: false, lastChance: true })
+    : deferredStart
+      ? `Dein ${meta.name} ab ${germanDate(deferredStart)} · KONNI MMA GYM`
+      : `Dein ${meta.name} · KONNI MMA GYM`
+  const html = lastChance
+    ? first50InviteHtml({ first, name, email, url, start, term, lastChance })
+    : deskInviteHtml({
+        first,
+        name,
+        email,
+        url,
+        plan: planId,
+        start,
+        openUntilSignup: keepOpen,
+        feeWaived: waived,
+      })
   try {
     await postInvite({
       fetchImpl,
@@ -326,13 +395,13 @@ export async function deliverFirst50Invite({
     console.error('[invite-mail]', String(error?.detail || error?.message || error).slice(0, 180))
     return { ok: false, error: 'mail' }
   }
-  const deferredStart = contractStart(start)
   return {
     ok: true,
     email,
     slot,
     plan: planId,
     openUntilSignup: keepOpen,
+    feeWaived: waived,
     url,
     ...(deferredStart ? { start: deferredStart } : {}),
   }

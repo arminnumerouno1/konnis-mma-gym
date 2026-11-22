@@ -3035,12 +3035,7 @@ export function Admin() {
 
       {tab === 'mail' ? <BroadcastMailer /> : null}
       {tab === 'members' ? <PhotoRequestBulk missing={stats?.noPhoto ?? 0} onDone={() => void refreshList()} /> : null}
-      {tab === 'members' ? (
-        <>
-          <First50Sender />
-          <SlowStartSender />
-        </>
-      ) : null}
+      {tab === 'members' ? <InviteSender /> : null}
 
       {tab === 'members' && creating ? <CreateMember onDone={async (id) => {
         setCreating(false)
@@ -4610,65 +4605,17 @@ function BroadcastMailer() {
   )
 }
 
-function First50Sender() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [note, setNote] = useState<string | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-
-  async function onSubmit(event: FormEvent) {
-    event.preventDefault()
-    setBusy(true)
-    setError(null)
-    setNote(null)
-    const { data } = await api('/api/admin', {
-      method: 'POST',
-      body: JSON.stringify({ action: 'sendFirst50', name, email }),
-    })
-    setBusy(false)
-    if (!data.ok) {
-      setError(errorText(data.error))
-      return
-    }
-    setNote(`Family-&-Friends-Link raus an ${data.email}. 89,99€, 48 Stunden, Name fest.`)
-    setName('')
-    setEmail('')
-  }
-
-  return (
-    <form className="admin-card" onSubmit={(event) => void onSubmit(event)}>
-      <h2>Family & Friends Link</h2>
-      <p className="admin-muted">
-        89,99€, 24 Monate. Name und E-Mail sind fest, der Link gilt 48 Stunden. Die Mail geht nur raus, wenn du hier auf
-        Senden klickst.
-      </p>
-      <div className="admin-grid">
-        <label>
-          Name
-          <input value={name} onChange={(event) => setName(event.target.value)} required />
-        </label>
-        <label>
-          E-Mail
-          <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-        </label>
-      </div>
-      {error ? <p className="admin-error">{error}</p> : null}
-      {note ? <p className="admin-muted">{note}</p> : null}
-      <button className="btn btn-solid" type="submit" disabled={busy}>
-        Link senden
-      </button>
-    </form>
-  )
-}
-
-function SlowStartSender() {
+function InviteSender() {
+  const [plan, setPlan] = useState<Exclude<PlanId, 'daypass'>>('standard')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [start, setStart] = useState('2026-12-01')
+  const [waiveFee, setWaiveFee] = useState(true)
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+
+  const needsStart = plan !== 'first50'
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -4678,11 +4625,13 @@ function SlowStartSender() {
     const { data } = await api('/api/admin', {
       method: 'POST',
       body: JSON.stringify({
-        action: 'sendSlowStartInvite',
+        action: 'sendInvite',
+        plan,
         name,
         email,
-        start,
-        openUntilSignup: true,
+        ...(needsStart || start ? { start } : {}),
+        waiveFee,
+        openUntilSignup: needsStart,
       }),
     })
     setBusy(false)
@@ -4690,8 +4639,10 @@ function SlowStartSender() {
       setError(errorText(data.error))
       return
     }
+    const feeText = data.feeWaived || data.fee === 0 ? 'ohne Anmeldegebühr' : 'Anmeldegebühr 19,99€'
+    const startText = data.start ? ` · Start ${deDate(String(data.start))}` : ''
     setNote(
-      `Slow-Start-Link raus an ${data.email}. 79,99€, Start ${deDate(String(data.start || start))}, bis zur Anmeldung gültig.`,
+      `Link raus an ${data.email}: ${data.planName || plan}${startText} · ${feeText}. Stripe bekommt Start und Gebühr mit.`,
     )
     setName('')
     setEmail('')
@@ -4699,12 +4650,45 @@ function SlowStartSender() {
 
   return (
     <form className="admin-card" onSubmit={(event) => void onSubmit(event)}>
-      <h2>Slow-Start-Link</h2>
+      <h2>Tarif-Link senden</h2>
       <p className="admin-muted">
-        79,99€, 12 Monate, 2×/Woche. Vertrag und erste Zahlung ab dem gewählten 1. des Monats. Bis dahin trainieren sie
-        mit, ohne Beitrag. Link bleibt bis zur Anmeldung gültig.
+        Tarif, Vertragsstart und Anmeldegebühr einzeln einstellen. Der Link schreibt Start und Gebühr fest in den Token –
+        Stripe startet die Zahlung erst ab dem gewählten 1. und berechnet die Gebühr nur, wenn sie hier auf Ja steht.
       </p>
       <div className="admin-grid">
+        <label>
+          Tarif
+          <select
+            value={plan}
+            onChange={(event) => {
+              const next = event.target.value as Exclude<PlanId, 'daypass'>
+              setPlan(next)
+              if (next === 'first50') setWaiveFee(true)
+            }}
+          >
+            <option value="slowstart">Slow Start Tarif · 79,99€</option>
+            <option value="standard">Standard · 99,99€</option>
+            <option value="flex">Flex · 109,99€</option>
+            <option value="plus">Plus · 119€</option>
+            <option value="first50">Family & Friends · 89,99€</option>
+          </select>
+        </label>
+        <label>
+          Vertragsstart (1. des Monats)
+          <input
+            type="date"
+            value={start}
+            onChange={(event) => setStart(event.target.value)}
+            required={needsStart}
+          />
+        </label>
+        <label>
+          Anmeldegebühr
+          <select value={waiveFee ? 'no' : 'yes'} onChange={(event) => setWaiveFee(event.target.value === 'no')}>
+            <option value="no">Nein · 0 €</option>
+            <option value="yes">Ja · 19,99 €</option>
+          </select>
+        </label>
         <label>
           Name
           <input value={name} onChange={(event) => setName(event.target.value)} required />
@@ -4712,10 +4696,6 @@ function SlowStartSender() {
         <label>
           E-Mail
           <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
-        </label>
-        <label>
-          Vertragsstart
-          <input type="date" value={start} onChange={(event) => setStart(event.target.value)} required />
         </label>
       </div>
       {error ? <p className="admin-error">{error}</p> : null}

@@ -97,8 +97,10 @@ export type InviteLookup =
         email: string
         name: string
         slot: number
-        plan: 'first50' | 'plus' | 'slowstart' | 'standard'
+        plan: 'first50' | 'plus' | 'slowstart' | 'standard' | 'flex'
         price: number
+        fee?: number
+        feeWaived?: boolean
         start?: string
         term?: number
         openUntilSignup?: boolean

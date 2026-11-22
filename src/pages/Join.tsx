@@ -189,7 +189,8 @@ function JoinForm({ plan, invite }: JoinProps) {
   const [inviteReady, setInviteReady] = useState(!invite)
   const [inviteError, setInviteError] = useState<string | null>(null)
   const [inviteSlot, setInviteSlot] = useState<number | null>(null)
-  const [invitePlan, setInvitePlan] = useState<'first50' | 'plus' | 'slowstart' | 'standard' | null>(null)
+  const [invitePlan, setInvitePlan] = useState<'first50' | 'plus' | 'slowstart' | 'standard' | 'flex' | null>(null)
+  const [inviteFee, setInviteFee] = useState<number | null>(null)
   const [contractStart, setContractStart] = useState('')
   const [contractTerm, setContractTerm] = useState<number | null>(null)
   const [inviteOpenUntilSignup, setInviteOpenUntilSignup] = useState(false)
@@ -233,17 +234,24 @@ function JoinForm({ plan, invite }: JoinProps) {
     (invitePlan === 'first50' ||
       invitePlan === 'plus' ||
       invitePlan === 'slowstart' ||
-      invitePlan === 'standard')
+      invitePlan === 'standard' ||
+      invitePlan === 'flex')
   const visiblePlans =
     invitePlan === 'plus'
       ? [PLUS]
       : invitePlan === 'first50'
         ? [FIRST50]
-        : invitePlan === 'slowstart'
-          ? PUBLIC_PLANS.filter((row) => row.id === 'slowstart')
-          : invitePlan === 'standard'
-            ? PUBLIC_PLANS.filter((row) => row.id === 'standard')
-            : PUBLIC_PLANS
+        : invitePlan === 'slowstart' || invitePlan === 'standard' || invitePlan === 'flex'
+          ? PUBLIC_PLANS.filter((row) => row.id === invitePlan)
+          : PUBLIC_PLANS
+  const shownFee =
+    inviteFee != null
+      ? inviteFee
+      : invitePlan === 'first50'
+        ? 0
+        : contractStart
+          ? 0
+          : 19.99
   const termLabel = (plan: { id: string; term: string }) =>
     plan.id === 'first50' && contractTerm === 12 ? '12 Monate Laufzeit' : plan.term
   const inviteLead =
@@ -281,13 +289,20 @@ function JoinForm({ plan, invite }: JoinProps) {
             ? 'slowstart'
             : result.invite.plan === 'standard'
               ? 'standard'
-              : 'first50'
+              : result.invite.plan === 'flex'
+                ? 'flex'
+                : 'first50'
       setChosen(plan)
       setInvitePlan(plan)
       setInviteSlot(result.invite.slot)
       setContractStart(result.invite.start ?? '')
-      setContractTerm(result.invite.term === 12 || result.invite.term === 6 ? result.invite.term : null)
+      setContractTerm(
+        result.invite.term === 12 || result.invite.term === 6 || result.invite.term === 24
+          ? result.invite.term
+          : null,
+      )
       setInviteOpenUntilSignup(Boolean(result.invite.openUntilSignup))
+      setInviteFee(typeof result.invite.fee === 'number' ? result.invite.fee : result.invite.feeWaived ? 0 : null)
       setEmail(result.invite.email)
       setFirstName(names.firstName)
       setLastName(names.lastName)
@@ -490,7 +505,7 @@ function JoinForm({ plan, invite }: JoinProps) {
             {summary.plan.id === 'daypass' ? null : (
               <div>
                 <dt>Aufnahmegebühr</dt>
-                <dd>19,99 €</dd>
+                <dd>{shownFee === 0 ? '0 €' : '19,99 €'}</dd>
               </div>
             )}
             {contractStart ? (
@@ -650,7 +665,7 @@ function JoinForm({ plan, invite }: JoinProps) {
                   <small className="plan-includes">{item.includes}</small>
                   {item.id === 'daypass' ? null : (
                     <small className="price-fee">
-                      <strong>{COPY.signupFeePrice}</strong>
+                      <strong>{shownFee === 0 ? '0 €' : COPY.signupFeePrice}</strong>
                       <span>{COPY.signupFeeLabel}</span>
                     </small>
                   )}

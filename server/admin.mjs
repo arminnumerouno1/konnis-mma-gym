@@ -88,6 +88,9 @@ import { BILLING_START, createCheckoutSession, siteOrigin } from './stripe-check
 import { allocateInvoiceNumber, buildReceiptPdf } from './receipt-pdf.mjs'
 import {
   FIRST50_ID,
+  FLEX_ID,
+  INVITE_PLAN_IDS,
+  INVITE_PLAN_META,
   INVITE_TTL_HOURS,
   PLUS_ID,
   SLOWSTART_ID,
@@ -1058,6 +1061,7 @@ export function createAdminHandler({
           action === 'sendPaperReturn' ||
           action === 'sendGuardianMandate' ||
           action === 'sendReminder' ||
+          action === 'sendInvite' ||
           action === 'sendFirst50' ||
           action === 'sendPlusInvite' ||
           action === 'sendSlowStartInvite' ||
@@ -1324,6 +1328,7 @@ export function createAdminHandler({
       }
 
       if (
+        action === 'sendInvite' ||
         action === 'sendFirst50' ||
         action === 'sendPlusInvite' ||
         action === 'sendSlowStartInvite' ||
@@ -1333,13 +1338,17 @@ export function createAdminHandler({
         const name = normalizePersonName(body.name)
         const start = body.start ? contractStart(body.start) : ''
         const plan =
-          action === 'sendPlusInvite' || body.plan === PLUS_ID
+          action === 'sendPlusInvite'
             ? PLUS_ID
-            : action === 'sendSlowStartInvite' || body.plan === SLOWSTART_ID
+            : action === 'sendSlowStartInvite'
               ? SLOWSTART_ID
-              : action === 'sendStandardInvite' || body.plan === STANDARD_ID
+              : action === 'sendStandardInvite'
                 ? STANDARD_ID
-                : FIRST50_ID
+                : action === 'sendFirst50'
+                  ? FIRST50_ID
+                  : INVITE_PLAN_IDS.includes(body.plan)
+                    ? body.plan
+                    : FIRST50_ID
         if (!isValidEmail(email) || name.length < 3) {
           json(res, 400, { ok: false, error: name.length < 3 ? 'name' : 'email' })
           return
@@ -1355,7 +1364,13 @@ export function createAdminHandler({
             return
           }
         }
-        if ((plan === PLUS_ID || plan === SLOWSTART_ID || plan === STANDARD_ID) && !start) {
+        const needsStart =
+          plan === PLUS_ID || plan === SLOWSTART_ID || plan === STANDARD_ID || plan === FLEX_ID
+        if (needsStart && !start && action !== 'sendInvite') {
+          json(res, 400, { ok: false, error: 'start' })
+          return
+        }
+        if (action === 'sendInvite' && needsStart && !start) {
           json(res, 400, { ok: false, error: 'start' })
           return
         }
@@ -1365,8 +1380,18 @@ export function createAdminHandler({
         }
         const now = new Date().toISOString()
         const openUntilSignup =
-          (plan === PLUS_ID || plan === SLOWSTART_ID || plan === STANDARD_ID) &&
-          body.openUntilSignup === true
+          action === 'sendInvite'
+            ? body.openUntilSignup !== false && needsStart
+            : (plan === PLUS_ID || plan === SLOWSTART_ID || plan === STANDARD_ID || plan === FLEX_ID) &&
+              body.openUntilSignup === true
+        const feeWaived =
+          body.waiveFee === true || body.waiveFee === false
+            ? body.waiveFee === true
+            : plan === FIRST50_ID
+              ? true
+              : start
+                ? true
+                : false
         const freshUntil = Date.now() - INVITE_TTL_HOURS * 60 * 60 * 1000
         let reserved = null
         await store.update((db) => {
@@ -1397,6 +1422,7 @@ export function createAdminHandler({
             name,
             at: now,
             plan,
+            feeWaived,
             ...(start ? { start } : {}),
             ...(openUntilSignup ? { openUntilSignup: true } : {}),
           })
@@ -1418,6 +1444,7 @@ export function createAdminHandler({
           start,
           lastChance,
           openUntilSignup,
+          feeWaived,
         })
         if (!mailed?.ok) {
           await store.update((db) => {
@@ -1436,6 +1463,8 @@ export function createAdminHandler({
             return db
           })
         }
+        const meta = INVITE_PLAN_META[plan] || PLAN_META[plan]
+        const fee = feeWaived ? 0 : 19.99
         if (proofOnly) {
           json(res, 200, {
             ok: true,
@@ -1443,6 +1472,8 @@ export function createAdminHandler({
             plan,
             lastChance,
             openUntilSignup,
+            fee,
+            feeWaived,
             ...(start ? { start } : {}),
             ...(mailed?.url ? { url: mailed.url } : {}),
           })
@@ -1453,8 +1484,11 @@ export function createAdminHandler({
           email,
           slot: reserved.slot,
           plan,
+          planName: meta?.name || plan,
           lastChance,
           openUntilSignup,
+          fee,
+          feeWaived,
           ...(start ? { start } : {}),
           ...(mailed?.url ? { url: mailed.url } : {}),
         })

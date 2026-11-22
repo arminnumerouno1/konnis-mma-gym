@@ -1,7 +1,17 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
 import { randomUUID } from 'node:crypto'
-import { inviteRevoked, inviteUsed, namesMatch, normalizeInviteEmail, normalizePersonName, storedContractTerm, verifyInvite } from './invite.mjs'
+import {
+  INVITE_PLAN_META,
+  inviteRevoked,
+  inviteSignupFee,
+  inviteUsed,
+  namesMatch,
+  normalizeInviteEmail,
+  normalizePersonName,
+  storedContractTerm,
+  verifyInvite,
+} from './invite.mjs'
 import { memberBillingStart, membershipTaken } from './member-model.mjs'
 import { sendGuardianMandateEmail } from './membership-mail.mjs'
 import { claimSignup, createMemberStore } from './member-store.mjs'
@@ -167,7 +177,10 @@ export function validateMembership(body, ctx = {}) {
   if (plan === 'daypass' && !DAY_PASS_OPEN) return { ok: false, error: 'plan' }
 
   let invite = null
-  if (plan === 'first50' || ((plan === 'plus' || plan === 'slowstart' || plan === 'standard') && body.invite)) {
+  if (
+    plan === 'first50' ||
+    ((plan === 'plus' || plan === 'slowstart' || plan === 'standard' || plan === 'flex') && body.invite)
+  ) {
     const checked = verifyInvite(ctx.inviteSecret, body.invite)
     if (!checked.ok) return { ok: false, error: checked.error === 'expired' ? 'expired' : 'invite' }
     if (checked.payload.plan !== plan) return { ok: false, error: 'invite' }
@@ -268,13 +281,16 @@ export function validateMembership(body, ctx = {}) {
       termMonths:
         invite?.plan === 'plus'
           ? 6
-          : invite?.plan === 'slowstart' || invite?.term === 12
+          : invite?.plan === 'slowstart' || invite?.plan === 'flex' || invite?.term === 12
             ? 12
             : invite?.plan === 'standard'
               ? 24
               : meta.months,
-      fee:
-        (plan === 'slowstart' || plan === 'standard') && invite?.start ? 0 : signupFeeFor(signedDay, plan),
+      fee: (() => {
+        const fromInvite = inviteSignupFee(invite, signedDay)
+        if (fromInvite != null) return fromInvite
+        return signupFeeFor(signedDay, plan)
+      })(),
       firstName,
       lastName,
       birthDate: String(body.birthDate),
@@ -456,14 +472,7 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
         const memberships = await knownSignups()
         const store = await members.load()
         const revokedInvites = store.revokedInvites
-        const plan =
-          checked.payload.plan === 'plus'
-            ? 'plus'
-            : checked.payload.plan === 'slowstart'
-              ? 'slowstart'
-              : checked.payload.plan === 'standard'
-                ? 'standard'
-                : 'first50'
+        const plan = INVITE_PLAN_META[checked.payload.plan] ? checked.payload.plan : 'first50'
         if (inviteRevoked(revokedInvites, checked.payload.email, checked.payload.slot)) {
           json(res, 400, { ok: false, error: 'invite' })
           return
@@ -478,16 +487,13 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
           json(res, 400, { ok: false, error: 'invite' })
           return
         }
-        const term =
-          plan === 'plus'
-            ? 6
-            : plan === 'standard'
-              ? 24
-              : plan === 'slowstart' ||
-                  checked.payload.term === 12 ||
-                  storedContractTerm(store.issuedFirst50, checked.payload.email, checked.payload.slot) === 12
-                ? 12
-                : 0
+        const meta = INVITE_PLAN_META[plan]
+        const term = checked.payload.term || meta.months
+        const fee =
+          inviteSignupFee(checked.payload) ??
+          ((plan === 'slowstart' || plan === 'standard' || plan === 'flex') && checked.payload.start
+            ? 0
+            : signupFeeFor(new Date().toISOString().slice(0, 10), plan))
         json(res, 200, {
           ok: true,
           invite: {
@@ -495,7 +501,9 @@ export function createMembershipHandler({ dataDir, env, fetchImpl = fetch }) {
             name: checked.payload.name,
             slot: checked.payload.slot,
             plan,
-            price: plan === 'plus' ? 119 : plan === 'slowstart' ? 79.99 : plan === 'standard' ? 99.99 : 89.99,
+            price: meta.price,
+            fee,
+            feeWaived: fee === 0,
             ...(checked.payload.start ? { start: checked.payload.start } : {}),
             ...(term ? { term } : {}),
             ...(checked.payload.openUntilSignup ? { openUntilSignup: true } : {}),

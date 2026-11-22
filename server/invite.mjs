@@ -4,7 +4,15 @@ export const FIRST50_ID = 'first50'
 export const PLUS_ID = 'plus'
 export const SLOWSTART_ID = 'slowstart'
 export const STANDARD_ID = 'standard'
-export const INVITE_PLAN_IDS = [FIRST50_ID, PLUS_ID, SLOWSTART_ID, STANDARD_ID]
+export const FLEX_ID = 'flex'
+export const INVITE_PLAN_IDS = [FIRST50_ID, PLUS_ID, SLOWSTART_ID, STANDARD_ID, FLEX_ID]
+export const INVITE_PLAN_META = {
+  first50: { name: 'Family & Friends Tarif', price: 89.99, months: 24 },
+  slowstart: { name: 'Slow Start Tarif', price: 79.99, months: 12 },
+  standard: { name: 'Standard', price: 99.99, months: 24 },
+  flex: { name: 'Flex', price: 109.99, months: 12 },
+  plus: { name: 'Plus', price: 119, months: 6 },
+}
 export const FIRST50_LIMIT = 50
 /** Extra personal seats past the original fifty. They stay Family & Friends Tarif in price, without a “Platz N von 50”. */
 export const FIRST50_SLOT_MAX = 400
@@ -104,6 +112,9 @@ export function verifyInvite(secret, token) {
     return { ok: false, error: 'invite' }
   }
   if (!Number.isFinite(exp) || exp < Date.now() / 1000) return { ok: false, error: 'expired' }
+  const feeFlag = payload.f
+  const feeWaived =
+    feeFlag === 1 ? true : feeFlag === 0 ? false : plan === FIRST50_ID ? true : undefined
   return {
     ok: true,
     payload: {
@@ -115,7 +126,14 @@ export function verifyInvite(secret, token) {
       openUntilSignup: payload.o === 1,
       start: contractStart(payload.d),
       term:
-        plan === PLUS_ID ? 6 : plan === SLOWSTART_ID ? 12 : plan === STANDARD_ID ? 24 : contractTerm(payload.m) || 24,
+        plan === PLUS_ID
+          ? 6
+          : plan === SLOWSTART_ID || plan === FLEX_ID
+            ? 12
+            : plan === STANDARD_ID
+              ? 24
+              : contractTerm(payload.m) || 24,
+      ...(feeWaived === undefined ? {} : { feeWaived }),
     },
   }
 }
@@ -170,12 +188,13 @@ export function makeInvitePayload({
   term = 0,
   ttlHours = INVITE_TTL_HOURS,
   openUntilSignup = false,
+  feeWaived = null,
   nowMs = Date.now(),
 }) {
   const planId = INVITE_PLAN_IDS.includes(plan) ? plan : FIRST50_ID
   const keepOpen =
     openUntilSignup === true &&
-    (planId === PLUS_ID || planId === SLOWSTART_ID || planId === STANDARD_ID)
+    (planId === PLUS_ID || planId === SLOWSTART_ID || planId === STANDARD_ID || planId === FLEX_ID)
   const hours = keepOpen
     ? INVITE_OPEN_UNTIL_SIGNUP_HOURS
     : Number.isFinite(Number(ttlHours)) && Number(ttlHours) > 0
@@ -195,5 +214,19 @@ export function makeInvitePayload({
     const months = contractTerm(term)
     if (months) payload.m = months
   }
+  if (feeWaived === true) payload.f = 1
+  else if (feeWaived === false) payload.f = 0
   return payload
+}
+
+/** Aufnahmegebühr aus Invite: explizit gesetzt, sonst Legacy-Regel. */
+export function inviteSignupFee(invite, signedDay = new Date().toISOString().slice(0, 10)) {
+  if (!invite) return null
+  if (invite.feeWaived === true) return 0
+  if (invite.feeWaived === false) return 19.99
+  if (invite.plan === FIRST50_ID) return 0
+  if ((invite.plan === SLOWSTART_ID || invite.plan === STANDARD_ID || invite.plan === FLEX_ID) && invite.start) {
+    return 0
+  }
+  return null
 }
