@@ -4605,17 +4605,42 @@ function BroadcastMailer() {
   )
 }
 
+type FreeTrainMode = 'none' | 'until_month_end' | 'full_month'
+
+/** Erster des Monats, monthsAhead ab heute (0 = dieser Monat). */
+function firstOfMonthAhead(monthsAhead: number, from = new Date()) {
+  const day = new Date(from.getFullYear(), from.getMonth() + monthsAhead, 1)
+  const y = day.getFullYear()
+  const m = String(day.getMonth() + 1).padStart(2, '0')
+  return `${y}-${m}-01`
+}
+
+function startFromFreeTrain(mode: FreeTrainMode) {
+  if (mode === 'until_month_end') return firstOfMonthAhead(1)
+  if (mode === 'full_month') return firstOfMonthAhead(2)
+  return ''
+}
+
+function freeTrainHint(mode: FreeTrainMode, start: string) {
+  if (mode === 'none') return 'Kein kostenloses Training. Zahlung startet mit dem Abschluss (ggf. anteilig).'
+  if (mode === 'until_month_end') {
+    return `Kostenlos bis Monatsende. Erste Zahlung am ${deDate(start)}.`
+  }
+  return `Kostenlos den Rest dieses Monats und den ganzen Folgemonat. Erste Zahlung am ${deDate(start)}.`
+}
+
 function InviteSender() {
   const [plan, setPlan] = useState<Exclude<PlanId, 'daypass'>>('standard')
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [start, setStart] = useState('2026-12-01')
+  const [freeTrain, setFreeTrain] = useState<FreeTrainMode>('until_month_end')
   const [waiveFee, setWaiveFee] = useState(true)
   const [note, setNote] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
-  const needsStart = plan !== 'first50'
+  const start = startFromFreeTrain(freeTrain)
+  const openUntilSignup = plan !== 'first50'
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault()
@@ -4629,9 +4654,9 @@ function InviteSender() {
         plan,
         name,
         email,
-        ...(needsStart || start ? { start } : {}),
+        ...(start ? { start } : {}),
         waiveFee,
-        openUntilSignup: needsStart,
+        openUntilSignup,
       }),
     })
     setBusy(false)
@@ -4640,10 +4665,14 @@ function InviteSender() {
       return
     }
     const feeText = data.feeWaived || data.fee === 0 ? 'ohne Anmeldegebühr' : 'Anmeldegebühr 19,99€'
-    const startText = data.start ? ` · Start ${deDate(String(data.start))}` : ''
-    setNote(
-      `Link raus an ${data.email}: ${data.planName || plan}${startText} · ${feeText}. Stripe bekommt Start und Gebühr mit.`,
-    )
+    const freeText =
+      freeTrain === 'none'
+        ? 'ohne Gratiszeit'
+        : freeTrain === 'until_month_end'
+          ? 'gratis bis Monatsende'
+          : 'gratis inkl. Folgemonat'
+    const startText = data.start ? ` · Zahlung ab ${deDate(String(data.start))}` : ' · Zahlung sofort'
+    setNote(`Link raus an ${data.email}: ${data.planName || plan} · ${freeText}${startText} · ${feeText}.`)
     setName('')
     setEmail('')
   }
@@ -4676,13 +4705,15 @@ function InviteSender() {
             </select>
           </label>
           <label>
-            Vertragsstart
-            <input
-              type="date"
-              value={start}
-              onChange={(event) => setStart(event.target.value)}
-              required={needsStart}
-            />
+            Kostenlos trainieren
+            <select
+              value={freeTrain}
+              onChange={(event) => setFreeTrain(event.target.value as FreeTrainMode)}
+            >
+              <option value="none">Gar nicht</option>
+              <option value="until_month_end">Bis Ende des Monats</option>
+              <option value="full_month">Ganzen Folgemonat mit</option>
+            </select>
           </label>
           <label>
             Anmeldegebühr
@@ -4692,6 +4723,7 @@ function InviteSender() {
             </select>
           </label>
         </div>
+        <p className="admin-invite-hint">{freeTrainHint(freeTrain, start || firstOfMonthAhead(0))}</p>
       </div>
 
       <div className="admin-invite-block">

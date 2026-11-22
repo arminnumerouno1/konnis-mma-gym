@@ -1364,13 +1364,10 @@ export function createAdminHandler({
             return
           }
         }
-        const needsStart =
+        const invitePlanNeedsStart =
           plan === PLUS_ID || plan === SLOWSTART_ID || plan === STANDARD_ID || plan === FLEX_ID
-        if (needsStart && !start && action !== 'sendInvite') {
-          json(res, 400, { ok: false, error: 'start' })
-          return
-        }
-        if (action === 'sendInvite' && needsStart && !start) {
+        // Legacy script actions still require a start. Desk sendInvite may omit it (= sofort zahlen).
+        if (invitePlanNeedsStart && !start && action !== 'sendInvite') {
           json(res, 400, { ok: false, error: 'start' })
           return
         }
@@ -1381,7 +1378,7 @@ export function createAdminHandler({
         const now = new Date().toISOString()
         const openUntilSignup =
           action === 'sendInvite'
-            ? body.openUntilSignup !== false && needsStart
+            ? body.openUntilSignup !== false && invitePlanNeedsStart
             : (plan === PLUS_ID || plan === SLOWSTART_ID || plan === STANDARD_ID || plan === FLEX_ID) &&
               body.openUntilSignup === true
         const feeWaived =
