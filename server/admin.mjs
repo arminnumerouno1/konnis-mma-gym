@@ -2631,6 +2631,29 @@ export function createAdminHandler({
           json(res, 400, { ok: false, error: 'invalid' })
           return
         }
+        const current = (await store.load()).members.find((row) => row.id === id)
+        if (!current) {
+          json(res, 404, { ok: false, error: 'missing' })
+          return
+        }
+        // Same rule as markCancelled / markWithdrawn: stop Stripe billing before the
+        // desk record disappears, so a deleted member cannot keep getting charged.
+        let stripeCancel = { ok: true, results: [] }
+        if (current.stripe?.subscriptionId || current.stripe?.customerId) {
+          try {
+            stripeCancel = await cancelStripeSubscriptions(env, current, fetchImpl)
+          } catch (error) {
+            console.error('[admin] stripe cancel on delete failed', error)
+            json(res, 502, { ok: false, error: 'stripe_fail' })
+            return
+          }
+          const failed = (stripeCancel.results || []).filter((row) => row.error)
+          if (failed.length) {
+            console.error('[admin] stripe cancel on delete partial', failed)
+            json(res, 502, { ok: false, error: 'stripe_fail' })
+            return
+          }
+        }
         let removed = null
         await store.update((db) => {
           const index = db.members.findIndex((row) => row.id === id)
@@ -2648,7 +2671,10 @@ export function createAdminHandler({
           `mail-lock/${id}`,
         ]
         await Promise.all(paths.map((path) => store.deleteDoc(path).catch(() => undefined)))
-        json(res, 200, { ok: true })
+        json(res, 200, {
+          ok: true,
+          stripeCanceled: Boolean(stripeCancel?.results?.length),
+        })
         return
       }
 

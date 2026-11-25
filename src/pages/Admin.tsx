@@ -287,7 +287,7 @@ const ERROR_TEXT: Record<string, string> = {
   stripe_off: 'Stripe ist noch nicht verbunden. Der Zahlungslink geht, sobald der Schlüssel hinterlegt ist.',
   stripe_exists: 'Für dieses Mitglied läuft schon ein Stripe-Abo.',
   stripe_early: 'Der Day Pass wird erst ab dem 1. November abgebucht.',
-  stripe_fail: 'Stripe hat den Link nicht angenommen. Bitte später noch einmal.',
+  stripe_fail: 'Stripe hat nicht mitgespielt (Link oder Abo-Stopp). Bitte später noch einmal.',
   address: 'Adresse prüfen. PLZ hat 5 Ziffern.',
   signature: 'Unterschrift fehlt. Mitglied und Studio müssen unterschreiben, bei unter 18 auch die Eltern.',
   place: 'Ort der Unterschrift prüfen.',
@@ -3487,7 +3487,7 @@ function MemberPane({
     const name = `${member.firstName} ${member.lastName}`.trim()
     const stripe = Boolean(member.stripe?.customerId || member.stripe?.subscriptionId)
     const stripeNote = stripe
-      ? '\n\nDas Stripe-Abo wird nicht beendet. Die Abbuchung läuft weiter, bis du es in Stripe stoppst.'
+      ? '\n\nStripe-Abo und offene Abbuchungen werden mit beendet (wie bei Kündigung/Widerruf).'
       : ''
     if (!window.confirm(`${name} wirklich aus der Verwaltung löschen? Die Person und die hochgeladenen Unterlagen sind danach weg.${stripeNote}`)) {
       return
@@ -4252,7 +4252,7 @@ function MemberPane({
         <p className="admin-muted">
           Entfernt {member.firstName} {member.lastName} aus der Verwaltung, inklusive hochgeladener Unterlagen.
           {member.stripe?.customerId || member.stripe?.subscriptionId
-            ? ' Das Stripe-Abo läuft danach weiter, bis es in Stripe beendet wird.'
+            ? ' Verbundenes Stripe-Abo wird mit beendet, damit nichts mehr abgebucht wird.'
             : ''}
         </p>
         <button className="btn btn-ghost admin-danger" type="button" disabled={busy} onClick={() => void remove()}>
