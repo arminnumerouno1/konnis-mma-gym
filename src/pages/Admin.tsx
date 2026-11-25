@@ -3836,9 +3836,9 @@ function MemberPane({
       <section className="admin-block">
         <h3>Vertragsmail</h3>
         <p className="admin-muted">
-          Die Mail mit den Daten und dem Vertrag geht nur raus, wenn du sie hier auslöst. Beim Anlegen passiert das
-          nicht. Das Mitglied bekommt den Vertrag mit diesen Unterschriften und die Widerrufsbelehrung. Eine Kopie geht
-          an das Studio.
+          Online mit Karte/Apple Pay/SEPA: Vertragsmail geht automatisch nach dem Stripe-Checkout raus. Hier nur bei
+          Bedarf noch einmal senden (Papier, Desk-Anlage, Nachschicken). Gegenzeichnung vom Studio ist nicht nötig —
+          die Unterschrift des Mitglieds reicht. Eine Kopie geht an das Studio.
           {member.docs?.contract ? ' Der hochgeladene Scan liegt zusätzlich bei.' : ''}
         </p>
         <SignatureFields
