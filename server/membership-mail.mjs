@@ -520,32 +520,48 @@ export async function sendGuardianMandateEmail(env, record) {
 }
 
 export function payLinkMailSubject() {
-  return 'Karte noch einrichten · KONNI MMA GYM'
+  return 'Dein Zahlungslink · KONNI MMA GYM'
 }
 
-export function payLinkMailHtml({ first = '', url = '', when = '' } = {}) {
+export function payLinkMailHtml({ first = '', url = '', when = '', canTrainBefore = true } = {}) {
   const who = escapeMail(String(first ?? '').trim() || 'du')
   const hi = who === 'du' ? 'Hi,' : `Hi ${who},`
   const link = escapeMail(url)
-  const due = escapeMail(when || 'Fälligkeitstag')
+  const due = escapeMail(when || '')
+  const payLine = due
+    ? `Erste Abbuchung am <strong>${due}</strong>. Vorher wird nichts abgebucht.`
+    : 'Sobald die Karte hinterlegt ist, läuft die Abbuchung wie im Vertrag.'
+  const trainLine = canTrainBefore
+    ? '<p>Du kannst schon vorher bei uns mittrainieren – der Link ist nur für die Zahlung.</p>'
+    : ''
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>${hi}</p>
-<p>deine Anmeldung ist da. Der Vertrag auch. <strong>Die Karte oder Apple Pay fehlt noch.</strong></p>
-<p>Ohne diesen Schritt wird am ${due} nichts abgebucht. In der Vertragsmail steht die Abbuchung ab diesem Tag. Dafür muss die Karte noch hinterlegt sein.</p>
-<p><a href="${link}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Zahlung einrichten</a></p>
-<p>Der Link gilt 24 Stunden. Danach können wir einen neuen schicken.</p>
-<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
+<p>hier ist dein persönlicher Link, um Karte, Apple Pay oder SEPA einzurichten.</p>
+<p>${payLine}</p>
+${trainLine}
+<p style="margin:28px 0"><a href="${link}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Zahlung einrichten</a></p>
+<p>Der Link gilt 24 Stunden. Wenn er abgelaufen ist, schicken wir dir einen neuen.</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
 </div>`
 }
 
-export async function sendPayLinkEmail(env, record, url) {
+export async function sendPayLinkEmail(env, record, url, { billingStart = '' } = {}) {
   const apiKey = env.BREVO_API_KEY?.trim()
   if (!apiKey || !record?.email || !url) return 'skipped'
+  const dueIso = /^\d{4}-\d{2}-\d{2}$/.test(String(billingStart || ''))
+    ? String(billingStart)
+    : memberBillingStart(record)
+  const today = new Date().toISOString().slice(0, 10)
   return sendSmtp(env, {
     to: record.email,
     name: whoOf(record),
     subject: payLinkMailSubject(),
-    html: payLinkMailHtml({ first: record.firstName, url, when: germanDate(memberBillingStart(record)) }),
+    html: payLinkMailHtml({
+      first: record.firstName,
+      url,
+      when: germanDate(dueIso),
+      canTrainBefore: Boolean(dueIso && dueIso > today),
+    }),
   })
 }
 

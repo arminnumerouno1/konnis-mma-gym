@@ -122,6 +122,30 @@ const PLAN_META = {
 }
 const hits = new Map()
 
+/** Nächster 1. ab today (heute, wenn today schon der 1. ist). */
+function firstOfNextMonthIso(today) {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(today || ''))
+  if (!match) return ''
+  if (match[3] === '01') return `${match[1]}-${match[2]}-01`
+  const year = Number(match[1])
+  const month = Number(match[2])
+  const nextMonth = month === 12 ? 1 : month + 1
+  const nextYear = month === 12 ? year + 1 : year
+  return `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`
+}
+
+/**
+ * Für Zahlungslinks: wenn kein fester Monatsbeginn in der Zukunft gesetzt ist,
+ * Zahlung ab dem nächsten 1. (bis dahin trainieren, keine Sofort-Anteilzahlung).
+ */
+function memberForPayLinkCheckout(member, today) {
+  const start = String(member?.startDate || '')
+  if (/^\d{4}-\d{2}-01$/.test(start) && start >= today) return member
+  const next = firstOfNextMonthIso(today)
+  if (!next) return member
+  return { ...member, startDate: next }
+}
+
 function adminSecret(env) {
   // Dedicated desk password only — never fall back to INVITE_SECRET (invite/photo signing key).
   const dedicated = env.ADMIN_SECRET?.trim() || ''
@@ -1716,9 +1740,10 @@ export function createAdminHandler({
           json(res, 503, { ok: false, error: 'stripe_off' })
           return
         }
+        const checkoutMember = memberForPayLinkCheckout(current, today)
         const session = await createCheckoutSession({
           secret: secretKey,
-          member: current,
+          member: checkoutMember,
           origin: siteOrigin(req, env),
           fetchImpl,
           confirmSecret: env.STRIPE_WEBHOOK_SECRET?.trim() || secretKey,
@@ -1734,6 +1759,9 @@ export function createAdminHandler({
           if (index < 0) return db
           db.members[index] = {
             ...db.members[index],
+            ...(checkoutMember.startDate && checkoutMember.startDate !== db.members[index].startDate
+              ? { startDate: checkoutMember.startDate }
+              : {}),
             stripe: {
               ...(db.members[index].stripe ?? {}),
               checkoutSessionId: session.id,
@@ -2116,9 +2144,10 @@ export function createAdminHandler({
           json(res, 503, { ok: false, error: 'stripe_off' })
           return
         }
+        const checkoutMember = memberForPayLinkCheckout(current, today)
         const session = await createCheckoutSession({
           secret: secretKey,
-          member: current,
+          member: checkoutMember,
           origin: siteOrigin(req, env),
           fetchImpl,
           confirmSecret: env.STRIPE_WEBHOOK_SECRET?.trim() || secretKey,
@@ -2134,6 +2163,9 @@ export function createAdminHandler({
           if (index < 0) return db
           db.members[index] = {
             ...db.members[index],
+            ...(checkoutMember.startDate && checkoutMember.startDate !== db.members[index].startDate
+              ? { startDate: checkoutMember.startDate }
+              : {}),
             stripe: {
               ...(db.members[index].stripe ?? {}),
               checkoutSessionId: session.id,
@@ -2152,7 +2184,9 @@ export function createAdminHandler({
         }
         let mailed
         try {
-          mailed = await sendPayLink(env, saved, session.url)
+          mailed = await sendPayLink(env, saved, session.url, {
+            billingStart: session.billingStart || saved.stripe?.billingStart || '',
+          })
         } catch (error) {
           console.error('[admin] pay link mail failed', error)
           json(res, 502, { ok: false, error: 'mail' })
