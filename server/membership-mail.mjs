@@ -523,7 +523,7 @@ export function payLinkMailSubject() {
   return 'Dein Zahlungslink · KONNI MMA GYM'
 }
 
-export function payLinkMailHtml({ first = '', url = '', when = '', canTrainBefore = true } = {}) {
+export function payLinkMailHtml({ first = '', url = '', when = '', canTrainBefore = true, note = '' } = {}) {
   const who = escapeMail(String(first ?? '').trim() || 'du')
   const hi = who === 'du' ? 'Hi,' : `Hi ${who},`
   const link = escapeMail(url)
@@ -534,8 +534,10 @@ export function payLinkMailHtml({ first = '', url = '', when = '', canTrainBefor
   const trainLine = canTrainBefore
     ? '<p>Du kannst schon vorher bei uns mittrainieren – der Link ist nur für die Zahlung.</p>'
     : ''
+  const noteLine = note ? `<p>${escapeMail(note)}</p>` : ''
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>${hi}</p>
+${noteLine}
 <p>hier ist dein persönlicher Link, um Karte, Apple Pay oder SEPA einzurichten.</p>
 <p>${payLine}</p>
 ${trainLine}
