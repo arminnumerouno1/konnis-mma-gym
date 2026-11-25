@@ -457,8 +457,10 @@ function readPlace(raw, fallback = 'Leipzig') {
 function deskSignaturesReady(member) {
   if (member.docs?.contract?.path && member.email) return true
   const signature = cleanSignature(member.signature)
-  const gym = cleanSignature(member.gymSignature)
   if (!signature.ok || signature.value.length < 2) return false
+  // Online-Abschluss: nur die Mitgliedsunterschrift. Studio-Gegenzeichnung ist nicht nötig.
+  if (member.source !== 'admin') return true
+  const gym = cleanSignature(member.gymSignature)
   if (!gym.ok || gym.value.length < 2) return false
   if (member.minor) {
     const guardian = cleanSignature(member.guardian?.signature)
@@ -1601,7 +1603,12 @@ export function createAdminHandler({
         await store.update((db) => {
           const index = db.members.findIndex((row) => row.id === id)
           if (index < 0) return db
-          const applied = applyDeskSignatures(db.members[index], body.signatures)
+          const row = db.members[index]
+          // Online: Unterschriften nicht überschreiben — Mail nur nochmal rausschicken.
+          const applied =
+            row.source === 'admin' && body.signatures
+              ? applyDeskSignatures(row, body.signatures)
+              : { ok: true, member: row }
           if (!applied.ok) {
             prepared = applied
             return db

@@ -3254,12 +3254,16 @@ function MemberPane({
     if (error) setPaneError(errorText(error))
   }
 
-  async function sendContract() {
+  async function sendContract(withSignatures = true) {
     setSending(true)
     setPaneError(null)
     const { data } = await api('/api/admin', {
       method: 'POST',
-      body: JSON.stringify({ action: 'sendContract', id: member.id, signatures }),
+      body: JSON.stringify({
+        action: 'sendContract',
+        id: member.id,
+        ...(withSignatures ? { signatures } : {}),
+      }),
     })
     setSending(false)
     if (!data.ok) {
@@ -3835,31 +3839,55 @@ function MemberPane({
 
       <section className="admin-block">
         <h3>Vertragsmail</h3>
-        <p className="admin-muted">
-          Online mit Karte/Apple Pay/SEPA: Vertragsmail geht automatisch nach dem Stripe-Checkout raus. Hier nur bei
-          Bedarf noch einmal senden (Papier, Desk-Anlage, Nachschicken). Gegenzeichnung vom Studio ist nicht nötig —
-          die Unterschrift des Mitglieds reicht. Eine Kopie geht an das Studio.
-          {member.docs?.contract ? ' Der hochgeladene Scan liegt zusätzlich bei.' : ''}
-        </p>
-        <SignatureFields
-          value={signatures}
-          onChange={setSignatures}
-          minor={member.minor}
-          mandate={Boolean(member.bank?.iban)}
-        />
-        {member.contractMailAt ? (
-          <p className="admin-muted">Zuletzt raus am {new Date(member.contractMailAt).toLocaleString('de-DE')}.</p>
+        {member.source === 'admin' ? (
+          <>
+            <p className="admin-muted">
+              Vor-Ort-/Papier-Vertrag: Mail mit Vertrag und Widerrufsbelehrung hier auslösen. Eine Kopie geht an das
+              Studio.
+              {member.docs?.contract ? ' Der hochgeladene Scan liegt zusätzlich bei.' : ''}
+            </p>
+            <SignatureFields
+              value={signatures}
+              onChange={setSignatures}
+              minor={member.minor}
+              mandate={Boolean(member.bank?.iban)}
+            />
+            {member.contractMailAt ? (
+              <p className="admin-muted">Zuletzt raus am {new Date(member.contractMailAt).toLocaleString('de-DE')}.</p>
+            ) : (
+              <p className="admin-muted">Noch keine Vertragsmail.</p>
+            )}
+            <div className="admin-inline">
+              <button className="btn btn-ghost" type="button" disabled={busy || sending} onClick={() => void save({ signatures })}>
+                Unterschriften speichern
+              </button>
+              <button className="btn btn-solid" type="button" disabled={busy || sending} onClick={() => void sendContract(true)}>
+                Mail mit Vertrag senden
+              </button>
+            </div>
+          </>
         ) : (
-          <p className="admin-muted">Noch keine Vertragsmail.</p>
+          <>
+            <p className="admin-muted">
+              {member.contractMailAt
+                ? `Vertragsmail automatisch raus am ${new Date(member.contractMailAt).toLocaleString('de-DE')}.`
+                : member.contractMail === 'guardian_pending'
+                  ? 'Vertragsmail wartet noch auf die Elternvollmacht.'
+                  : member.contractMail === 'after_payment'
+                    ? 'Vertragsmail geht nach dem Stripe-Checkout automatisch raus.'
+                    : 'Noch keine Vertragsmail.'}
+              {member.docs?.contract ? ' Hochgeladener Scan kann beim erneuten Senden mit.' : ''}
+            </p>
+            <button
+              className="btn btn-ghost"
+              type="button"
+              disabled={busy || sending}
+              onClick={() => void sendContract(false)}
+            >
+              {member.contractMailAt ? 'Noch einmal senden' : 'Mail mit Vertrag senden'}
+            </button>
+          </>
         )}
-        <div className="admin-inline">
-          <button className="btn btn-ghost" type="button" disabled={busy || sending} onClick={() => void save({ signatures })}>
-            Unterschriften speichern
-          </button>
-          <button className="btn btn-solid" type="button" disabled={busy || sending} onClick={() => void sendContract()}>
-            Mail mit Vertrag senden
-          </button>
-        </div>
       </section>
 
       <section className="admin-block">
