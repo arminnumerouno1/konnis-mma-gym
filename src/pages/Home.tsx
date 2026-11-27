@@ -260,7 +260,7 @@ function GymMap() {
     <div className="gym-map">
       {extras ? (
         <iframe
-          title="KONNI MMA GYM, Wittenberger Straße 15, Leipzig"
+          title="KONNI MMA GYM, Wittenberger Straße 15, Aufgang B, Leipzig"
           src={GYM.mapsEmbed}
           loading="lazy"
           referrerPolicy="no-referrer"
