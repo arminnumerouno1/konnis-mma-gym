@@ -9,8 +9,13 @@ try {
   const raw = await readFile(file, 'utf8')
   const parsed = JSON.parse(raw)
   const signups = Array.isArray(parsed.signups) ? parsed.signups : []
-  console.log(`${signups.length} Einträge`)
-  for (const row of signups) {
+  const ordered = [...signups].sort((a, b) => {
+    const left = typeof a?.createdAt === 'string' ? a.createdAt : ''
+    const right = typeof b?.createdAt === 'string' ? b.createdAt : ''
+    return right.localeCompare(left)
+  })
+  console.log(`${ordered.length} Einträge`)
+  for (const row of ordered) {
     const name = row.name ? `${row.name} ` : ''
     console.log(`${row.createdAt}\t${name}<${row.email}>`)
   }
