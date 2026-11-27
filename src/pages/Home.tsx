@@ -387,7 +387,11 @@ export function Home() {
             <img className="hero-logo ghost red" src={GYM.logo} alt="" width={1036} height={1125} />
             <img className="hero-logo" src={GYM.logo} alt={GYM.name} width={1036} height={1125} />
           </div>
-          <p className="hero-stamp">{COPY.heroStamp}</p>
+          <p className="hero-stamp">
+            <a href={GOOGLE_REVIEWS.reviewsUrl} target="_blank" rel="noopener noreferrer">
+              {GOOGLE_REVIEWS.ratingLabel} · 250+ Google-Bewertungen
+            </a>
+          </p>
           <h1>
             <span className="sr-only">MMA Gym in Leipzig. {COPY.gymName}. </span>
             <span className="hero-name">

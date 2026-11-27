@@ -236,7 +236,6 @@ export function buildSeoBody(): string {
       <a href="/#plan">${escapeHtml(COPY.navPlan)}</a>
       <a href="/#preise">${escapeHtml(COPY.navPlans)}</a>
       <a href="/#team">${escapeHtml(COPY.navTeam)}</a>
-      <a href="/#konrad-dyrschka">${escapeHtml(COPY.konradName)}</a>
       <a href="/#kontakt">${escapeHtml(COPY.navContact)}</a>
       <a href="/mitglied">${escapeHtml(COPY.ctaJoin)}</a>
       <a href="/impressum">${escapeHtml(COPY.impressum)}</a>

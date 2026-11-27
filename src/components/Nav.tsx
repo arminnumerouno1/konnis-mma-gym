@@ -26,7 +26,6 @@ export function Nav({ route }: NavProps) {
     { href: '/#preise', label: COPY.navPlans },
     ...(TRIAL_OPEN ? [{ href: '/#probetraining', label: COPY.navTrial }] : []),
     { href: '/#team', label: COPY.navTeam },
-    { href: '/#konrad-dyrschka', label: 'Konrad' },
     { href: '/#kontakt', label: COPY.navContact },
   ]
 
