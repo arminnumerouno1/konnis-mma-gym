@@ -50,6 +50,10 @@ export const GYM = {
     marks: '/brand/halle/marks.jpg',
     ropes: '/brand/halle/halle-kaefig-front.jpg',
   },
+  tour: {
+    video: '/brand/tour/reelgym.mp4',
+    poster: '/brand/tour/reelgym-poster.jpg',
+  },
   hoursNote: 'Anhand des Kursplans. Feiertage und Änderungen möglich.',
   siteBy: {
     name: 'Armin Scholtz',

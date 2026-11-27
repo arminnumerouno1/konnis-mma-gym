@@ -442,6 +442,27 @@ export function Home() {
         ))}
       </section>
 
+      <section className="tour" id="tour" data-reveal aria-label={COPY.tourTitle}>
+        <div className="tour-head">
+          <p className="tour-kicker">{COPY.tourKicker}</p>
+          <h2>{COPY.tourTitle}</h2>
+          <p className="tour-lead">{COPY.tourLead}</p>
+        </div>
+        <div className="tour-phone">
+          <video
+            className="tour-video"
+            controls
+            playsInline
+            preload="none"
+            poster={GYM.tour.poster}
+            width={720}
+            height={1280}
+          >
+            <source src={GYM.tour.video} type="video/mp4" />
+          </video>
+        </div>
+      </section>
+
       <section className="opening" id="studio" data-reveal>
         <p className="opening-kicker">{COPY.aboutKicker}</p>
         <p className="opening-date">{COPY.aboutDate}</p>
