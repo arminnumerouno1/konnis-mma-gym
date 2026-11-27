@@ -390,6 +390,11 @@ p,
   animation: fadeUp 0.5s ease 1.05s forwards;
 }
 
+.hero-stamp a {
+  color: inherit;
+  text-decoration: none;
+}
+
 .hero-slam h1 {
   margin: 4px 0 0;
   display: grid;
