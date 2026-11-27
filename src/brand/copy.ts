@@ -29,7 +29,6 @@ export const COPY = {
   navContact: 'Kontakt',
   tourKicker: 'Studio-Tour',
   tourTitle: 'Konrad zeigt das KONNI MMA GYM',
-  tourLead: '70 Sekunden durchs Studio.',
   aboutKicker: 'Das Gym',
   aboutDate: 'Jetzt offen',
   aboutTitleStart: 'KONNI MMA GYM',

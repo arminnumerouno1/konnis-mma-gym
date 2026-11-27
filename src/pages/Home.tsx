@@ -446,7 +446,6 @@ export function Home() {
         <div className="tour-head">
           <p className="tour-kicker">{COPY.tourKicker}</p>
           <h2>{COPY.tourTitle}</h2>
-          <p className="tour-lead">{COPY.tourLead}</p>
         </div>
         <div className="tour-phone">
           <video
