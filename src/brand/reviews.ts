@@ -15,8 +15,8 @@ export const GOOGLE_REVIEWS = {
     'https://www.google.com/search?q=KONNI+MMA+GYM+Leipzig&kgmid=/g/11zy1q9d8k',
   rating: 5,
   ratingLabel: '5,0',
-  count: 200,
-  countLabel: 'über 200 Rezensionen',
+  count: 250,
+  countLabel: 'über 250 Rezensionen',
   quotes: [
     {
       name: 'Lars Bindheim',

@@ -94,7 +94,7 @@ export function buildSeoHead(siteUrl = ''): string {
         ratingValue: '5',
         bestRating: '5',
         worstRating: '1',
-        ratingCount: '200',
+        ratingCount: '250',
       },
       sport: ['Mixed Martial Arts', 'MMA', 'Wrestling', 'Brazilian Jiu-Jitsu', 'Boxing', 'Kickboxing', 'Muay Thai'],
       founder: [
