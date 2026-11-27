@@ -1,7 +1,7 @@
 export const COPY = {
   gymName: 'KONNI MMA GYM',
   city: 'LEIPZIG',
-  heroStamp: '5,0 · 250+ Google-Bewertungen',
+  heroStamp: '★★★★★ 250+ Google Bewertungen',
   heroName: 'KONRAD DYRSCHKA',
   heroMma: 'MMA',
   heroCity: 'in Leipzig',

@@ -389,7 +389,10 @@ export function Home() {
           </div>
           <p className="hero-stamp">
             <a href={GOOGLE_REVIEWS.reviewsUrl} target="_blank" rel="noopener noreferrer">
-              {GOOGLE_REVIEWS.ratingLabel} · 250+ Google-Bewertungen
+              <span className="hero-stamp-stars" aria-hidden="true">
+                ★★★★★
+              </span>
+              <span className="hero-stamp-label">250+ Google Bewertungen</span>
             </a>
           </p>
           <h1>
