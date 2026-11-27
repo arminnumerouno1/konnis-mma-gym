@@ -221,7 +221,7 @@ ${lead}
 ${forGym ? files : ''}
 <p style="margin:28px 0 8px;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:#666">${forGym ? 'Daten' : 'Kurzfassung'}</p>
 <h2 style="margin:0 0 8px">Mitgliedsvertrag · ${escapeMail(record.planName || record.plan)}</h2>
-<p>KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig</p>
+<p>KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, Aufgang B, 04129 Leipzig</p>
 <p><strong>Mitglied</strong><br>${escapeMail(who)}, geboren ${escapeMail(record.birthDate)}</p>
 <p><strong>Anschrift</strong><br>${escapeMail(record.street)}, ${escapeMail(record.zip)} ${escapeMail(record.city)}</p>
 <p><strong>Kontakt</strong><br>${[record.email, record.phone].filter(Boolean).map(escapeMail).join(' · ')}</p>
@@ -257,7 +257,7 @@ ${bankBlock(record)}
 <p>AGB Stand 22. Oktober 2026 und Hausordnung wurden vor Abschluss zur Verfügung gestellt. Widerruf: 14 Tage.</p>
 ${forGym ? '' : files}
 ${record.signedUploadName ? '<p>Zusätzlich liegt der hochgeladene unterschriebene Vertrag bei.</p>' : ''}
-<p>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+<p>KONNI MMA GYM · Wittenberger Straße 15, Aufgang B · Leipzig</p>
 </div>`
 }
 
@@ -543,7 +543,7 @@ ${noteLine}
 ${trainLine}
 <p style="margin:28px 0"><a href="${link}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Zahlung einrichten</a></p>
 <p>Der Link gilt 24 Stunden. Wenn er abgelaufen ist, schicken wir dir einen neuen.</p>
-<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15, Aufgang B · Leipzig</p>
 </div>`
 }
 
@@ -718,7 +718,7 @@ export function broadcastMailHtml({ first = '', body = '' } = {}) {
   return `<div style="font-family:Arial,Helvetica,sans-serif;color:#111;line-height:1.55;max-width:640px">
 <p>${hi}</p>
 ${content}
-<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15, Aufgang B · Leipzig</p>
 </div>`
 }
 

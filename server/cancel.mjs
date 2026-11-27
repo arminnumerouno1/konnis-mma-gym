@@ -181,7 +181,7 @@ ${row.suggestedEnd ? `<br><strong>Voraussichtliches Vertragsende (Berechnung):</
 </p>
 ${row.note ? `<p><strong>Deine Nachricht:</strong><br>${escapeMail(row.note)}</p>` : ''}
 <p>Wir prüfen die Erklärung und setzen sie um. Bei Rückfragen antworte einfach auf diese Mail.</p>
-<p>KONNI MMA GYM GbR<br>Wittenberger Straße 15 · 04129 Leipzig<br>info@mma-in-leipzig.de</p>
+<p>KONNI MMA GYM GbR<br>Wittenberger Straße 15, Aufgang B · 04129 Leipzig<br>info@mma-in-leipzig.de</p>
 </div>`
 }
 

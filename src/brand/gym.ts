@@ -3,7 +3,7 @@ export const GYM = {
   legalName: 'KONNI MMA GYM GbR',
   short: 'KONNI',
   city: 'Leipzig',
-  street: 'Wittenberger Straße 15',
+  street: 'Wittenberger Straße 15, Aufgang B',
   zip: '04129',
   country: 'Deutschland',
   email: 'info@mma-in-leipzig.de',
@@ -25,7 +25,7 @@ export const GYM = {
   agbDate: '15.11.2026',
   privacyStand: '19. November 2026',
   mapsUrl:
-    'https://www.openstreetmap.org/search?query=Wittenberger%20Stra%C3%9Fe%2015%2C%2004129%20Leipzig',
+    'https://www.openstreetmap.org/search?query=Wittenberger%20Stra%C3%9Fe%2015%2C%20Aufgang%20B%2C%2004129%20Leipzig',
   mapsEmbed:
     'https://www.openstreetmap.org/export/embed.html?bbox=12.3846%2C51.3564%2C12.3886%2C51.3585&layer=mapnik&marker=51.3574773%2C12.3866214',
   /** Google Unternehmensprofil — nur Link, kein Embed. */

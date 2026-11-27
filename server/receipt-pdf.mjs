@@ -75,7 +75,7 @@ export async function buildReceiptPdf(member, payment, { number, issuedAt = new 
     color: RULE,
   })
   draw('KONNI MMA GYM GbR', { size: 14, weight: bold, gap: 18 })
-  draw('Wittenberger Straße 15, 04129 Leipzig', { size: 9, color: MUTED, gap: 12 })
+  draw('Wittenberger Straße 15, Aufgang B, 04129 Leipzig', { size: 9, color: MUTED, gap: 12 })
   draw('Quittung / Zahlungsbeleg', { size: 16, weight: bold, gap: 22 })
 
   draw(`Belegnummer: ${number}`, { size: 11, weight: bold })

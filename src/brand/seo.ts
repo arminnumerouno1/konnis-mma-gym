@@ -10,7 +10,7 @@ export const SEO = {
   title: 'MMA Gym in Leipzig | KONNI MMA GYM | BJJ & Boxen',
   shortTitle: 'MMA Leipzig',
   description:
-    'MMA Gym in Leipzig von Konrad Dyrschka: MMA, Ringen, BJJ, Boxen und Kick- & Thai-Boxen im KONNI MMA GYM. Wittenberger Straße 15. Jetzt Mitglied werden.',
+    'MMA Gym in Leipzig von Konrad Dyrschka: MMA, Ringen, BJJ, Boxen und Kick- & Thai-Boxen im KONNI MMA GYM. Wittenberger Straße 15, Aufgang B. Jetzt Mitglied werden.',
   ogImagePath: '/og-image.jpg',
   ogImageAlt: 'KONNI MMA GYM Leipzig – das MMA-Gym von MMA-Profi Konrad Dyrschka.',
   locale: 'de_DE',
@@ -279,7 +279,7 @@ ${faq}
       ·
       <a href="${escapeHtml(GYM.whatsapp)}" rel="noopener noreferrer">WhatsApp</a>
       ·
-      <a href="${escapeHtml(GYM.mapsUrl)}" rel="noopener noreferrer">Karte Wittenberger Straße 15 Leipzig</a>
+      <a href="${escapeHtml(GYM.mapsUrl)}" rel="noopener noreferrer">Karte Wittenberger Straße 15, Aufgang B Leipzig</a>
     </p>
   </article>`
 }

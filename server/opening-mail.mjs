@@ -30,7 +30,7 @@ export function openingMailHtml({ first = '' } = {}) {
 <div style="padding:24px 4px 0">
 <p>${hi}</p>
 <p>kurze Klarstellung, falls bei dir noch eine ältere Mail liegt: <strong>Das KONNI MMA GYM ist geöffnet.</strong> Training läuft. Es gibt keine Warteliste mehr.</p>
-<p>Du kannst online Mitglied werden und direkt trainieren. Wittenberger Straße 15, 04129 Leipzig.</p>
+<p>Du kannst online Mitglied werden und direkt trainieren. Wittenberger Straße 15, Aufgang B, 04129 Leipzig.</p>
 <p>Von MMA-Profi Konrad Dyrschka. Endlich ein Top MMA Gym in Leipzig.</p>
 <p style="margin:28px 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#666">Die Tarife</p>
 <table style="width:100%;border-collapse:collapse">
@@ -54,7 +54,7 @@ export function openingMailHtml({ first = '' } = {}) {
 <p>Family-&amp;-Friends-Plätze laufen über persönlichen Link. Alle anderen melden sich unter <a href="${join}">mma-in-leipzig.de/mitglied</a> an.</p>
 <p>Aktuelles und Kursplan auch auf Instagram: <a href="https://www.instagram.com/konnimmagym/" style="color:#c4121a;font-weight:bold">@konnimmagym</a>.</p>
 <p style="margin:28px 0 0"><a href="${join}" style="display:inline-block;background:#c4121a;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Mitglied werden</a></p>
-<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15, Aufgang B · Leipzig</p>
 </div>
 </div>`
 }

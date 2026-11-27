@@ -34,7 +34,7 @@ assert(!html.includes('SEPA-Lastschrift kommt später.'), 'sepa is available now
 assert(!/ersten\s+50|First 50|persönlichen Link/i.test(html), 'no first 50 in this mail')
 assert(!html.includes('Bist du schon Mitglied'), 'no already-member line')
 assert(html.includes('Konrad und Mehmet'), 'signoff')
-assert(html.includes('Wittenberger Straße 15'), 'street')
+assert(html.includes('Wittenberger Straße 15, Aufgang B'), 'street')
 assert(html.includes('konni-logo-mail.jpg'), 'logo')
 assert(!html.includes('<script'), 'no script')
 assert(!/Halle/i.test(html), 'no halle')

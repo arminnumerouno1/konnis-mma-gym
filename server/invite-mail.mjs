@@ -75,7 +75,7 @@ ${chance}
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
 <p>${expiry}</p>
 <p>${payment}</p>
-<p>Adresse: Wittenberger Straße 15, 04129 Leipzig. Kursplan und Infos: <a href="https://www.mma-in-leipzig.de/">mma-in-leipzig.de</a></p>
+<p>Adresse: Wittenberger Straße 15, Aufgang B, 04129 Leipzig. Kursplan und Infos: <a href="https://www.mma-in-leipzig.de/">mma-in-leipzig.de</a></p>
 <p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM</p>
 </div>`
 }
@@ -213,7 +213,7 @@ export function plusInviteHtml({ first, name, email, url, start = '', openUntilS
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
 <p>Alle Kurse inklusive: MMA, Boxen, BJJ und mehr. So oft du willst – nicht nur 2× die Woche.</p>
 <p>Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. ${feeMailLine(feeWaived)}</p>
-<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15, Aufgang B · Leipzig</p>
 </div>`
 }
 
@@ -242,7 +242,7 @@ export function slowstartInviteHtml({ first, name, email, url, start = '', openU
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
 <p>Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe.</p>
-<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15, Aufgang B · Leipzig</p>
 </div>`
 }
 
@@ -271,7 +271,7 @@ export function standardInviteHtml({ first, name, email, url, start = '', openUn
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
 <p>Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe.</p>
-<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15, Aufgang B · Leipzig</p>
 </div>`
 }
 
@@ -310,7 +310,7 @@ ${startBlock}
 <p>${full} · ${mail}</p>
 <p style="margin:28px 0"><a href="${href}" style="display:inline-block;background:#111;color:#fff;text-decoration:none;padding:12px 18px;font-weight:bold">Jetzt Vertrag abschließen</a></p>
 <p>Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. ${feeMailLine(feeWaived)}</p>
-<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15 · Leipzig</p>
+<p>Bis bald auf der Matte.<br>Konrad und Mehmet<br>KONNI MMA GYM · Wittenberger Straße 15, Aufgang B · Leipzig</p>
 </div>`
 }
 

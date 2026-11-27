@@ -6,7 +6,7 @@ export const COPY = {
   heroMma: 'MMA',
   heroCity: 'in Leipzig',
   heroHit: 'Vom Käfig auf die Matte.',
-  tape: 'MMA Gym in Leipzig · Wittenberger Straße 15 · Training läuft · ',
+  tape: 'MMA Gym in Leipzig · Wittenberger Straße 15, Aufgang B · Training läuft · ',
   /** Banner hidden when today (Berlin) is after this date. */
   siteNoticeUntil: '2026-11-15',
   siteNoticeKicker: 'Gute Nachrichten',
@@ -33,12 +33,12 @@ export const COPY = {
   aboutTitleDate: 'in Leipzig',
   aboutTitleEnd: '🥊',
   aboutParas: [
-    'Konrad Dyrschka und Mehmet-Deniz Celik haben das KONNI MMA GYM in der Wittenberger Straße 15 in Leipzig aufgebaut. Die Türen sind offen – Training läuft.',
+    'Konrad Dyrschka und Mehmet-Deniz Celik haben das KONNI MMA GYM in der Wittenberger Straße 15, Aufgang B, in Leipzig aufgebaut. Die Türen sind offen – Training läuft.',
     'Konrad ist selbst aktiver MMA-Profi-Kämpfer und bringt seine Erfahrung aus dem eigenen Training und aus dem Käfig direkt ins Gym ein. Gemeinsam mit Mehmet steht ein komplett neues Kampfsportstudio, in dem MMA, Ringen, BJJ, Boxen sowie Kick- und Thai-Boxen trainiert werden.',
     'Schau dir Studio, Trainingsbereich und Käfig an und lern Konrad, Mehmet und das Team kennen. Vor Ort erklären wir dir Training, Kurse und den Ablauf im Gym.',
   ],
   aboutPlace: 'KONNI MMA GYM',
-  aboutStreet: 'Wittenberger Straße 15',
+  aboutStreet: 'Wittenberger Straße 15, Aufgang B',
   aboutZip: '04129 Leipzig',
   aboutWhen: 'Jetzt offen · Kursplan siehe unten',
   aboutClose: 'Training läuft. Wir freuen uns auf dich auf der Matte.',
@@ -110,7 +110,7 @@ export const COPY = {
     'Konrad Dyrschka (* 26. Oktober 1991 in Schkeuditz) kam über das Ringen zum Kampfsport und stand als Jugendlicher im erweiterten Bundesliga-Kader. Seit 2013 kämpft er professionell MMA.',
     'Sein Pro-Rekord steht bei 17–2–0 (plus ein No Contest). Zwischen 2015 und 2020 blieb er lange ungeschlagen – zehn Siege in Folge. Acht Siege holte er per KO/TKO.',
     'Bekanntheit auf europäischer Bühne brachte das Debüt bei KSW 59. Bei OKTAGON ist Konrad Dyrschka unter Vertrag und bislang ungeschlagen (3–0), zuletzt mit einem Sieg bei OKTAGON 77.',
-    'Im KONNI MMA GYM an der Wittenberger Straße 15 gibt er seine Erfahrung aus dem Käfig als Head Coach weiter – in MMA, Ringen und dem Alltag auf der Matte.',
+    'Im KONNI MMA GYM an der Wittenberger Straße 15, Aufgang B, gibt er seine Erfahrung aus dem Käfig als Head Coach weiter – in MMA, Ringen und dem Alltag auf der Matte.',
   ],
   konradSectionMilestonesTitle: 'Station und Erfolge',
   mehmetName: 'Mehmet-Deniz Celik',
@@ -160,7 +160,7 @@ export const COPY = {
   preregLead:
     'Die Voranmeldung ist geschlossen. Das Studio ist offen – werde direkt Mitglied oder frag ein Probetraining an.',
   preregButton: 'Jetzt Mitglied werden',
-  preregMeta: 'Training läuft · Wittenberger Straße 15',
+  preregMeta: 'Training läuft · Wittenberger Straße 15, Aufgang B',
   trialLead:
     'Such dir eine Einheit aus. Das Probetraining ist einmalig und unverbindlich – ohne Vertrag.',
   trialClosedLead:

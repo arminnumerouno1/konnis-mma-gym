@@ -47,7 +47,7 @@ AGB, Impressum und Datenschutz stehen als Seiten. Als PDF liegt nur die Widerruf
 
 - `public/legal/widerrufsbelehrung.pdf` — Stand 27. September 2026
 
-Anbieter: KONNI MMA GYM GbR, Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig, info@mma-in-leipzig.de.
+Anbieter: KONNI MMA GYM GbR, Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, Aufgang B, 04129 Leipzig, info@mma-in-leipzig.de.
 
 ## SEO
 

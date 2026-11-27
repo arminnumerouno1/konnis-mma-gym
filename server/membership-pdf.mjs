@@ -226,7 +226,7 @@ class PdfWriter {
 
   finish() {
     const pages = this.doc.getPages()
-    const mark = pdfSafe('KONNI MMA GYM GbR · Wittenberger Straße 15 · 04129 Leipzig')
+    const mark = pdfSafe('KONNI MMA GYM GbR · Wittenberger Straße 15, Aufgang B · 04129 Leipzig')
     pages.forEach((page, index) => {
       page.drawLine({
         start: { x: MARGIN, y: 38 },
@@ -331,7 +331,7 @@ export async function buildContractPdf(record, { paper = false, creditorId = '',
 
   writer.heading('1. Vertragsparteien')
   writer.para(
-    'Anbieter: KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig.',
+    'Anbieter: KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, Aufgang B, 04129 Leipzig.',
   )
   writer.kv('E-Mail Studio', 'info@mma-in-leipzig.de')
   writer.kv('Telefon Studio', '+49 1522 1872354')
@@ -438,7 +438,7 @@ async function buildPaperContractPdf(record, creditorId, { returnCopy = false } 
 
   writer.heading('1. Vertragsparteien')
   writer.para(
-    'Anbieter: KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig.',
+    'Anbieter: KONNI MMA GYM GbR, vertreten durch Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, Aufgang B, 04129 Leipzig.',
   )
   writer.kv('E-Mail Studio', 'info@mma-in-leipzig.de')
   writer.kv('Telefon Studio', '+49 1522 1872354')
@@ -503,7 +503,7 @@ async function buildPaperContractPdf(record, creditorId, { returnCopy = false } 
     writer.para(
       'Du zahlst mit Karte, Apple Pay oder SEPA-Lastschrift über Stripe. Bei SEPA-Lastschrift erteilst du das Mandat im Stripe-Checkout; ein separates Papier-Mandat ist nicht erforderlich.',
     )
-    writer.kv('Zahlungsempfänger', 'KONNI MMA GYM GbR, Wittenberger Straße 15, 04129 Leipzig')
+    writer.kv('Zahlungsempfänger', 'KONNI MMA GYM GbR, Wittenberger Straße 15, Aufgang B, 04129 Leipzig')
     writer.para(`Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Die erste Abbuchung ist am ${chargeLabel(record)} fällig.`)
     if (bank.iban || bank.mandateSignature) {
       writer.gap(6)
@@ -538,13 +538,13 @@ export async function buildWithdrawalPdf() {
   writer.text('Stand: 27. September 2026', { size: 10, color: MUTED, leading: 14 })
   writer.gap(8)
 
-  writer.para('KONNI MMA GYM GbR, vertreten durch die Gesellschafter Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, 04129 Leipzig, E-Mail: info@mma-in-leipzig.de.')
+  writer.para('KONNI MMA GYM GbR, vertreten durch die Gesellschafter Konrad Dyrschka und Mehmet-Deniz Celik, Wittenberger Straße 15, Aufgang B, 04129 Leipzig, E-Mail: info@mma-in-leipzig.de.')
 
   writer.heading('Widerrufsrecht')
   writer.para('Sie haben das Recht, binnen vierzehn Tagen ohne Angabe von Gründen diesen Vertrag zu widerrufen.')
   writer.para('Die Widerrufsfrist beträgt vierzehn Tage ab dem Tag des Vertragsabschlusses.')
   writer.para('Um Ihr Widerrufsrecht auszuüben, müssen Sie uns')
-  writer.para('KONNI MMA GYM GbR, Wittenberger Straße 15, 04129 Leipzig, E-Mail: info@mma-in-leipzig.de')
+  writer.para('KONNI MMA GYM GbR, Wittenberger Straße 15, Aufgang B, 04129 Leipzig, E-Mail: info@mma-in-leipzig.de')
   writer.para(
     'mittels einer eindeutigen Erklärung, zum Beispiel durch einen mit der Post versandten Brief oder eine E-Mail, über Ihren Entschluss, diesen Vertrag zu widerrufen, informieren. Sie können dafür das beigefügte Muster-Widerrufsformular verwenden, das jedoch nicht vorgeschrieben ist.',
   )
@@ -576,7 +576,7 @@ export async function buildWithdrawalPdf() {
 
   writer.heading('Muster-Widerrufsformular')
   writer.para('Wenn Sie den Vertrag widerrufen wollen, können Sie dieses Formular ausfüllen und zurücksenden.')
-  writer.para('An: KONNI MMA GYM GbR, Wittenberger Straße 15, 04129 Leipzig, E-Mail: info@mma-in-leipzig.de')
+  writer.para('An: KONNI MMA GYM GbR, Wittenberger Straße 15, Aufgang B, 04129 Leipzig, E-Mail: info@mma-in-leipzig.de')
   writer.para('Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über die Erbringung der folgenden Dienstleistung:')
   writer.para('Mitgliedschaft / Dienstleistung: ______________________________')
   writer.para('Vertrag abgeschlossen am: ______________________________')
@@ -674,7 +674,7 @@ export async function buildGuardianMandatePdf(record) {
   })
   writer.gap(6)
 
-  writer.kv('Studio', 'KONNI MMA GYM GbR, Wittenberger Straße 15, 04129 Leipzig')
+  writer.kv('Studio', 'KONNI MMA GYM GbR, Wittenberger Straße 15, Aufgang B, 04129 Leipzig')
   writer.kv('E-Mail', 'info@mma-in-leipzig.de')
   writer.kv('Telefon', '+49 1522 1872354')
   writer.para(
@@ -782,7 +782,7 @@ export async function buildTrialGuardianConsentPdf(entry) {
   writer.text('Für Minderjährige · bitte unterschreiben', { size: 10, color: MUTED, leading: 13 })
   writer.gap(6)
 
-  writer.kv('Studio', 'KONNI MMA GYM GbR, Wittenberger Straße 15, 04129 Leipzig')
+  writer.kv('Studio', 'KONNI MMA GYM GbR, Wittenberger Straße 15, Aufgang B, 04129 Leipzig')
   writer.kv('E-Mail', 'info@mma-in-leipzig.de')
   writer.kv('Telefon', '+49 1522 1872354')
   writer.para(
