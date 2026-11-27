@@ -113,43 +113,44 @@ function nextFirstIso(iso) {
 }
 
 /**
- * Vor dem 1. November: Testphase bis Mitternacht, keine Abbuchung.
- * Danach am 1.: sofort der volle Monat. Mitten im Monat: Anteil jetzt, voller Monat ab dem nächsten 1.
+ * Mitgliedsbeitrag immer zum 1. (Europe/Berlin).
+ * Vor dem Billing-Start / mitten im Monat: Trial bis zum nächsten 1., keine Sofort-Anteilzahlung.
+ * Am 1.: voller Monat sofort. Day Pass bleibt Einmalzahlung.
  */
 export function checkoutSchedule(nowMs, { plan = 'standard', billingStart = BILLING_START } = {}) {
-  const anchor = berlinMidnightUnix(billingStart)
-  const nowS = Math.floor(nowMs / 1000)
   const today = berlinIsoDate(nowMs)
   if (plan === 'daypass') {
     if (today < billingStart) return { skip: 'before_opening', billingStart, chargeNow: false }
     return { mode: 'payment', delay: 'payment', billingStart: null, chargeNow: true }
   }
-  if (anchor == null) return { skip: 'before_opening', billingStart, chargeNow: false }
+
+  // Effektiver Abbuchungs-1.: expliziter Start, sonst nächster 1. (heute, wenn schon der 1.).
+  let due = billingStart
+  if (!/^\d{4}-\d{2}-01$/.test(String(due || '')) || due < today) {
+    due = today.endsWith('-01') ? today : nextFirstIso(today)
+  }
+  if (due < billingStart) due = billingStart
+
+  const anchor = berlinMidnightUnix(due)
+  const nowS = Math.floor(nowMs / 1000)
+  if (anchor == null) return { skip: 'before_opening', billingStart: due, chargeNow: false }
+
   if (nowS < anchor) {
     if (anchor - nowS >= TRIAL_LEAD_S) {
-      return { mode: 'subscription', delay: 'trial', trialEnd: anchor, billingStart, chargeNow: false }
+      return { mode: 'subscription', delay: 'trial', trialEnd: anchor, billingStart: due, chargeNow: false }
     }
     return {
       mode: 'subscription',
       delay: 'anchor',
       cycleAnchor: anchor,
       prorate: false,
-      billingStart,
+      billingStart: due,
       chargeNow: false,
     }
   }
-  if (today.endsWith('-01')) {
-    return { mode: 'subscription', delay: 'now', billingStart: today, chargeNow: true }
-  }
-  const next = nextFirstIso(today)
-  return {
-    mode: 'subscription',
-    delay: 'prorate',
-    cycleAnchor: berlinMidnightUnix(next),
-    prorate: true,
-    billingStart: next,
-    chargeNow: true,
-  }
+
+  // Am Abbuchungstag (1.): voller Monat jetzt.
+  return { mode: 'subscription', delay: 'now', billingStart: due, chargeNow: true }
 }
 
 const SITE_HOST_ALLOW = new Set(['www.mma-in-leipzig.de', 'mma-in-leipzig.de', 'konnisstudio.vercel.app'])

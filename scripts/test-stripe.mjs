@@ -78,8 +78,9 @@ assert(plusFields.fields.mode === 'subscription', 'plus is a monthly subscriptio
 
 const opened = new Date('2026-11-02T10:00:00.000Z').getTime()
 const openedPlan = checkoutSchedule(opened, { plan: 'standard' })
-assert(openedPlan.delay === 'prorate' && openedPlan.chargeNow === true, 'after opening prorate the rest of the month')
+assert(openedPlan.delay === 'trial' && openedPlan.chargeNow === false, 'mid-month waits for the next 1st')
 assert(openedPlan.billingStart === '2026-12-01', 'full months from december')
+assert(openedPlan.trialEnd === berlinMidnightUnix('2026-12-01'), 'trial until december 1')
 
 const firstOfMonth = new Date('2026-11-01T10:00:00.000Z').getTime()
 const firstPlan = checkoutSchedule(firstOfMonth, { plan: 'standard' })

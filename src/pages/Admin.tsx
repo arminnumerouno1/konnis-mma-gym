@@ -4170,9 +4170,7 @@ function MemberPane({
         <section className="admin-block">
           <h3>Stripe</h3>
           <p className="admin-muted">
-            {member.stripe?.chargeNow && member.stripe.delay === 'prorate'
-              ? `Anteiliger Beitrag jetzt, volle Monate ab ${deDate(member.stripe.billingStart)}.`
-              : `Der Mitgliedsbeitrag ist jeweils zum 1. des Monats fällig. Erste Abbuchung ${deDate(member.stripe?.billingStart || member.startDate)}.`}
+            {`Der Mitgliedsbeitrag wird immer zum 1. abgebucht. Erste Abbuchung ${deDate(member.stripe?.billingStart || member.startDate)}.`}
             {member.stripe?.subscriptionId
               ? ' Das Abo ist verknüpft. Die Monate färben sich, sobald die Rechnung kommt.'
               : ' Das Mitglied zahlt auf der Stripe-Seite mit Karte, Apple Pay oder SEPA-Lastschrift. Der Link gilt 24 Stunden.'}
